@@ -10,6 +10,7 @@ if TYPE_CHECKING:
     import datetime
     from types import ModuleType
 
+    import numpy as np
     from jaxtyping import Array, Bool, Float, Int
 
     from ttsim.typing import NestedLookupDict
@@ -120,12 +121,13 @@ class ConsecutiveIntLookupTableParamValue:
         "xnp",
     )
 
-    bases_to_subtract: Int[Array, "n_rows n_cols"]
-    lookup_multipliers: Int[Array, "n_rows n_cols"]
+    bases_to_subtract: Int[Array, "n_rows n_cols"] | np.ndarray
+    lookup_multipliers: Int[Array, "n_rows n_cols"] | np.ndarray
     values_to_look_up: (
         Float[Array, "n_rows n_cols"]
         | Int[Array, "n_rows n_cols"]
         | Bool[Array, "n_rows n_cols"]
+        | np.ndarray
     )
     xnp: ModuleType
 
@@ -134,8 +136,9 @@ class ConsecutiveIntLookupTableParamValue:
         xnp: ModuleType,
         values_to_look_up: Float[Array, "n_rows n_cols"]
         | Int[Array, "n_rows n_cols"]
-        | Bool[Array, "n_rows n_cols"],
-        bases_to_subtract: Int[Array, "n_rows n_cols"],
+        | Bool[Array, "n_rows n_cols"]
+        | np.ndarray,
+        bases_to_subtract: Int[Array, "n_rows n_cols"] | np.ndarray,
     ) -> None:
         self.xnp = xnp
         self.values_to_look_up = values_to_look_up.flatten()
@@ -188,9 +191,9 @@ class PiecewisePolynomialParamValue:
         Slope and higher-order coefficients of the polynomial on each segment.
     """
 
-    thresholds: Float[Array, " n_segments"]
-    intercepts: Float[Array, " n_segments"]
-    rates: Float[Array, " n_segments"]
+    thresholds: Float[Array, " n_segments"] | np.ndarray
+    intercepts: Float[Array, " n_segments"] | np.ndarray
+    rates: Float[Array, " n_segments"] | np.ndarray
 
 
 def get_consecutive_int_lookup_table_param_value(

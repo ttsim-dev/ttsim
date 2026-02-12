@@ -168,9 +168,9 @@ SOME_DICT_PARAM = DictParam(
 
 SOME_PIECEWISE_POLYNOMIAL_PARAM = PiecewisePolynomialParam(
     value=PiecewisePolynomialParamValue(
-        thresholds=[1, 2, 3],
-        intercepts=[1, 2, 3],
-        rates=[1, 2, 3],
+        thresholds=[1, 2, 3],  # ty: ignore[invalid-argument-type]
+        intercepts=[1, 2, 3],  # ty: ignore[invalid-argument-type]
+        rates=[1, 2, 3],  # ty: ignore[invalid-argument-type]
     ),
     start_date=datetime.date(2025, 1, 1),
     end_date=datetime.date(2025, 12, 31),

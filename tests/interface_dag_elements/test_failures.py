@@ -12,9 +12,9 @@ import pytest
 from mettsim import middle_earth
 
 try:
-    import jax  # ty: ignore[unresolved-import]
+    import jax
 except ImportError:
-    jax = None
+    jax = None  # ty: ignore[invalid-assignment]
 
 from ttsim import InputData, MainTarget, OrigPolicyObjects, TTTargets, main
 from ttsim.interface_dag_elements.fail_if import (
@@ -1704,9 +1704,9 @@ def test_backend_has_changed_from_jax_to_numpy_passes():
     )
     input_data = InputData.tree(
         tree={
-            "p_id": jax.numpy.array([0, 1, 2]),  # ty: ignore[possibly-missing-attribute]
+            "p_id": jax.numpy.array([0, 1, 2]),
             "property_tax": {
-                "acre_size_in_hectares": jax.numpy.array([5, 20, 200]),  # ty: ignore[possibly-missing-attribute]
+                "acre_size_in_hectares": jax.numpy.array([5, 20, 200]),
             },
         }
     )
