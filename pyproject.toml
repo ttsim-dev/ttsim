@@ -23,7 +23,6 @@ authors = [
   { name = "Marvin Immesberger" },
 ]
 requires-python = ">=3.11"
-
 classifiers = [
   "Intended Audience :: Science/Research",
   "License :: OSI Approved :: GNU Affero General Public License v3",
@@ -60,28 +59,19 @@ urls.Github = "https://github.com/ttsim-dev/ttsim"
 urls.Repository = "https://github.com/ttsim-dev/ttsim"
 urls.Tracker = "https://github.com/ttsim-dev/ttsim/issues"
 
-[tool.hatch.build.hooks.vcs]
-version-file = "src/ttsim/_version.py"
-
-[tool.hatch.build.targets.sdist]
-exclude = [ "tests" ]
-only-packages = true
-
-[tool.hatch.build.targets.wheel]
-only-include = [ "src" ]
-sources = [ "src" ]
-
-[tool.hatch.metadata]
-allow-direct-references = true
-
-[tool.hatch.version]
-source = "vcs"
+[tool.hatch]
+build.hooks.vcs.version-file = "src/ttsim/_version.py"
+build.targets.sdist.exclude = [ "tests" ]
+build.targets.sdist.only-packages = true
+build.targets.wheel.only-include = [ "src" ]
+build.targets.wheel.sources = [ "src" ]
+metadata.allow-direct-references = true
+version.source = "vcs"
 
 [tool.ruff]
 target-version = "py311"
 fix = true
 unsafe-fixes = false
-
 lint.select = [ "ALL" ]
 lint.extend-ignore = [
   "COM812",  # Conflicts with ruff-format
@@ -160,9 +150,9 @@ lint.per-file-ignores."tests/tt/test_vectorization.py" = [
 ]
 lint.pydocstyle.convention = "google"
 
-[tool.pytest.ini_options]
-addopts = [ "--pdbcls=pdbp:Pdb" ]
-filterwarnings = [
+[tool.pytest]
+ini_options.addopts = [ "--pdbcls=pdbp:Pdb" ]
+ini_options.filterwarnings = [
   "ignore:.*XMLParser*:DeprecationWarning",
   "ignore:.*'tree.iter()'*:PendingDeprecationWarning",
   "ignore:.*Sorting*:FutureWarning",
@@ -171,139 +161,94 @@ filterwarnings = [
   "ignore:Using or importing the ABCs from 'collections'",
   "ignore:Explicitly requested dtype .*64 requested in zeros_like",
 ]
-markers = [
+ini_options.markers = [
   "skipif_jax: skip test if backend is jax",
   "skipif_numpy: skip test if backend is numpy",
 ]
-norecursedirs = [ "docs" ]
-testpaths = [ "tests", "src_mettsim/tests_middle_earth" ]
+ini_options.norecursedirs = [ "docs" ]
+ini_options.testpaths = [ "tests", "src_mettsim/tests_middle_earth" ]
 
-[tool.ty.analysis]
-allowed-unresolved-imports = [ "ttsim._version", "jax", "jax.numpy", "jax.ops" ]
-
-[tool.ty.rules]
-ambiguous-protocol-member = "error"
-deprecated = "error"
-division-by-zero = "error"
-empty-body = "ignore"                    # raised for all functions decorated with @policy_input
-ignore-comment-unknown-rule = "error"
-invalid-argument-type = "error"
-invalid-ignore-comment = "error"
-invalid-return-type = "ignore"
-possibly-missing-attribute = "error"
-possibly-missing-implicit-call = "error"
-possibly-missing-import = "error"
-possibly-unresolved-reference = "error"
-redundant-cast = "error"
-undefined-reveal = "error"
-unresolved-global = "error"
-unsupported-base = "error"
-unused-ignore-comment = "error"
-useless-overload-body = "error"
-
-[tool.pixi.dependencies]
-ipywidgets = "*"
-jupyterlab = "*"
-numpy_groupies = "*"
-numpydoc = "*"
-openpyxl = "*"
-pandas = ">=2.3"
-prek = "*"
-pygments = "*"
-pygraphviz = "*"
-pyyaml = "*"
-snakeviz = ">=2.2.2"
-tabulate = "*"
-toml = "*"
-
-[tool.pixi.environments]
-py311 = [ "py311", "tests" ]
-py312 = [ "py312", "tests" ]
-py313 = [ "py313", "tests" ]
-py314 = [ "py314", "tests" ]
-py314-cuda = [ "py314", "tests", "cuda" ]
-py314-jax = [ "py314", "tests", "jax" ]
-py314-metal = [ "py314", "tests", "metal" ]
-
-[tool.pixi.feature.cuda]
-platforms = [ "linux-64" ]
-system-requirements = { cuda = "13" }
-
-[tool.pixi.feature.cuda.target.linux-64.pypi-dependencies]
-jax = { version = ">=0.8", extras = [ "cuda13" ] }
-
-[tool.pixi.feature.cuda.target.linux-64.tasks]
-tests-jax = "pytest --backend=jax"
-
-[tool.pixi.feature.jax]
-platforms = [ "linux-64", "osx-arm64", "win-64" ]
-
-[tool.pixi.feature.jax.pypi-dependencies]
-jax = ">=0.8"
-[tool.pixi.feature.jax.target.linux-64.tasks]
-tests-jax = "pytest --backend=jax"
-
-[tool.pixi.feature.jax.target.osx-arm64.tasks]
-tests-jax = "dot -c && pytest --backend=jax"
-
-[tool.pixi.feature.jax.target.win-64.tasks]
-tests-jax = "pytest --backend=jax"
-
-[tool.pixi.feature.metal]
-platforms = [ "osx-arm64" ]
-
-[tool.pixi.feature.metal.target.osx-arm64.pypi-dependencies]
-jax = ">=0.8"
-jax-metal = ">=0.1.1"
-
-[tool.pixi.feature.py311.dependencies]
-python = "~=3.11.0"
-
-[tool.pixi.feature.py312.dependencies]
-python = "~=3.12.0"
-
-[tool.pixi.feature.py313.dependencies]
-python = "~=3.13.0"
-
-[tool.pixi.feature.py314.dependencies]
-python = "~=3.14.0"
-
-[tool.pixi.feature.tests.pypi-dependencies]
-ty = "*"
-types-PyYAML = "*"
-types-pytz = "*"
-pytest-cov = "*"
-pytest-xdist = "*"
-
-[tool.pixi.feature.tests.target.linux-64.tasks]
-tests = "pytest"
-ty = "ty check"
-
-[tool.pixi.feature.tests.target.osx-64.tasks]
-tests = "dot -c && pytest" # dot -c needed for pygraphviz on macOS
-ty = "ty check"
-
-[tool.pixi.feature.tests.target.osx-arm64.tasks]
-tests = "dot -c && pytest" # dot -c needed for pygraphviz on macOS
-ty = "ty check"
-
-[tool.pixi.feature.tests.target.win-64.tasks]
-tests = "pytest"
-ty = "ty check"
-
-[tool.pixi.pypi-dependencies]
-# jax-datetime = { git = "https://github.com/google/jax-datetime.git" }
-jaxtyping = ">=0.3.2"
-kaleido = ">=1.0.0"
-mettsim = { path = "src_mettsim", editable = true }
-pdbp = ">=1.7.1"
-ttsim-backend = { path = ".", editable = true }
-
-[tool.pixi.workspace]
-channels = [ "conda-forge" ]
-platforms = [ "linux-64", "osx-64", "osx-arm64", "win-64" ]
+[tool.ty]
+analysis.allowed-unresolved-imports = [ "ttsim._version", "jax", "jax.numpy", "jax.ops" ]
+rules.ambiguous-protocol-member = "error"
+rules.deprecated = "error"
+rules.division-by-zero = "error"
+rules.empty-body = "ignore"  # raised for all functions decorated with @policy_input
+rules.ignore-comment-unknown-rule = "error"
+rules.invalid-argument-type = "error"
+rules.invalid-ignore-comment = "error"
+rules.invalid-return-type = "ignore"
+rules.possibly-missing-attribute = "error"
+rules.possibly-missing-implicit-call = "error"
+rules.possibly-missing-import = "error"
+rules.possibly-unresolved-reference = "error"
+rules.redundant-cast = "error"
+rules.undefined-reveal = "error"
+rules.unresolved-global = "error"
+rules.unsupported-base = "error"
+rules.unused-ignore-comment = "error"
+rules.useless-overload-body = "error"
 
 [tool.yamlfix]
 line_length = 88
 none_representation = "null"
 sequence_style = "block_style"
+
+[tool.pixi]
+dependencies.ipywidgets = "*"
+dependencies.jupyterlab = "*"
+dependencies.numpy_groupies = "*"
+dependencies.numpydoc = "*"
+dependencies.openpyxl = "*"
+dependencies.pandas = ">=2.3"
+dependencies.prek = "*"
+dependencies.pygments = "*"
+dependencies.pygraphviz = "*"
+dependencies.pyyaml = "*"
+dependencies.snakeviz = ">=2.2.2"
+dependencies.tabulate = "*"
+dependencies.toml = "*"
+environments.py311 = [ "py311", "tests" ]
+environments.py312 = [ "py312", "tests" ]
+environments.py313 = [ "py313", "tests" ]
+environments.py314 = [ "py314", "tests" ]
+environments.py314-cuda = [ "py314", "tests", "cuda" ]
+environments.py314-jax = [ "py314", "tests", "jax" ]
+environments.py314-metal = [ "py314", "tests", "metal" ]
+feature.cuda.platforms = [ "linux-64" ]
+feature.cuda.system-requirements = { cuda = "13" }
+feature.cuda.target.linux-64.pypi-dependencies.jax = { version = ">=0.8", extras = [ "cuda13" ] }
+feature.cuda.target.linux-64.tasks.tests-jax = "pytest --backend=jax"
+feature.jax.platforms = [ "linux-64", "osx-arm64", "win-64" ]
+feature.jax.pypi-dependencies.jax = ">=0.8"
+feature.jax.target.linux-64.tasks.tests-jax = "pytest --backend=jax"
+feature.jax.target.osx-arm64.tasks.tests-jax = "dot -c && pytest --backend=jax"
+feature.jax.target.win-64.tasks.tests-jax = "pytest --backend=jax"
+feature.metal.platforms = [ "osx-arm64" ]
+feature.metal.target.osx-arm64.pypi-dependencies.jax = ">=0.8"
+feature.metal.target.osx-arm64.pypi-dependencies.jax-metal = ">=0.1.1"
+feature.py311.dependencies.python = "~=3.11.0"
+feature.py312.dependencies.python = "~=3.12.0"
+feature.py313.dependencies.python = "~=3.13.0"
+feature.py314.dependencies.python = "~=3.14.0"
+feature.tests.pypi-dependencies.ty = "*"
+feature.tests.pypi-dependencies.types-PyYAML = "*"
+feature.tests.pypi-dependencies.types-pytz = "*"
+feature.tests.pypi-dependencies.pytest-cov = "*"
+feature.tests.pypi-dependencies.pytest-xdist = "*"
+feature.tests.target.linux-64.tasks.tests = "pytest"
+feature.tests.target.linux-64.tasks.ty = "ty check"
+feature.tests.target.osx-64.tasks.tests = "dot -c && pytest"  # dot -c needed for pygraphviz on macOS
+feature.tests.target.osx-64.tasks.ty = "ty check"
+feature.tests.target.osx-arm64.tasks.tests = "dot -c && pytest"  # dot -c needed for pygraphviz on macOS
+feature.tests.target.osx-arm64.tasks.ty = "ty check"
+feature.tests.target.win-64.tasks.tests = "pytest"
+feature.tests.target.win-64.tasks.ty = "ty check"
+# jax-datetime = { git = "https://github.com/google/jax-datetime.git" }
+pypi-dependencies.jaxtyping = ">=0.3.2"
+pypi-dependencies.kaleido = ">=1.0.0"
+pypi-dependencies.mettsim = { path = "src_mettsim", editable = true }
+pypi-dependencies.pdbp = ">=1.7.1"
+pypi-dependencies.ttsim-backend = { path = ".", editable = true }
+workspace.channels = [ "conda-forge" ]
+workspace.platforms = [ "linux-64", "osx-64", "osx-arm64", "win-64" ]
