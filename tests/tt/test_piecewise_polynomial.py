@@ -24,7 +24,7 @@ from ttsim.tt.piecewise_polynomial import (
 def parameters(xnp: ModuleType):
     return PiecewisePolynomialParamValue(
         thresholds=xnp.array([-xnp.inf, 9168.0, 14254.0, 55960.0, 265326.0, xnp.inf]),
-        rates=xnp.array(
+        coefficients=xnp.array(
             [
                 [0.00000000e00, 0.00000000e00],
                 [1.40000000e-01, 9.80141565e-06],

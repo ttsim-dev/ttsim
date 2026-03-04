@@ -184,7 +184,7 @@ class PiecewisePolynomialParamValue:
         Boundary points defining the pieces / different segments.
     intercepts:
         Intercepts of the polynomial on each segment (one per interval).
-    rates:
+    coefficients:
         Coefficients of the polynomial on each segment, shape
         (n_intervals, n_coefficients). For piecewise_constant, this is
         (n_intervals, 1) with all zeros.
@@ -192,7 +192,7 @@ class PiecewisePolynomialParamValue:
 
     thresholds: Float[Array, " n_thresholds"]
     intercepts: Float[Array, " n_intervals"]
-    rates: Float[Array, "n_intervals n_coefficients"]
+    coefficients: Float[Array, "n_intervals n_coefficients"]
 
 
 def get_consecutive_int_lookup_table_param_value(

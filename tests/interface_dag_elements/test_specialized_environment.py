@@ -160,7 +160,7 @@ SOME_PIECEWISE_POLYNOMIAL_PARAM = PiecewisePolynomialParam(
     value=PiecewisePolynomialParamValue(
         thresholds=[1, 2, 3],
         intercepts=[1, 2, 3],
-        rates=[1, 2, 3],
+        coefficients=[1, 2, 3],
     ),
     start_date=datetime.date(2025, 1, 1),
     end_date=datetime.date(2025, 12, 31),

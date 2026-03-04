@@ -70,6 +70,17 @@ def extend_intervals_to_real_line(
     After merging specs (e.g., via updates_previous), changing one interval's
     bounds can leave adjacent intervals with stale boundaries. This propagates
     each interval's upper bound as the next interval's lower bound.
+
+    Example
+    -------
+    >>> extend_intervals_to_real_line([
+    ...     {"interval": "(-inf, 50)", "slope": 0.1},
+    ...     {"interval": "[100, inf)", "slope": 0.3},
+    ... ])
+    [
+        {"interval": "(-inf, 50)", "slope": 0.1},
+        {"interval": "[50, inf)", "slope": 0.3},
+    ]
     """
     if not items or not any("interval" in item for item in items):
         return items

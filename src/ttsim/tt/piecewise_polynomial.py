@@ -26,27 +26,27 @@ FUNC_TYPES = Literal[
 
 
 @dataclass(frozen=True)
-class RatesOptions:
+class CoefficientOptions:
     required_keys: tuple[Literal["slope", "quadratic", "cubic"], ...]
-    rates_size: int
+    n_coefficients: int
 
 
 OPTIONS_REGISTRY = {
-    "piecewise_constant": RatesOptions(
+    "piecewise_constant": CoefficientOptions(
         required_keys=(),
-        rates_size=1,
+        n_coefficients=1,
     ),
-    "piecewise_linear": RatesOptions(
+    "piecewise_linear": CoefficientOptions(
         required_keys=("slope",),
-        rates_size=1,
+        n_coefficients=1,
     ),
-    "piecewise_quadratic": RatesOptions(
+    "piecewise_quadratic": CoefficientOptions(
         required_keys=("slope", "quadratic"),
-        rates_size=2,
+        n_coefficients=2,
     ),
-    "piecewise_cubic": RatesOptions(
+    "piecewise_cubic": CoefficientOptions(
         required_keys=("slope", "quadratic", "cubic"),
-        rates_size=3,
+        n_coefficients=3,
     ),
 }
 
@@ -81,15 +81,15 @@ def piecewise_polynomial(
         The value of `x` under the piecewise function.
 
     """
-    n_intervals = parameters.rates.shape[0]
-    order = parameters.rates.shape[1]
+    n_intervals = parameters.coefficients.shape[0]
+    order = parameters.coefficients.shape[1]
     # Get interval of requested value
     selected_bin = xnp.searchsorted(parameters.thresholds, x, side="right") - 1
 
     # Clamp to valid range for indexing (we'll mask out-of-domain later)
     clamped_bin = xnp.clip(selected_bin, 0, n_intervals - 1)
 
-    coefficients = parameters.rates[clamped_bin]
+    coefficients = parameters.coefficients[clamped_bin]
     # Calculate distance from x to lower threshold
     increment_to_calc = xnp.where(
         parameters.thresholds[clamped_bin] == -xnp.inf,
@@ -146,25 +146,25 @@ def get_piecewise_parameters(
         xnp=xnp,
     )
 
-    # Create and fill rates-array
-    rates = _check_and_get_rates(
+    # Create and fill coefficients array
+    coefficients = _check_and_get_coefficients(
         parameter_list=parameter_list,
         leaf_name=leaf_name,
         func_type=func_type,
         xnp=xnp,
     )
-    # Create and fill intercept-array
+    # Create and fill intercept array
     intercepts = _check_and_get_intercepts(
         parameter_list=parameter_list,
         leaf_name=leaf_name,
         lower_thresholds=lower_thresholds,
         upper_thresholds=upper_thresholds,
-        rates=rates,
+        coefficients=coefficients,
         xnp=xnp,
     )
     return PiecewisePolynomialParamValue(
         thresholds=thresholds,
-        rates=rates,
+        coefficients=coefficients,
         intercepts=intercepts,
     )
 
@@ -201,27 +201,27 @@ def get_piecewise_thresholds(
     return intervals_to_thresholds(intervals=intervals, xnp=xnp)
 
 
-def _check_and_get_rates(
+def _check_and_get_coefficients(
     leaf_name: str,
     func_type: FUNC_TYPES,
     parameter_list: list[dict[str, float | str]],
     xnp: ModuleType,
 ) -> Float[Array, "n_intervals n_coefficients"]:
-    """Check and extract rates data from the list-of-dicts format.
+    """Check and extract coefficient data from the list-of-dicts format.
 
-    Returns rates with shape (n_intervals, n_coefficients).
+    Returns coefficients with shape (n_intervals, n_coefficients).
     """
     n_intervals = len(parameter_list)
     options = OPTIONS_REGISTRY[func_type]
-    rates = numpy.zeros((n_intervals, options.rates_size))
+    coefficients = numpy.zeros((n_intervals, options.n_coefficients))
     for i, item in enumerate(parameter_list):
         for j, rate_type in enumerate(options.required_keys):
             if rate_type not in item:
                 raise ValueError(
                     f"In interval {i} of {leaf_name}, {rate_type} is missing.",
                 )
-            rates[i, j] = item[rate_type]
-    return xnp.array(rates)
+            coefficients[i, j] = item[rate_type]
+    return xnp.array(coefficients)
 
 
 def _check_and_get_intercepts(
@@ -229,7 +229,7 @@ def _check_and_get_intercepts(
     parameter_list: list[dict[str, float | str]],
     lower_thresholds: Float[Array, " n_segments"],
     upper_thresholds: Float[Array, " n_segments"],
-    rates: Float[Array, "n_intervals n_coefficients"],
+    coefficients: Float[Array, "n_intervals n_coefficients"],
     xnp: ModuleType,
 ) -> Float[Array, " n_segments"]:
     """Check and extract intercept data. If necessary create intercepts."""
@@ -255,7 +255,7 @@ def _check_and_get_intercepts(
         intercepts = _create_intercepts(
             lower_thresholds,
             upper_thresholds,
-            rates,
+            coefficients,
             intercepts[0],
             xnp=xnp,
         )
@@ -265,7 +265,7 @@ def _check_and_get_intercepts(
 def _create_intercepts(
     lower_thresholds: Float[Array, " n_segments"],
     upper_thresholds: Float[Array, " n_segments"],
-    rates: Float[Array, "n_intervals n_coefficients"],
+    coefficients: Float[Array, "n_intervals n_coefficients"],
     intercept_at_lowest_threshold: float,
     xnp: ModuleType,
 ) -> Float[Array, " n_segments"]:
@@ -277,7 +277,7 @@ def _create_intercepts(
             x=up_thr,
             lower_thresholds=lower_thresholds,
             upper_thresholds=upper_thresholds,
-            rates=rates,
+            coefficients=coefficients,
             intercepts=intercepts,
         )
     return xnp.array(intercepts)
@@ -287,7 +287,7 @@ def _calculate_one_intercept(
     x: float,
     lower_thresholds: Float[Array, " n_segments"],
     upper_thresholds: Float[Array, " n_segments"],
-    rates: Float[Array, "n_intervals n_coefficients"],
+    coefficients: Float[Array, "n_intervals n_coefficients"],
     intercepts: Float[Array, " n_segments"],
 ) -> float:
     """Calculate the intercept for the segment `x` lies in."""
@@ -306,6 +306,6 @@ def _calculate_one_intercept(
     increment_to_calc = x - lower_threshold_interval
 
     out = intercept_interval
-    for j in range(rates.shape[1]):
-        out += rates[index_interval, j] * increment_to_calc ** (j + 1)
+    for j in range(coefficients.shape[1]):
+        out += coefficients[index_interval, j] * increment_to_calc ** (j + 1)
     return out
