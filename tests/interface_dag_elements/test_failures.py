@@ -97,7 +97,7 @@ some_piecewise_polynomial_param = PiecewisePolynomialParam(
     value=PiecewisePolynomialParamValue(
         thresholds=numpy.array([1, 2, 3]),
         intercepts=numpy.array([1, 2, 3]),
-        rates=numpy.array([1, 2, 3]),
+        coefficients=numpy.array([1, 2, 3]),
     ),
     **_GENERIC_PARAM_SPEC,  # ty: ignore[invalid-argument-type]
 )

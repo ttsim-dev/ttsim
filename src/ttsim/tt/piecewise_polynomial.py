@@ -58,7 +58,6 @@ def piecewise_polynomial(
     x: Float[Array, " n_pp_values"],
     parameters: PiecewisePolynomialParamValue,
     xnp: ModuleType,
-    rates_multiplier: Float[Array, " n_segments"] | float = 1.0,
 ) -> Float[Array, " n_pp_values"]:
     """Calculate value of the piecewise function at `x`.
 
@@ -72,8 +71,6 @@ def piecewise_polynomial(
         Thresholds defining the pieces and coefficients on each piece.
     xnp:
         The backend module to use for calculations.
-    rates_multiplier:
-        Multiplier to create individual or scaled rates.
 
     Returns
     -------
@@ -97,13 +94,9 @@ def piecewise_polynomial(
         x - parameters.thresholds[clamped_bin],
     )
     # Evaluate polynomial at x
-    result = rates_multiplier * (
-        parameters.intercepts[clamped_bin]
-        + (
-            increment_to_calc.reshape(-1, 1) ** xnp.arange(1, order + 1, 1)
-            * coefficients
-        ).sum(axis=1)
-    )
+    result = parameters.intercepts[clamped_bin] + (
+        increment_to_calc.reshape(-1, 1) ** xnp.arange(1, order + 1, 1) * coefficients
+    ).sum(axis=1)
 
     # NaN for out-of-domain values
     out_of_domain = (selected_bin < 0) | (selected_bin >= n_intervals)
@@ -215,12 +208,12 @@ def _check_and_get_coefficients(
     options = OPTIONS_REGISTRY[func_type]
     coefficients = numpy.zeros((n_intervals, options.n_coefficients))
     for i, item in enumerate(parameter_list):
-        for j, rate_type in enumerate(options.required_keys):
-            if rate_type not in item:
+        for j, coefficient_key in enumerate(options.required_keys):
+            if coefficient_key not in item:
                 raise ValueError(
-                    f"In interval {i} of {leaf_name}, {rate_type} is missing.",
+                    f"In interval {i} of {leaf_name}, {coefficient_key} is missing.",
                 )
-            coefficients[i, j] = item[rate_type]
+            coefficients[i, j] = item[coefficient_key]
     return xnp.array(coefficients)
 
 

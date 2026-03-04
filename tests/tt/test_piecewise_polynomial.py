@@ -77,12 +77,11 @@ def test_piecewise_polynomial(
     xnp: ModuleType,
 ):
     x = xnp.array([-1_000, 1_000, 10_000, 30_000, 100_000, 1_000_000])
-    expected = xnp.array([0.0, 0.0, 246.53, 10551.65, 66438.2, 866518.64])
+    expected = xnp.array([0.0, 0.0, 123.265, 5275.825, 33219.1, 433259.32])
 
     actual = piecewise_polynomial(
         x=x,
         parameters=parameters,
-        rates_multiplier=2,
         xnp=xnp,
     )
     numpy.testing.assert_allclose(xnp.array(actual), expected, atol=0.01)
