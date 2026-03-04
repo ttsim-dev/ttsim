@@ -177,6 +177,29 @@ class RawParam(ParamObject):
 
 
 @dataclass(frozen=True)
+class PiecewisePolynomialInterval:
+    """A single interval of a piecewise polynomial."""
+
+    intercept: float
+    coefficients: Float[Array, " n_coefficients"]
+
+    @property
+    def slope(self) -> float:
+        """The first coefficient (linear term)."""
+        return self.coefficients[0]
+
+    @property
+    def quadratic(self) -> float:
+        """The second coefficient (quadratic term)."""
+        return self.coefficients[1]
+
+    @property
+    def cubic(self) -> float:
+        """The third coefficient (cubic term)."""
+        return self.coefficients[2]
+
+
+@dataclass(frozen=True)
 class PiecewisePolynomialParamValue:
     """The parameters expected by `piecewise_polynomial`.
 
@@ -193,6 +216,12 @@ class PiecewisePolynomialParamValue:
     thresholds: Float[Array, " n_thresholds"]
     intercepts: Float[Array, " n_intervals"]
     coefficients: Float[Array, "n_intervals n_coefficients"]
+
+    def __getitem__(self, index: int) -> PiecewisePolynomialInterval:
+        return PiecewisePolynomialInterval(
+            intercept=self.intercepts[index],
+            coefficients=self.coefficients[index],
+        )
 
 
 def get_consecutive_int_lookup_table_param_value(
