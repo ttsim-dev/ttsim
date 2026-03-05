@@ -294,7 +294,7 @@ def _harmonize_main_targets(
 ) -> list[str]:
     if isinstance(main_targets, dict):
         out = dt.qnames(main_targets)  # ty: ignore [invalid-argument-type]
-    elif isinstance(main_targets[0], tuple):
+    elif isinstance(main_targets[0], tuple):  # ty: ignore [not-subscriptable]
         out = [dt.qname_from_tree_path(tp) for tp in main_targets]  # ty: ignore [invalid-argument-type]
     else:
         out = list(main_targets)

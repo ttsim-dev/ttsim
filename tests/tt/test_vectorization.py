@@ -32,6 +32,7 @@ from ttsim.tt.vectorization import (
     _is_lambda_function,
     _make_vectorizable,
     make_vectorizable_source,
+    scalar_type_to_array_type,
     vectorize_function,
 )
 
@@ -863,3 +864,25 @@ def test_forbidden_augassign_raise(func, xnp):
         TranslateToVectorizableError, match="Augmented assignment is not allowed"
     ):
         make_vectorizable_source(func, backend="numpy", xnp=xnp)
+
+
+# ======================================================================================
+# scalar_type_to_array_type
+# ======================================================================================
+
+
+@pytest.mark.parametrize(
+    ("input_type", "expected"),
+    [
+        ("int", "IntColumn"),
+        ("float", "FloatColumn"),
+        ("bool", "BoolColumn"),
+        (int, "IntColumn"),
+        (float, "FloatColumn"),
+        (bool, "BoolColumn"),
+        ("str", "str"),
+        ("dict[str, float]", "dict[str, float]"),
+    ],
+)
+def test_scalar_type_to_array_type(input_type, expected):
+    assert scalar_type_to_array_type(input_type) == expected

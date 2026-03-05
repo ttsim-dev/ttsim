@@ -534,8 +534,10 @@ def _create_vectorized_annotations(func: FunctionType[..., Any]) -> dict[str, An
     }
 
 
-def scalar_type_to_array_type(orig_type: Literal["int", "float", "bool"]) -> str:
+def scalar_type_to_array_type(orig_type: str | type) -> str:
     """Convert a scalar type to the corresponding array type."""
+    if not isinstance(orig_type, str):
+        orig_type = getattr(orig_type, "__name__", str(orig_type))
     registry = {
         "int": "IntColumn",
         "float": "FloatColumn",

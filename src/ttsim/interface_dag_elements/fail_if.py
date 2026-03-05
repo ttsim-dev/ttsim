@@ -16,7 +16,7 @@ import pandas as pd
 from dags import create_dag, get_free_arguments
 
 try:
-    import jax  # ty: ignore[unresolved-import]
+    import jax
 except ImportError:
     jax = None
 

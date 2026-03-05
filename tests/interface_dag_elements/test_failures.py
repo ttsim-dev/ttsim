@@ -12,7 +12,7 @@ import pytest
 from mettsim import middle_earth
 
 try:
-    import jax  # ty: ignore[unresolved-import]
+    import jax
 except ImportError:
     jax = None
 

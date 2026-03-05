@@ -3,8 +3,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 try:
-    import jax.numpy as jnp  # ty: ignore[unresolved-import]
-    from jax.ops import (  # ty: ignore[unresolved-import]
+    import jax.numpy as jnp
+    from jax.ops import (
         segment_max,
         segment_min,
         segment_sum,

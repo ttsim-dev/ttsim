@@ -89,3 +89,51 @@ def test_processed_data_foreign_key_inside_bounds(xnp):
         ),
         pd.DataFrame(expected),
     )
+
+
+def test_processed_data_single_column(xnp):
+    """Test processed_data with a single column (p_id only)."""
+    input_data__flat = {
+        ("p_id",): numpy.array([3, 1, 2]),
+    }
+    input_data__sort_indices = sort_indices(input_data__flat=input_data__flat, xnp=xnp)
+
+    expected = {
+        "p_id": xnp.array([0, 1, 2]),
+    }
+
+    pd.testing.assert_frame_equal(
+        pd.DataFrame(
+            processed_data(
+                input_data__flat=input_data__flat,
+                input_data__sort_indices=input_data__sort_indices,
+                xnp=xnp,
+            )
+        ),
+        pd.DataFrame(expected),
+    )
+
+
+def test_processed_data_single_row(xnp):
+    """Test processed_data with a single row."""
+    input_data__flat = {
+        ("p_id",): numpy.array([42]),
+        ("hh_id",): numpy.array([100]),
+    }
+    input_data__sort_indices = sort_indices(input_data__flat=input_data__flat, xnp=xnp)
+
+    expected = {
+        "p_id": xnp.array([0]),
+        "hh_id": xnp.array([0]),
+    }
+
+    pd.testing.assert_frame_equal(
+        pd.DataFrame(
+            processed_data(
+                input_data__flat=input_data__flat,
+                input_data__sort_indices=input_data__sort_indices,
+                xnp=xnp,
+            )
+        ),
+        pd.DataFrame(expected),
+    )
