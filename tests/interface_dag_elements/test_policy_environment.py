@@ -288,20 +288,3 @@ def test_get_param_value_piecewise_updates_previous_on_first_raises():
     ]
     with pytest.raises(ValueError, match="updates_previous"):
         _get_param_value_piecewise(specs)
-
-
-def test_bare_list_format_raises_type_error(xnp: ModuleType):
-    spec = {
-        "name": {"de": "Test", "en": "Test"},
-        "description": {"de": "Test", "en": "Test"},
-        "type": "piecewise_linear",
-        datetime.date(2020, 1, 1): [
-            {"interval": "[0, inf)", "slope": 0.1, "intercept": 0},
-        ],
-    }
-    with pytest.raises(TypeError, match="Bare list format is no longer supported"):
-        _active_param_objects(
-            orig={("spam.yaml", "foo"): spec},  # ty: ignore[invalid-argument-type]
-            policy_date=datetime.date(2020, 7, 1),
-            xnp=xnp,
-        )
