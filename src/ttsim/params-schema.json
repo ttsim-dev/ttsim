@@ -63,19 +63,34 @@
       },
       "patternProperties": {
         "^(19|20)[0-9]{2}-(0[1-9]|1[0-2])-[0-3][0-9]$": {
-          "type": "object",
-          "properties": {
-            "value": {
-              "oneOf": [
-                { "type": ["number"] },
-                { "type": "string", "enum": ["inf", "-inf"] }
-              ]
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "oneOf": [
+                    { "type": ["number"] },
+                    { "type": "string", "enum": ["inf", "-inf"] }
+                  ]
+                },
+                "reference": { "type": "string" },
+                "note": { "type": "string" },
+                "deviation_from": { "type": "string" }
+              },
+              "additionalProperties": true
             },
-            "reference": { "type": "string" },
-            "note": { "type": "string" },
-            "deviation_from": { "type": "string" }
-          },
-          "additionalProperties": true
+            {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "interval": { "type": "string" }
+                },
+                "required": ["interval"],
+                "additionalProperties": true
+              }
+            }
+          ]
         }
       },
       "additionalProperties": false,

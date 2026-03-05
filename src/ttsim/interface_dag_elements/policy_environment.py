@@ -317,16 +317,4 @@ def _get_param_value(
             to_upsert=current_spec,  # ty: ignore[invalid-argument-type]
         )
 
-    # Convert integer-keyed dict to list when keys are consecutive ints 0..n-1
-    # and values are dicts (piecewise polynomial interval specs).
-    # Do not convert when values are scalars (consecutive_int_lookup_table)
-    # or keys are non-consecutive (partial overlay specs like {3: {...}}).
-    if (
-        current_spec
-        and all(isinstance(k, int) for k in current_spec)
-        and all(isinstance(v, dict) for v in current_spec.values())
-        and sorted(current_spec) == list(range(len(current_spec)))
-    ):
-        return [current_spec[i] for i in range(len(current_spec))]
-
     return current_spec
