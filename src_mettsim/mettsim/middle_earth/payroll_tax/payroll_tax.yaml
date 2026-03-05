@@ -22,13 +22,14 @@ tax_schedule_standard:
   reference_period: Year
   type: piecewise_linear
   1900-01-01:
-    - interval: (-inf, 0)
-      slope: 0.0
-      intercept: 0
-    - interval: '[0, 100)'
-      slope: 0.1
-    - interval: '[100, inf)'
-      slope: 0.3
+    intervals:
+      - interval: (-inf, 0)
+        slope: 0.0
+        intercept: 0
+      - interval: '[0, 100)'
+        slope: 0.1
+      - interval: '[100, inf)'
+        slope: 0.3
 tax_schedule_reduced:
   name:
     de: Lohnsteuersatz
@@ -40,10 +41,11 @@ tax_schedule_reduced:
   reference_period: Year
   type: piecewise_linear
   1900-01-01:
-    - interval: (-inf, 0)
-      slope: 0
-      intercept: 0
-    - interval: '[0, 100)'
-      slope: 0.1
-    - interval: '[100, inf)'
-      slope: 0.15
+    intervals:
+      - interval: (-inf, 0)
+        slope: 0
+        intercept: 0
+      - interval: '[0, 100)'
+        slope: 0.1
+      - interval: '[100, inf)'
+        slope: 0.15

@@ -62,6 +62,54 @@ def intervals_to_thresholds(
     return xnp.array(lower), xnp.array(upper), xnp.array(all_bounds)
 
 
+def merge_piecewise_intervals(
+    base: list[dict[str, Any]],
+    update: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Merge updated piecewise intervals into a base set.
+
+    Updated intervals take precedence. Previous intervals overlapping with the
+    updated range are trimmed. Coefficients not specified in an updated interval
+    are left unspecified in the result.
+    """
+    if not update:
+        return base
+
+    # Parse all intervals
+    parsed_base = [
+        (portion.from_string(item["interval"], conv=float), item) for item in base
+    ]
+    parsed_update = [
+        (portion.from_string(item["interval"], conv=float), item) for item in update
+    ]
+
+    # Compute the total domain covered by the update
+    update_domain = portion.empty()
+    for iv, _ in parsed_update:
+        update_domain = update_domain | iv
+
+    # Collect base intervals outside the update domain
+    kept_before = []
+    kept_after = []
+    for b_iv, b_item in parsed_base:
+        remaining = b_iv - update_domain
+        if remaining.empty:
+            continue
+        # remaining could be split into multiple parts; handle each
+        for atomic in remaining:
+            trimmed = {
+                **b_item,
+                "interval": portion.to_string(atomic),
+            }
+            if atomic.upper <= update_domain.lower:
+                kept_before.append(trimmed)
+            else:
+                kept_after.append(trimmed)
+
+    result = kept_before + update + kept_after
+    return extend_intervals_to_real_line(result)
+
+
 def extend_intervals_to_real_line(
     items: list[dict[str, Any]],
 ) -> list[dict[str, Any]]:

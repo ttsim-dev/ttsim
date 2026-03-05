@@ -28,7 +28,7 @@ from ttsim.tt import (
 from ttsim.tt.column_objects_param_function import (
     DEFAULT_END_DATE,
 )
-from ttsim.tt.interval_utils import extend_intervals_to_real_line
+from ttsim.tt.interval_utils import merge_piecewise_intervals
 from ttsim.tt.piecewise_polynomial import get_piecewise_parameters
 
 if TYPE_CHECKING:
@@ -180,12 +180,7 @@ def _get_one_param(
         return ScalarParam(**cleaned_spec)
     if param_type == "dict":
         return DictParam(**cleaned_spec)
-    if param_type in {
-        "piecewise_constant",
-        "piecewise_linear",
-        "piecewise_quadratic",
-        "piecewise_cubic",
-    }:
+    if param_type in PIECEWISE_TYPES:
         cleaned_spec["value"] = get_piecewise_parameters(
             leaf_name=leaf_name,
             func_type=param_type,  # ty: ignore[invalid-argument-type]
@@ -213,6 +208,14 @@ def _get_one_param(
         return RawParam(**cleaned_spec)
 
     raise ValueError(f"Unknown parameter type: {param_type} for {leaf_name}")
+
+
+PIECEWISE_TYPES = {
+    "piecewise_constant",
+    "piecewise_linear",
+    "piecewise_quadratic",
+    "piecewise_cubic",
+}
 
 
 def _clean_one_param_spec(
@@ -243,15 +246,9 @@ def _clean_one_param_spec(
     out["reference_period"] = spec.get("reference_period", None)
     out["name"] = spec["name"]
     out["description"] = spec["description"]
-    raw_current = copy.deepcopy(spec[policy_dates[idx - 1]])
-    if isinstance(raw_current, list):
-        # List-based spec (no note/reference at this level)
-        out["note"] = None
-        out["reference"] = None
-        out["value"] = _get_param_value([spec[d] for d in policy_dates[:idx]])
-        return out
 
-    current_spec: dict[str | int, Any] = raw_current
+    raw_current = copy.deepcopy(spec[policy_dates[idx - 1]])
+    current_spec: dict[str, Any] = raw_current
     out["note"] = current_spec.pop("note", None)
     out["reference"] = current_spec.pop("reference", None)
     if not current_spec:
@@ -261,60 +258,72 @@ def _clean_one_param_spec(
             "'updates_previous' cannot be specified as the only element, found:\n\n"
             f"{spec}\n\n",
         )
-    if spec["type"] == "scalar":
+    param_type = spec["type"]
+    if param_type == "scalar":
         if "updates_previous" in current_spec:
             raise ValueError(
                 "'updates_previous' cannot be specified for scalar parameters"
             )
         out["value"] = current_spec["value"]
+    elif param_type in PIECEWISE_TYPES:
+        out["value"] = _get_param_value_piecewise(
+            relevant_specs=[spec[d] for d in policy_dates[:idx]],
+        )
     else:
-        out["value"] = _get_param_value([spec[d] for d in policy_dates[:idx]])
+        out["value"] = _get_param_value(
+            relevant_specs=[spec[d] for d in policy_dates[:idx]],
+        )
     return out
 
 
-def _get_param_value(
-    relevant_specs: list[dict[str | int, Any] | list[dict[str, Any]]],
-) -> dict[str | int, Any] | list[dict[str, Any]]:
-    """Get the value of a parameter.
-
-    Implementation is a recursion in order to handle the 'updates_previous' machinery.
-
-    Supports both dict-based and list-based (piecewise) specs. When the raw spec
-    is a list (no reference/note fields), it's used directly. When it's a dict
-    with integer keys (has reference/note alongside), the integer-keyed entries
-    are converted to a list.
-
-    """
+def _get_param_value_piecewise(
+    relevant_specs: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Get the value of a piecewise parameter, handling updates_previous."""
     raw_spec = relevant_specs[-1]
-    if isinstance(raw_spec, list):
-        # Already a list (YAML date entry was a plain list)
-        return raw_spec
 
     current_spec = raw_spec.copy()
     updates_previous = current_spec.pop("updates_previous", False)
     current_spec.pop("note", None)
     current_spec.pop("reference", None)
-    if updates_previous:
-        if len(relevant_specs) <= 1:
-            raise ValueError(
-                "'updates_previous' cannot be missing in the initial spec, found "
-                f"{relevant_specs}"
-            )
-        base = _get_param_value(relevant_specs=relevant_specs[:-1])
-        if isinstance(base, list):
-            # List-based spec: convert list to dict with integer keys for merging
-            base_dict = dict(enumerate(base))
-            merged = upsert_tree(
-                base=base_dict,
-                to_upsert=current_spec,  # ty: ignore[invalid-argument-type]
-            )
-            result = [
-                merged[i] for i in sorted(k for k in merged if isinstance(k, int))
-            ]
-            return extend_intervals_to_real_line(result)
-        return upsert_tree(
-            base=base,  # ty: ignore[invalid-argument-type]
-            to_upsert=current_spec,  # ty: ignore[invalid-argument-type]
+
+    value = current_spec.get("intervals", [])
+
+    if not updates_previous:
+        return value
+
+    if len(relevant_specs) <= 1:
+        raise ValueError(
+            "'updates_previous' cannot be used on the initial spec, found "
+            f"{relevant_specs}"
         )
 
-    return current_spec
+    base = _get_param_value_piecewise(relevant_specs=relevant_specs[:-1])
+    return merge_piecewise_intervals(base=base, update=value)
+
+
+def _get_param_value(
+    relevant_specs: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Get the value of a dict parameter, handling updates_previous."""
+    raw_spec = relevant_specs[-1]
+
+    current_spec = raw_spec.copy()
+    updates_previous = current_spec.pop("updates_previous", False)
+    current_spec.pop("note", None)
+    current_spec.pop("reference", None)
+
+    if not updates_previous:
+        return current_spec
+
+    if len(relevant_specs) <= 1:
+        raise ValueError(
+            "'updates_previous' cannot be used on the initial spec, found "
+            f"{relevant_specs}"
+        )
+
+    base = _get_param_value(relevant_specs=relevant_specs[:-1])
+    return upsert_tree(
+        base=base,  # ty: ignore[invalid-argument-type]
+        to_upsert=current_spec,  # ty: ignore[invalid-argument-type]
+    )
