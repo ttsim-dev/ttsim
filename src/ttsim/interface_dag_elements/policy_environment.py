@@ -10,7 +10,6 @@ import numpy
 from ttsim.interface_dag_elements.interface_node_objects import interface_function
 from ttsim.interface_dag_elements.shared import (
     merge_trees,
-    upsert_tree,
 )
 from ttsim.tt import (
     ConsecutiveIntLookupTableParam,
@@ -28,7 +27,6 @@ from ttsim.tt import (
 from ttsim.tt.column_objects_param_function import (
     DEFAULT_END_DATE,
 )
-from ttsim.tt.interval_utils import merge_piecewise_intervals
 from ttsim.tt.piecewise_polynomial import get_piecewise_parameters
 
 if TYPE_CHECKING:
@@ -253,77 +251,11 @@ def _clean_one_param_spec(
     out["reference"] = current_spec.pop("reference", None)
     if not current_spec:
         return None
-    if len(current_spec) == 1 and "updates_previous" in current_spec:
-        raise ValueError(
-            "'updates_previous' cannot be specified as the only element, found:\n\n"
-            f"{spec}\n\n",
-        )
     param_type = spec["type"]
     if param_type == "scalar":
-        if "updates_previous" in current_spec:
-            raise ValueError(
-                "'updates_previous' cannot be specified for scalar parameters"
-            )
         out["value"] = current_spec["value"]
     elif param_type in PIECEWISE_TYPES:
-        out["value"] = _get_param_value_piecewise(
-            relevant_specs=[spec[d] for d in policy_dates[:idx]],
-        )
+        out["value"] = current_spec.get("intervals", [])
     else:
-        out["value"] = _get_param_value(
-            relevant_specs=[spec[d] for d in policy_dates[:idx]],
-        )
+        out["value"] = current_spec
     return out
-
-
-def _get_param_value_piecewise(
-    relevant_specs: list[dict[str, Any]],
-) -> list[dict[str, Any]]:
-    """Get the value of a piecewise parameter, handling updates_previous."""
-    raw_spec = relevant_specs[-1]
-
-    current_spec = raw_spec.copy()
-    updates_previous = current_spec.pop("updates_previous", False)
-    current_spec.pop("note", None)
-    current_spec.pop("reference", None)
-
-    value = current_spec.get("intervals", [])
-
-    if not updates_previous:
-        return value
-
-    if len(relevant_specs) <= 1:
-        raise ValueError(
-            "'updates_previous' cannot be used on the initial spec, found "
-            f"{relevant_specs}"
-        )
-
-    base = _get_param_value_piecewise(relevant_specs=relevant_specs[:-1])
-    return merge_piecewise_intervals(base=base, update=value)
-
-
-def _get_param_value(
-    relevant_specs: list[dict[str, Any]],
-) -> dict[str, Any]:
-    """Get the value of a dict parameter, handling updates_previous."""
-    raw_spec = relevant_specs[-1]
-
-    current_spec = raw_spec.copy()
-    updates_previous = current_spec.pop("updates_previous", False)
-    current_spec.pop("note", None)
-    current_spec.pop("reference", None)
-
-    if not updates_previous:
-        return current_spec
-
-    if len(relevant_specs) <= 1:
-        raise ValueError(
-            "'updates_previous' cannot be used on the initial spec, found "
-            f"{relevant_specs}"
-        )
-
-    base = _get_param_value(relevant_specs=relevant_specs[:-1])
-    return upsert_tree(
-        base=base,  # ty: ignore[invalid-argument-type]
-        to_upsert=current_spec,  # ty: ignore[invalid-argument-type]
-    )

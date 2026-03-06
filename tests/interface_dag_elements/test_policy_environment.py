@@ -16,8 +16,6 @@ from ttsim.interface_dag_elements.orig_policy_objects import (
 from ttsim.interface_dag_elements.policy_environment import (
     _active_column_objects_and_param_functions,
     _active_param_objects,
-    _get_param_value,
-    _get_param_value_piecewise,
 )
 from ttsim.tt import ScalarParam, policy_function
 
@@ -29,20 +27,6 @@ if TYPE_CHECKING:
     )
 
 from mettsim import middle_earth
-
-
-@pytest.fixture(scope="module")
-def some_params_spec_with_updates_previous():
-    return [
-        {
-            "a": 1,
-            "b": 2,
-        },
-        {
-            "updates_previous": True,
-            "b": 4,
-        },
-    ]
 
 
 @pytest.fixture(scope="module")
@@ -217,74 +201,3 @@ def test_active_tree_with_column_objects_and_param_functions(
 
     assert accessor(functions_last_day).__name__ == function_name_last_day
     assert accessor(functions_next_day).__name__ == function_name_next_day
-
-
-def test_get_params_contents_with_updated_previous(
-    some_params_spec_with_updates_previous,
-):
-    params_contents = _get_param_value(some_params_spec_with_updates_previous)
-    expected = {
-        "a": 1,
-        "b": 4,
-    }
-    assert params_contents == expected
-
-
-def test_get_param_value_piecewise_no_updates():
-    specs = [
-        {
-            "reference": "some ref",
-            "intervals": [
-                {"interval": "[0, 100)", "slope": 0.1, "intercept": 0},
-                {"interval": "[100, inf)", "slope": 0.2, "intercept": 10},
-            ],
-        },
-    ]
-    result = _get_param_value_piecewise(specs)
-    assert len(result) == 2
-    assert result[0]["slope"] == 0.1
-    assert result[1]["slope"] == 0.2
-
-
-def test_get_param_value_piecewise_with_updates_previous():
-    specs = [
-        {
-            "reference": "base ref",
-            "intervals": [
-                {"interval": "[0, 16956)", "intercept": 0, "slope": 0},
-                {"interval": "[16956, 31528)", "slope": 0.119},
-                {"interval": "[31528, inf)", "slope": 0.055},
-            ],
-        },
-        {
-            "updates_previous": True,
-            "reference": "update ref",
-            "intervals": [
-                {"interval": "[0, 17543)"},
-                {"interval": "[17543, 32619)", "slope": 0.119},
-            ],
-        },
-    ]
-    result = _get_param_value_piecewise(specs)
-    assert len(result) == 3
-    # First interval: no coefficients specified, so none inherited
-    assert "intercept" not in result[0]
-    assert "slope" not in result[0]
-    # Second interval: explicit slope
-    assert result[1]["slope"] == 0.119
-    # Third interval: carried over from base, trimmed
-    assert result[2]["slope"] == 0.055
-    assert "32619" in result[2]["interval"]
-
-
-def test_get_param_value_piecewise_updates_previous_on_first_raises():
-    specs = [
-        {
-            "updates_previous": True,
-            "intervals": [
-                {"interval": "[0, 100)", "slope": 0.1},
-            ],
-        },
-    ]
-    with pytest.raises(ValueError, match="updates_previous"):
-        _get_param_value_piecewise(specs)
