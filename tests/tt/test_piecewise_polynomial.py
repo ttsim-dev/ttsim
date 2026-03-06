@@ -14,6 +14,7 @@ if TYPE_CHECKING:
 
 
 from ttsim.tt.interval_utils import merge_piecewise_intervals
+from ttsim.tt.param_objects import PiecewisePolynomialInterval
 from ttsim.tt.piecewise_polynomial import (
     PiecewisePolynomialParamValue,
     get_piecewise_parameters,
@@ -260,3 +261,101 @@ def test_merge_full_replacement():
     ]
     result = merge_piecewise_intervals(base, update)
     assert result == update
+
+
+# --- Tests for overlapping intervals ---
+
+
+def test_validation_error_overlapping(xnp: ModuleType):
+    """Overlapping intervals should raise ValueError."""
+    parameter_list = [
+        {"interval": "[0, 100)", "slope": 0.1, "intercept": 0},
+        {"interval": "[50, 200)", "slope": 0.2, "intercept": 10},
+    ]
+    with pytest.raises(ValueError, match="Overlapping intervals"):
+        get_piecewise_parameters(
+            leaf_name="test_overlap",
+            func_type="piecewise_linear",
+            parameter_list=parameter_list,
+            xnp=xnp,
+        )
+
+
+# --- Tests for PiecewisePolynomialParamValue.__getitem__ ---
+
+
+def test_param_value_getitem(xnp: ModuleType):
+    """__getitem__ returns correct PiecewisePolynomialInterval."""
+    params = get_piecewise_parameters(
+        leaf_name="test_getitem",
+        func_type="piecewise_linear",
+        parameter_list=[
+            {"interval": "[0, 100)", "slope": 0.5, "intercept": 0},
+            {"interval": "[100, 200)", "slope": 0.4, "intercept": 5},
+        ],
+        xnp=xnp,
+    )
+    interval_0 = params[0]
+    assert isinstance(interval_0, PiecewisePolynomialInterval)
+    assert float(interval_0.intercept) == pytest.approx(0.0)
+    assert float(interval_0.slope) == pytest.approx(0.5)
+
+    interval_1 = params[1]
+    assert float(interval_1.intercept) == pytest.approx(5.0)
+    assert float(interval_1.slope) == pytest.approx(0.4)
+
+
+# --- Tests for PiecewisePolynomialInterval property guards ---
+
+
+def test_interval_slope_guard(xnp: ModuleType):
+    """Accessing slope on a piecewise_constant interval raises AttributeError."""
+    interval = PiecewisePolynomialInterval(
+        intercept=1.0,
+        coefficients=xnp.array([]),
+    )
+    with pytest.raises(AttributeError, match="piecewise_constant"):
+        _ = interval.slope
+
+
+def test_interval_quadratic_guard(xnp: ModuleType):
+    """Accessing quadratic on piecewise_linear raises AttributeError."""
+    interval = PiecewisePolynomialInterval(
+        intercept=1.0,
+        coefficients=xnp.array([0.5]),
+    )
+    with pytest.raises(AttributeError, match="piecewise_quadratic"):
+        _ = interval.quadratic
+
+
+def test_interval_cubic_guard(xnp: ModuleType):
+    """Accessing cubic on piecewise_quadratic raises AttributeError."""
+    interval = PiecewisePolynomialInterval(
+        intercept=1.0,
+        coefficients=xnp.array([0.5, 0.1]),
+    )
+    with pytest.raises(AttributeError, match="piecewise_cubic"):
+        _ = interval.cubic
+
+
+# --- Tests for piecewise_constant with n_coefficients=0 ---
+
+
+def test_piecewise_constant(xnp: ModuleType):
+    """piecewise_constant uses only intercepts, no coefficients."""
+    parameter_list = [
+        {"interval": "(-inf, 100)", "intercept": 5.0},
+        {"interval": "[100, 200)", "intercept": 10.0},
+        {"interval": "[200, inf)", "intercept": 15.0},
+    ]
+    params = get_piecewise_parameters(
+        leaf_name="test_const",
+        func_type="piecewise_constant",
+        parameter_list=parameter_list,
+        xnp=xnp,
+    )
+    assert params.coefficients.shape == (3, 0)
+
+    x = xnp.array([50.0, 150.0, 250.0])
+    result = piecewise_polynomial(x=x, parameters=params, xnp=xnp)
+    numpy.testing.assert_allclose(result, xnp.array([5.0, 10.0, 15.0]), atol=1e-7)

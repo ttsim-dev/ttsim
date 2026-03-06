@@ -183,19 +183,31 @@ class PiecewisePolynomialInterval:
     intercept: float
     coefficients: Float[Array, " n_coefficients"]
 
+    _MIN_COEFFICIENTS_LINEAR = 1
+    _MIN_COEFFICIENTS_QUADRATIC = 2
+    _MIN_COEFFICIENTS_CUBIC = 3
+
     @property
     def slope(self) -> float:
         """The first coefficient (linear term)."""
+        if self.coefficients.shape[0] < self._MIN_COEFFICIENTS_LINEAR:
+            raise AttributeError("No slope coefficient for piecewise_constant.")
         return self.coefficients[0]
 
     @property
     def quadratic(self) -> float:
         """The second coefficient (quadratic term)."""
+        if self.coefficients.shape[0] < self._MIN_COEFFICIENTS_QUADRATIC:
+            raise AttributeError(
+                "No quadratic coefficient; requires piecewise_quadratic or higher."
+            )
         return self.coefficients[1]
 
     @property
     def cubic(self) -> float:
         """The third coefficient (cubic term)."""
+        if self.coefficients.shape[0] < self._MIN_COEFFICIENTS_CUBIC:
+            raise AttributeError("No cubic coefficient; requires piecewise_cubic.")
         return self.coefficients[2]
 
 

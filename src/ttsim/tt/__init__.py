@@ -34,7 +34,6 @@ from ttsim.tt.param_objects import (
 )
 from ttsim.tt.piecewise_polynomial import (
     get_piecewise_parameters,
-    get_piecewise_thresholds,
     piecewise_polynomial,
 )
 from ttsim.tt.rounding import RoundingSpec
@@ -68,7 +67,6 @@ __all__ = [
     "get_consecutive_int_lookup_table_param_value",
     "get_month_based_phase_inout_of_age_thresholds_param_value",
     "get_piecewise_parameters",
-    "get_piecewise_thresholds",
     "get_year_based_phase_inout_of_age_thresholds_param_value",
     "group_creation_function",
     "join",

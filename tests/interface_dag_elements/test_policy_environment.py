@@ -44,7 +44,7 @@ def some_int_param():
     )
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture
 def piecewise_spec_base():
     return {
         "name": {"de": "Test", "en": "Test"},
@@ -390,3 +390,86 @@ def test_dict_no_updates_previous(xnp: ModuleType):
         xnp=xnp,
     )
     assert result["foo"].value == {"c": 3}
+
+
+def test_piecewise_updates_previous_chained(piecewise_spec_base, xnp: ModuleType):
+    """Chained piecewise updates_previous across 3+ dates merges correctly."""
+    spec = piecewise_spec_base
+    spec[datetime.date(2021, 1, 1)] = {
+        "updates_previous": True,
+        "intervals": [
+            {"interval": "[0, 100)", "slope": 0.9, "intercept": 0},
+        ],
+    }
+    spec[datetime.date(2022, 1, 1)] = {
+        "updates_previous": True,
+        "intervals": [
+            {"interval": "[100, 200)", "slope": 0.8, "intercept": 10},
+        ],
+    }
+    result = _active_param_objects(
+        orig={("spam.yaml", "foo"): spec},
+        policy_date=datetime.date(2022, 6, 1),
+        xnp=xnp,
+    )
+    params = result["foo"].value
+    # First interval updated in 2021
+    assert params.coefficients[0][0] == pytest.approx(0.9)
+    # Second interval updated in 2022
+    assert params.coefficients[1][0] == pytest.approx(0.8)
+
+
+def test_updates_previous_on_first_date_raises_dict(xnp: ModuleType):
+    """updates_previous on the initial date entry raises for dict params."""
+    spec = {
+        "name": {"de": "Test", "en": "Test"},
+        "description": {"de": "Test", "en": "Test"},
+        "type": "dict",
+        datetime.date(2020, 1, 1): {
+            "updates_previous": True,
+            "a": 1,
+        },
+    }
+    with pytest.raises(ValueError, match="initial date entry"):
+        _active_param_objects(
+            orig={("spam.yaml", "foo"): spec},  # ty: ignore[invalid-argument-type]
+            policy_date=datetime.date(2020, 6, 1),
+            xnp=xnp,
+        )
+
+
+def test_updates_previous_on_first_date_raises_piecewise(
+    piecewise_spec_base, xnp: ModuleType
+):
+    """updates_previous on the initial date entry raises for piecewise params."""
+    spec = piecewise_spec_base
+    # Overwrite the only date entry to have updates_previous
+    spec[datetime.date(2020, 1, 1)] = {
+        "updates_previous": True,
+        "intervals": [
+            {"interval": "[0, 100)", "slope": 0.5, "intercept": 0},
+        ],
+    }
+    with pytest.raises(ValueError, match="initial date entry"):
+        _active_param_objects(
+            orig={("spam.yaml", "foo"): spec},
+            policy_date=datetime.date(2020, 6, 1),
+            xnp=xnp,
+        )
+
+
+def test_scalar_updates_previous_raises(xnp: ModuleType):
+    """updates_previous on a scalar parameter raises ValueError."""
+    spec = {
+        "name": {"de": "Test", "en": "Test"},
+        "description": {"de": "Test", "en": "Test"},
+        "type": "scalar",
+        datetime.date(2020, 1, 1): {"value": 1},
+        datetime.date(2021, 1, 1): {"updates_previous": True, "value": 2},
+    }
+    with pytest.raises(ValueError, match="scalar parameters"):
+        _active_param_objects(
+            orig={("spam.yaml", "foo"): spec},  # ty: ignore[invalid-argument-type]
+            policy_date=datetime.date(2021, 6, 1),
+            xnp=xnp,
+        )

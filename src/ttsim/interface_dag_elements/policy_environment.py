@@ -221,11 +221,16 @@ PIECEWISE_TYPES = {
 def _get_param_value_piecewise(
     relevant_specs: list[dict[str, Any]],
 ) -> list[dict[str, Any]]:
-    """Resolve piecewise intervals, handling `updates_previous` chains."""
+    """Resolve piecewise parameter value, handling `updates_previous` chains."""
     current = relevant_specs[-1]
     current.pop("note", None)
     current.pop("reference", None)
     updates_previous = current.pop("updates_previous", False)
+
+    if updates_previous and len(relevant_specs) <= 1:
+        raise ValueError(
+            "'updates_previous' cannot be specified on the initial date entry."
+        )
 
     if not updates_previous:
         return current.get("intervals", [])
@@ -240,11 +245,16 @@ def _get_param_value_piecewise(
 def _get_param_value(
     relevant_specs: list[dict[str, Any]],
 ) -> dict[str, Any]:
-    """Resolve dict parameter value, handling `updates_previous` chains."""
+    """Resolve parameter value, handling `updates_previous` chains."""
     current = relevant_specs[-1]
     current.pop("note", None)
     current.pop("reference", None)
     updates_previous = current.pop("updates_previous", False)
+
+    if updates_previous and len(relevant_specs) <= 1:
+        raise ValueError(
+            "'updates_previous' cannot be specified on the initial date entry."
+        )
 
     if not updates_previous:
         return current
@@ -289,14 +299,17 @@ def _clean_one_param_spec(
 
     param_type = spec["type"]
     if param_type == "scalar":
-        current_spec.pop("updates_previous", None)
+        if current_spec.pop("updates_previous", False):
+            raise ValueError(
+                "'updates_previous' cannot be specified for scalar parameters."
+            )
         if not current_spec:
             return None
         out["value"] = current_spec["value"]
     elif param_type in PIECEWISE_TYPES:
         relevant_specs = [copy.deepcopy(spec[policy_dates[i]]) for i in range(idx)]
-        out["value"] = _get_param_value_piecewise(relevant_specs)  # ty: ignore[invalid-argument-type]
+        out["value"] = _get_param_value_piecewise(relevant_specs)
     else:
         relevant_specs = [copy.deepcopy(spec[policy_dates[i]]) for i in range(idx)]
-        out["value"] = _get_param_value(relevant_specs)  # ty: ignore[invalid-argument-type]
+        out["value"] = _get_param_value(relevant_specs)
     return out

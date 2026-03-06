@@ -88,5 +88,5 @@ def intervals_to_thresholds(
     """Extract threshold arrays from parsed intervals."""
     lower = numpy.array([_bound_to_float(iv.lower) for iv in intervals])
     upper = numpy.array([_bound_to_float(iv.upper) for iv in intervals])
-    all_bounds = sorted(set(lower) | set(upper))
+    all_bounds = numpy.array(sorted(set(lower) | set(upper)))
     return xnp.array(lower), xnp.array(upper), xnp.array(all_bounds)

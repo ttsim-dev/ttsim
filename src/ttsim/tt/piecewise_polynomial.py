@@ -34,7 +34,7 @@ class CoefficientOptions:
 OPTIONS_REGISTRY = {
     "piecewise_constant": CoefficientOptions(
         required_keys=(),
-        n_coefficients=1,
+        n_coefficients=0,
     ),
     "piecewise_linear": CoefficientOptions(
         required_keys=("slope",),
@@ -160,38 +160,6 @@ def get_piecewise_parameters(
         coefficients=coefficients,
         intercepts=intercepts,
     )
-
-
-def get_piecewise_thresholds(
-    leaf_name: str,
-    parameter_list: list[dict[str, float | str]],
-    xnp: ModuleType,
-) -> tuple[
-    Float[Array, " n_segments"],
-    Float[Array, " n_segments"],
-    Float[Array, " n_segments"],
-]:
-    """Check and extract threshold data from list-of-dicts format.
-
-    Parameters
-    ----------
-    leaf_name:
-        Name of the parameter (for error messages).
-    parameter_list:
-        List of dicts, each with an 'interval' string.
-    xnp:
-        The numpy module to use for calculations.
-
-    Returns
-    -------
-    (lower_thresholds, upper_thresholds, thresholds)
-
-    """
-    intervals = [
-        portion.from_string(item["interval"], conv=float) for item in parameter_list
-    ]
-    validate_intervals(intervals, leaf_name)
-    return intervals_to_thresholds(intervals=intervals, xnp=xnp)
 
 
 def _check_and_get_coefficients(
