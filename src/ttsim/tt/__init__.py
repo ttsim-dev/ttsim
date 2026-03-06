@@ -17,6 +17,7 @@ from ttsim.tt.column_objects_param_function import (
     policy_function,
     policy_input,
 )
+from ttsim.tt.interval_utils import intervals_to_thresholds, merge_piecewise_intervals
 from ttsim.tt.param_objects import (
     ConsecutiveIntLookupTableParam,
     ConsecutiveIntLookupTableParamValue,
@@ -69,7 +70,9 @@ __all__ = [
     "get_piecewise_parameters",
     "get_year_based_phase_inout_of_age_thresholds_param_value",
     "group_creation_function",
+    "intervals_to_thresholds",
     "join",
+    "merge_piecewise_intervals",
     "param_function",
     "piecewise_polynomial",
     "policy_function",

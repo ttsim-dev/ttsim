@@ -309,10 +309,16 @@ def _clean_one_param_spec(
         relevant_specs: list[dict[str, Any]] = [
             copy.deepcopy(spec[policy_dates[i]]) for i in range(idx)
         ]  # ty: ignore[invalid-assignment]
-        out["value"] = _get_param_value_piecewise(relevant_specs)
+        piecewise_intervals = _get_param_value_piecewise(relevant_specs)
+        if not piecewise_intervals:
+            return None
+        out["value"] = piecewise_intervals
     else:
         relevant_specs: list[dict[str, Any]] = [
             copy.deepcopy(spec[policy_dates[i]]) for i in range(idx)
         ]  # ty: ignore[invalid-assignment]
-        out["value"] = _get_param_value(relevant_specs)
+        dict_value = _get_param_value(relevant_specs)
+        if not dict_value:
+            return None
+        out["value"] = dict_value
     return out

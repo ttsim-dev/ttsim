@@ -79,14 +79,37 @@ def _bound_to_float(v: float) -> float:
 
 
 def intervals_to_thresholds(
-    intervals: list[portion.Interval], xnp: ModuleType
+    intervals: list[portion.Interval] | list[dict[str, Any]],
+    xnp: ModuleType,
+    leaf_name: str = "",
 ) -> tuple[
     Float[Array, " n"],
     Float[Array, " n"],
     Float[Array, " n_plus_1"],
 ]:
-    """Extract threshold arrays from parsed intervals."""
-    lower = numpy.array([_bound_to_float(iv.lower) for iv in intervals])
-    upper = numpy.array([_bound_to_float(iv.upper) for iv in intervals])
+    """Extract threshold arrays from parsed or raw intervals.
+
+    Parameters
+    ----------
+    intervals
+        Either a list of ``portion.Interval`` objects (already parsed) or a list
+        of raw interval dicts containing an ``"interval"`` key with string
+        notation (e.g. ``"[0, 100)"``).
+    xnp
+        The backend module to use for array creation.
+    leaf_name
+        Name used in error messages during validation.
+
+    """
+    if intervals and isinstance(intervals[0], dict):
+        parsed = [
+            portion.from_string(item["interval"], conv=float) for item in intervals
+        ]
+        if leaf_name:
+            validate_intervals(parsed, leaf_name)
+    else:
+        parsed = intervals  # type: ignore[assignment]
+    lower = numpy.array([_bound_to_float(iv.lower) for iv in parsed])
+    upper = numpy.array([_bound_to_float(iv.upper) for iv in parsed])
     all_bounds = numpy.array(sorted(set(lower) | set(upper)))
     return xnp.array(lower), xnp.array(upper), xnp.array(all_bounds)
