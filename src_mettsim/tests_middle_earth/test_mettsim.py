@@ -49,11 +49,11 @@ def get_orig_mettsim_objects() -> dict[
 def dates_in_orig_mettsim_objects() -> list[datetime.date]:
     orig_objects = get_orig_mettsim_objects()
     start_dates = {
-        v.start_date  # ty: ignore[possibly-missing-attribute]
+        v.start_date  # ty: ignore[unresolved-attribute]
         for v in orig_objects["column_objects_and_param_functions"].values()
     }
     end_dates = {
-        v.end_date + timedelta(days=1)  # ty: ignore[possibly-missing-attribute]
+        v.end_date + timedelta(days=1)  # ty: ignore[unresolved-attribute]
         for v in orig_objects["column_objects_and_param_functions"].values()
     }
     return sorted(start_dates | end_dates)

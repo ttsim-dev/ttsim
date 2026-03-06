@@ -69,7 +69,7 @@ def merge_piecewise_intervals(
     return result
 
 
-def _bound_to_float(v: object) -> float:
+def _bound_to_float(v: float) -> float:
     """Convert a portion bound (including portion.inf) to a Python float."""
     if v == -portion.inf:
         return float("-inf")

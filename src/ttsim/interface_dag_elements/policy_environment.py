@@ -44,6 +44,14 @@ if TYPE_CHECKING:
     )
 
 
+PIECEWISE_TYPES = {
+    "piecewise_constant",
+    "piecewise_linear",
+    "piecewise_quadratic",
+    "piecewise_cubic",
+}
+
+
 @interface_function(in_top_level_namespace=True)
 def policy_environment(
     orig_policy_objects__column_objects_and_param_functions: FlatColumnObjectsParamFunctions,  # noqa: E501
@@ -167,7 +175,7 @@ def _get_one_param(
     spec: OrigParamSpec,
     policy_date: datetime.date,
     xnp: ModuleType,
-) -> ParamObject:
+) -> ParamObject | None:
     """Parse the original specification found in the yaml tree to a ParamObject."""
     cleaned_spec = _clean_one_param_spec(spec=spec, policy_date=policy_date)
 
@@ -208,14 +216,6 @@ def _get_one_param(
         return RawParam(**cleaned_spec)
 
     raise ValueError(f"Unknown parameter type: {param_type} for {leaf_name}")
-
-
-PIECEWISE_TYPES = {
-    "piecewise_constant",
-    "piecewise_linear",
-    "piecewise_quadratic",
-    "piecewise_cubic",
-}
 
 
 def _get_param_value_piecewise(
@@ -292,8 +292,7 @@ def _clean_one_param_spec(
     out["name"] = spec["name"]
     out["description"] = spec["description"]
 
-    raw_current = copy.deepcopy(spec[policy_dates[idx - 1]])
-    current_spec: dict[str, Any] = raw_current
+    current_spec: dict[str, Any] = copy.deepcopy(spec[policy_dates[idx - 1]])  # ty: ignore[invalid-assignment]
     out["note"] = current_spec.pop("note", None)
     out["reference"] = current_spec.pop("reference", None)
 
@@ -307,9 +306,13 @@ def _clean_one_param_spec(
             return None
         out["value"] = current_spec["value"]
     elif param_type in PIECEWISE_TYPES:
-        relevant_specs = [copy.deepcopy(spec[policy_dates[i]]) for i in range(idx)]
+        relevant_specs: list[dict[str, Any]] = [
+            copy.deepcopy(spec[policy_dates[i]]) for i in range(idx)
+        ]  # ty: ignore[invalid-assignment]
         out["value"] = _get_param_value_piecewise(relevant_specs)
     else:
-        relevant_specs = [copy.deepcopy(spec[policy_dates[i]]) for i in range(idx)]
+        relevant_specs: list[dict[str, Any]] = [
+            copy.deepcopy(spec[policy_dates[i]]) for i in range(idx)
+        ]  # ty: ignore[invalid-assignment]
         out["value"] = _get_param_value(relevant_specs)
     return out

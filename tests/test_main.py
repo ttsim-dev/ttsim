@@ -36,6 +36,7 @@ from ttsim.entry_point import (
 from ttsim.interface_dag_elements.fail_if import format_list_linewise
 from ttsim.interface_dag_elements.interface_node_objects import (
     InputDependentInterfaceFunction,
+    InterfaceFunction,
     input_dependent_interface_function,
     interface_function,
 )
@@ -607,6 +608,7 @@ def test_resolve_dynamic_interface_objects_to_static_nodes_returns_correct_funct
             ).values()
         )
     )
+    assert isinstance(static_func, InterfaceFunction)
     assert static_func.original_function_name == expected_function_name
 
 

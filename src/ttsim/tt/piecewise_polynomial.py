@@ -109,44 +109,23 @@ def get_piecewise_parameters(
     parameter_list: list[dict[str, float | str]],
     xnp: ModuleType,
 ) -> PiecewisePolynomialParamValue:
-    """Create the objects for piecewise polynomial from a list of interval specs.
-
-    Parameters
-    ----------
-    leaf_name:
-        Name of the parameter (for error messages).
-    func_type:
-        The type of piecewise function.
-    parameter_list:
-        List of dicts, each with an 'interval' string and coefficient keys.
-    xnp:
-        The backend module to use for calculations.
-
-    Returns
-    -------
-    PiecewisePolynomialParamValue
-
-    """
-    # Parse intervals
+    """Create the objects for piecewise polynomial from a list of interval specs."""
     intervals = [
         portion.from_string(item["interval"], conv=float) for item in parameter_list
     ]
     validate_intervals(intervals, leaf_name)
 
-    # Extract thresholds
     lower_thresholds, upper_thresholds, thresholds = intervals_to_thresholds(
         intervals=intervals,
         xnp=xnp,
     )
 
-    # Create and fill coefficients array
     coefficients = _check_and_get_coefficients(
         parameter_list=parameter_list,
         leaf_name=leaf_name,
         func_type=func_type,
         xnp=xnp,
     )
-    # Create and fill intercept array
     intercepts = _check_and_get_intercepts(
         parameter_list=parameter_list,
         leaf_name=leaf_name,
