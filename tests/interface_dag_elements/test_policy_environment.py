@@ -44,6 +44,21 @@ def some_int_param():
     )
 
 
+@pytest.fixture(scope="module")
+def piecewise_spec_base():
+    return {
+        "name": {"de": "Test", "en": "Test"},
+        "description": {"de": "Test", "en": "Test"},
+        "type": "piecewise_linear",
+        datetime.date(2020, 1, 1): {
+            "intervals": [
+                {"interval": "[0, 100)", "slope": 0.5, "intercept": 0},
+                {"interval": "[100, 200)", "slope": 0.4, "intercept": 5},
+            ],
+        },
+    }
+
+
 def test_add_jahresanfang(xnp: ModuleType):
     spec = {
         "name": {"de": "Test", "en": "Check"},
@@ -201,3 +216,177 @@ def test_active_tree_with_column_objects_and_param_functions(
 
     assert accessor(functions_last_day).__name__ == function_name_last_day
     assert accessor(functions_next_day).__name__ == function_name_next_day
+
+
+def test_piecewise_updates_previous(piecewise_spec_base, xnp: ModuleType):
+    """Piecewise param with updates_previous merges intervals."""
+    spec = piecewise_spec_base
+    spec[datetime.date(2021, 1, 1)] = {
+        "updates_previous": True,
+        "intervals": [
+            {"interval": "[0, 100)", "slope": 0.9, "intercept": 0},
+        ],
+    }
+    result = _active_param_objects(
+        orig={("spam.yaml", "foo"): spec},
+        policy_date=datetime.date(2021, 6, 1),
+        xnp=xnp,
+    )
+    params = result["foo"].value
+    # The first interval's slope should be updated to 0.9
+    assert params.coefficients[0][0] == pytest.approx(0.9)
+    # The second interval should remain from base
+    assert params.coefficients[1][0] == pytest.approx(0.4)
+
+
+def test_piecewise_no_updates_previous(piecewise_spec_base, xnp: ModuleType):
+    """Piecewise param without updates_previous uses intervals directly."""
+    spec = piecewise_spec_base
+    result = _active_param_objects(
+        orig={("spam.yaml", "foo"): spec},
+        policy_date=datetime.date(2020, 6, 1),
+        xnp=xnp,
+    )
+    params = result["foo"].value
+    assert params.coefficients[0][0] == pytest.approx(0.5)
+    assert params.coefficients[1][0] == pytest.approx(0.4)
+
+
+def test_dict_updates_previous(xnp: ModuleType):
+    """Dict param with updates_previous merges dicts."""
+    spec = {
+        "name": {"de": "Test", "en": "Test"},
+        "description": {"de": "Test", "en": "Test"},
+        "type": "dict",
+        datetime.date(2020, 1, 1): {
+            "a": 1,
+            "b": 2,
+        },
+        datetime.date(2021, 1, 1): {
+            "updates_previous": True,
+            "a": 10,
+        },
+    }
+    result = _active_param_objects(
+        orig={("spam.yaml", "foo"): spec},  # ty: ignore[invalid-argument-type]
+        policy_date=datetime.date(2021, 6, 1),
+        xnp=xnp,
+    )
+    assert result["foo"].value == {"a": 10, "b": 2}
+
+
+def test_dict_updates_previous_adds_new_key(xnp: ModuleType):
+    """Dict updates_previous can add keys not present in the base."""
+    spec = {
+        "name": {"de": "Test", "en": "Test"},
+        "description": {"de": "Test", "en": "Test"},
+        "type": "dict",
+        datetime.date(2020, 1, 1): {
+            "a": 1,
+        },
+        datetime.date(2021, 1, 1): {
+            "updates_previous": True,
+            "b": 2,
+        },
+    }
+    result = _active_param_objects(
+        orig={("spam.yaml", "foo"): spec},  # ty: ignore[invalid-argument-type]
+        policy_date=datetime.date(2021, 6, 1),
+        xnp=xnp,
+    )
+    assert result["foo"].value == {"a": 1, "b": 2}
+
+
+def test_dict_updates_previous_chained(xnp: ModuleType):
+    """Three dates with chained updates_previous merges all."""
+    spec = {
+        "name": {"de": "Test", "en": "Test"},
+        "description": {"de": "Test", "en": "Test"},
+        "type": "dict",
+        datetime.date(2020, 1, 1): {
+            "a": 1,
+            "b": 2,
+            "c": 3,
+        },
+        datetime.date(2021, 1, 1): {
+            "updates_previous": True,
+            "a": 10,
+        },
+        datetime.date(2022, 1, 1): {
+            "updates_previous": True,
+            "b": 20,
+        },
+    }
+    result = _active_param_objects(
+        orig={("spam.yaml", "foo"): spec},  # ty: ignore[invalid-argument-type]
+        policy_date=datetime.date(2022, 6, 1),
+        xnp=xnp,
+    )
+    assert result["foo"].value == {"a": 10, "b": 20, "c": 3}
+
+
+def test_dict_updates_previous_nested(xnp: ModuleType):
+    """Nested dict is merged recursively via upsert_tree."""
+    spec = {
+        "name": {"de": "Test", "en": "Test"},
+        "description": {"de": "Test", "en": "Test"},
+        "type": "dict",
+        datetime.date(2020, 1, 1): {
+            "outer": {"x": 1, "y": 2},
+        },
+        datetime.date(2021, 1, 1): {
+            "updates_previous": True,
+            "outer": {"x": 10},
+        },
+    }
+    result = _active_param_objects(
+        orig={("spam.yaml", "foo"): spec},  # ty: ignore[invalid-argument-type]
+        policy_date=datetime.date(2021, 6, 1),
+        xnp=xnp,
+    )
+    assert result["foo"].value == {"outer": {"x": 10, "y": 2}}
+
+
+def test_dict_updates_previous_queries_base_date(xnp: ModuleType):
+    """Querying the base date ignores updates_previous on later dates."""
+    spec = {
+        "name": {"de": "Test", "en": "Test"},
+        "description": {"de": "Test", "en": "Test"},
+        "type": "dict",
+        datetime.date(2020, 1, 1): {
+            "a": 1,
+            "b": 2,
+        },
+        datetime.date(2021, 1, 1): {
+            "updates_previous": True,
+            "a": 10,
+        },
+    }
+    result = _active_param_objects(
+        orig={("spam.yaml", "foo"): spec},  # ty: ignore[invalid-argument-type]
+        policy_date=datetime.date(2020, 6, 1),
+        xnp=xnp,
+    )
+    assert result["foo"].value == {"a": 1, "b": 2}
+
+
+def test_dict_no_updates_previous(xnp: ModuleType):
+    """Dict param without updates_previous uses current spec directly."""
+    spec = {
+        "name": {"de": "Test", "en": "Test"},
+        "description": {"de": "Test", "en": "Test"},
+        "type": "dict",
+        datetime.date(2020, 1, 1): {
+            "a": 1,
+            "b": 2,
+        },
+        datetime.date(2021, 1, 1): {
+            "c": 3,
+        },
+    }
+    result = _active_param_objects(
+        orig={("spam.yaml", "foo"): spec},  # ty: ignore[invalid-argument-type]
+        policy_date=datetime.date(2021, 6, 1),
+        xnp=xnp,
+    )
+    assert result["foo"].value == {"c": 3}

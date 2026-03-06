@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import numpy
 import portion
@@ -37,6 +37,36 @@ def validate_intervals(intervals: list[portion.Interval], leaf_name: str) -> Non
                 f"interval {i - 1} upper = {prev.upper}, "
                 f"interval {i} lower = {curr.lower}."
             )
+
+
+def merge_piecewise_intervals(
+    base: list[dict[str, Any]],
+    update: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Merge update intervals into base intervals by exact bound matching.
+
+    For each interval in `update`, find the base interval with identical parsed bounds
+    and replace it. Intervals in `base` that are not matched are kept as-is.
+    """
+    base_parsed = [portion.from_string(item["interval"], conv=float) for item in base]
+    result = list(base)
+
+    for upd_item in update:
+        upd_interval = portion.from_string(upd_item["interval"], conv=float)
+        matched = False
+        for i, base_interval in enumerate(base_parsed):
+            if base_interval == upd_interval:
+                result[i] = upd_item
+                matched = True
+                break
+        if not matched:
+            msg = (
+                f"Update interval {upd_item['interval']!r} "
+                f"does not match any base interval."
+            )
+            raise ValueError(msg)
+
+    return result
 
 
 def _bound_to_float(v: object) -> float:

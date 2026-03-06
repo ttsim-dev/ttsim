@@ -10,6 +10,7 @@ import numpy
 from ttsim.interface_dag_elements.interface_node_objects import interface_function
 from ttsim.interface_dag_elements.shared import (
     merge_trees,
+    upsert_tree,
 )
 from ttsim.tt import (
     ConsecutiveIntLookupTableParam,
@@ -27,6 +28,7 @@ from ttsim.tt import (
 from ttsim.tt.column_objects_param_function import (
     DEFAULT_END_DATE,
 )
+from ttsim.tt.interval_utils import merge_piecewise_intervals
 from ttsim.tt.piecewise_polynomial import get_piecewise_parameters
 
 if TYPE_CHECKING:
@@ -216,6 +218,41 @@ PIECEWISE_TYPES = {
 }
 
 
+def _get_param_value_piecewise(
+    relevant_specs: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Resolve piecewise intervals, handling `updates_previous` chains."""
+    current = relevant_specs[-1]
+    current.pop("note", None)
+    current.pop("reference", None)
+    updates_previous = current.pop("updates_previous", False)
+
+    if not updates_previous:
+        return current.get("intervals", [])
+
+    base_intervals = _get_param_value_piecewise(relevant_specs[:-1])
+    return merge_piecewise_intervals(
+        base=base_intervals,
+        update=current.get("intervals", []),
+    )
+
+
+def _get_param_value(
+    relevant_specs: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Resolve dict parameter value, handling `updates_previous` chains."""
+    current = relevant_specs[-1]
+    current.pop("note", None)
+    current.pop("reference", None)
+    updates_previous = current.pop("updates_previous", False)
+
+    if not updates_previous:
+        return current
+
+    base_value = _get_param_value(relevant_specs[:-1])
+    return upsert_tree(base=base_value, to_upsert=current)
+
+
 def _clean_one_param_spec(
     spec: OrigParamSpec,
     policy_date: datetime.date,
@@ -249,13 +286,17 @@ def _clean_one_param_spec(
     current_spec: dict[str, Any] = raw_current
     out["note"] = current_spec.pop("note", None)
     out["reference"] = current_spec.pop("reference", None)
-    if not current_spec:
-        return None
+
     param_type = spec["type"]
     if param_type == "scalar":
+        current_spec.pop("updates_previous", None)
+        if not current_spec:
+            return None
         out["value"] = current_spec["value"]
     elif param_type in PIECEWISE_TYPES:
-        out["value"] = current_spec.get("intervals", [])
+        relevant_specs = [copy.deepcopy(spec[policy_dates[i]]) for i in range(idx)]
+        out["value"] = _get_param_value_piecewise(relevant_specs)  # ty: ignore[invalid-argument-type]
     else:
-        out["value"] = current_spec
+        relevant_specs = [copy.deepcopy(spec[policy_dates[i]]) for i in range(idx)]
+        out["value"] = _get_param_value(relevant_specs)  # ty: ignore[invalid-argument-type]
     return out

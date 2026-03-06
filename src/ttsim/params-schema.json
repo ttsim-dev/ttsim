@@ -75,7 +75,8 @@
                 },
                 "reference": { "type": "string" },
                 "note": { "type": "string" },
-                "deviation_from": { "type": "string" }
+                "deviation_from": { "type": "string" },
+                "updates_previous": { "type": "boolean" }
               },
               "additionalProperties": true
             },

@@ -13,6 +13,7 @@ if TYPE_CHECKING:
     from types import ModuleType
 
 
+from ttsim.tt.interval_utils import merge_piecewise_intervals
 from ttsim.tt.piecewise_polynomial import (
     PiecewisePolynomialParamValue,
     get_piecewise_parameters,
@@ -192,3 +193,70 @@ def test_validation_error_wrong_order(xnp: ModuleType):
             parameter_list=parameter_list,
             xnp=xnp,
         )
+
+
+# --- Tests for merge_piecewise_intervals ---
+
+
+def _base_intervals():
+    return [
+        {"interval": "(-inf, 0)", "slope": 0, "intercept": 0},
+        {"interval": "[0, 100)", "slope": 0.1, "intercept": 0},
+        {"interval": "[100, inf)", "slope": 0.2, "intercept": 10},
+    ]
+
+
+def test_merge_single_interval_update():
+    """Replace one of three intervals."""
+    base = _base_intervals()
+    update = [{"interval": "[0, 100)", "slope": 0.5, "intercept": 0}]
+    result = merge_piecewise_intervals(base, update)
+    assert result[0] == base[0]
+    assert result[1] == update[0]
+    assert result[2] == base[2]
+
+
+def test_merge_multiple_intervals_update():
+    """Replace two of three intervals."""
+    base = _base_intervals()
+    update = [
+        {"interval": "(-inf, 0)", "slope": 0.3, "intercept": 5},
+        {"interval": "[100, inf)", "slope": 0.9, "intercept": 20},
+    ]
+    result = merge_piecewise_intervals(base, update)
+    assert result[0] == update[0]
+    assert result[1] == base[1]
+    assert result[2] == update[1]
+
+
+def test_merge_no_match_raises():
+    """Update with bounds not in base should raise ValueError."""
+    base = _base_intervals()
+    update = [{"interval": "[50, 150)", "slope": 0.5, "intercept": 0}]
+    with pytest.raises(ValueError, match="does not match any base interval"):
+        merge_piecewise_intervals(base, update)
+
+
+def test_merge_preserves_order():
+    """Output order matches base order regardless of update order."""
+    base = _base_intervals()
+    update = [
+        {"interval": "[100, inf)", "slope": 0.9, "intercept": 20},
+        {"interval": "(-inf, 0)", "slope": 0.3, "intercept": 5},
+    ]
+    result = merge_piecewise_intervals(base, update)
+    assert result[0] == update[1]  # (-inf, 0) at position 0
+    assert result[1] == base[1]  # [0, 100) unchanged
+    assert result[2] == update[0]  # [100, inf) at position 2
+
+
+def test_merge_full_replacement():
+    """All intervals updated."""
+    base = _base_intervals()
+    update = [
+        {"interval": "(-inf, 0)", "slope": 1, "intercept": 1},
+        {"interval": "[0, 100)", "slope": 2, "intercept": 2},
+        {"interval": "[100, inf)", "slope": 3, "intercept": 3},
+    ]
+    result = merge_piecewise_intervals(base, update)
+    assert result == update
