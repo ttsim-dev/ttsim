@@ -1,41 +1,17 @@
 # ======================================================================================
+# Build system configuration
+# ======================================================================================
+[build-system]
+build-backend = "hatchling.build"
+requires = [ "hatch-vcs", "hatchling" ]
+
+# ======================================================================================
 # Project metadata
 # ======================================================================================
-
 [project]
-authors = [
-  { name = "Hans-Martin von Gaudecker", email = "hmgaudecker@uni-bonn.de" },
-  { name = "Marvin Immesberger" },
-]
-classifiers = [
-  "Intended Audience :: Science/Research",
-  "License :: OSI Approved :: GNU Affero General Public License v3",
-  "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
-  "Operating System :: MacOS :: MacOS X",
-  "Operating System :: Microsoft :: Windows",
-  "Operating System :: POSIX",
-  "Operating System :: Unix",
-  "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3 :: Only",
-]
-dependencies = [
-  "dags>=0.4.2",
-  "ipywidgets",
-  "networkx>=3.5",
-  "numpy",
-  "numpy-groupies",
-  "openpyxl",
-  "optree>=0.16.0",
-  "pandas",
-  "plotly>=6.2.0",
-  "portion",
-  "pygments",
-  "pygraphviz",
-  "pytest",
-  "pyyaml",
-]
+name = "ttsim-backend"
 description = "code powering Taxes and Transfers SIMulators"
-dynamic = [ "version" ]
+readme = { file = "README.md", content-type = "text/markdown" }
 keywords = [
   "Benefits",
   "Economics",
@@ -44,14 +20,48 @@ keywords = [
   "Transfers",
 ]
 license = { file = "LICENSE" }
-maintainers = [
-  { name = "Hans-Martin von Gaudecker", email = "hmgaudecker@uni-bonn.de" },
-  { name = "Marvin Immesberger" },
-]
-name = "ttsim-backend"
-readme = { file = "README.md", content-type = "text/markdown" }
 requires-python = ">=3.11"
-
+classifiers = [
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: GNU Affero General Public License v3",
+  "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+  "Operating System :: MacOS :: MacOS X",
+  "Operating System :: Microsoft :: Windows",
+  "Operating System :: POSIX",
+  "Operating System :: Unix",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+]
+dynamic = [ "version" ]
+dependencies = [
+  "dags>=0.4.2",
+  "ipywidgets",
+  "networkx>=3.5",
+  "numpy",
+  "numpy-groupies",
+  "openpyxl",
+  "optree>=0.16",
+  "pandas",
+  "plotly>=6.2",
+  "portion",
+  "pygments",
+  "pygraphviz",
+  "pytest",
+  "pyyaml",
+]
+[[project.authors]]
+name = "Hans-Martin von Gaudecker"
+email = "hmgaudecker@uni-bonn.de"
+[[project.authors]]
+name = "Marvin Immesberger"
+[[project.maintainers]]
+name = "Hans-Martin von Gaudecker"
+email = "hmgaudecker@uni-bonn.de"
+[[project.maintainers]]
+name = "Marvin Immesberger"
 [project.urls]
 Changelog = "https://github.com/ttsim-dev/ttsim/CHANGES.md"
 Documentation = "https://gettsim.readthedocs.io"
@@ -59,42 +69,146 @@ Github = "https://github.com/ttsim-dev/ttsim"
 Repository = "https://github.com/ttsim-dev/ttsim"
 Tracker = "https://github.com/ttsim-dev/ttsim/issues"
 
-# ======================================================================================
-# Build system configuration
-# ======================================================================================
-
-[build-system]
-build-backend = "hatchling.build"
-requires = [ "hatchling", "hatch-vcs" ]
-
-[tool.hatch.build.hooks.vcs]
-version-file = "src/ttsim/_version.py"
-
-[tool.hatch.build.targets.sdist]
-exclude = [ "tests" ]
-only-packages = true
-
-[tool.hatch.build.targets.wheel]
-only-include = [ "src" ]
-sources = [ "src" ]
-
-[tool.hatch.metadata]
-allow-direct-references = true
-
-[tool.hatch.version]
-source = "vcs"
+[tool.hatch]
+build.hooks.vcs.version-file = "src/ttsim/_version.py"
+build.targets.sdist.exclude = [ "tests" ]
+build.targets.sdist.only-packages = true
+build.targets.wheel.only-include = [ "src" ]
+build.targets.wheel.sources = [ "src" ]
+metadata.allow-direct-references = true
+version.source = "vcs"
 
 # ======================================================================================
-# Pixi configuration
+# Ruff configuration
 # ======================================================================================
+[tool.ruff]
+target-version = "py314"
+fix = true
+unsafe-fixes = false
+[tool.ruff.lint]
+select = [ "ALL" ]
+extend-ignore = [
+  "COM812",  # Conflicts with ruff-format
+  "EM101",   # Exception must not use a string literal
+  "EM102",   # Exception must not use an f-string literal
+  "FIX002",  # Line contains TODO
+  "ISC001",  # Conflicts with ruff-format
+  "TC001",   # Move application import into a type-checking block
+  "TC002",   # Move third-party import into a type-checking block
+  "TC003",   # Move standard library import into a type-checking block
+  "TRY003",  # Long messages outside exception class
+  "D",
+  "F722",
+  "FBT001",
+  "FBT002",
+  "ICN001",
+  "N999",
+  "PLC2401",
+  "PLC2403",
+  "PLR0913",
+  "PLR5501",
+]
+per-file-ignores."conftest.py" = [ "ANN" ]
+per-file-ignores."src/ttsim/__init__.py" = [ "PLW0127" ]
+per-file-ignores."src/ttsim/interface_dag_elements/fail_if.py" = [ "E501" ]
+per-file-ignores."src/ttsim/interface_dag_elements/specialized_environment.py" = [
+  "E501"
+]
+per-file-ignores."src/ttsim/main_args.py" = [ "F811" ]
+per-file-ignores."src/ttsim/plot/dag/*.py" = [ "B006", "C901", "PLR0912", "PLR0915" ]
+per-file-ignores."src/ttsim/typing.py" = [ "PYI051" ]
+per-file-ignores."src_mettsim/mettsim/middle_earth/**/*.py" = [
+  "E721",
+  "PLR1714",
+  "PLR1716",
+  "PLR2004",
+  "RET",
+  "SIM108"
+]
+per-file-ignores."src_mettsim/tests_middle_earth/*.py" = [
+  "ANN",
+  "INP001",
+  "PLR2004",
+  "S101"
+]
+per-file-ignores."tests/*" = [ "INP001", "S101" ]
+per-file-ignores."tests/**/*.py" = [ "ANN", "INP001", "PLR2004", "S101" ]
+per-file-ignores."tests/interface_dag_elements/test_failures.py" = [ "E501" ]
+per-file-ignores."tests/tt/test_vectorization.py" = [
+  "E721",
+  "PLR1714",
+  "PLR1716",
+  "RET",
+  "SIM108"
+]
+pydocstyle.convention = "google"
 
-[tool.pixi.workspace]
-channels = [ "conda-forge" ]
-platforms = [ "linux-64", "osx-64", "osx-arm64", "win-64" ]
+[tool.pyproject-fmt]
+column_width = 88
+max_supported_python = "3.14"
+table_format = "long"
+collapse_tables = [ "tool.hatch", "tool.pytest", "tool.pytask", "tool.ty" ]
+expand_tables = [
+  "tool.pixi.dependencies",
+  "tool.pixi.environments",
+  "tool.pixi.feature",
+  "tool.pixi.feature.cuda",
+  "tool.pixi.feature.cuda.system-requirements",
+  "tool.pixi.feature.cuda.target",
+  "tool.pixi.feature.jax",
+  "tool.pixi.feature.jax.pypi-dependencies",
+  "tool.pixi.feature.jax.target",
+  "tool.pixi.feature.metal",
+  "tool.pixi.feature.metal.target",
+  "tool.pixi.feature.py311",
+  "tool.pixi.feature.py311.dependencies",
+  "tool.pixi.feature.py312",
+  "tool.pixi.feature.py312.dependencies",
+  "tool.pixi.feature.py313",
+  "tool.pixi.feature.py313.dependencies",
+  "tool.pixi.feature.py314",
+  "tool.pixi.feature.py314.dependencies",
+  "tool.pixi.feature.tests",
+  "tool.pixi.feature.tests.pypi-dependencies",
+  "tool.pixi.feature.tests.target",
+  "tool.pixi.pypi-dependencies",
+  "tool.pixi.pypi-dependencies.mettsim",
+  "tool.pixi.pypi-dependencies.ttsim-backend",
+  "tool.pixi.workspace",
+]
 
+[tool.pytest]
+ini_options.addopts = [ "--pdbcls=pdbp:Pdb" ]
+ini_options.filterwarnings = []
+ini_options.norecursedirs = [ "docs" ]
+
+[tool.ty]
+rules.ambiguous-protocol-member = "error"
+rules.deprecated = "error"
+rules.division-by-zero = "error"
+rules.ignore-comment-unknown-rule = "error"
+rules.invalid-argument-type = "error"
+rules.invalid-ignore-comment = "error"
+rules.invalid-return-type = "error"
+rules.possibly-missing-attribute = "error"
+rules.possibly-missing-implicit-call = "error"
+rules.possibly-missing-import = "error"
+rules.possibly-unresolved-reference = "error"
+rules.redundant-cast = "error"
+rules.undefined-reveal = "error"
+rules.unresolved-global = "error"
+rules.unsupported-base = "error"
+rules.unused-ignore-comment = "error"
+rules.useless-overload-body = "error"
+
+[tool.yamlfix]
+line_length = 88
+none_representation = "null"
+sequence_style = "block_style"
+
+[tool.pixi]
 # Development Dependencies (conda)
 # --------------------------------------------------------------------------------------
-
 [tool.pixi.dependencies]
 ipywidgets = "*"
 jupyterlab = "*"
@@ -110,94 +224,6 @@ pyyaml = "*"
 snakeviz = ">=2.2.2"
 tabulate = "*"
 toml = "*"
-
-# Development Dependencies (pypi)
-# --------------------------------------------------------------------------------------
-
-[tool.pixi.pypi-dependencies]
-jaxtyping = ">=0.3.2"
-kaleido = ">=1.0.0"
-mettsim = { path = "src_mettsim", editable = true }
-pdbp = ">=1.7.1"
-ttsim-backend = { path = ".", editable = true }
-
-# Features
-# --------------------------------------------------------------------------------------
-
-[tool.pixi.feature.py311.dependencies]
-python = "~=3.11.0"
-
-[tool.pixi.feature.py312.dependencies]
-python = "~=3.12.0"
-
-[tool.pixi.feature.py313.dependencies]
-python = "~=3.13.0"
-
-[tool.pixi.feature.py314.dependencies]
-python = "~=3.14.0"
-
-[tool.pixi.feature.jax]
-platforms = [ "linux-64", "osx-arm64", "win-64" ]
-
-[tool.pixi.feature.jax.pypi-dependencies]
-jax = ">=0.8"
-# jax-datetime = { git = "https://github.com/google/jax-datetime.git" }
-
-[tool.pixi.feature.cuda]
-platforms = [ "linux-64" ]
-system-requirements = { cuda = "13" }
-
-[tool.pixi.feature.cuda.target.linux-64.pypi-dependencies]
-jax = { version = ">=0.8", extras = [ "cuda13" ] }
-
-[tool.pixi.feature.metal]
-platforms = [ "osx-arm64" ]
-
-[tool.pixi.feature.metal.target.osx-arm64.pypi-dependencies]
-jax = ">=0.8"
-jax-metal = ">=0.1.1"
-
-[tool.pixi.feature.tests.pypi-dependencies]
-ty = "*"
-types-PyYAML = "*"
-types-pytz = "*"
-pytest-cov = "*"
-pytest-xdist = "*"
-
-# Tasks
-# --------------------------------------------------------------------------------------
-
-[tool.pixi.feature.tests.target.linux-64.tasks]
-tests = "pytest"
-ty = "ty check"
-
-[tool.pixi.feature.tests.target.osx-64.tasks]
-tests = "dot -c && pytest" # dot -c needed for pygraphviz on macOS
-ty = "ty check"
-
-[tool.pixi.feature.tests.target.osx-arm64.tasks]
-tests = "dot -c && pytest" # dot -c needed for pygraphviz on macOS
-ty = "ty check"
-
-[tool.pixi.feature.tests.target.win-64.tasks]
-tests = "pytest"
-ty = "ty check"
-
-[tool.pixi.feature.jax.target.linux-64.tasks]
-tests-jax = "pytest --backend=jax"
-
-[tool.pixi.feature.jax.target.osx-arm64.tasks]
-tests-jax = "dot -c && pytest --backend=jax"
-
-[tool.pixi.feature.jax.target.win-64.tasks]
-tests-jax = "pytest --backend=jax"
-
-[tool.pixi.feature.cuda.target.linux-64.tasks]
-tests-jax = "pytest --backend=jax"
-
-# Environments
-# --------------------------------------------------------------------------------------
-
 [tool.pixi.environments]
 py311 = [ "py311", "tests" ]
 py312 = [ "py312", "tests" ]
@@ -206,150 +232,42 @@ py314 = [ "py314", "tests" ]
 py314-cuda = [ "py314", "tests", "cuda" ]
 py314-jax = [ "py314", "tests", "jax" ]
 py314-metal = [ "py314", "tests", "metal" ]
-
-# ======================================================================================
-# Ruff configuration
-# ======================================================================================
-
-[tool.ruff]
-fix = true
-target-version = "py311"
-unsafe-fixes = false
-
-[tool.ruff.lint]
-extend-ignore = [
-  "COM812",  # Conflicts with ruff-format
-  "EM101",   # Exception must not use a string literal
-  "EM102",   # Exception must not use an f-string literal
-  "TC001",   # Move application import into a type-checking block
-  "F722",    # Forward annotation syntax error (jaxtyping)
-  "FBT001",  # Boolean-typed positional argument in function definition
-  "FBT002",  # Boolean default positional argument in function definition
-  "FIX002",  # Line contains TODO
-  "ICN001",  # numpy should be np (different convention here)
-  "ISC001",  # Conflicts with ruff-format
-  "N999",    # Invalid module name
-  "PLC2401", # Variable name contains non-ASCII character
-  "PLC2403", # Module alias contains non-ASCII character
-  "PLR0913", # Too many arguments in function definition
-  "PLR5501", # elif not supported by vectorization converter for JAX
-  "TC002",   # Move third-party import into a type-checking block
-  "TC003",   # Move standard library import into a type-checking block
-  "TRY003",  # Long messages outside exception class
-  # Ignored during transition phase
-  "D", # Docstrings
-]
-select = [ "ALL" ]
-
-[tool.ruff.lint.per-file-ignores]
-"conftest.py" = [
-  "ANN", # Type annotations
-]
-"src/ttsim/__init__.py" = [
-  "PLW0127", # Re-export things for tab-completion explicitly
-]
-"src/ttsim/interface_dag_elements/fail_if.py" = [
-  "E501", # Line too long
-]
-"src/ttsim/interface_dag_elements/specialized_environment.py" = [
-  "E501", # Line too long
-]
-"src/ttsim/main_args.py" = [
-  "F811", # Redefinition of unused name
-]
-"src/ttsim/plot/dag/*.py" = [
-  "B006",    # Mutable argument default
-  "C901",    # Function too complex
-  "PLR0912", # Too many branches
-  "PLR0915", # Too many statements
-]
-"src/ttsim/typing.py" = [
-  "PYI051", # Redundant literal union
-]
-"src_mettsim/mettsim/middle_earth/**/*.py" = [
-  "E721",    # Type comparison
-  "PLR1714", # Repeated equality comparison
-  "PLR1716", # Contains duplicate comparison
-  "PLR2004", # Magic value in comparison
-  "RET",     # Return rules
-  "SIM108",  # Use ternary operator
-]
-"src_mettsim/tests_middle_earth/*.py" = [
-  "ANN",     # Type annotations
-  "INP001",  # Implicit namespace package
-  "PLR2004", # Magic value in comparison
-  "S101",    # Use of assert
-]
-"tests/**/*.py" = [
-  "ANN",     # Type annotations
-  "INP001",  # Implicit namespace package
-  "PLR2004", # Magic value in comparison
-  "S101",    # Use of assert
-]
-"tests/interface_dag_elements/test_failures.py" = [
-  "E501", # Line too long
-]
-"tests/tt/test_vectorization.py" = [
-  "E721",    # Type comparison
-  "PLR1714", # Repeated equality comparison
-  "PLR1716", # Contains duplicate comparison
-  "RET",     # Return rules
-  "SIM108",  # Use ternary operator
-]
-
-[tool.ruff.lint.pydocstyle]
-convention = "google"
-
-# ======================================================================================
-# ty configuration
-# ======================================================================================
-
-[tool.ty.rules]
-ambiguous-protocol-member = "error"
-deprecated = "error"
-division-by-zero = "error"
-ignore-comment-unknown-rule = "error"
-invalid-argument-type = "error"
-invalid-ignore-comment = "error"
-invalid-return-type = "ignore"
-possibly-missing-attribute = "error"
-possibly-missing-implicit-call = "error"
-possibly-missing-import = "error"
-possibly-unresolved-reference = "error"
-redundant-cast = "error"
-undefined-reveal = "error"
-unresolved-global = "error"
-unsupported-base = "error"
-unused-ignore-comment = "error"
-useless-overload-body = "error"
-
-# ======================================================================================
-# pytest configuration
-# ======================================================================================
-
-[tool.pytest.ini_options]
-addopts = [ "--pdbcls=pdbp:Pdb" ]
-filterwarnings = [
-  "ignore:.*XMLParser*:DeprecationWarning",
-  "ignore:.*'tree.iter()'*:PendingDeprecationWarning",
-  "ignore:.*Sorting*:FutureWarning",
-  "ignore:The TerminalReporter.writer attribute is",
-  "ignore:Repeated execution of the test suite",
-  "ignore:Using or importing the ABCs from 'collections'",
-  "ignore:Explicitly requested dtype .*64 requested in zeros_like",
-]
-markers = [
-  "skipif_jax: skip test if backend is jax",
-  "skipif_numpy: skip test if backend is numpy",
-]
-norecursedirs = [ "docs" ]
-testpaths = [ "tests", "src_mettsim/tests_middle_earth" ]
-
-# ======================================================================================
-# yamlfix configuration
-# ======================================================================================
-
-[tool.yamlfix]
-line_length = 88
-none_representation = "null"
-sequence_style = "block_style"
+[tool.pixi.feature]
+cuda.platforms = [ "linux-64" ]
+cuda.system-requirements = { cuda = "13" }
+cuda.target.linux-64.pypi-dependencies.jax = { version = ">=0.8", extras = [ "cuda13" ] }
+cuda.target.linux-64.tasks.tests-jax = "pytest --backend=jax"
+jax.platforms = [ "linux-64", "osx-arm64", "win-64" ]
+jax.pypi-dependencies.jax = ">=0.8"
+jax.target.linux-64.tasks.tests-jax = "pytest --backend=jax"
+jax.target.osx-arm64.tasks.tests-jax = "dot -c && pytest --backend=jax"
+jax.target.win-64.tasks.tests-jax = "pytest --backend=jax"
+metal.platforms = [ "osx-arm64" ]
+metal.target.osx-arm64.pypi-dependencies.jax = ">=0.8"
+metal.target.osx-arm64.pypi-dependencies.jax-metal = ">=0.1.1"
+py311.dependencies.python = "~=3.11.0"
+py312.dependencies.python = "~=3.12.0"
+py313.dependencies.python = "~=3.13.0"
+py314.dependencies.python = "~=3.14.0"
+tests.pypi-dependencies.ty = "*"
+tests.pypi-dependencies.types-PyYAML = "*"
+tests.pypi-dependencies.types-pytz = "*"
+tests.pypi-dependencies.pytest-cov = "*"
+tests.pypi-dependencies.pytest-xdist = "*"
+tests.target.linux-64.tasks.tests = "pytest"
+tests.target.linux-64.tasks.ty = "ty check"
+tests.target.osx-64.tasks.tests = "dot -c && pytest"  # dot -c needed for pygraphviz on macOS
+tests.target.osx-64.tasks.ty = "ty check"
+tests.target.osx-arm64.tasks.tests = "dot -c && pytest"  # dot -c needed for pygraphviz on macOS
+tests.target.osx-arm64.tasks.ty = "ty check"
+tests.target.win-64.tasks.tests = "pytest"
+tests.target.win-64.tasks.ty = "ty check"
+[tool.pixi.pypi-dependencies]
+jaxtyping = ">=0.3.2"
+kaleido = ">=1.0.0"
+mettsim = { path = "src_mettsim", editable = true }
+pdbp = ">=1.7.1"
+ttsim-backend = { path = ".", editable = true }
+[tool.pixi.workspace]
+channels = [ "conda-forge" ]
+platforms = [ "linux-64", "osx-64", "osx-arm64", "win-64" ]

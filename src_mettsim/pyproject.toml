@@ -1,4 +1,12 @@
 # ======================================================================================
+# Build system configuration
+# ======================================================================================
+
+[build-system]
+build-backend = "hatchling.build"
+requires = [ "hatchling" ]
+
+# ======================================================================================
 # Project metadata
 # ======================================================================================
 
@@ -8,23 +16,25 @@ name = "mettsim"
 version = "0.0.0"
 description = "The Middle Earth Taxes and Transfers SIMulator"
 readme = { file = "mettsim/README.md", content-type = "text/markdown" }
+keywords = [
+  "Benefits",
+  "Pensions",
+  "Taxes",
+  "Testing",
+  "Transfers",
+]
 license = { file = "mettsim/LICENSE" }
+maintainers = [
+  { name = "Hans-Martin von Gaudecker", email = "hmgaudecker@uni-bonn.de" },
+  { name = "Marvin Immesberger" },
+]
 # About the project
 authors = [
   { name = "Hans-Martin von Gaudecker", email = "hmgaudecker@uni-bonn.de" },
   { name = "Marvin Immesberger" },
 ]
-maintainers = [
-  { name = "Hans-Martin von Gaudecker", email = "hmgaudecker@uni-bonn.de" },
-  { name = "Marvin Immesberger" },
-]
-keywords = [
-  "Testing",
-  "Taxes",
-  "Benefits",
-  "Transfers",
-  "Pensions",
-]
+# Dependencies and requirements
+requires-python = ">=3.11"
 classifiers = [
   "Intended Audience :: Science/Research",
   "License :: OSI Approved :: GNU Affero General Public License v3",
@@ -33,34 +43,21 @@ classifiers = [
   "Operating System :: Microsoft :: Windows",
   "Operating System :: POSIX",
   "Operating System :: Unix",
-  "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
 ]
-# Dependencies and requirements
-requires-python = ">=3.11"
+urls.Changelog = "https://gettsim.readthedocs.io/en/stable/changes.html"
+urls.Documentation = "https://gettsim.readthedocs.io"
+urls.Github = "https://github.com/ttsim-dev/ttsim"
+urls.Repository = "https://github.com/ttsim-dev/ttsim"
+urls.Tracker = "https://github.com/ttsim-dev/ttsim/issues"
 
-[project.urls]
-Repository = "https://github.com/ttsim-dev/ttsim"
-Changelog = "https://gettsim.readthedocs.io/en/stable/changes.html"
-Documentation = "https://gettsim.readthedocs.io"
-Github = "https://github.com/ttsim-dev/ttsim"
-Tracker = "https://github.com/ttsim-dev/ttsim/issues"
-
-# ======================================================================================
-# Build system configuration
-# ======================================================================================
-
-[build-system]
-requires = [ "hatchling" ]
-build-backend = "hatchling.build"
-
-[tool.hatch.build.targets.sdist]
-exclude = [ "tests_middle_earth" ]
-only-packages = true
-
-[tool.hatch.build.targets.wheel]
-only-include = [ "." ]
-sources = [ "." ]
-
-[tool.hatch.metadata]
-allow-direct-references = true
+[tool.hatch]
+build.targets.sdist.exclude = [ "tests_middle_earth" ]
+build.targets.sdist.only-packages = true
+build.targets.wheel.only-include = [ "." ]
+build.targets.wheel.sources = [ "." ]
+metadata.allow-direct-references = true

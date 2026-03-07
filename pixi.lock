@@ -12036,7 +12036,7 @@ packages:
 - pypi: ./src_mettsim
   name: mettsim
   version: 0.0.0
-  sha256: c87225df3e904e26a7f2fabbd8db4e29405944e5d5caffc719ce69b94ded1b17
+  sha256: b4a9d921930a6c6f7d93bbe68cbea21c27695f5514a352f99553a1f1bb454caf
   requires_python: '>=3.11'
 - conda: https://conda.anaconda.org/conda-forge/noarch/mistune-3.2.0-pyhcf101f3_0.conda
   sha256: d3fb4beb5e0a52b6cc33852c558e077e1bfe44df1159eb98332d69a264b14bae
@@ -18077,8 +18077,8 @@ packages:
   timestamp: 1733367480074
 - pypi: ./
   name: ttsim-backend
-  version: 1.1.2.dev4+gd36b549d8.d20260129
-  sha256: fe5f175b561b67a1ab485c3a304cb7fc7f9a21019dc4b482a37088e2a7d3a864
+  version: 1.1.2.dev6+gc300185a4.d20260302
+  sha256: f90601eedb1aba1384e58a122e3b189ca012e1422284876b612063f8fbca8ff0
   requires_dist:
   - dags>=0.4.2
   - ipywidgets
@@ -18086,9 +18086,9 @@ packages:
   - numpy
   - numpy-groupies
   - openpyxl
-  - optree>=0.16.0
+  - optree>=0.16
   - pandas
-  - plotly>=6.2.0
+  - plotly>=6.2
   - portion
   - pygments
   - pygraphviz
