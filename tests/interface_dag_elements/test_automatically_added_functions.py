@@ -105,7 +105,7 @@ def test_create_function_for_time_unit_should_not_set_info_if_none():
 def test_create_function_for_time_unit_should_apply_converter():
     function = _create_function_for_time_unit("test", per_d_to_per_w)
 
-    assert function(1) == 7
+    assert function(1) == 7  # ty: ignore[invalid-argument-type]
 
 
 def test_time_conversions_should_not_create_cycle():

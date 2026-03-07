@@ -40,7 +40,7 @@ def parameters(xnp: ModuleType):
 
 
 def test_get_piecewise_parameters_all_intercepts_supplied(xnp: ModuleType):
-    parameter_list = [
+    parameter_list: list[dict[str, int | float | str]] = [
         {
             "interval": "(-inf, 2005)",
             "slope": 0,
@@ -122,7 +122,7 @@ def test_partial_domain_returns_nan(xnp: ModuleType):
 
 def test_interval_parsing_edge_cases(xnp: ModuleType):
     """Test various interval bracket combinations."""
-    parameter_list = [
+    parameter_list: list[dict[str, int | float | str]] = [
         {
             "interval": "(-inf, 0)",
             "slope": 0,
@@ -152,7 +152,7 @@ def test_interval_parsing_edge_cases(xnp: ModuleType):
 
 def test_validation_error_gaps(xnp: ModuleType):
     """Gaps between intervals should raise ValueError."""
-    parameter_list = [
+    parameter_list: list[dict[str, int | float | str]] = [
         {
             "interval": "(-inf, 0)",
             "slope": 0,
@@ -175,7 +175,7 @@ def test_validation_error_gaps(xnp: ModuleType):
 
 def test_validation_error_wrong_order(xnp: ModuleType):
     """Intervals not in ascending order should raise ValueError."""
-    parameter_list = [
+    parameter_list: list[dict[str, int | float | str]] = [
         {
             "interval": "[5, inf)",
             "slope": 0.5,

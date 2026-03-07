@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import timedelta
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 import numpy
 import pytest
@@ -137,7 +137,7 @@ def test_mettsim_policy_environment_is_complete(orig_mettsim_objects, date):
 
 
 def test_fail_functions_are_executed_with_priority(backend: Literal["numpy", "jax"]):
-    data = {("p_id",): numpy.array([0, 1, 2, 3])}
+    data: dict[tuple[str, ...], Any] = {("p_id",): numpy.array([0, 1, 2, 3])}
     with pytest.raises(
         ValueError,
         match=r"The following data columns are missing.",

@@ -599,7 +599,7 @@ def agg_by_group_function(
             _fail_if_other_arg_is_invalid(other_args, orig_location)
             mapper = {"group_id": group_id, "column": other_args.pop()}
         agg_func = rename_arguments(
-            func=agg_registry[agg_type],
+            func=agg_registry[agg_type],  # ty: ignore[invalid-argument-type]
             mapper=mapper,
         )
         return AggByGroupFunction(
@@ -752,7 +752,7 @@ def agg_by_p_id_function(
                 "backend": "backend",
             }
         agg_func = rename_arguments(
-            func=agg_registry[agg_type],
+            func=agg_registry[agg_type],  # ty: ignore[invalid-argument-type]
             mapper=mapper,
         )
         return AggByPIDFunction(

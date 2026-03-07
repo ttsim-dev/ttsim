@@ -129,7 +129,7 @@ def _active_column_objects_and_param_functions(
     -------
     A tree of active ColumnObjectParamFunctions.
     """
-    flat_objects_tree = {
+    flat_objects_tree: dict[tuple[str, ...], Any] = {
         (*orig_path[:-2], obj.leaf_name): obj
         for orig_path, obj in orig.items()
         if obj.is_active(policy_date)
@@ -209,7 +209,7 @@ def _get_one_param(
         ),
     }
     if param_type in lookup_table_converters:
-        converter = lookup_table_converters[param_type]
+        converter = lookup_table_converters[param_type]  # ty: ignore[invalid-argument-type]
         cleaned_spec["value"] = converter(raw=cleaned_spec["value"], xnp=xnp)
         return ConsecutiveIntLookupTableParam(**cleaned_spec)
     if param_type == "require_converter":

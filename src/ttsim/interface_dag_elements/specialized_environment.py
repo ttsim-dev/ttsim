@@ -304,6 +304,6 @@ def tt_dag(
 ) -> nx.DiGraph:
     """The taxes-transfers DAG."""
     return create_dag(
-        functions=with_partialled_params_and_scalars,  # ty: ignore[invalid-argument-type]
-        targets=labels__column_targets,  # ty: ignore[invalid-argument-type]
+        functions=with_partialled_params_and_scalars,
+        targets=labels__column_targets,
     )

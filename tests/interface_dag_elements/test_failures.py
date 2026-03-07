@@ -14,7 +14,7 @@ from mettsim import middle_earth
 try:
     import jax
 except ImportError:
-    jax = None
+    jax = None  # ty: ignore[invalid-assignment]
 
 from ttsim import InputData, MainTarget, OrigPolicyObjects, TTTargets, main
 from ttsim.interface_dag_elements.fail_if import (
@@ -80,9 +80,9 @@ _GENERIC_PARAM_SPEC = {
 
 some_consecutive_int_lookup_table_param = ConsecutiveIntLookupTableParam(
     value=ConsecutiveIntLookupTableParamValue(
-        bases_to_subtract=numpy.array([1]),
+        bases_to_subtract=numpy.array([1]),  # ty: ignore[invalid-argument-type]
         xnp=numpy,
-        values_to_look_up=numpy.array([1, 2, 3]),
+        values_to_look_up=numpy.array([1, 2, 3]),  # ty: ignore[invalid-argument-type]
     ),
     **_GENERIC_PARAM_SPEC,  # ty: ignore[invalid-argument-type]
 )
@@ -95,9 +95,9 @@ some_dict_param = DictParam(
 
 some_piecewise_polynomial_param = PiecewisePolynomialParam(
     value=PiecewisePolynomialParamValue(
-        thresholds=numpy.array([1, 2, 3]),
-        intercepts=numpy.array([1, 2, 3]),
-        coefficients=numpy.array([1, 2, 3]),
+        thresholds=numpy.array([1, 2, 3]),  # ty: ignore[invalid-argument-type]
+        intercepts=numpy.array([1, 2, 3]),  # ty: ignore[invalid-argument-type]
+        coefficients=numpy.array([1, 2, 3]),  # ty: ignore[invalid-argument-type]
     ),
     **_GENERIC_PARAM_SPEC,  # ty: ignore[invalid-argument-type]
 )
@@ -1704,9 +1704,9 @@ def test_backend_has_changed_from_jax_to_numpy_passes():
     )
     input_data = InputData.tree(
         tree={
-            "p_id": jax.numpy.array([0, 1, 2]),  # ty: ignore[unresolved-attribute]
+            "p_id": jax.numpy.array([0, 1, 2]),
             "property_tax": {
-                "acre_size_in_hectares": jax.numpy.array([5, 20, 200]),  # ty: ignore[unresolved-attribute]
+                "acre_size_in_hectares": jax.numpy.array([5, 20, 200]),
             },
         }
     )

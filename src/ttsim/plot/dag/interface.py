@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
     import plotly.graph_objects as go
 
-INTERFACE_COLORMAP = {
+INTERFACE_COLORMAP: dict[tuple[str, ...] | str, str] = {
     ("policy_date",): "gold",
     ("policy_date_str",): "gold",
     ("orig_policy_objects",): "gold",

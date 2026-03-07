@@ -688,7 +688,7 @@ def test_grouped_sum_single_element(backend):
     column = numpy.array([42.0])
     group_id = numpy.array([0])
 
-    result = grouped_sum(
+    result = grouped_sum(  # ty: ignore[no-matching-overload]
         column=column,
         group_id=group_id,
         num_segments=1,
@@ -703,7 +703,7 @@ def test_grouped_max_all_same_values(backend):
     column = numpy.array([5.0, 5.0, 5.0, 10.0, 10.0])
     group_id = numpy.array([0, 0, 0, 1, 1])
 
-    result = grouped_max(
+    result = grouped_max(  # ty: ignore[no-matching-overload]
         column=column,
         group_id=group_id,
         num_segments=5,
@@ -719,7 +719,7 @@ def test_grouped_min_all_same_values(backend):
     column = numpy.array([5.0, 5.0, 5.0, 10.0, 10.0])
     group_id = numpy.array([0, 0, 0, 1, 1])
 
-    result = grouped_min(
+    result = grouped_min(  # ty: ignore[no-matching-overload]
         column=column,
         group_id=group_id,
         num_segments=5,
@@ -736,7 +736,7 @@ def test_sum_by_p_id_all_missing(backend):
     p_id_to_aggregate_by = numpy.array([-1, -1, -1])
     p_id_to_store_by = numpy.array([0, 1, 2])
 
-    result = sum_by_p_id(
+    result = sum_by_p_id(  # ty: ignore[no-matching-overload]
         column=column,
         p_id_to_aggregate_by=p_id_to_aggregate_by,
         p_id_to_store_by=p_id_to_store_by,
@@ -754,7 +754,7 @@ def test_sum_by_p_id_bool_column(backend):
     p_id_to_aggregate_by = numpy.array([0, 0, 1, 1, 1])
     p_id_to_store_by = numpy.array([0, 1, 2, 3, 4])
 
-    result = sum_by_p_id(
+    result = sum_by_p_id(  # ty: ignore[no-matching-overload]
         column=column,
         p_id_to_aggregate_by=p_id_to_aggregate_by,
         p_id_to_store_by=p_id_to_store_by,
@@ -773,7 +773,7 @@ def test_grouped_count_with_many_groups(backend):
     group_id = numpy.array([0, 1, 2, 3, 4])
 
     result = grouped_count(
-        group_id=group_id,
+        group_id=group_id,  # ty: ignore[invalid-argument-type]
         num_segments=5,
         backend=backend,
     )
@@ -788,7 +788,7 @@ def test_grouped_mean_with_negative_values(backend):
     column = numpy.array([-10.0, 10.0, -5.0, 5.0])
     group_id = numpy.array([0, 0, 1, 1])
 
-    result = grouped_mean(
+    result = grouped_mean(  # ty: ignore[no-matching-overload]
         column=column,
         group_id=group_id,
         num_segments=4,
@@ -805,7 +805,7 @@ def test_grouped_sum_large_group_ids_with_gaps(backend):
     column = numpy.array([1.0, 2.0, 3.0])
     group_id = numpy.array([0, 100, 100])
 
-    result = grouped_sum(
+    result = grouped_sum(  # ty: ignore[no-matching-overload]
         column=column,
         group_id=group_id,
         num_segments=101,
@@ -824,8 +824,8 @@ def test_count_by_p_id_raises_not_implemented(backend):
 
     with pytest.raises(NotImplementedError):
         count_by_p_id(
-            p_id_to_aggregate_by=p_id_to_aggregate_by,
-            p_id_to_store_by=p_id_to_store_by,
+            p_id_to_aggregate_by=p_id_to_aggregate_by,  # ty: ignore[invalid-argument-type]
+            p_id_to_store_by=p_id_to_store_by,  # ty: ignore[invalid-argument-type]
             num_segments=5,
             backend=backend,
         )
@@ -838,7 +838,7 @@ def test_mean_by_p_id_raises_not_implemented(backend):
     p_id_to_store_by = numpy.array([7, 8, 9, 10, 11])
 
     with pytest.raises(NotImplementedError):
-        mean_by_p_id(
+        mean_by_p_id(  # ty: ignore[no-matching-overload]
             column=column,
             p_id_to_aggregate_by=p_id_to_aggregate_by,
             p_id_to_store_by=p_id_to_store_by,
@@ -854,7 +854,7 @@ def test_max_by_p_id_raises_not_implemented(backend):
     p_id_to_store_by = numpy.array([7, 8, 9, 10, 11])
 
     with pytest.raises(NotImplementedError):
-        max_by_p_id(
+        max_by_p_id(  # ty: ignore[no-matching-overload]
             column=column,
             p_id_to_aggregate_by=p_id_to_aggregate_by,
             p_id_to_store_by=p_id_to_store_by,
@@ -870,7 +870,7 @@ def test_min_by_p_id_raises_not_implemented(backend):
     p_id_to_store_by = numpy.array([7, 8, 9, 10, 11])
 
     with pytest.raises(NotImplementedError):
-        min_by_p_id(
+        min_by_p_id(  # ty: ignore[no-matching-overload]
             column=column,
             p_id_to_aggregate_by=p_id_to_aggregate_by,
             p_id_to_store_by=p_id_to_store_by,
@@ -886,7 +886,7 @@ def test_any_by_p_id_raises_not_implemented(backend):
     p_id_to_store_by = numpy.array([7, 8, 9, 10, 11])
 
     with pytest.raises(NotImplementedError):
-        any_by_p_id(
+        any_by_p_id(  # ty: ignore[no-matching-overload]
             column=column,
             p_id_to_aggregate_by=p_id_to_aggregate_by,
             p_id_to_store_by=p_id_to_store_by,
@@ -902,7 +902,7 @@ def test_all_by_p_id_raises_not_implemented(backend):
     p_id_to_store_by = numpy.array([7, 8, 9, 10, 11])
 
     with pytest.raises(NotImplementedError):
-        all_by_p_id(
+        all_by_p_id(  # ty: ignore[no-matching-overload]
             column=column,
             p_id_to_aggregate_by=p_id_to_aggregate_by,
             p_id_to_store_by=p_id_to_store_by,

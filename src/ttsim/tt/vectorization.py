@@ -351,7 +351,7 @@ def _ifexp_to_call(node: ast.IfExp, module: str) -> ast.Call:
 
 def _boolop_to_call(node: ast.BoolOp, module: str) -> ast.Call:
     """Transform BoolOp operation to Call."""
-    operation = {ast.And: "logical_and", ast.Or: "logical_or"}[type(node.op)]
+    operation = {ast.And: "logical_and", ast.Or: "logical_or"}[type(node.op)]  # ty: ignore[invalid-argument-type]
 
     def _constructor(left: ast.Call | ast.expr, right: ast.Call | ast.expr) -> ast.Call:
         """Construct calls of the form `module.logical_(and|or)(left, right)`."""

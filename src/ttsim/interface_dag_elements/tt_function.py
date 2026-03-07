@@ -41,7 +41,7 @@ def tt_function(
     """Return the function calculating the taxes and transfers."""
     ttf_with_keyword_args = concatenate_functions(
         dag=specialized_environment__tt_dag,
-        functions=specialized_environment__with_partialled_params_and_scalars,  # ty: ignore[invalid-argument-type]
+        functions=specialized_environment__with_partialled_params_and_scalars,
         targets=list(labels__column_targets),
         return_type="dict",
         aggregator=None,

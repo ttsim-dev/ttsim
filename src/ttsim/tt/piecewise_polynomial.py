@@ -106,7 +106,7 @@ def piecewise_polynomial(
 def get_piecewise_parameters(
     leaf_name: str,
     func_type: FUNC_TYPES,
-    parameter_list: list[dict[str, float | str]],
+    parameter_list: list[dict[str, int | float | str]],
     xnp: ModuleType,
 ) -> PiecewisePolynomialParamValue:
     """Create the objects for piecewise polynomial from a list of interval specs."""
@@ -144,7 +144,7 @@ def get_piecewise_parameters(
 def _check_and_get_coefficients(
     leaf_name: str,
     func_type: FUNC_TYPES,
-    parameter_list: list[dict[str, float | str]],
+    parameter_list: list[dict[str, int | float | str]],
     xnp: ModuleType,
 ) -> Float[Array, "n_intervals n_coefficients"]:
     """Check and extract coefficient data from the list-of-dicts format.
@@ -166,7 +166,7 @@ def _check_and_get_coefficients(
 
 def _check_and_get_intercepts(
     leaf_name: str,
-    parameter_list: list[dict[str, float | str]],
+    parameter_list: list[dict[str, int | float | str]],
     lower_thresholds: Float[Array, " n_segments"],
     upper_thresholds: Float[Array, " n_segments"],
     coefficients: Float[Array, "n_intervals n_coefficients"],
@@ -218,7 +218,7 @@ def _create_intercepts(
             lower_thresholds=lower_thresholds,
             upper_thresholds=upper_thresholds,
             coefficients=coefficients,
-            intercepts=intercepts,
+            intercepts=intercepts,  # ty: ignore[invalid-argument-type]
         )
     return xnp.array(intercepts)
 

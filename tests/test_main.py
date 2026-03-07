@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import inspect
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import dags
 import dags.tree as dt
@@ -212,7 +212,7 @@ def test_main_target_class_is_complete() -> None:
         ),
         (InputData.tree({"tree_data": {"key": [1, 2, 3]}}), "tree"),
         (InputData.flat({"flat.key": [1, 2, 3]}), "flat"),  # ty: ignore[invalid-argument-type]
-        (InputData.qname({"qname.test": np.array([1, 2, 3])}), "qname"),
+        (InputData.qname({"qname.test": np.array([1, 2, 3])}), "qname"),  # ty: ignore[invalid-argument-type]
     ],
 )
 def test_input_data_classmethods(classmethod_instance, expected_field_name):
@@ -295,19 +295,19 @@ def test_input_data_classmethods(classmethod_instance, expected_field_name):
         ),
         # RawResults
         (
-            RawResults.columns({"test": np.array([1, 2, 3])}),
+            RawResults.columns({"test": np.array([1, 2, 3])}),  # ty: ignore[invalid-argument-type]
             RawResults(columns={"test": np.array([1, 2, 3])}),  # ty: ignore[unknown-argument]
         ),
         (
-            RawResults.params({"param": np.array([4, 5, 6])}),
+            RawResults.params({"param": np.array([4, 5, 6])}),  # ty: ignore[invalid-argument-type]
             RawResults(params={"param": np.array([4, 5, 6])}),  # ty: ignore[unknown-argument]
         ),
         (
-            RawResults.from_input_data({"input": np.array([7, 8, 9])}),
+            RawResults.from_input_data({"input": np.array([7, 8, 9])}),  # ty: ignore[invalid-argument-type]
             RawResults(from_input_data={"input": np.array([7, 8, 9])}),  # ty: ignore[unknown-argument]
         ),
         (
-            RawResults.combined({"combined": np.array([1, 2])}),
+            RawResults.combined({"combined": np.array([1, 2])}),  # ty: ignore[invalid-argument-type]
             RawResults(combined={"combined": np.array([1, 2])}),  # ty: ignore[unknown-argument]
         ),
         # SpecializedEnvironment
@@ -629,7 +629,7 @@ def test_resolve_dynamic_interface_objects_to_static_nodes_with_conflicting_cond
 
 
 def test_fail_if_static_root_node_is_missing():
-    flat_interface_objects = {
+    flat_interface_objects: dict[tuple[str, ...], Any] = {
         ("interface_function_a",): interface_function_a,
         ("interface_function_b",): interface_function_b,
         ("interface_function_c",): interface_function_c,
@@ -653,7 +653,7 @@ def test_fail_if_static_root_node_is_missing():
 
 
 def test_fail_if_dynamic_root_node_is_missing():
-    flat_interface_objects = {
+    flat_interface_objects: dict[tuple[str, ...], Any] = {
         ("a",): a,
         ("interface_function_a",): interface_function_a,
     }
@@ -678,7 +678,7 @@ def test_fail_if_dynamic_root_node_is_missing():
 
 
 def test_fail_if_inputs_to_create_dynamic_root_node_are_missing():
-    flat_interface_objects = {
+    flat_interface_objects: dict[tuple[str, ...], Any] = {
         ("some_idif_require_input_1",): some_idif_require_input_1,
     }
     dag = dags.create_dag(
