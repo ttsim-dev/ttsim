@@ -390,7 +390,7 @@ def policy_function(
 
     def inner(func: FunctionType[..., Any]) -> PolicyFunction:
         return PolicyFunction(
-            leaf_name=leaf_name if leaf_name else func.__name__,
+            leaf_name=leaf_name or func.__name__,
             function=func,
             start_date=start_date,
             end_date=end_date,
@@ -603,7 +603,7 @@ def agg_by_group_function(
             mapper=mapper,
         )
         return AggByGroupFunction(
-            leaf_name=leaf_name if leaf_name else func.__name__,
+            leaf_name=leaf_name or func.__name__,
             function=agg_func,
             start_date=start_date,
             end_date=end_date,
@@ -756,7 +756,7 @@ def agg_by_p_id_function(
             mapper=mapper,
         )
         return AggByPIDFunction(
-            leaf_name=leaf_name if leaf_name else func.__name__,
+            leaf_name=leaf_name or func.__name__,
             function=agg_func,
             start_date=start_date,
             end_date=end_date,
@@ -979,7 +979,7 @@ def param_function(
 
     def inner(func: FunctionType[..., Any]) -> ParamFunction:
         return ParamFunction(
-            leaf_name=leaf_name if leaf_name else func.__name__,
+            leaf_name=leaf_name or func.__name__,
             function=func,
             start_date=start_date,
             end_date=end_date,

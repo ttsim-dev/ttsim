@@ -30,7 +30,7 @@ def grouped_sum(
     group_id: IntColumn,
     num_segments: int,
 ) -> FloatColumn | IntColumn:
-    if column.dtype in ["bool"]:
+    if column.dtype == "bool":
         column = column.astype(int)
 
     out_grouped = segment_sum(
@@ -46,7 +46,7 @@ def grouped_mean(
     group_id: IntColumn,
     num_segments: int,
 ) -> FloatColumn:
-    if column.dtype in ["bool"]:
+    if column.dtype == "bool":
         column = column.astype(int)
     sum_grouped = segment_sum(
         data=column,

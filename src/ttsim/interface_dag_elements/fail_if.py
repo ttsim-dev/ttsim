@@ -327,8 +327,8 @@ def policy_environment_is_invalid(
     """Validate that the environment is a pytree with supported types."""
     assert_valid_ttsim_pytree(
         tree=policy_environment,
-        leaf_checker=lambda leaf: (
-            isinstance(leaf, ColumnObject | ParamFunction | ParamObject | ModuleType)
+        leaf_checker=lambda leaf: isinstance(
+            leaf, ColumnObject | ParamFunction | ParamObject | ModuleType
         ),
         tree_name="policy_environment",
     )

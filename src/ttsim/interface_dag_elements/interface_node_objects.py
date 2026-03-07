@@ -75,7 +75,7 @@ def interface_input(
 
     def inner(func: FunctionType[..., Any]) -> InterfaceInput:
         return InterfaceInput(
-            leaf_name=leaf_name if leaf_name else func.__name__,
+            leaf_name=leaf_name or func.__name__,
             in_top_level_namespace=in_top_level_namespace,
             return_type=func.__annotations__["return"],
             docstring=inspect.getdoc(func),  # ty: ignore [invalid-argument-type]
@@ -185,7 +185,7 @@ def interface_function(
 
     def inner(func: FunctionType[..., Any]) -> InterfaceFunction:
         return InterfaceFunction(
-            leaf_name=leaf_name if leaf_name else func.__name__,
+            leaf_name=leaf_name or func.__name__,
             function=func,
             in_top_level_namespace=in_top_level_namespace,
         )
@@ -286,7 +286,7 @@ def input_dependent_interface_function(
         func: FunctionType[..., Any],
     ) -> InputDependentInterfaceFunction[FunArgTypes, ReturnType]:
         return InputDependentInterfaceFunction(
-            leaf_name=leaf_name if leaf_name else func.__name__,
+            leaf_name=leaf_name or func.__name__,
             function=func,
             in_top_level_namespace=in_top_level_namespace,
             include_if_any_input_present=include_if_any_input_present,
@@ -338,7 +338,7 @@ def fail_function(
         return FailFunction(
             include_if_any_element_present=include_if_any_element_present,
             include_if_all_elements_present=include_if_all_elements_present,
-            leaf_name=leaf_name if leaf_name else func.__name__,
+            leaf_name=leaf_name or func.__name__,
             function=func,
             in_top_level_namespace=in_top_level_namespace,
         )
@@ -387,7 +387,7 @@ def warn_function(
         return WarnFunction(
             include_if_any_element_present=include_if_any_element_present,
             include_if_all_elements_present=include_if_all_elements_present,
-            leaf_name=leaf_name if leaf_name else func.__name__,
+            leaf_name=leaf_name or func.__name__,
             function=func,
             in_top_level_namespace=in_top_level_namespace,
         )
