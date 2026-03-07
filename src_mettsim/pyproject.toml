@@ -1,8 +1,17 @@
+# ======================================================================================
+# Build system configuration
+# ======================================================================================
+
 [build-system]
 build-backend = "hatchling.build"
 requires = [ "hatchling" ]
 
+# ======================================================================================
+# Project metadata
+# ======================================================================================
+
 [project]
+# Basic information
 name = "mettsim"
 version = "0.0.0"
 description = "The Middle Earth Taxes and Transfers SIMulator"
@@ -19,10 +28,12 @@ maintainers = [
   { name = "Hans-Martin von Gaudecker", email = "hmgaudecker@uni-bonn.de" },
   { name = "Marvin Immesberger" },
 ]
+# About the project
 authors = [
   { name = "Hans-Martin von Gaudecker", email = "hmgaudecker@uni-bonn.de" },
   { name = "Marvin Immesberger" },
 ]
+# Dependencies and requirements
 requires-python = ">=3.11"
 classifiers = [
   "Intended Audience :: Science/Research",

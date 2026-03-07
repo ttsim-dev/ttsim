@@ -29,6 +29,8 @@ docs/_build/
 
 # pixi
 .pixi/
+node_modules/
+package-lock.json
 
 # Python
 __pycache__/
