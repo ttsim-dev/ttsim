@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 import numpy
 import portion
@@ -108,7 +108,7 @@ def intervals_to_thresholds(
         if leaf_name:
             validate_intervals(parsed, leaf_name)
     else:
-        parsed = intervals  # type: ignore[assignment]
+        parsed = cast("list[portion.Interval]", intervals)
     lower = numpy.array([_bound_to_float(iv.lower) for iv in parsed])
     upper = numpy.array([_bound_to_float(iv.upper) for iv in parsed])
     all_bounds = numpy.array(sorted(set(lower) | set(upper)))

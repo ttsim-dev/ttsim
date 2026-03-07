@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 PLACEHOLDER_VALUE = object()
 PLACEHOLDER_FIELD = field(default_factory=lambda: PLACEHOLDER_VALUE)
@@ -42,7 +42,7 @@ class ParamObject:
     description: dict[Literal["de", "en"], str] | None = None
 
     def __post_init__(self) -> None:
-        if self.value is PLACEHOLDER_VALUE:  # ty: ignore[unresolved-attribute]
+        if getattr(self, "value", PLACEHOLDER_VALUE) is PLACEHOLDER_VALUE:
             raise ValueError(
                 "'value' field must be specified for any type of 'ParamObject'"
             )
@@ -302,14 +302,15 @@ def get_month_based_phase_inout_of_age_thresholds_param_value(
     last_m_since_ad_to_consider = _m_since_ad(y=raw.pop("last_year_to_consider"), m=12)
     if not all(isinstance(k, int) for k in raw):
         raise ValueError("All keys must be integers")
-    first_year_phase_inout: int = min(raw.keys())  # ty: ignore[invalid-assignment]
-    first_month_phase_inout: int = min(raw[first_year_phase_inout].keys())
+    int_raw = cast("dict[int, Any]", raw)
+    first_year_phase_inout: int = min(int_raw.keys())
+    first_month_phase_inout: int = min(int_raw[first_year_phase_inout].keys())
     first_m_since_ad_phase_inout = _m_since_ad(
         y=first_year_phase_inout,
         m=first_month_phase_inout,
     )
-    last_year_phase_inout: int = max(raw.keys())  # ty: ignore[invalid-assignment]
-    last_month_phase_inout: int = max(raw[last_year_phase_inout].keys())
+    last_year_phase_inout: int = max(int_raw.keys())
+    last_month_phase_inout: int = max(int_raw[last_year_phase_inout].keys())
     last_m_since_ad_phase_inout = _m_since_ad(
         y=last_year_phase_inout,
         m=last_month_phase_inout,
@@ -325,16 +326,16 @@ def get_month_based_phase_inout_of_age_thresholds_param_value(
             "`last_m_since_ad_phase_inout`."
         )
     before_phase_inout: dict[int, float] = {
-        b_m: _year_fraction(raw[first_year_phase_inout][first_month_phase_inout])
+        b_m: _year_fraction(int_raw[first_year_phase_inout][first_month_phase_inout])
         for b_m in range(first_m_since_ad_to_consider, first_m_since_ad_phase_inout)
     }
     during_phase_inout: dict[int, float] = _fill_phase_inout(
-        raw=raw,  # ty: ignore[invalid-argument-type]
+        raw=int_raw,
         first_m_since_ad_phase_inout=first_m_since_ad_phase_inout,
         last_m_since_ad_phase_inout=last_m_since_ad_phase_inout,
     )
     after_phase_inout: dict[int, float] = {
-        b_m: _year_fraction(raw[last_year_phase_inout][last_month_phase_inout])
+        b_m: _year_fraction(int_raw[last_year_phase_inout][last_month_phase_inout])
         for b_m in range(
             last_m_since_ad_phase_inout + 1,
             last_m_since_ad_to_consider + 1,
@@ -358,8 +359,9 @@ def get_year_based_phase_inout_of_age_thresholds_param_value(
     last_year_to_consider = raw.pop("last_year_to_consider")
     if not all(isinstance(k, int) for k in raw):
         raise ValueError("All keys must be integers")
-    first_year_phase_inout: int = sorted(raw)[0]  # ty: ignore[invalid-assignment]
-    last_year_phase_inout: int = sorted(raw)[-1]  # ty: ignore[invalid-assignment]
+    int_raw = cast("dict[int, Any]", raw)
+    first_year_phase_inout: int = sorted(int_raw)[0]
+    last_year_phase_inout: int = sorted(int_raw)[-1]
     if first_year_to_consider > first_year_phase_inout:
         raise ValueError(
             "`first_year_to_consider` must be less than or equal to "
@@ -371,14 +373,14 @@ def get_year_based_phase_inout_of_age_thresholds_param_value(
             "`last_year_phase_inout`."
         )
     before_phase_inout: dict[int, float] = {
-        b_y: _year_fraction(raw[first_year_phase_inout])
+        b_y: _year_fraction(int_raw[first_year_phase_inout])
         for b_y in range(first_year_to_consider, first_year_phase_inout)
     }
-    during_phase_inout: dict[int, float] = {  # ty: ignore[invalid-assignment]
-        b_y: _year_fraction(spec) for b_y, spec in raw.items()
+    during_phase_inout: dict[int, float] = {
+        b_y: _year_fraction(spec) for b_y, spec in int_raw.items()
     }
     after_phase_inout: dict[int, float] = {
-        b_y: _year_fraction(raw[last_year_phase_inout])
+        b_y: _year_fraction(int_raw[last_year_phase_inout])
         for b_y in range(last_year_phase_inout + 1, last_year_to_consider + 1)
     }
     return get_consecutive_int_lookup_table_param_value(
@@ -434,7 +436,7 @@ def convert_sparse_to_consecutive_int_lookup_table(
     min_int_in_table: int = tmp.pop("min_int_in_table")
     max_int_in_table: int = tmp.pop("max_int_in_table")
 
-    base_spec: dict[int, Any] = tmp  # ty: ignore[invalid-assignment]
+    base_spec = cast("dict[int, Any]", tmp)
     _fail_if_raw_incompatible_with_min_max_int_in_table(
         raw=base_spec,
         min_int_in_table=min_int_in_table,
