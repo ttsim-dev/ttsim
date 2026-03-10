@@ -153,7 +153,7 @@ class InterfaceFunction(InterfaceNodeObject, Generic[FunArgTypes, ReturnType]):
         """Remove tree logic from the function and update the function signature."""
         return InterfaceFunction(
             leaf_name=self.leaf_name,
-            function=dt.one_function_without_tree_logic(
+            function=dt.get_one_function_without_tree_logic(
                 function=self.function,
                 tree_path=tree_path,
                 top_level_namespace=top_level_namespace,
@@ -235,7 +235,7 @@ class InputDependentInterfaceFunction(InterfaceFunction[FunArgTypes, ReturnType]
         """Remove tree logic from the function and update the function signature."""
         return InputDependentInterfaceFunction(
             leaf_name=self.leaf_name,
-            function=dt.one_function_without_tree_logic(
+            function=dt.get_one_function_without_tree_logic(
                 function=self.function,
                 tree_path=tree_path,
                 top_level_namespace=top_level_namespace,
@@ -312,7 +312,7 @@ class FailFunction(InterfaceFunction):
         """Remove tree logic from the function and update the function signature."""
         return FailFunction(
             leaf_name=self.leaf_name,
-            function=dt.one_function_without_tree_logic(
+            function=dt.get_one_function_without_tree_logic(
                 function=self.function,
                 tree_path=tree_path,
                 top_level_namespace=top_level_namespace,
@@ -361,7 +361,7 @@ class WarnFunction(InterfaceFunction):
         """Remove tree logic from the function and update the function signature."""
         return WarnFunction(
             leaf_name=self.leaf_name,
-            function=dt.one_function_without_tree_logic(
+            function=dt.get_one_function_without_tree_logic(
                 function=self.function,
                 tree_path=tree_path,
                 top_level_namespace=top_level_namespace,

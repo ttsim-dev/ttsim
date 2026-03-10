@@ -14,6 +14,7 @@ import numpy
 import optree
 import pandas as pd
 from dags import create_dag, get_free_arguments
+from dags.tree.validation import fail_if_paths_are_invalid
 
 try:
     import jax
@@ -223,7 +224,7 @@ def any_paths_are_invalid(
     labels__top_level_namespace: UnorderedQNames,
 ) -> None:
     """Fail if any paths are invalid in the policy environment."""
-    return dt.fail_if_paths_are_invalid(
+    return fail_if_paths_are_invalid(
         functions=policy_environment,
         data_tree=input_data__tree,
         targets=tt_targets__tree,

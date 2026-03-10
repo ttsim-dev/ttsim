@@ -291,7 +291,7 @@ class PolicyFunction(ColumnFunction):
     ) -> PolicyFunction:
         """Remove tree logic from the function and update the function signature."""
 
-        function_without_tree_logic = dt.one_function_without_tree_logic(
+        function_without_tree_logic = dt.get_one_function_without_tree_logic(
             function=self.function,
             tree_path=tree_path,
             top_level_namespace=top_level_namespace,
@@ -299,7 +299,7 @@ class PolicyFunction(ColumnFunction):
         # All functions that will be vectorized require the globals attribute to be
         # the same as for the initially defined function, since otherwise global
         # variables or imported functions cannot be found after vectorization.
-        # This is not done by dt.one_function_without_tree_logic, so we do it here.
+        # This is not done by dt.get_one_function_without_tree_logic, so we do it here.
         function_without_tree_logic.__globals__.update(self.function.__globals__)  # ty: ignore[unresolved-attribute]
 
         return PolicyFunction(
@@ -452,7 +452,7 @@ class GroupCreationFunction(ColumnFunction):
         """Remove tree logic from the function and update the function signature."""
         return GroupCreationFunction(
             leaf_name=self.leaf_name,
-            function=dt.one_function_without_tree_logic(
+            function=dt.get_one_function_without_tree_logic(
                 function=self.function,
                 tree_path=tree_path,
                 top_level_namespace=top_level_namespace,
@@ -548,7 +548,7 @@ class AggByGroupFunction(ColumnFunction):
         """Remove tree logic from the function and update the function signature."""
         return AggByGroupFunction(
             leaf_name=self.leaf_name,
-            function=dt.one_function_without_tree_logic(
+            function=dt.get_one_function_without_tree_logic(
                 function=self.function,
                 tree_path=tree_path,
                 top_level_namespace=top_level_namespace,
@@ -686,7 +686,7 @@ class AggByPIDFunction(ColumnFunction):
         """Remove tree logic from the function and update the function signature."""
         return AggByGroupFunction(
             leaf_name=self.leaf_name,
-            function=dt.one_function_without_tree_logic(
+            function=dt.get_one_function_without_tree_logic(
                 function=self.function,
                 tree_path=tree_path,
                 top_level_namespace=top_level_namespace,
@@ -825,7 +825,7 @@ class TimeConversionFunction(ColumnFunction):
         return TimeConversionFunction(
             source=self.source,
             leaf_name=self.leaf_name,
-            function=dt.one_function_without_tree_logic(
+            function=dt.get_one_function_without_tree_logic(
                 function=self.function,
                 tree_path=tree_path,
                 top_level_namespace=top_level_namespace,
@@ -927,7 +927,7 @@ class ParamFunction(Generic[FunArgTypes, ReturnType]):
         """Remove tree logic from the function and update the function signature."""
         return ParamFunction(
             leaf_name=self.leaf_name,
-            function=dt.one_function_without_tree_logic(
+            function=dt.get_one_function_without_tree_logic(
                 function=self.function,
                 tree_path=tree_path,
                 top_level_namespace=top_level_namespace,
