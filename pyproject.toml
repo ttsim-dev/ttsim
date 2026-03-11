@@ -31,7 +31,7 @@ classifiers = [
 ]
 dynamic = [ "version" ]
 dependencies = [
-  # "dags>=0.4.2",
+  "dags>=0.5",
   "ipywidgets",
   "networkx>=3.5",
   "numpy",
@@ -39,7 +39,7 @@ dependencies = [
   "openpyxl",
   "optree>=0.16",
   "pandas",
-  "plotly>=6.2",
+  "plotly[kaleido]",
   "portion",
   "pygments",
   "pygraphviz",
@@ -301,11 +301,10 @@ tests.target.win-64.tasks.tests = "pytest"
 ty-task.pypi-dependencies.ty = "*"
 ty-task.tasks.ty = "ty check"
 [tool.pixi.pypi-dependencies]
-dags = { git = "https://github.com/OpenSourceEconomics/dags.git", branch = "main" }
-jaxtyping = ">=0.3.2"
-kaleido = ">=1.0.0"
+# jax-datetime = { git = "https://github.com/google/jax-datetime.git" }
+jaxtyping = "*"
 mettsim = { path = "src_mettsim", editable = true }
-pdbp = ">=1.7.1"
+pdbp = "*"
 ttsim-backend = { path = ".", editable = true }
 [tool.pixi.workspace]
 channels = [ "conda-forge" ]
