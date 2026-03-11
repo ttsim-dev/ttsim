@@ -193,6 +193,9 @@ expand_tables = [
   "tool.pixi.feature.type-checking",
   "tool.pixi.feature.type-checking.pypi-dependencies",
   "tool.pixi.feature.type-checking.tasks",
+  "tool.pixi.feature.type-checking-jax",
+  "tool.pixi.feature.type-checking-jax.pypi-dependencies",
+  "tool.pixi.feature.type-checking-jax.tasks",
   "tool.pixi.pypi-dependencies",
   "tool.pixi.pypi-dependencies.mettsim",
   "tool.pixi.pypi-dependencies.ttsim-backend",
@@ -273,6 +276,7 @@ py314 = [ "py314", "tests" ]
 py314-cuda = [ "py314", "tests", "cuda" ]
 py314-jax = [ "py314", "tests", "jax" ]
 type-checking = [ "py314", "type-checking" ]
+type-checking-jax = [ "py314", "type-checking-jax", "jax" ]
 py314-metal = [ "py314", "tests", "metal" ]
 [tool.pixi.feature]
 cuda.platforms = [ "linux-64" ]
@@ -304,7 +308,13 @@ tests.target.osx-arm64.tasks.tests-with-cov = "dot -c && pytest --cov-report=xml
 tests.target.win-64.tasks.tests = "pytest"
 tests.target.win-64.tasks.tests-with-cov = "pytest --cov-report=xml --cov=./"
 type-checking.pypi-dependencies.ty = "*"
+type-checking.pypi-dependencies.types-PyYAML = "*"
+type-checking.pypi-dependencies.types-pytz = "*"
 type-checking.tasks.ty = "ty check"
+type-checking-jax.pypi-dependencies.ty = "*"
+type-checking-jax.pypi-dependencies.types-PyYAML = "*"
+type-checking-jax.pypi-dependencies.types-pytz = "*"
+type-checking-jax.tasks.ty-jax = "ty check"
 [tool.pixi.pypi-dependencies]
 # jax-datetime = { git = "https://github.com/google/jax-datetime.git" }
 jaxtyping = "*"
