@@ -59,7 +59,7 @@ jobs:
         shell: bash -el {0}
       - name: Run tests on Linux (with NumPy backend and coverage)
         if: runner.os == 'Linux' && matrix.environment == 'py314'
-        run: pixi run -e ${{ matrix.environment }} tests --cov --cov-report=xml
+        run: pixi run -e ${{ matrix.environment }} tests-with-cov
         shell: bash -el {0}
       - name: Run tests on MacOS / Windows (with NumPy backend and without coverage)
         if: runner.os != 'Linux'
@@ -85,7 +85,7 @@ jobs:
           cache: true
           cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
           frozen: true
-          environments: py314
+          environments: type-checking
       - name: Run ty
-        run: pixi run ty
+        run: pixi run -e type-checking ty
         shell: bash -el {0}

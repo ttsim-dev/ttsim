@@ -1,3 +1,5 @@
+@.ai-instructions/profiles/tier-a.md @.ai-instructions/modules/jax.md
+
 # CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in
@@ -35,7 +37,7 @@ pixi run -e ty ty
 Before finishing any task that modifies code, always run these three verification steps
 in order:
 
-1. `pixi run -e py314 ty` (type checker)
+1. `pixi run -e py314-jax ty` (type checker)
 1. `pixi run -e py314-jax prek run --all-files` (quality checks: linting, formatting,
    yaml, etc.)
 1. `pixi run -e py314-jax tests -n 7` (full test suite)

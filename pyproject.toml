@@ -190,9 +190,9 @@ expand_tables = [
   "tool.pixi.feature.tests",
   "tool.pixi.feature.tests.pypi-dependencies",
   "tool.pixi.feature.tests.target",
-  "tool.pixi.feature.ty-task",
-  "tool.pixi.feature.ty-task.pypi-dependencies",
-  "tool.pixi.feature.ty-task.tasks",
+  "tool.pixi.feature.type-checking",
+  "tool.pixi.feature.type-checking.pypi-dependencies",
+  "tool.pixi.feature.type-checking.tasks",
   "tool.pixi.pypi-dependencies",
   "tool.pixi.pypi-dependencies.mettsim",
   "tool.pixi.pypi-dependencies.ttsim-backend",
@@ -271,7 +271,8 @@ py312 = [ "py312", "tests" ]
 py313 = [ "py313", "tests" ]
 py314 = [ "py314", "tests" ]
 py314-cuda = [ "py314", "tests", "cuda" ]
-py314-jax = [ "py314", "tests", "jax", "ty-task" ]
+py314-jax = [ "py314", "tests", "jax" ]
+type-checking = [ "py314", "type-checking" ]
 py314-metal = [ "py314", "tests", "metal" ]
 [tool.pixi.feature]
 cuda.platforms = [ "linux-64" ]
@@ -295,11 +296,15 @@ tests.pypi-dependencies.types-pytz = "*"
 tests.pypi-dependencies.pytest-cov = "*"
 tests.pypi-dependencies.pytest-xdist = "*"
 tests.target.linux-64.tasks.tests = "pytest"
+tests.target.linux-64.tasks.tests-with-cov = "pytest --cov-report=xml --cov=./"
 tests.target.osx-64.tasks.tests = "dot -c && pytest"  # needed for pygraphviz on macOS
+tests.target.osx-64.tasks.tests-with-cov = "dot -c && pytest --cov-report=xml --cov=./"  # needed for pygraphviz on macOS
 tests.target.osx-arm64.tasks.tests = "dot -c && pytest"  # needed for pygraphviz on macOS
+tests.target.osx-arm64.tasks.tests-with-cov = "dot -c && pytest --cov-report=xml --cov=./"  # needed for pygraphviz on macOS
 tests.target.win-64.tasks.tests = "pytest"
-ty-task.pypi-dependencies.ty = "*"
-ty-task.tasks.ty = "ty check"
+tests.target.win-64.tasks.tests-with-cov = "pytest --cov-report=xml --cov=./"
+type-checking.pypi-dependencies.ty = "*"
+type-checking.tasks.ty = "ty check"
 [tool.pixi.pypi-dependencies]
 # jax-datetime = { git = "https://github.com/google/jax-datetime.git" }
 jaxtyping = "*"

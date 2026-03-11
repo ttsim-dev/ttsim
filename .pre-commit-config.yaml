@@ -80,7 +80,7 @@ repos:
         args:
           - --wrap
           - '88'
-        files: (CLAUDE\.md|README\.md|CHANGES\.md|CODE_OF_CONDUCT\.md)
+        files: (AGENTS\.md|CLAUDE\.md|README\.md|CHANGES\.md|CODE_OF_CONDUCT\.md|modules/.*\.md|profiles/.*\.md)
   - repo: https://github.com/python-jsonschema/check-jsonschema
     rev: 0.37.0
     hooks:
