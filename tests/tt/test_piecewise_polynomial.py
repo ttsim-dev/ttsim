@@ -266,6 +266,52 @@ def test_merge_full_replacement():
 # --- Tests for overlapping intervals ---
 
 
+def test_validation_error_double_open_gap(xnp: ModuleType):
+    """Two intervals both open at a shared boundary should raise ValueError."""
+    parameter_list: list[dict[str, int | float | str]] = [
+        {
+            "interval": "(-inf, 0)",
+            "slope": 0,
+            "intercept": 0,
+        },
+        {
+            "interval": "(0, inf)",
+            "slope": 0.5,
+            "intercept": 0,
+        },
+    ]
+    with pytest.raises(ValueError, match="Gap at boundary"):
+        get_piecewise_parameters(
+            leaf_name="test_double_open",
+            func_type="piecewise_linear",
+            parameter_list=parameter_list,
+            xnp=xnp,
+        )
+
+
+def test_nonzero_coefficient_on_neg_inf_interval_raises(xnp: ModuleType):
+    """Non-zero slope on (-inf, b) interval should raise ValueError."""
+    parameter_list: list[dict[str, int | float | str]] = [
+        {
+            "interval": "(-inf, 0)",
+            "slope": 0.5,
+            "intercept": 0,
+        },
+        {
+            "interval": "[0, inf)",
+            "slope": 0.3,
+            "intercept": 0,
+        },
+    ]
+    with pytest.raises(ValueError, match="has no effect"):
+        get_piecewise_parameters(
+            leaf_name="test_neg_inf_coeff",
+            func_type="piecewise_linear",
+            parameter_list=parameter_list,
+            xnp=xnp,
+        )
+
+
 def test_validation_error_overlapping(xnp: ModuleType):
     """Overlapping intervals should raise ValueError."""
     parameter_list = [

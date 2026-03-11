@@ -115,6 +115,16 @@ def get_piecewise_parameters(
     ]
     validate_intervals(intervals, leaf_name)
 
+    if intervals[0].lower == -portion.inf:
+        options = OPTIONS_REGISTRY[func_type]
+        for key in options.required_keys:
+            if parameter_list[0].get(key, 0) != 0:
+                raise ValueError(
+                    f"Coefficient '{key}' on interval {intervals[0]} of {leaf_name} "
+                    f"has no effect because the interval starts at -inf. "
+                    f"Set it to 0 or remove it."
+                )
+
     lower_thresholds, upper_thresholds, thresholds = intervals_to_thresholds(
         intervals=intervals,
         xnp=xnp,

@@ -37,6 +37,12 @@ def validate_intervals(intervals: list[portion.Interval], leaf_name: str) -> Non
                 f"interval {i - 1} upper = {prev.upper}, "
                 f"interval {i} lower = {curr.lower}."
             )
+        if prev.right == portion.OPEN and curr.left == portion.OPEN:
+            raise ValueError(
+                f"Gap at boundary {prev.upper} for {leaf_name}: "
+                f"interval {i - 1} = {prev} is open-right and "
+                f"interval {i} = {curr} is open-left."
+            )
 
 
 def merge_piecewise_intervals(
