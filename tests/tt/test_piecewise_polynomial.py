@@ -89,6 +89,16 @@ def test_piecewise_polynomial(
     numpy.testing.assert_allclose(xnp.array(actual), expected, atol=0.01)
 
 
+def test_piecewise_polynomial_scalar_input(
+    parameters: PiecewisePolynomialParamValue,
+    xnp: ModuleType,
+):
+    """piecewise_polynomial accepts a scalar float and returns a 1-element array."""
+    result = piecewise_polynomial(x=30_000.0, parameters=parameters, xnp=xnp)
+    assert result.shape == (1,)
+    numpy.testing.assert_allclose(result[0], 5275.825, atol=0.01)
+
+
 def test_partial_domain_returns_nan(xnp: ModuleType):
     """Values outside partial domain should return NaN."""
     parameter_list = [

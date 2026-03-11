@@ -55,7 +55,7 @@ if set(OPTIONS_REGISTRY.keys()) != set(get_args(FUNC_TYPES)):
 
 
 def piecewise_polynomial(
-    x: Float[Array, " n_pp_values"],
+    x: Float[Array, " n_pp_values"] | float,
     parameters: PiecewisePolynomialParamValue,
     xnp: ModuleType,
 ) -> Float[Array, " n_pp_values"]:

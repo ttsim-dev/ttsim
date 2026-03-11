@@ -34,7 +34,7 @@ def amount_y(
 ) -> float:
     """Property tax amount for the standard tax schedule."""
     return piecewise_polynomial(
-        x=acre_size_in_hectares_after_cap,  # ty: ignore[invalid-argument-type]
+        x=acre_size_in_hectares_after_cap,
         parameters=tax_schedule,
         xnp=xnp,
     )

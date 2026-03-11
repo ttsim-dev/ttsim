@@ -36,7 +36,7 @@ def amount_standard_y(
 ) -> float:
     """Payroll tax amount for the standard tax schedule."""
     return piecewise_polynomial(
-        x=income__amount_y,  # ty: ignore[invalid-argument-type]
+        x=income__amount_y,
         parameters=tax_schedule_standard,
         xnp=xnp,
     )
@@ -50,7 +50,7 @@ def amount_reduced_y(
 ) -> float:
     """Payroll tax amount for the reduced tax schedule."""
     return piecewise_polynomial(
-        x=income__amount_y,  # ty: ignore[invalid-argument-type]
+        x=income__amount_y,
         parameters=tax_schedule_reduced,
         xnp=xnp,
     )
