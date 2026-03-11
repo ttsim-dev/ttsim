@@ -6,6 +6,7 @@ releases are available on [Anaconda.org](https://anaconda.org/conda-forge/ttsim)
 
 ## Unreleased
 
+- {gh}`86` Require `dags >= 0.5.0`. ({ghuser}`hmgaudecker`)
 - {gh}`83` Allow non-string annotations in vectorization. ({ghuser}`hmgaudecker`)
 - {gh}`80` Generalize type hints for time conversion functions. ({ghuser}`hmgaudecker`)
 - {gh}`75` Improve test coverage. ({ghuser}`MImmesberger`)
