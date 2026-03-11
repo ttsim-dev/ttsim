@@ -40,7 +40,7 @@ classifiers = [
 ]
 dynamic = [ "version" ]
 dependencies = [
-  # "dags>=0.5.0",
+  "dags>=0.5",
   "ipywidgets",
   "networkx>=3.5",
   "numpy",
@@ -48,7 +48,7 @@ dependencies = [
   "openpyxl",
   "optree>=0.16",
   "pandas",
-  "plotly>=6.2",
+  "plotly[kaleido]",
   "pygments",
   "pygraphviz",
   "pytest",
@@ -293,11 +293,9 @@ ty = "ty check"
 
 [tool.pixi.pypi-dependencies]
 # jax-datetime = { git = "https://github.com/google/jax-datetime.git" }
-dags = { git = "https://github.com/OpenSourceEconomics/dags", branch = "streamline-api" }
-jaxtyping = ">=0.3.2"
-kaleido = ">=1.0.0"
+jaxtyping = "*"
 mettsim = { path = "src_mettsim", editable = true }
-pdbp = ">=1.7.1"
+pdbp = "*"
 ttsim-backend = { path = ".", editable = true }
 
 [tool.pixi.workspace]
