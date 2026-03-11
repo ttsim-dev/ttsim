@@ -575,7 +575,7 @@ def agg_by_group_function(
 ) -> Callable[[FunctionType[..., Any]], AggByGroupFunction]:
     start_date, end_date = _convert_and_validate_dates(start_date, end_date)
 
-    agg_registry = {
+    agg_registry: dict[AggType, FunctionType[..., Any]] = {
         AggType.SUM: grouped_sum,
         AggType.MEAN: grouped_mean,
         AggType.MAX: grouped_max,
@@ -599,7 +599,7 @@ def agg_by_group_function(
             _fail_if_other_arg_is_invalid(other_args, orig_location)
             mapper = {"group_id": group_id, "column": other_args.pop()}
         agg_func = rename_arguments(
-            func=agg_registry[agg_type],  # ty: ignore[invalid-argument-type]
+            func=agg_registry[agg_type],
             mapper=mapper,
         )
         return AggByGroupFunction(
@@ -713,7 +713,7 @@ def agg_by_p_id_function(
 ) -> Callable[[FunctionType[..., Any]], AggByPIDFunction]:
     start_date, end_date = _convert_and_validate_dates(start_date, end_date)
 
-    agg_registry = {
+    agg_registry: dict[AggType, FunctionType[..., Any]] = {
         AggType.SUM: sum_by_p_id,
         AggType.MEAN: mean_by_p_id,
         AggType.MAX: max_by_p_id,
@@ -752,7 +752,7 @@ def agg_by_p_id_function(
                 "backend": "backend",
             }
         agg_func = rename_arguments(
-            func=agg_registry[agg_type],  # ty: ignore[invalid-argument-type]
+            func=agg_registry[agg_type],
             mapper=mapper,
         )
         return AggByPIDFunction(

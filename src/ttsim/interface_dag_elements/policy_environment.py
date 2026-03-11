@@ -32,8 +32,9 @@ from ttsim.tt.interval_utils import merge_piecewise_intervals
 from ttsim.tt.piecewise_polynomial import get_piecewise_parameters
 
 if TYPE_CHECKING:
-    from types import ModuleType
+    from types import FunctionType, ModuleType
 
+    from ttsim.tt import ConsecutiveIntLookupTableParamValue
     from ttsim.typing import (
         FlatColumnObjectsParamFunctions,
         FlatOrigParamSpecs,
@@ -196,7 +197,9 @@ def _get_one_param(
             xnp=xnp,
         )
         return PiecewisePolynomialParam(**cleaned_spec)
-    lookup_table_converters = {
+    lookup_table_converters: dict[
+        str, FunctionType[..., ConsecutiveIntLookupTableParamValue]
+    ] = {
         "consecutive_int_lookup_table": get_consecutive_int_lookup_table_param_value,
         "month_based_phase_inout_of_age_thresholds": (
             get_month_based_phase_inout_of_age_thresholds_param_value
@@ -209,7 +212,7 @@ def _get_one_param(
         ),
     }
     if param_type in lookup_table_converters:
-        converter = lookup_table_converters[param_type]  # ty: ignore[invalid-argument-type]
+        converter = lookup_table_converters[param_type]
         cleaned_spec["value"] = converter(raw=cleaned_spec["value"], xnp=xnp)
         return ConsecutiveIntLookupTableParam(**cleaned_spec)
     if param_type == "require_converter":

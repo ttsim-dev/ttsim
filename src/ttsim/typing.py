@@ -17,6 +17,9 @@ if TYPE_CHECKING:
         """A dictionary with patterns for header and parameters at one point in time."""
 
         @overload
+        def __getitem__(self, key: Literal["type"]) -> str: ...
+
+        @overload
         def __getitem__(
             self, key: str
         ) -> str | None | dict[Literal["de", "en"], str | None]: ...
