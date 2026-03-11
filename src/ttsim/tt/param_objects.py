@@ -231,7 +231,7 @@ class PiecewisePolynomialParamValue:
 
     def __getitem__(self, index: int) -> PiecewisePolynomialInterval:
         return PiecewisePolynomialInterval(
-            intercept=self.intercepts[index],  # ty: ignore[invalid-argument-type]
+            intercept=self.intercepts[index],
             coefficients=self.coefficients[index],
         )
 

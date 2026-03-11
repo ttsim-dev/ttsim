@@ -212,7 +212,7 @@ def test_main_target_class_is_complete() -> None:
         ),
         (InputData.tree({"tree_data": {"key": [1, 2, 3]}}), "tree"),
         (InputData.flat({"flat.key": [1, 2, 3]}), "flat"),  # ty: ignore[invalid-argument-type]
-        (InputData.qname({"qname.test": np.array([1, 2, 3])}), "qname"),  # ty: ignore[invalid-argument-type]
+        (InputData.qname({"qname.test": np.array([1, 2, 3])}), "qname"),
     ],
 )
 def test_input_data_classmethods(classmethod_instance, expected_field_name):
@@ -295,19 +295,19 @@ def test_input_data_classmethods(classmethod_instance, expected_field_name):
         ),
         # RawResults
         (
-            RawResults.columns({"test": np.array([1, 2, 3])}),  # ty: ignore[invalid-argument-type]
+            RawResults.columns({"test": np.array([1, 2, 3])}),
             RawResults(columns={"test": np.array([1, 2, 3])}),  # ty: ignore[unknown-argument]
         ),
         (
-            RawResults.params({"param": np.array([4, 5, 6])}),  # ty: ignore[invalid-argument-type]
+            RawResults.params({"param": np.array([4, 5, 6])}),
             RawResults(params={"param": np.array([4, 5, 6])}),  # ty: ignore[unknown-argument]
         ),
         (
-            RawResults.from_input_data({"input": np.array([7, 8, 9])}),  # ty: ignore[invalid-argument-type]
+            RawResults.from_input_data({"input": np.array([7, 8, 9])}),
             RawResults(from_input_data={"input": np.array([7, 8, 9])}),  # ty: ignore[unknown-argument]
         ),
         (
-            RawResults.combined({"combined": np.array([1, 2])}),  # ty: ignore[invalid-argument-type]
+            RawResults.combined({"combined": np.array([1, 2])}),
             RawResults(combined={"combined": np.array([1, 2])}),  # ty: ignore[unknown-argument]
         ),
         # SpecializedEnvironment

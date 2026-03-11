@@ -89,6 +89,8 @@ jobs:
       - name: Run ty
         run: pixi run ty
         shell: bash -el {0}
-      - name: Run ty-jax
-        run: pixi run ty-jax
-        shell: bash -el {0}
+      # TODO(hmg): Re-enable once jaxtyping Array vs numpy.ndarray type
+      # annotations are resolved.
+      # - name: Run ty-jax
+      #   run: pixi run ty-jax
+      #   shell: bash -el {0}

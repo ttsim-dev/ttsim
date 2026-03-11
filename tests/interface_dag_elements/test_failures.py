@@ -14,7 +14,7 @@ from mettsim import middle_earth
 try:
     import jax
 except ImportError:
-    jax = None  # ty: ignore[invalid-assignment]
+    jax = None
 
 from ttsim import InputData, MainTarget, OrigPolicyObjects, TTTargets, main
 from ttsim.interface_dag_elements.fail_if import (
@@ -80,9 +80,9 @@ _GENERIC_PARAM_SPEC = {
 
 some_consecutive_int_lookup_table_param = ConsecutiveIntLookupTableParam(
     value=ConsecutiveIntLookupTableParamValue(
-        bases_to_subtract=numpy.array([1]),  # ty: ignore[invalid-argument-type]
+        bases_to_subtract=numpy.array([1]),
         xnp=numpy,
-        values_to_look_up=numpy.array([1, 2, 3]),  # ty: ignore[invalid-argument-type]
+        values_to_look_up=numpy.array([1, 2, 3]),
     ),
     **_GENERIC_PARAM_SPEC,  # ty: ignore[invalid-argument-type]
 )
@@ -95,9 +95,9 @@ some_dict_param = DictParam(
 
 some_piecewise_polynomial_param = PiecewisePolynomialParam(
     value=PiecewisePolynomialParamValue(
-        thresholds=numpy.array([1, 2, 3]),  # ty: ignore[invalid-argument-type]
-        intercepts=numpy.array([1, 2, 3]),  # ty: ignore[invalid-argument-type]
-        coefficients=numpy.array([1, 2, 3]),  # ty: ignore[invalid-argument-type]
+        thresholds=numpy.array([1, 2, 3]),
+        intercepts=numpy.array([1, 2, 3]),
+        coefficients=numpy.array([1, 2, 3]),
     ),
     **_GENERIC_PARAM_SPEC,  # ty: ignore[invalid-argument-type]
 )
@@ -1696,6 +1696,7 @@ def test_fail_if_tt_dag_includes_policy_input_with_fail_msg_if_included_set_does
 
 @pytest.mark.skipif(jax is None, reason="Jax is not installed")
 def test_backend_has_changed_from_jax_to_numpy_passes():
+    assert jax is not None
     policy_environment = main(
         main_target=MainTarget.policy_environment,
         policy_date_str="2000-01-01",

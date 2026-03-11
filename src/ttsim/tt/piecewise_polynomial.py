@@ -228,7 +228,7 @@ def _create_intercepts(
             lower_thresholds=lower_thresholds,
             upper_thresholds=upper_thresholds,
             coefficients=coefficients,
-            intercepts=intercepts,  # ty: ignore[invalid-argument-type]
+            intercepts=intercepts,
         )
     return xnp.array(intercepts)
 
