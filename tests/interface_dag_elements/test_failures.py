@@ -11,12 +11,8 @@ import pandas as pd
 import pytest
 from mettsim import middle_earth
 
-try:
-    import jax
-except ImportError:
-    jax = None
-
 from ttsim import InputData, MainTarget, OrigPolicyObjects, TTTargets, main
+from ttsim.interface_dag_elements.backend import jax
 from ttsim.interface_dag_elements.fail_if import (
     ConflictingActivePeriodsError,
     _param_with_active_periods,

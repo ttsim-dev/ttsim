@@ -222,15 +222,17 @@ def _create_intercepts(
     xnp: ModuleType,
 ) -> Float[Array, " n_segments"]:
     """Create intercepts from raw data."""
-    intercepts = numpy.full_like(upper_thresholds, numpy.nan)
-    intercepts[0] = intercept_at_lowest_threshold
-    for i, up_thr in enumerate(upper_thresholds[:-1]):
-        intercepts[i + 1] = _calculate_one_intercept(
-            x=up_thr,
-            lower_thresholds=lower_thresholds,
-            upper_thresholds=upper_thresholds,
-            coefficients=coefficients,
-            intercepts=intercepts,
+    intercepts = [intercept_at_lowest_threshold]
+    for up_thr in upper_thresholds[:-1]:
+        intercepts.append(
+            _calculate_one_intercept(
+                x=up_thr,
+                lower_thresholds=lower_thresholds,
+                upper_thresholds=upper_thresholds,
+                coefficients=coefficients,
+                intercepts=xnp.array(intercepts),
+                xnp=xnp,
+            )
         )
     return xnp.array(intercepts)
 
@@ -241,18 +243,19 @@ def _calculate_one_intercept(
     upper_thresholds: Float[Array, " n_segments"],
     coefficients: Float[Array, "n_intervals n_coefficients"],
     intercepts: Float[Array, " n_segments"],
+    xnp: ModuleType,
 ) -> float:
     """Calculate the intercept for the segment `x` lies in."""
     # Check if value lies within the defined range.
-    if (x < lower_thresholds[0]) or (x > upper_thresholds[-1]) or numpy.isnan(x):
-        return numpy.nan
-    index_interval = numpy.searchsorted(upper_thresholds, x, side="left")
+    if (x < lower_thresholds[0]) or (x > upper_thresholds[-1]) or xnp.isnan(x):
+        return float("nan")
+    index_interval = xnp.searchsorted(upper_thresholds, x, side="left")
     intercept_interval = intercepts[index_interval]
 
     # Select threshold and calculate corresponding increment into interval
     lower_threshold_interval = lower_thresholds[index_interval]
 
-    if lower_threshold_interval == -numpy.inf:
+    if lower_threshold_interval == -xnp.inf:
         return intercept_interval
 
     increment_to_calc = x - lower_threshold_interval

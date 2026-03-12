@@ -180,7 +180,7 @@ class RawParam(ParamObject):
 class PiecewisePolynomialInterval:
     """A single interval of a piecewise polynomial."""
 
-    intercept: float
+    intercept: float | Float[Array, ""]
     coefficients: Float[Array, " n_coefficients"]
 
     _MIN_COEFFICIENTS_LINEAR = 1

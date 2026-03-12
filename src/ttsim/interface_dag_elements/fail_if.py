@@ -16,12 +16,7 @@ import pandas as pd
 from dags import create_dag, get_free_arguments
 from dags.tree.validation import fail_if_paths_are_invalid
 
-try:
-    import jax
-except ImportError:
-    jax = None
-
-
+from ttsim.interface_dag_elements.backend import jax
 from ttsim.interface_dag_elements.interface_node_objects import fail_function
 from ttsim.interface_dag_elements.shared import get_name_of_group_by_id
 from ttsim.tt.column_objects_param_function import (
