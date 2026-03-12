@@ -38,7 +38,7 @@ dependencies = [
   "numpy-groupies",
   "openpyxl",
   "optree>=0.16",
-  "pandas",
+  "pandas>=3",
   "plotly[kaleido]",
   "portion",
   "pygments",
@@ -259,7 +259,7 @@ jupyterlab = "*"
 numpy_groupies = "*"
 numpydoc = "*"
 openpyxl = "*"
-pandas = ">=2.3"
+pandas = ">=3"
 portion = "*"
 prek = "*"
 pygments = "*"

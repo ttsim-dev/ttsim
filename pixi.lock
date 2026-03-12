@@ -19865,8 +19865,8 @@ packages:
   timestamp: 1733367480074
 - pypi: ./
   name: ttsim-backend
-  version: 1.1.2.dev37+g9cc1d7e5f.d20260312
-  sha256: 0b51b73a6aed8c60f230efdf66da4dd480314f8b8f33967fe380e5a1525ba6ae
+  version: 1.1.2.dev41+g7111cf619.d20260312
+  sha256: 5631cd0bbb894d9e3146304fc9dc23f2b33df5e26d9d52f208159f3d2fc71dd9
   requires_dist:
   - dags>=0.5
   - ipywidgets
@@ -19875,7 +19875,7 @@ packages:
   - numpy-groupies
   - openpyxl
   - optree>=0.16
-  - pandas
+  - pandas>=3
   - plotly[kaleido]
   - portion
   - pygments

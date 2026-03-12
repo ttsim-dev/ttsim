@@ -71,7 +71,7 @@ jobs:
         shell: bash -el {0}
       - name: Upload coverage reports
         if: runner.os == 'Linux' && matrix.environment == 'py314'
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v5.5.2
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
   run-ty:

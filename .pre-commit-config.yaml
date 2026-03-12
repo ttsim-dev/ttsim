@@ -14,9 +14,16 @@ repos:
     hooks:
       - id: yamlfix
   - repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.33.0
+    rev: 0.37.0
     hooks:
       - id: check-github-workflows
+      - id: check-jsonschema
+        name: Validate JSON/YAML files against schema
+        entry: check-jsonschema
+        language: python
+        files: ^src_mettsim/mettsim/middle_earth/.*\.(yaml|yml)$
+        args:
+          - --schemafile=src/ttsim/params-schema.json
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:
@@ -85,15 +92,5 @@ repos:
           - --wrap
           - '88'
         files: (AGENTS\.md|CLAUDE\.md|README\.md|CHANGES\.md|CODE_OF_CONDUCT\.md|modules/.*\.md|profiles/.*\.md)
-  - repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.37.0
-    hooks:
-      - id: check-jsonschema
-        name: Validate JSON/YAML files against schema
-        entry: check-jsonschema
-        language: python
-        files: ^src_mettsim/mettsim/middle_earth/.*\.(yaml|yml)$
-        args:
-          - --schemafile=src/ttsim/params-schema.json
 ci:
   autoupdate_schedule: monthly
