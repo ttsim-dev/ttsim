@@ -213,51 +213,6 @@ def _get_one_param(
     raise ValueError(f"Unknown parameter type: {param_type} for {leaf_name}")
 
 
-def _get_param_value_piecewise(
-    relevant_specs: list[dict[str, Any]],
-) -> list[dict[str, Any]]:
-    """Resolve piecewise parameter value, handling `updates_previous` chains."""
-    current = relevant_specs[-1]
-    current.pop("note", None)
-    current.pop("reference", None)
-    updates_previous = current.pop("updates_previous", False)
-
-    if updates_previous and len(relevant_specs) <= 1:
-        raise ValueError(
-            "'updates_previous' cannot be specified on the initial date entry."
-        )
-
-    if not updates_previous:
-        return current.get("intervals", [])
-
-    base_intervals = _get_param_value_piecewise(relevant_specs[:-1])
-    return merge_piecewise_intervals(
-        base=base_intervals,
-        update=current.get("intervals", []),
-    )
-
-
-def _get_param_value(
-    relevant_specs: list[dict[str, Any]],
-) -> dict[str, Any]:
-    """Resolve parameter value, handling `updates_previous` chains."""
-    current = relevant_specs[-1]
-    current.pop("note", None)
-    current.pop("reference", None)
-    updates_previous = current.pop("updates_previous", False)
-
-    if updates_previous and len(relevant_specs) <= 1:
-        raise ValueError(
-            "'updates_previous' cannot be specified on the initial date entry."
-        )
-
-    if not updates_previous:
-        return current
-
-    base_value = _get_param_value(relevant_specs[:-1])
-    return upsert_tree(base=base_value, to_upsert=current)
-
-
 def _clean_one_param_spec(
     spec: OrigParamSpec,
     policy_date: datetime.date,
@@ -316,3 +271,48 @@ def _clean_one_param_spec(
         ]  # ty: ignore[invalid-assignment]
         out["value"] = _get_param_value(relevant_specs)
     return out
+
+
+def _get_param_value(
+    relevant_specs: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Resolve parameter value, handling `updates_previous` chains."""
+    current = relevant_specs[-1]
+    current.pop("note", None)
+    current.pop("reference", None)
+    updates_previous = current.pop("updates_previous", False)
+
+    if updates_previous and len(relevant_specs) <= 1:
+        raise ValueError(
+            "'updates_previous' cannot be specified on the initial date entry."
+        )
+
+    if not updates_previous:
+        return current
+
+    base_value = _get_param_value(relevant_specs[:-1])
+    return upsert_tree(base=base_value, to_upsert=current)
+
+
+def _get_param_value_piecewise(
+    relevant_specs: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Resolve piecewise parameter value, handling `updates_previous` chains."""
+    current = relevant_specs[-1]
+    current.pop("note", None)
+    current.pop("reference", None)
+    updates_previous = current.pop("updates_previous", False)
+
+    if updates_previous and len(relevant_specs) <= 1:
+        raise ValueError(
+            "'updates_previous' cannot be specified on the initial date entry."
+        )
+
+    if not updates_previous:
+        return current.get("intervals", [])
+
+    base_intervals = _get_param_value_piecewise(relevant_specs[:-1])
+    return merge_piecewise_intervals(
+        base=base_intervals,
+        update=current.get("intervals", []),
+    )
