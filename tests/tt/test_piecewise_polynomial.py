@@ -74,7 +74,7 @@ def test_get_piecewise_parameters_all_intercepts_supplied(xnp: ModuleType):
     numpy.testing.assert_allclose(actual.intercepts, expected, atol=1e-7)
 
 
-def test_piecewise_polynomial(
+def test_typical_evaluation(
     parameters: PiecewisePolynomialParamValue,
     xnp: ModuleType,
 ):
@@ -130,7 +130,7 @@ def test_partial_domain_returns_nan(xnp: ModuleType):
     assert numpy.isnan(result[3]), "Value above domain should be NaN"
 
 
-def test_interval_parsing_edge_cases(xnp: ModuleType):
+def test_neg_inf_to_zero_to_inf(xnp: ModuleType):
     """Test various interval bracket combinations."""
     parameter_list: list[dict[str, int | float | str]] = [
         {
@@ -160,7 +160,7 @@ def test_interval_parsing_edge_cases(xnp: ModuleType):
     numpy.testing.assert_allclose(result[2], 5.0, atol=1e-7)
 
 
-def test_validation_error_gaps(xnp: ModuleType):
+def test_gap_raises(xnp: ModuleType):
     """Gaps between intervals should raise ValueError."""
     parameter_list: list[dict[str, int | float | str]] = [
         {
@@ -183,7 +183,30 @@ def test_validation_error_gaps(xnp: ModuleType):
         )
 
 
-def test_validation_error_wrong_order(xnp: ModuleType):
+def test_double_open_gap_raises(xnp: ModuleType):
+    """Two intervals both open at a shared boundary should raise ValueError."""
+    parameter_list: list[dict[str, int | float | str]] = [
+        {
+            "interval": "(-inf, 0)",
+            "slope": 0,
+            "intercept": 0,
+        },
+        {
+            "interval": "(0, inf)",
+            "slope": 0.5,
+            "intercept": 0,
+        },
+    ]
+    with pytest.raises(ValueError, match="Gap at boundary"):
+        get_piecewise_parameters(
+            leaf_name="test_double_open",
+            func_type="piecewise_linear",
+            parameter_list=parameter_list,
+            xnp=xnp,
+        )
+
+
+def test_wrong_order_raises(xnp: ModuleType):
     """Intervals not in ascending order should raise ValueError."""
     parameter_list: list[dict[str, int | float | str]] = [
         {
@@ -206,7 +229,64 @@ def test_validation_error_wrong_order(xnp: ModuleType):
         )
 
 
-# --- Tests for merge_piecewise_intervals ---
+@pytest.mark.parametrize(
+    ("func_type", "first_interval_params"),
+    [
+        ("piecewise_linear", {"slope": 0.5, "intercept": 0}),
+        ("piecewise_quadratic", {"slope": 0, "quadratic": 0.01, "intercept": 0}),
+        (
+            "piecewise_cubic",
+            {"slope": 0, "quadratic": 0, "cubic": 0.001, "intercept": 0},
+        ),
+    ],
+    ids=["slope", "quadratic", "cubic"],
+)
+def test_higher_order_coeff_on_neg_inf_interval_raises(
+    xnp: ModuleType,
+    func_type: str,
+    first_interval_params: dict[str, float],
+):
+    """Non-zero higher-order coefficient on (-inf, b) interval raise ValueError."""
+    parameter_list: list[dict[str, int | float | str]] = [
+        {"interval": "(-inf, 0)", **first_interval_params},
+        {"interval": "[0, inf)", "slope": 0.3, "intercept": 0},
+    ]
+    with pytest.raises(ValueError, match="has no effect"):
+        get_piecewise_parameters(
+            leaf_name="test_neg_inf_coeff",
+            func_type=func_type,  # ty: ignore[invalid-argument-type]
+            parameter_list=parameter_list,
+            xnp=xnp,
+        )
+
+
+def test_intercept_only_on_neg_inf_interval_passes(xnp: ModuleType):
+    """Intercept-only on (-inf, b) interval is valid."""
+    parameter_list = [
+        {"interval": "(-inf, 0)", "intercept": 5.0},
+        {"interval": "[0, inf)", "intercept": 10.0},
+    ]
+    get_piecewise_parameters(
+        leaf_name="test_neg_inf_intercept_only",
+        func_type="piecewise_constant",
+        parameter_list=parameter_list,
+        xnp=xnp,
+    )
+
+
+def test_overlapping_raises(xnp: ModuleType):
+    """Overlapping intervals should raise ValueError."""
+    parameter_list = [
+        {"interval": "[0, 100)", "slope": 0.1, "intercept": 0},
+        {"interval": "[50, 200)", "slope": 0.2, "intercept": 10},
+    ]
+    with pytest.raises(ValueError, match="Overlapping intervals"):
+        get_piecewise_parameters(
+            leaf_name="test_overlap",
+            func_type="piecewise_linear",
+            parameter_list=parameter_list,
+            xnp=xnp,
+        )
 
 
 def _base_intervals():
@@ -217,7 +297,7 @@ def _base_intervals():
     ]
 
 
-def test_merge_single_interval_update():
+def test_merge_single_interval():
     """Replace one of three intervals."""
     base = _base_intervals()
     update = [{"interval": "[0, 100)", "slope": 0.5, "intercept": 0}]
@@ -227,7 +307,7 @@ def test_merge_single_interval_update():
     assert result[2] == base[2]
 
 
-def test_merge_multiple_intervals_update():
+def test_merge_multiple_intervals():
     """Replace two of three intervals."""
     base = _base_intervals()
     update = [
@@ -273,73 +353,6 @@ def test_merge_full_replacement():
     assert result == update
 
 
-# --- Tests for overlapping intervals ---
-
-
-def test_validation_error_double_open_gap(xnp: ModuleType):
-    """Two intervals both open at a shared boundary should raise ValueError."""
-    parameter_list: list[dict[str, int | float | str]] = [
-        {
-            "interval": "(-inf, 0)",
-            "slope": 0,
-            "intercept": 0,
-        },
-        {
-            "interval": "(0, inf)",
-            "slope": 0.5,
-            "intercept": 0,
-        },
-    ]
-    with pytest.raises(ValueError, match="Gap at boundary"):
-        get_piecewise_parameters(
-            leaf_name="test_double_open",
-            func_type="piecewise_linear",
-            parameter_list=parameter_list,
-            xnp=xnp,
-        )
-
-
-def test_nonzero_coefficient_on_neg_inf_interval_raises(xnp: ModuleType):
-    """Non-zero slope on (-inf, b) interval should raise ValueError."""
-    parameter_list: list[dict[str, int | float | str]] = [
-        {
-            "interval": "(-inf, 0)",
-            "slope": 0.5,
-            "intercept": 0,
-        },
-        {
-            "interval": "[0, inf)",
-            "slope": 0.3,
-            "intercept": 0,
-        },
-    ]
-    with pytest.raises(ValueError, match="has no effect"):
-        get_piecewise_parameters(
-            leaf_name="test_neg_inf_coeff",
-            func_type="piecewise_linear",
-            parameter_list=parameter_list,
-            xnp=xnp,
-        )
-
-
-def test_validation_error_overlapping(xnp: ModuleType):
-    """Overlapping intervals should raise ValueError."""
-    parameter_list = [
-        {"interval": "[0, 100)", "slope": 0.1, "intercept": 0},
-        {"interval": "[50, 200)", "slope": 0.2, "intercept": 10},
-    ]
-    with pytest.raises(ValueError, match="Overlapping intervals"):
-        get_piecewise_parameters(
-            leaf_name="test_overlap",
-            func_type="piecewise_linear",
-            parameter_list=parameter_list,
-            xnp=xnp,
-        )
-
-
-# --- Tests for PiecewisePolynomialParamValue.__getitem__ ---
-
-
 def test_param_value_getitem(xnp: ModuleType):
     """__getitem__ returns correct PiecewisePolynomialInterval."""
     params = get_piecewise_parameters(
@@ -359,9 +372,6 @@ def test_param_value_getitem(xnp: ModuleType):
     interval_1 = params[1]
     assert float(interval_1.intercept) == pytest.approx(5.0)
     assert float(interval_1.slope) == pytest.approx(0.4)
-
-
-# --- Tests for PiecewisePolynomialInterval property guards ---
 
 
 def test_interval_slope_guard(xnp: ModuleType):
@@ -392,9 +402,6 @@ def test_interval_cubic_guard(xnp: ModuleType):
     )
     with pytest.raises(AttributeError, match="piecewise_cubic"):
         _ = interval.cubic
-
-
-# --- Tests for piecewise_constant with n_coefficients=0 ---
 
 
 def test_piecewise_constant(xnp: ModuleType):

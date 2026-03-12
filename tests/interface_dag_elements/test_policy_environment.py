@@ -218,6 +218,23 @@ def test_active_tree_with_column_objects_and_param_functions(
     assert accessor(functions_next_day).__name__ == function_name_next_day
 
 
+def test_scalar_updates_previous_raises(xnp: ModuleType):
+    """updates_previous on a scalar parameter raises ValueError."""
+    spec = {
+        "name": {"de": "Test", "en": "Test"},
+        "description": {"de": "Test", "en": "Test"},
+        "type": "scalar",
+        datetime.date(2020, 1, 1): {"value": 1},
+        datetime.date(2021, 1, 1): {"updates_previous": True, "value": 2},
+    }
+    with pytest.raises(ValueError, match="scalar parameters"):
+        _active_param_objects(
+            orig={("spam.yaml", "foo"): spec},  # ty: ignore[invalid-argument-type]
+            policy_date=datetime.date(2021, 6, 1),
+            xnp=xnp,
+        )
+
+
 def test_piecewise_updates_previous(piecewise_spec_base, xnp: ModuleType):
     """Piecewise param with updates_previous merges intervals."""
     spec = piecewise_spec_base
@@ -454,22 +471,5 @@ def test_updates_previous_on_first_date_raises_piecewise(
         _active_param_objects(
             orig={("spam.yaml", "foo"): spec},
             policy_date=datetime.date(2020, 6, 1),
-            xnp=xnp,
-        )
-
-
-def test_scalar_updates_previous_raises(xnp: ModuleType):
-    """updates_previous on a scalar parameter raises ValueError."""
-    spec = {
-        "name": {"de": "Test", "en": "Test"},
-        "description": {"de": "Test", "en": "Test"},
-        "type": "scalar",
-        datetime.date(2020, 1, 1): {"value": 1},
-        datetime.date(2021, 1, 1): {"updates_previous": True, "value": 2},
-    }
-    with pytest.raises(ValueError, match="scalar parameters"):
-        _active_param_objects(
-            orig={("spam.yaml", "foo"): spec},  # ty: ignore[invalid-argument-type]
-            policy_date=datetime.date(2021, 6, 1),
             xnp=xnp,
         )
