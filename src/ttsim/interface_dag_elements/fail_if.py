@@ -831,14 +831,18 @@ def _param_with_active_periods(
     """Return parameter with active periods."""
 
     def _remove_note_and_reference(
-        entry: dict[str | int, Any] | list,
-    ) -> dict[str | int, Any] | list:
+        entry: dict[str | int, Any],
+    ) -> dict[str | int, Any]:
         """Remove note and reference from a parameter specification."""
-        if isinstance(entry, list):
-            return entry
         entry.pop("note", None)
         entry.pop("reference", None)
         return entry
+
+    def _has_substantive_content(entry: dict[str | int, Any] | list) -> bool:
+        """Check whether a date entry has substantive content."""
+        if isinstance(entry, list):
+            return bool(entry)
+        return bool(_remove_note_and_reference(entry))
 
     relevant = sorted(
         [key for key in param_spec if isinstance(key, datetime.date)],
@@ -868,7 +872,7 @@ def _param_with_active_periods(
     start_date: datetime.date | None = None
     end_date = DEFAULT_END_DATE
     for date in relevant:
-        if _remove_note_and_reference(param_spec[date]):
+        if _has_substantive_content(param_spec[date]):
             start_date = date
         else:
             if start_date:

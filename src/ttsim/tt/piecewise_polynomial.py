@@ -50,6 +50,8 @@ OPTIONS_REGISTRY = {
     ),
 }
 
+PIECEWISE_TYPES: frozenset[str] = frozenset(OPTIONS_REGISTRY)
+
 if set(OPTIONS_REGISTRY.keys()) != set(get_args(FUNC_TYPES)):
     raise ValueError("Keys in OPTIONS_REGISTRY must match FUNC_TYPES")
 

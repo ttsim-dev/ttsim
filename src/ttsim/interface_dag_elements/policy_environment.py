@@ -29,7 +29,7 @@ from ttsim.tt.column_objects_param_function import (
     DEFAULT_END_DATE,
 )
 from ttsim.tt.interval_utils import merge_piecewise_intervals
-from ttsim.tt.piecewise_polynomial import get_piecewise_parameters
+from ttsim.tt.piecewise_polynomial import PIECEWISE_TYPES, get_piecewise_parameters
 
 if TYPE_CHECKING:
     from types import FunctionType, ModuleType
@@ -43,14 +43,6 @@ if TYPE_CHECKING:
         OrigParamSpec,
         PolicyEnvironment,
     )
-
-
-PIECEWISE_TYPES = {
-    "piecewise_constant",
-    "piecewise_linear",
-    "piecewise_quadratic",
-    "piecewise_cubic",
-}
 
 
 @interface_function(in_top_level_namespace=True)
@@ -299,29 +291,28 @@ def _clean_one_param_spec(
     out["note"] = current_spec.pop("note", None)
     out["reference"] = current_spec.pop("reference", None)
 
+    # A date entry with only note/reference metadata and no value signals that the
+    # parameter is no longer active at this date (e.g. "Ceased to exist" or
+    # "Replaced by new rule").
+    remaining = {k: v for k, v in current_spec.items() if k != "updates_previous"}
+    if not remaining:
+        return None
+
     param_type = spec["type"]
     if param_type == "scalar":
         if current_spec.pop("updates_previous", False):
             raise ValueError(
                 "'updates_previous' cannot be specified for scalar parameters."
             )
-        if not current_spec:
-            return None
         out["value"] = current_spec["value"]
     elif param_type in PIECEWISE_TYPES:
         relevant_specs: list[dict[str, Any]] = [
             copy.deepcopy(spec[policy_dates[i]]) for i in range(idx)
         ]  # ty: ignore[invalid-assignment]
-        piecewise_intervals = _get_param_value_piecewise(relevant_specs)
-        if not piecewise_intervals:
-            return None
-        out["value"] = piecewise_intervals
+        out["value"] = _get_param_value_piecewise(relevant_specs)
     else:
         relevant_specs: list[dict[str, Any]] = [
             copy.deepcopy(spec[policy_dates[i]]) for i in range(idx)
         ]  # ty: ignore[invalid-assignment]
-        dict_value = _get_param_value(relevant_specs)
-        if not dict_value:
-            return None
-        out["value"] = dict_value
+        out["value"] = _get_param_value(relevant_specs)
     return out
