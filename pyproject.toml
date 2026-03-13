@@ -31,15 +31,16 @@ classifiers = [
 ]
 dynamic = [ "version" ]
 dependencies = [
-  "dags>=0.5",
+  "dags>=0.5.1",
   "ipywidgets",
+  "kaleido>=1.1",
   "networkx>=3.5",
   "numpy",
   "numpy-groupies",
   "openpyxl",
   "optree>=0.16",
   "pandas>=3",
-  "plotly[kaleido]",
+  "plotly>=6.5",
   "portion",
   "pygments",
   "pygraphviz",
