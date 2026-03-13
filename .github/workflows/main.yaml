@@ -55,19 +55,19 @@ jobs:
           matrix.environment == 'py311' ||
           matrix.environment == 'py312' ||
           matrix.environment == 'py313'
-        run: pixi run -e ${{ matrix.environment }} tests
+        run: pixi run --locked -e ${{ matrix.environment }} tests
         shell: bash -el {0}
       - name: Run tests on Linux (with NumPy backend and coverage)
         if: runner.os == 'Linux' && matrix.environment == 'py314'
-        run: pixi run -e ${{ matrix.environment }} tests-with-cov
+        run: pixi run --locked -e ${{ matrix.environment }} tests-with-cov
         shell: bash -el {0}
       - name: Run tests on MacOS / Windows (with NumPy backend and without coverage)
         if: runner.os != 'Linux'
-        run: pixi run -e ${{ matrix.environment }} tests
+        run: pixi run --locked -e ${{ matrix.environment }} tests
         shell: bash -el {0}
       - name: Run tests with JAX backend
         if: matrix.environment == 'py314-jax'
-        run: pixi run -e ${{ matrix.environment }} tests-jax
+        run: pixi run --locked -e ${{ matrix.environment }} tests-jax
         shell: bash -el {0}
       - name: Upload coverage reports
         if: runner.os == 'Linux' && matrix.environment == 'py314'
@@ -87,8 +87,8 @@ jobs:
           frozen: true
           environments: type-checking type-checking-jax
       - name: Run ty
-        run: pixi run ty
+        run: pixi run --locked ty
         shell: bash -el {0}
       - name: Run ty-jax
-        run: pixi run ty-jax
+        run: pixi run --locked ty-jax
         shell: bash -el {0}
