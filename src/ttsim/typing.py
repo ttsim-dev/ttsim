@@ -116,7 +116,7 @@ if TYPE_CHECKING:
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     # Collections of names etc.
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-    NestedStrings = Mapping[str, str | "NestedStrings"]
+    NestedStrings = Mapping[str, "str | NestedStrings"]
     """Tree mapping TTSIM paths to df columns or type hints."""
     UnorderedQNames = set[str]
     """A set of qualified names."""
@@ -126,7 +126,7 @@ if TYPE_CHECKING:
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     # Tree-like data structures for policy objects
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-    NestedPolicyInputs = Mapping[str, PolicyInput | "NestedPolicyInputs"]
+    NestedPolicyInputs = Mapping[str, "PolicyInput | NestedPolicyInputs"]
     """Tree of policy inputs."""
     FlatColumnObjects = Mapping[str, ColumnObject]
     """Flat mapping of paths to column objects."""
@@ -142,7 +142,7 @@ if TYPE_CHECKING:
     """Tree of column objects or param functions."""
     FlatOrigParamSpecs = dict[tuple[str, ...], OrigParamSpec]
     """Flat mapping of paths to yaml contents; the leaf name is also the last element of the key."""  # noqa: E501
-    NestedParamObjects = dict[str, ParamObject | "NestedParamObjects"]
+    NestedParamObjects = dict[str, "ParamObject | NestedParamObjects"]
     """Tree with param objects."""
     PolicyEnvironment = Mapping[
         str,
