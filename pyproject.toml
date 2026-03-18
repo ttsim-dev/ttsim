@@ -74,7 +74,6 @@ metadata.allow-direct-references = true
 version.source = "vcs"
 
 [tool.ruff]
-target-version = "py314"
 fix = true
 unsafe-fixes = false
 [tool.ruff.lint]
