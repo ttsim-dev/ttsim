@@ -834,7 +834,12 @@ def _param_with_active_periods(
         return entry
 
     def _has_substantive_content(entry: dict[str | int, Any] | list) -> bool:
-        """Check whether a date entry has substantive content."""
+        """Check whether a date entry has substantive content.
+
+        Parameters do not have substantive content if they are empty or contain only a
+        note and a reference. This happens when a parameter is revoked/abolished and we
+        have just passed a reference and a note to document this.
+        """
         if isinstance(entry, list):
             return bool(entry)
         return bool(_remove_note_and_reference(entry))
