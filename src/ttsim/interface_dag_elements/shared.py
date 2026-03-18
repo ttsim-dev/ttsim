@@ -31,7 +31,7 @@ _PARAM_METADATA_KEYS = frozenset({"note", "reference"})
 
 
 def param_has_substantive_content(
-    entry: dict[str | int, Any] | list,
+    entry: dict[str, Any] | dict[str | int, Any] | list,
 ) -> bool:
     """Check whether a parameter date entry has substantive content.
 
