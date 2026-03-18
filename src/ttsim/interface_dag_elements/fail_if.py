@@ -18,7 +18,10 @@ from dags.tree.validation import fail_if_paths_are_invalid
 
 from ttsim.interface_dag_elements.backend import jax
 from ttsim.interface_dag_elements.interface_node_objects import fail_function
-from ttsim.interface_dag_elements.shared import get_name_of_group_by_id
+from ttsim.interface_dag_elements.shared import (
+    get_name_of_group_by_id,
+    param_has_substantive_content,
+)
 from ttsim.tt.column_objects_param_function import (
     DEFAULT_END_DATE,
     ColumnFunction,
@@ -825,25 +828,6 @@ def _param_with_active_periods(
 ) -> list[_ParamWithActivePeriod]:
     """Return parameter with active periods."""
 
-    def _remove_note_and_reference(
-        entry: dict[str | int, Any],
-    ) -> dict[str | int, Any]:
-        """Remove note and reference from a parameter specification."""
-        entry.pop("note", None)
-        entry.pop("reference", None)
-        return entry
-
-    def _has_substantive_content(entry: dict[str | int, Any] | list) -> bool:
-        """Check whether a date entry has substantive content.
-
-        Parameters do not have substantive content if they are empty or contain only a
-        note and a reference. This happens when a parameter is revoked/abolished and we
-        have just passed a reference and a note to document this.
-        """
-        if isinstance(entry, list):
-            return bool(entry)
-        return bool(_remove_note_and_reference(entry))
-
     relevant = sorted(
         [key for key in param_spec if isinstance(key, datetime.date)],
         reverse=True,
@@ -872,7 +856,7 @@ def _param_with_active_periods(
     start_date: datetime.date | None = None
     end_date = DEFAULT_END_DATE
     for date in relevant:
-        if _has_substantive_content(param_spec[date]):
+        if param_has_substantive_content(param_spec[date]):
             start_date = date
         else:
             if start_date:

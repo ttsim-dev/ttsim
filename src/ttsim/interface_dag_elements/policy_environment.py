@@ -10,6 +10,7 @@ import numpy
 from ttsim.interface_dag_elements.interface_node_objects import interface_function
 from ttsim.interface_dag_elements.shared import (
     merge_trees,
+    param_has_substantive_content,
     upsert_tree,
 )
 from ttsim.tt import (
@@ -246,11 +247,7 @@ def _clean_one_param_spec(
     out["note"] = current_spec.pop("note", None)
     out["reference"] = current_spec.pop("reference", None)
 
-    # A date entry with only note/reference metadata and no value signals that the
-    # parameter is no longer active at this date (e.g. "Ceased to exist" or
-    # "Replaced by new rule").
-    remaining = {k: v for k, v in current_spec.items() if k != "updates_previous"}
-    if not remaining:
+    if not param_has_substantive_content(current_spec):
         return None
 
     param_type = spec["type"]
