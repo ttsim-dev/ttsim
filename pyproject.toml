@@ -202,24 +202,6 @@ expand_tables = [
   "tool.pixi.workspace",
 ]
 
-[tool.pytest]
-ini_options.addopts = [ "--pdbcls=pdbp:Pdb" ]
-ini_options.filterwarnings = [
-  "ignore:.*XMLParser*:DeprecationWarning",
-  "ignore:.*'tree.iter()'*:PendingDeprecationWarning",
-  "ignore:.*Sorting*:FutureWarning",
-  "ignore:The TerminalReporter.writer attribute is",
-  "ignore:Repeated execution of the test suite",
-  "ignore:Using or importing the ABCs from 'collections'",
-  "ignore:Explicitly requested dtype .*64 requested in zeros_like",
-]
-ini_options.markers = [
-  "skipif_jax: skip test if backend is jax",
-  "skipif_numpy: skip test if backend is numpy",
-]
-ini_options.norecursedirs = [ "docs" ]
-ini_options.testpaths = [ "tests", "src_mettsim/tests_middle_earth" ]
-
 [tool.ty]
 analysis.allowed-unresolved-imports = [
   "ttsim._version",
@@ -242,6 +224,24 @@ rules.possibly-missing-submodule = "error"
 rules.redundant-cast = "error"
 rules.unused-awaitable = "error"
 rules.unused-ignore-comment = "error"
+
+[tool.pytest]
+ini_options.addopts = [ "--pdbcls=pdbp:Pdb" ]
+ini_options.filterwarnings = [
+  "ignore:.*XMLParser*:DeprecationWarning",
+  "ignore:.*'tree.iter()'*:PendingDeprecationWarning",
+  "ignore:.*Sorting*:FutureWarning",
+  "ignore:The TerminalReporter.writer attribute is",
+  "ignore:Repeated execution of the test suite",
+  "ignore:Using or importing the ABCs from 'collections'",
+  "ignore:Explicitly requested dtype .*64 requested in zeros_like",
+]
+ini_options.markers = [
+  "skipif_jax: skip test if backend is jax",
+  "skipif_numpy: skip test if backend is numpy",
+]
+ini_options.norecursedirs = [ "docs" ]
+ini_options.testpaths = [ "tests", "src_mettsim/tests_middle_earth" ]
 
 [tool.yamlfix]
 line_length = 88

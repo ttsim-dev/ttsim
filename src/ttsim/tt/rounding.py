@@ -15,7 +15,7 @@ ROUNDING_DIRECTION = Literal["up", "down", "nearest"]
 P = ParamSpec("P")
 
 
-@dataclass
+@dataclass(frozen=True)
 class RoundingSpec:
     base: int | float
     direction: ROUNDING_DIRECTION
