@@ -66,17 +66,13 @@ def get_re_pattern_for_all_time_units_and_groupings(
     - <base_name>_<grouping>
     - <base_name>_<time_unit>_<grouping>
 
-    Parameters
-    ----------
-    time_units
-        The supported time units.
-    grouping_levels
-        The supported grouping levels.
+    Args:
+        time_units: The supported time units.
+        grouping_levels: The supported grouping levels.
 
-    Returns
-    -------
-    pattern
+    Returns:
         The regex pattern.
+
     """
     re_units = "".join(time_units)
     re_groupings = "|".join(grouping_levels)
@@ -107,19 +103,14 @@ def get_re_pattern_for_specific_time_units_and_groupings(
     - <specific_base_name>_<grouping>
     - <specific_base_name>_<time_unit>_<grouping>
 
-    Parameters
-    ----------
-    base_name
-        The specific base name to match.
-    time_units
-        The supported time units.
-    grouping_levels
-        The supported grouping levels.
+    Args:
+        base_name: The specific base name to match.
+        time_units: The supported time units.
+        grouping_levels: The supported grouping levels.
 
-    Returns
-    -------
-    pattern
+    Returns:
         The regex pattern.
+
     """
     re_units = "".join(all_time_units)
     re_groupings = "|".join(grouping_levels)
@@ -154,16 +145,13 @@ def create_tree_from_path_and_value(
         Result:
             {"a": {"b": {"c": None}}}
 
-    Parameters
-    ----------
-    path
-        The path to create the tree structure from.
-    value (Optional)
-        The value to insert into the tree structure.
+    Args:
+        path: The path to create the tree structure from.
+        value: The value to insert into the tree structure.
 
-    Returns
-    -------
-    The tree structure.
+    Returns:
+        The tree structure.
+
     """
     nested_dict = value
     for entry in reversed(path):
@@ -172,19 +160,15 @@ def create_tree_from_path_and_value(
 
 
 def merge_trees(left: dict[str, Any], right: dict[str, Any]) -> dict[str, Any]:
-    """
-    Merge two pytrees, raising an error if a path is present in both trees.
+    """Merge two pytrees, raising an error if a path is present in both trees.
 
-    Parameters
-    ----------
-    left
-        The first tree to be merged.
-    right
-        The second tree to be merged.
+    Args:
+        left: The first tree to be merged.
+        right: The second tree to be merged.
 
-    Returns
-    -------
-    The merged pytree.
+    Returns:
+        The merged pytree.
+
     """
     if set(optree.tree_paths(left)) & set(optree.tree_paths(right)):  # ty: ignore [invalid-argument-type]
         raise ValueError("Conflicting paths in trees to merge.")
@@ -193,8 +177,7 @@ def merge_trees(left: dict[str, Any], right: dict[str, Any]) -> dict[str, Any]:
 
 
 def upsert_tree(base: dict[str, Any], to_upsert: dict[str, Any]) -> dict[str, Any]:
-    """
-    Upsert a tree into another tree for trees defined by dictionaries only.
+    """Upsert a tree into another tree for trees defined by dictionaries only.
 
     Note: In case of conflicting trees, the to_upsert takes precedence.
 
@@ -205,16 +188,13 @@ def upsert_tree(base: dict[str, Any], to_upsert: dict[str, Any]) -> dict[str, An
         Output:
             {"a": {"b": {"c": None, "d": None}}}
 
-    Parameters
-    ----------
-    base
-        The base dictionary.
-    to_upsert
-        The dictionary to update the base dictionary.
+    Args:
+        base: The base dictionary.
+        to_upsert: The dictionary to update the base dictionary.
 
-    Returns
-    -------
-    The merged dictionary.
+    Returns:
+        The merged dictionary.
+
     """
     result = base.copy()
 
@@ -272,16 +252,14 @@ def get_name_of_group_by_id(
     The group-by-identifier is the name of the group identifier that is embedded in the
     name of the target. E.g., "income_kin" has "kin_id" as its group-by-identifier.
 
-    Parameters
-    ----------
-    target_name
-        The name of the target.
-    grouping_levels
-        The supported grouping levels.
+    Args:
+        target_name: The name of the target.
+        grouping_levels: The supported grouping levels.
 
-    Returns
-    -------
-    The group-by-identifier, or an empty tuple if it is an individual-level variable.
+    Returns:
+        The group-by-identifier, or an empty tuple if it is an individual-level
+            variable.
+
     """
     for g in grouping_levels:
         if target_name.endswith(f"_{g}"):
@@ -321,16 +299,15 @@ def copy_environment(env: SomeEnv) -> SomeEnv:
     of the tree structure while preserving references to functions and other objects
     that don't need to be copied.
 
-    Parameters
-    ----------
-    env
-        The environment to copy. Can be a PolicyEnvironment or any of the
-        specialized environment types (SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
-        SpecEnvWithProcessedParamsAndScalars, SpecEnvWithPartialledParamsAndScalars).
+    Args:
+        env: The environment to copy. Can be a PolicyEnvironment or any of the
+            specialized environment types
+            (SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
+            SpecEnvWithProcessedParamsAndScalars,
+            SpecEnvWithPartialledParamsAndScalars).
 
-    Returns
-    -------
-    A copy of *env*, which is a deep copy for all practical purposes.
+    Returns:
+        A copy of *env*, which is a deep copy for all practical purposes.
 
     """
     return optree.tree_map(copy, env)  # ty: ignore[invalid-argument-type]

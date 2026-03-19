@@ -109,19 +109,15 @@ def _active_column_objects_and_param_functions(
     orig: FlatColumnObjectsParamFunctions,
     policy_date: datetime.date,
 ) -> NestedColumnObjectsParamFunctions:
-    """
-    Traverse `root` and return all ColumnObjectParamFunctions for a given date.
+    """Traverse `root` and return all ColumnObjectParamFunctions for a given date.
 
-    Parameters
-    ----------
-    root:
-        The directory to traverse.
-    policy_date:
-        The date for which policy objects should be loaded.
+    Args:
+        root: The directory to traverse.
+        policy_date: The date for which policy objects should be loaded.
 
-    Returns
-    -------
-    A tree of active ColumnObjectParamFunctions.
+    Returns:
+        A tree of active ColumnObjectParamFunctions.
+
     """
     flat_objects_tree: dict[tuple[str, ...], Any] = {
         (*orig_path[:-2], obj.leaf_name): obj

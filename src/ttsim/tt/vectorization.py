@@ -33,12 +33,10 @@ def vectorize_function(
         backend: Backend to use for vectorization.
         xnp: Module to use for vectorization.
 
-    Returns
-    -------
+    Returns:
         New PolicyFunction with the function attribute vectorized.
 
-    Raises
-    ------
+    Raises:
         ValueError: If the vectorization strategy is not supported.
         TranslateToVectorizableError: If the function cannot be vectorized.
 
@@ -81,8 +79,7 @@ def _make_vectorizable(
         backend: Backend library. Currently supported backends are 'jax' and 'numpy'.
             Array module must export function `where` that behaves as `numpy.where`.
 
-    Returns
-    -------
+    Returns:
         New function with altered ast.
     """
     if _is_lambda_function(func):
@@ -139,8 +136,7 @@ def make_vectorizable_source(
             backends. Array module must export function `where` that behaves as
             `numpy.where`.
 
-    Returns
-    -------
+    Returns:
         Source code of new function with altered ast.
     """
     if _is_lambda_function(func):
@@ -165,8 +161,7 @@ def _make_vectorizable_ast(
         func: Function.
         module: Module which exports the function `where` that behaves as `numpy.where`.
 
-    Returns
-    -------
+    Returns:
         AST of new function with altered ast.
     """
     tree = _func_to_ast(func)

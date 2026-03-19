@@ -25,19 +25,15 @@ def get_figure(
 ) -> go.Figure:
     """Plot the DAG.
 
-    Parameters
-    ----------
-    dag : nx.DiGraph
-        The DAG to plot.
-    show_node_description : bool
-        Whether to show node descriptions on hover.
-    node_colormap : dict[tuple[str, ...] | str, str] | None, optional
-        Dictionary mapping namespace patterns to colors. Patterns can be specified
-        as tuples (e.g., ("housing_benefits", "*_m")) or as qualified name strings
-        (e.g., "housing_benefits__*_m"). If provided, overrides the default automatic
-        color generation.
-    **kwargs : Any
-        Additional keyword arguments passed to the plotly layout.
+    Args:
+        dag: The DAG to plot.
+        show_node_description: Whether to show node descriptions on hover.
+        node_colormap: Dictionary mapping namespace patterns to colors. Patterns
+            can be specified as tuples (e.g., ("housing_benefits", "*_m")) or as
+            qualified name strings (e.g., "housing_benefits__*_m"). If provided,
+            overrides the default automatic color generation.
+        **kwargs: Additional keyword arguments passed to the plotly layout.
+
     """
     nice_dag = nx.relabel_nodes(dag, {qn: qname_to_label(qn) for qn in dag.nodes()})
 
@@ -192,22 +188,17 @@ def qname_to_label(qname: str) -> str:
 def hsl_to_hex(hue: float, saturation: float, lightness: float) -> str:
     """Convert HSL color values to hexadecimal color code.
 
-    Parameters
-    ----------
-    hue : float
-        Hue value between 0 and 1, representing the position on the color wheel
-        (0 = red, 0.33 = green, 0.66 = blue, 1 = red again)
-    saturation : float
-        Saturation value between 0 and 1, representing color intensity
-        (0 = grayscale, 1 = fully saturated)
-    lightness : float
-        Lightness value between 0 and 1, representing brightness
-        (0 = black, 0.5 = normal, 1 = white)
+    Args:
+        hue: Hue value between 0 and 1, representing the position on the color
+            wheel (0 = red, 0.33 = green, 0.66 = blue, 1 = red again).
+        saturation: Saturation value between 0 and 1, representing color intensity
+            (0 = grayscale, 1 = fully saturated).
+        lightness: Lightness value between 0 and 1, representing brightness
+            (0 = black, 0.5 = normal, 1 = white).
 
-    Returns
-    -------
-    str
-        Hexadecimal color code in the format '#RRGGBB'
+    Returns:
+        Hexadecimal color code in the format '#RRGGBB'.
+
     """
 
     rgb = colorsys.hls_to_rgb(h=hue, l=lightness, s=saturation)
@@ -222,15 +213,12 @@ def _normalize_colormap(
     Accepts both tuple patterns and qname strings (with '__' separators).
     Converts qname strings to tuple patterns.
 
-    Parameters
-    ----------
-    node_colormap
-        Dictionary with keys that are either tuples or qname strings.
+    Args:
+        node_colormap: Dictionary with keys that are either tuples or qname strings.
 
-    Returns
-    -------
-    dict[tuple[str, ...], str]
+    Returns:
         Dictionary with all keys normalized to tuples.
+
     """
     normalized = {}
     for pattern, color in node_colormap.items():
@@ -251,18 +239,14 @@ def _find_color_for_qname(qname: str, node_colormap: dict[tuple[str, ...], str])
     3. Patterns without wildcards score higher than those with wildcards
     4. Among equal-specificity patterns, first defined wins
 
-    Parameters
-    ----------
-    qname
-        The qualified name to find a color for.
-    node_colormap
-        Dictionary mapping pattern tuples to colors. Patterns can contain
-        glob wildcards (* for any characters, ? for single character).
+    Args:
+        qname: The qualified name to find a color for.
+        node_colormap: Dictionary mapping pattern tuples to colors. Patterns can
+            contain glob wildcards (* for any characters, ? for single character).
 
-    Returns
-    -------
-    str
+    Returns:
         The color for the qname, or "black" if no match is found.
+
     """
     tp = dt.tree_path_from_qname(qname)
 
@@ -297,17 +281,13 @@ def _matches_glob_pattern(tp: tuple[str, ...], pattern_tp: tuple[str, ...]) -> b
     - `("**", "*_bg")` matches any path ending with `_bg` at any depth
     - `("ns", "**", "*_m")` matches `ns__*__*_m` at any depth
 
-    Parameters
-    ----------
-    tp
-        The tree path to match against.
-    pattern_tp
-        The pattern tuple, which may contain glob wildcards and `**`.
+    Args:
+        tp: The tree path to match against.
+        pattern_tp: The pattern tuple, which may contain glob wildcards and `**`.
 
-    Returns
-    -------
-    bool
+    Returns:
         True if the tree path matches the pattern.
+
     """
     # Special case: ("top-level",) matches single-element tree paths
     if pattern_tp == ("top-level",):
@@ -375,17 +355,13 @@ def _pattern_specificity(tp: tuple[str, ...], pattern_tp: tuple[str, ...]) -> in
     4. Patterns with "**" have lower priority than equivalent patterns without
     5. The special ("top-level",) pattern has lowest priority (catch-all)
 
-    Parameters
-    ----------
-    tp
-        The tree path being matched.
-    pattern_tp
-        The pattern tuple that matched.
+    Args:
+        tp: The tree path being matched.
+        pattern_tp: The pattern tuple that matched.
 
-    Returns
-    -------
-    int
+    Returns:
         A specificity score (higher = more specific).
+
     """
     # Special case: ("top-level",) is a catch-all with lowest priority
     if pattern_tp == ("top-level",):

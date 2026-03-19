@@ -45,26 +45,22 @@ def join(
     value_if_foreign_key_is_missing: float | bool,
     xnp: ModuleType,
 ) -> FloatColumn | IntColumn | BoolColumn:
-    """
+    """Find matching primary key for a foreign key and return the target value.
+
     Given a foreign key, find the corresponding primary key, and return the target at
     the same index as the primary key. When using Jax, does not work on String Arrays.
 
-    Parameters
-    ----------
-    foreign_key:
-        The foreign keys.
-    primary_key:
-        The primary keys.
-    target:
-        The targets, in the same order as the primary keys.
-    value_if_foreign_key_is_missing:
-        The value to return if no matching primary key is found.
-    xnp:
-        The numpy module to use for calculations.
+    Args:
+        foreign_key: The foreign keys.
+        primary_key: The primary keys.
+        target: The targets, in the same order as the primary keys.
+        value_if_foreign_key_is_missing: The value to return if no matching primary
+            key is found.
+        xnp: The numpy module to use for calculations.
 
-    Returns
-    -------
-    The joined array.
+    Returns:
+        The joined array.
+
     """
     # First, get the sort order of primary_key to enable efficient lookup
     sort_indices = xnp.argsort(primary_key)

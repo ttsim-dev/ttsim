@@ -172,11 +172,10 @@ def active_periods_overlap(
     Checks that objects or parameters with the same tree path / qualified name are not
     active at the same time.
 
-    Raises
-    ------
-    ConflictingActivePeriodsError
-        If multiple objects and/or parameters with the same leaf name are active at the
-        same time.
+    Raises:
+        ConflictingActivePeriodsError: If multiple objects and/or parameters with the
+            same leaf name are active at the same time.
+
     """
     # Create mapping from leaf names to objects.
     overlap_checker: dict[
@@ -788,16 +787,12 @@ def format_errors_and_warnings(text: str, width: int = 79) -> str:
     wrapping at the specified width. Mainly required because of messages are written as
     part of indented blocks in our source code.
 
-    Parameters
-    ----------
-    text : str
-        The text which can include multiple paragraphs separated by two newlines.
-    width : int
-        The text will be wrapped by `width` characters.
+    Args:
+        text: The text which can include multiple paragraphs separated by two newlines.
+        width: The text will be wrapped by `width` characters.
 
-    Returns
-    -------
-    Correctly dedented, wrapped text.
+    Returns:
+        Correctly dedented, wrapped text.
 
     """
     text = text.lstrip("\n")

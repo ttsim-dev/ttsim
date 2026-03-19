@@ -47,16 +47,12 @@ class RoundingSpec:
     ) -> FunctionType[P, FloatColumn]:
         """Decorator to round the output of a function.
 
-        Parameters
-        ----------
-        func
-            Function to be rounded.
-        xnp
-            The computing module to use.
+        Args:
+            func: Function to be rounded.
+            xnp: The computing module to use.
 
-        Returns
-        -------
-        Function with rounding applied.
+        Returns:
+            Function with rounding applied.
         """
 
         @functools.wraps(func)
