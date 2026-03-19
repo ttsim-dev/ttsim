@@ -1,15 +1,19 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Literal
+from types import ModuleType
+from typing import Literal
 
-if TYPE_CHECKING:
-    from types import ModuleType
 import numpy
 
 from ttsim.interface_dag_elements.interface_node_objects import (
     interface_function,
     interface_input,
 )
+
+try:
+    import jax
+except ImportError:
+    jax: ModuleType | None = None
 
 
 @interface_input(in_top_level_namespace=True)

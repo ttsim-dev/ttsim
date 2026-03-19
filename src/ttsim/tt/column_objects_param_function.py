@@ -390,7 +390,7 @@ def policy_function(
 
     def inner(func: FunctionType[..., Any]) -> PolicyFunction:
         return PolicyFunction(
-            leaf_name=leaf_name if leaf_name else func.__name__,
+            leaf_name=leaf_name or func.__name__,
             function=func,
             start_date=start_date,
             end_date=end_date,
@@ -575,7 +575,7 @@ def agg_by_group_function(
 ) -> Callable[[FunctionType[..., Any]], AggByGroupFunction]:
     start_date, end_date = _convert_and_validate_dates(start_date, end_date)
 
-    agg_registry = {
+    agg_registry: dict[AggType, FunctionType[..., Any]] = {
         AggType.SUM: grouped_sum,
         AggType.MEAN: grouped_mean,
         AggType.MAX: grouped_max,
@@ -603,7 +603,7 @@ def agg_by_group_function(
             mapper=mapper,
         )
         return AggByGroupFunction(
-            leaf_name=leaf_name if leaf_name else func.__name__,
+            leaf_name=leaf_name or func.__name__,
             function=agg_func,
             start_date=start_date,
             end_date=end_date,
@@ -713,7 +713,7 @@ def agg_by_p_id_function(
 ) -> Callable[[FunctionType[..., Any]], AggByPIDFunction]:
     start_date, end_date = _convert_and_validate_dates(start_date, end_date)
 
-    agg_registry = {
+    agg_registry: dict[AggType, FunctionType[..., Any]] = {
         AggType.SUM: sum_by_p_id,
         AggType.MEAN: mean_by_p_id,
         AggType.MAX: max_by_p_id,
@@ -756,7 +756,7 @@ def agg_by_p_id_function(
             mapper=mapper,
         )
         return AggByPIDFunction(
-            leaf_name=leaf_name if leaf_name else func.__name__,
+            leaf_name=leaf_name or func.__name__,
             function=agg_func,
             start_date=start_date,
             end_date=end_date,
@@ -979,7 +979,7 @@ def param_function(
 
     def inner(func: FunctionType[..., Any]) -> ParamFunction:
         return ParamFunction(
-            leaf_name=leaf_name if leaf_name else func.__name__,
+            leaf_name=leaf_name or func.__name__,
             function=func,
             start_date=start_date,
             end_date=end_date,

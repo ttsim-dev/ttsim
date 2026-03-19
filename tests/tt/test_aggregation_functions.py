@@ -683,10 +683,10 @@ def test_sum_by_p_id_raises(
         )
 
 
-def test_grouped_sum_single_element(backend):
+def test_grouped_sum_single_element(backend, xnp):
     """Test grouped_sum with a single-element array."""
-    column = numpy.array([42.0])
-    group_id = numpy.array([0])
+    column = xnp.array([42.0])
+    group_id = xnp.array([0])
 
     result = grouped_sum(
         column=column,
@@ -695,13 +695,13 @@ def test_grouped_sum_single_element(backend):
         backend=backend,
     )
 
-    numpy.testing.assert_array_equal(result, numpy.array([42.0]))
+    numpy.testing.assert_array_equal(result, xnp.array([42.0]))
 
 
-def test_grouped_max_all_same_values(backend):
+def test_grouped_max_all_same_values(backend, xnp):
     """Test grouped_max when all values in groups are identical."""
-    column = numpy.array([5.0, 5.0, 5.0, 10.0, 10.0])
-    group_id = numpy.array([0, 0, 0, 1, 1])
+    column = xnp.array([5.0, 5.0, 5.0, 10.0, 10.0])
+    group_id = xnp.array([0, 0, 0, 1, 1])
 
     result = grouped_max(
         column=column,
@@ -710,14 +710,14 @@ def test_grouped_max_all_same_values(backend):
         backend=backend,
     )
 
-    expected = numpy.array([5.0, 5.0, 5.0, 10.0, 10.0])
+    expected = xnp.array([5.0, 5.0, 5.0, 10.0, 10.0])
     numpy.testing.assert_array_equal(result, expected)
 
 
-def test_grouped_min_all_same_values(backend):
+def test_grouped_min_all_same_values(backend, xnp):
     """Test grouped_min when all values in groups are identical."""
-    column = numpy.array([5.0, 5.0, 5.0, 10.0, 10.0])
-    group_id = numpy.array([0, 0, 0, 1, 1])
+    column = xnp.array([5.0, 5.0, 5.0, 10.0, 10.0])
+    group_id = xnp.array([0, 0, 0, 1, 1])
 
     result = grouped_min(
         column=column,
@@ -726,15 +726,15 @@ def test_grouped_min_all_same_values(backend):
         backend=backend,
     )
 
-    expected = numpy.array([5.0, 5.0, 5.0, 10.0, 10.0])
+    expected = xnp.array([5.0, 5.0, 5.0, 10.0, 10.0])
     numpy.testing.assert_array_equal(result, expected)
 
 
-def test_sum_by_p_id_all_missing(backend):
+def test_sum_by_p_id_all_missing(backend, xnp):
     """Test sum_by_p_id when all p_ids are missing (-1)."""
-    column = numpy.array([10.0, 20.0, 30.0])
-    p_id_to_aggregate_by = numpy.array([-1, -1, -1])
-    p_id_to_store_by = numpy.array([0, 1, 2])
+    column = xnp.array([10.0, 20.0, 30.0])
+    p_id_to_aggregate_by = xnp.array([-1, -1, -1])
+    p_id_to_store_by = xnp.array([0, 1, 2])
 
     result = sum_by_p_id(
         column=column,
@@ -745,14 +745,14 @@ def test_sum_by_p_id_all_missing(backend):
     )
 
     # All missing, so result should be zeros
-    numpy.testing.assert_array_equal(result, numpy.array([0.0, 0.0, 0.0]))
+    numpy.testing.assert_array_equal(result, xnp.array([0.0, 0.0, 0.0]))
 
 
-def test_sum_by_p_id_bool_column(backend):
+def test_sum_by_p_id_bool_column(backend, xnp):
     """Test sum_by_p_id with boolean column."""
-    column = numpy.array([True, False, True, True, False])
-    p_id_to_aggregate_by = numpy.array([0, 0, 1, 1, 1])
-    p_id_to_store_by = numpy.array([0, 1, 2, 3, 4])
+    column = xnp.array([True, False, True, True, False])
+    p_id_to_aggregate_by = xnp.array([0, 0, 1, 1, 1])
+    p_id_to_store_by = xnp.array([0, 1, 2, 3, 4])
 
     result = sum_by_p_id(
         column=column,
@@ -763,14 +763,14 @@ def test_sum_by_p_id_bool_column(backend):
     )
 
     # p_id 0: True + False = 1, p_id 1: True + True + False = 2
-    expected = numpy.array([1, 2, 0, 0, 0])
+    expected = xnp.array([1, 2, 0, 0, 0])
     numpy.testing.assert_array_equal(result, expected)
 
 
-def test_grouped_count_with_many_groups(backend):
+def test_grouped_count_with_many_groups(backend, xnp):
     """Test grouped_count with many distinct groups."""
     # Each element in its own group
-    group_id = numpy.array([0, 1, 2, 3, 4])
+    group_id = xnp.array([0, 1, 2, 3, 4])
 
     result = grouped_count(
         group_id=group_id,
@@ -779,14 +779,14 @@ def test_grouped_count_with_many_groups(backend):
     )
 
     # Each group has exactly 1 element
-    expected = numpy.array([1, 1, 1, 1, 1])
+    expected = xnp.array([1, 1, 1, 1, 1])
     numpy.testing.assert_array_equal(result, expected)
 
 
-def test_grouped_mean_with_negative_values(backend):
+def test_grouped_mean_with_negative_values(backend, xnp):
     """Test grouped_mean with negative values."""
-    column = numpy.array([-10.0, 10.0, -5.0, 5.0])
-    group_id = numpy.array([0, 0, 1, 1])
+    column = xnp.array([-10.0, 10.0, -5.0, 5.0])
+    group_id = xnp.array([0, 0, 1, 1])
 
     result = grouped_mean(
         column=column,
@@ -796,14 +796,14 @@ def test_grouped_mean_with_negative_values(backend):
     )
 
     # Group 0: (-10 + 10) / 2 = 0, Group 1: (-5 + 5) / 2 = 0
-    expected = numpy.array([0.0, 0.0, 0.0, 0.0])
+    expected = xnp.array([0.0, 0.0, 0.0, 0.0])
     numpy.testing.assert_array_almost_equal(result, expected)
 
 
-def test_grouped_sum_large_group_ids_with_gaps(backend):
+def test_grouped_sum_large_group_ids_with_gaps(backend, xnp):
     """Test grouped_sum with large group_id values that have gaps."""
-    column = numpy.array([1.0, 2.0, 3.0])
-    group_id = numpy.array([0, 100, 100])
+    column = xnp.array([1.0, 2.0, 3.0])
+    group_id = xnp.array([0, 100, 100])
 
     result = grouped_sum(
         column=column,
@@ -813,14 +813,14 @@ def test_grouped_sum_large_group_ids_with_gaps(backend):
     )
 
     # Group 0: 1.0, Group 100: 2.0 + 3.0 = 5.0
-    expected = numpy.array([1.0, 5.0, 5.0])
+    expected = xnp.array([1.0, 5.0, 5.0])
     numpy.testing.assert_array_equal(result, expected)
 
 
-def test_count_by_p_id_raises_not_implemented(backend):
+def test_count_by_p_id_raises_not_implemented(backend, xnp):
     """Test count_by_p_id raises NotImplementedError (not yet implemented)."""
-    p_id_to_aggregate_by = numpy.array([-1, -1, 8, 8, 10])
-    p_id_to_store_by = numpy.array([7, 8, 9, 10, 11])
+    p_id_to_aggregate_by = xnp.array([-1, -1, 8, 8, 10])
+    p_id_to_store_by = xnp.array([7, 8, 9, 10, 11])
 
     with pytest.raises(NotImplementedError):
         count_by_p_id(
@@ -831,11 +831,11 @@ def test_count_by_p_id_raises_not_implemented(backend):
         )
 
 
-def test_mean_by_p_id_raises_not_implemented(backend):
+def test_mean_by_p_id_raises_not_implemented(backend, xnp):
     """Test mean_by_p_id raises NotImplementedError (not yet implemented)."""
-    column = numpy.array([10.0, 20.0, 30.0, 40.0, 50.0])
-    p_id_to_aggregate_by = numpy.array([-1, -1, 8, 8, 10])
-    p_id_to_store_by = numpy.array([7, 8, 9, 10, 11])
+    column = xnp.array([10.0, 20.0, 30.0, 40.0, 50.0])
+    p_id_to_aggregate_by = xnp.array([-1, -1, 8, 8, 10])
+    p_id_to_store_by = xnp.array([7, 8, 9, 10, 11])
 
     with pytest.raises(NotImplementedError):
         mean_by_p_id(
@@ -847,11 +847,11 @@ def test_mean_by_p_id_raises_not_implemented(backend):
         )
 
 
-def test_max_by_p_id_raises_not_implemented(backend):
+def test_max_by_p_id_raises_not_implemented(backend, xnp):
     """Test max_by_p_id raises NotImplementedError (not yet implemented)."""
-    column = numpy.array([10.0, 20.0, 30.0, 40.0, 50.0])
-    p_id_to_aggregate_by = numpy.array([-1, -1, 8, 8, 10])
-    p_id_to_store_by = numpy.array([7, 8, 9, 10, 11])
+    column = xnp.array([10.0, 20.0, 30.0, 40.0, 50.0])
+    p_id_to_aggregate_by = xnp.array([-1, -1, 8, 8, 10])
+    p_id_to_store_by = xnp.array([7, 8, 9, 10, 11])
 
     with pytest.raises(NotImplementedError):
         max_by_p_id(
@@ -863,11 +863,11 @@ def test_max_by_p_id_raises_not_implemented(backend):
         )
 
 
-def test_min_by_p_id_raises_not_implemented(backend):
+def test_min_by_p_id_raises_not_implemented(backend, xnp):
     """Test min_by_p_id raises NotImplementedError (not yet implemented)."""
-    column = numpy.array([10.0, 20.0, 30.0, 40.0, 50.0])
-    p_id_to_aggregate_by = numpy.array([-1, -1, 8, 8, 10])
-    p_id_to_store_by = numpy.array([7, 8, 9, 10, 11])
+    column = xnp.array([10.0, 20.0, 30.0, 40.0, 50.0])
+    p_id_to_aggregate_by = xnp.array([-1, -1, 8, 8, 10])
+    p_id_to_store_by = xnp.array([7, 8, 9, 10, 11])
 
     with pytest.raises(NotImplementedError):
         min_by_p_id(
@@ -879,11 +879,11 @@ def test_min_by_p_id_raises_not_implemented(backend):
         )
 
 
-def test_any_by_p_id_raises_not_implemented(backend):
+def test_any_by_p_id_raises_not_implemented(backend, xnp):
     """Test any_by_p_id raises NotImplementedError (not yet implemented)."""
-    column = numpy.array([True, False, True, False, True])
-    p_id_to_aggregate_by = numpy.array([-1, -1, 8, 8, 10])
-    p_id_to_store_by = numpy.array([7, 8, 9, 10, 11])
+    column = xnp.array([True, False, True, False, True])
+    p_id_to_aggregate_by = xnp.array([-1, -1, 8, 8, 10])
+    p_id_to_store_by = xnp.array([7, 8, 9, 10, 11])
 
     with pytest.raises(NotImplementedError):
         any_by_p_id(
@@ -895,11 +895,11 @@ def test_any_by_p_id_raises_not_implemented(backend):
         )
 
 
-def test_all_by_p_id_raises_not_implemented(backend):
+def test_all_by_p_id_raises_not_implemented(backend, xnp):
     """Test all_by_p_id raises NotImplementedError (not yet implemented)."""
-    column = numpy.array([True, False, True, False, True])
-    p_id_to_aggregate_by = numpy.array([-1, -1, 8, 8, 10])
-    p_id_to_store_by = numpy.array([7, 8, 9, 10, 11])
+    column = xnp.array([True, False, True, False, True])
+    p_id_to_aggregate_by = xnp.array([-1, -1, 8, 8, 10])
+    p_id_to_store_by = xnp.array([7, 8, 9, 10, 11])
 
     with pytest.raises(NotImplementedError):
         all_by_p_id(

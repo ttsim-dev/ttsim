@@ -16,14 +16,12 @@ import pandas as pd
 from dags import create_dag, get_free_arguments
 from dags.tree.validation import fail_if_paths_are_invalid
 
-try:
-    import jax
-except ImportError:
-    jax = None
-
-
+from ttsim.interface_dag_elements.backend import jax
 from ttsim.interface_dag_elements.interface_node_objects import fail_function
-from ttsim.interface_dag_elements.shared import get_name_of_group_by_id
+from ttsim.interface_dag_elements.shared import (
+    get_name_of_group_by_id,
+    param_has_substantive_content,
+)
 from ttsim.tt.column_objects_param_function import (
     DEFAULT_END_DATE,
     ColumnFunction,
@@ -328,8 +326,8 @@ def policy_environment_is_invalid(
     """Validate that the environment is a pytree with supported types."""
     assert_valid_ttsim_pytree(
         tree=policy_environment,
-        leaf_checker=lambda leaf: (
-            isinstance(leaf, ColumnObject | ParamFunction | ParamObject | ModuleType)
+        leaf_checker=lambda leaf: isinstance(
+            leaf, ColumnObject | ParamFunction | ParamObject | ModuleType
         ),
         tree_name="policy_environment",
     )
@@ -666,7 +664,7 @@ def backend_has_changed(
             for argname, arg in func.keywords.items():
                 # We are fine if it is a jax array and we do not want to loop over its
                 # attributes (GETTSIM tests fail otherwise).
-                if isinstance(arg, jax.Array):  # ty: ignore[possibly-missing-attribute]
+                if jax is not None and isinstance(arg, jax.Array):
                     continue
                 if isinstance(arg, numpy.ndarray) or any(
                     isinstance(getattr(arg, attr), numpy.ndarray) for attr in dir(arg)
@@ -701,7 +699,7 @@ def tt_dag_includes_function_with_fail_msg_if_included_set(
         # Check for attribute existence because ParamObjects can be overridden by
         # ColumnObjects down the road.
         if hasattr(env[node], "fail_msg_if_included"):  # noqa: SIM102
-            if msg := env[node].fail_msg_if_included:  # ty: ignore[possibly-missing-attribute]
+            if msg := env[node].fail_msg_if_included:  # ty: ignore[unresolved-attribute]
                 issues += f"{node}:\n\n{msg}\n\n\n"
     if issues:
         raise ValueError(
@@ -830,12 +828,6 @@ def _param_with_active_periods(
 ) -> list[_ParamWithActivePeriod]:
     """Return parameter with active periods."""
 
-    def _remove_note_and_reference(entry: dict[str | int, Any]) -> dict[str | int, Any]:
-        """Remove note and reference from a parameter specification."""
-        entry.pop("note", None)
-        entry.pop("reference", None)
-        return entry
-
     relevant = sorted(
         [key for key in param_spec if isinstance(key, datetime.date)],
         reverse=True,
@@ -864,7 +856,7 @@ def _param_with_active_periods(
     start_date: datetime.date | None = None
     end_date = DEFAULT_END_DATE
     for date in relevant:
-        if _remove_note_and_reference(param_spec[date]):
+        if param_has_substantive_content(param_spec[date]):
             start_date = date
         else:
             if start_date:

@@ -528,7 +528,7 @@ def test_node_colormap_functionality():
     """
 
     # Test with top-level namespace coloring
-    top_level_colormap = {
+    top_level_colormap: dict[tuple[str, ...] | str, str] = {
         ("housing_benefits",): "#ff0000",
         ("payroll_tax",): "#00ff00",
         ("wealth_tax",): "#0000ff",
@@ -550,7 +550,7 @@ def test_node_colormap_functionality():
     assert fig_interface is not None
 
     # Test with hierarchical namespace coloring
-    hierarchical_colormap = {
+    hierarchical_colormap: dict[tuple[str, ...] | str, str] = {
         ("housing_benefits",): "#ff0000",
         (
             "housing_benefits",
@@ -587,7 +587,7 @@ def test_node_colormap_fallback_to_default():
     """Test that nodes not in the colormap fall back to default colors."""
 
     # Partial colormap that doesn't cover all namespaces
-    partial_colormap = {
+    partial_colormap: dict[tuple[str, ...] | str, str] = {
         ("housing_benefits",): "#ff0000",
     }
 
@@ -651,7 +651,7 @@ def test_node_colormap_glob_patterns():
     )
 
     # Test _find_color_for_qname
-    colormap = {
+    colormap: dict[tuple[str, ...], str] = {
         ("wealth*",): "blue",
         ("wealth_housing",): "navy",  # More specific, should win
         ("*_m",): "orange",
@@ -685,7 +685,7 @@ def test_node_colormap_glob_patterns_in_plot():
     """Test that glob patterns work in actual DAG plots."""
 
     # Use glob patterns in colormap
-    glob_colormap = {
+    glob_colormap: dict[tuple[str, ...] | str, str] = {
         ("payroll*",): "#ff0000",  # Match payroll_tax and any payroll_ prefix
         ("housing_benefits", "*"): "#00ff00",  # Match all under housing_benefits
         ("*_tax",): "#0000ff",  # Match anything ending in _tax
@@ -746,7 +746,7 @@ def test_node_colormap_doublestar_patterns():
     )
 
     # Test _find_color_for_qname with ** patterns
-    colormap = {
+    colormap: dict[tuple[str, ...], str] = {
         ("**", "*_bg"): "purple",  # Match any _bg at any depth
         ("bürgergeld", "*"): "green",  # More specific for bürgergeld direct children
         ("bürgergeld", "betrag_m_bg"): "darkgreen",  # Most specific
@@ -768,7 +768,7 @@ def test_node_colormap_doublestar_patterns():
 
 def test_node_colormap_doublestar_in_plot():
     """Test that ** patterns work in actual DAG plots."""
-    doublestar_colormap = {
+    doublestar_colormap: dict[tuple[str, ...] | str, str] = {
         ("**", "*_y"): "#ff0000",  # Match any yearly variable at any depth
         ("housing_benefits",): "#00ff00",
         ("top-level",): "#888888",
@@ -788,7 +788,7 @@ def test_node_colormap_doublestar_in_plot():
 def test_normalize_colormap():
     """Test that _normalize_colormap converts qname strings to tuples."""
     # Mixed input with both tuples and qname strings
-    mixed_colormap = {
+    mixed_colormap: dict[tuple[str, ...] | str, str] = {
         ("housing_benefits",): "green",
         "payroll_tax": "red",
         "wealth_tax__amount": "blue",
@@ -822,7 +822,7 @@ def test_normalize_colormap():
 def test_node_colormap_qname_strings():
     """Test that node_colormap accepts qname strings as keys."""
     # Use qname strings in colormap (equivalent to tuple patterns)
-    qname_colormap = {
+    qname_colormap: dict[tuple[str, ...] | str, str] = {
         "payroll_tax": "#ff0000",
         "housing_benefits__*": "#00ff00",
         "**__*_y": "#0000ff",
@@ -842,7 +842,7 @@ def test_node_colormap_qname_strings():
 
 def test_node_colormap_qname_and_tuple_mixed():
     """Test that node_colormap accepts mixed qname strings and tuples."""
-    mixed_colormap = {
+    mixed_colormap: dict[tuple[str, ...] | str, str] = {
         ("payroll_tax",): "#ff0000",  # Tuple
         "housing_benefits__*": "#00ff00",  # Qname string
         ("**", "*_m"): "#0000ff",  # Tuple with **

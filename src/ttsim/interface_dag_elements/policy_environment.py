@@ -10,6 +10,7 @@ import numpy
 from ttsim.interface_dag_elements.interface_node_objects import interface_function
 from ttsim.interface_dag_elements.shared import (
     merge_trees,
+    param_has_substantive_content,
     upsert_tree,
 )
 from ttsim.tt import (
@@ -28,11 +29,13 @@ from ttsim.tt import (
 from ttsim.tt.column_objects_param_function import (
     DEFAULT_END_DATE,
 )
-from ttsim.tt.piecewise_polynomial import get_piecewise_parameters
+from ttsim.tt.interval_utils import merge_piecewise_intervals
+from ttsim.tt.piecewise_polynomial import PIECEWISE_TYPES, get_piecewise_parameters
 
 if TYPE_CHECKING:
-    from types import ModuleType
+    from types import FunctionType, ModuleType
 
+    from ttsim.tt import ConsecutiveIntLookupTableParamValue
     from ttsim.typing import (
         FlatColumnObjectsParamFunctions,
         FlatOrigParamSpecs,
@@ -120,7 +123,7 @@ def _active_column_objects_and_param_functions(
     -------
     A tree of active ColumnObjectParamFunctions.
     """
-    flat_objects_tree = {
+    flat_objects_tree: dict[tuple[str, ...], Any] = {
         (*orig_path[:-2], obj.leaf_name): obj
         for orig_path, obj in orig.items()
         if obj.is_active(policy_date)
@@ -166,7 +169,7 @@ def _get_one_param(
     spec: OrigParamSpec,
     policy_date: datetime.date,
     xnp: ModuleType,
-) -> ParamObject:
+) -> ParamObject | None:
     """Parse the original specification found in the yaml tree to a ParamObject."""
     cleaned_spec = _clean_one_param_spec(spec=spec, policy_date=policy_date)
 
@@ -179,20 +182,17 @@ def _get_one_param(
         return ScalarParam(**cleaned_spec)
     if param_type == "dict":
         return DictParam(**cleaned_spec)
-    if param_type in {
-        "piecewise_constant",
-        "piecewise_linear",
-        "piecewise_quadratic",
-        "piecewise_cubic",
-    }:
+    if param_type in PIECEWISE_TYPES:
         cleaned_spec["value"] = get_piecewise_parameters(
             leaf_name=leaf_name,
             func_type=param_type,  # ty: ignore[invalid-argument-type]
-            parameter_dict=cleaned_spec["value"],
+            parameter_list=cleaned_spec["value"],
             xnp=xnp,
         )
         return PiecewisePolynomialParam(**cleaned_spec)
-    lookup_table_converters = {
+    lookup_table_converters: dict[
+        str, FunctionType[..., ConsecutiveIntLookupTableParamValue]
+    ] = {
         "consecutive_int_lookup_table": get_consecutive_int_lookup_table_param_value,
         "month_based_phase_inout_of_age_thresholds": (
             get_month_based_phase_inout_of_age_thresholds_param_value
@@ -242,48 +242,74 @@ def _clean_one_param_spec(
     out["reference_period"] = spec.get("reference_period", None)
     out["name"] = spec["name"]
     out["description"] = spec["description"]
-    current_spec: dict[str | int, Any] = copy.deepcopy(spec[policy_dates[idx - 1]])
+
+    current_spec: dict[str, Any] = copy.deepcopy(spec[policy_dates[idx - 1]])  # ty: ignore[invalid-assignment]
     out["note"] = current_spec.pop("note", None)
     out["reference"] = current_spec.pop("reference", None)
-    if len(current_spec) == 0:
+
+    if not param_has_substantive_content(current_spec):
         return None
-    if len(current_spec) == 1 and "updates_previous" in current_spec:
-        raise ValueError(
-            "'updates_previous' cannot be specified as the only element, found:\n\n"
-            f"{spec}\n\n",
-        )
-        # Parameter ceased to exist
-    if spec["type"] == "scalar":
-        if "updates_previous" in current_spec:
+
+    param_type = spec["type"]
+    if param_type == "scalar":
+        if current_spec.pop("updates_previous", False):
             raise ValueError(
-                "'updates_previous' cannot be specified for scalar parameters"
+                "'updates_previous' cannot be specified for scalar parameters."
             )
         out["value"] = current_spec["value"]
+    elif param_type in PIECEWISE_TYPES:
+        relevant_specs: list[dict[str, Any]] = [
+            copy.deepcopy(spec[policy_dates[i]]) for i in range(idx)
+        ]  # ty: ignore[invalid-assignment]
+        out["value"] = _get_param_value_piecewise(relevant_specs)
     else:
-        out["value"] = _get_param_value([spec[d] for d in policy_dates[:idx]])
+        relevant_specs: list[dict[str, Any]] = [
+            copy.deepcopy(spec[policy_dates[i]]) for i in range(idx)
+        ]  # ty: ignore[invalid-assignment]
+        out["value"] = _get_param_value(relevant_specs)
     return out
 
 
 def _get_param_value(
-    relevant_specs: list[dict[str | int, Any]],
-) -> dict[str | int, Any]:
-    """Get the value of a parameter.
+    relevant_specs: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Resolve parameter value, handling `updates_previous` chains."""
+    current = relevant_specs[-1]
+    current.pop("note", None)
+    current.pop("reference", None)
+    updates_previous = current.pop("updates_previous", False)
 
-    Implementation is a recursion in order to handle the 'updates_previous' machinery.
-
-    """
-    current_spec = relevant_specs[-1].copy()
-    updates_previous = current_spec.pop("updates_previous", False)
-    current_spec.pop("note", None)
-    current_spec.pop("reference", None)
-    if updates_previous:
-        if len(relevant_specs) <= 1:
-            raise ValueError(
-                "'updates_previous' cannot be missing in the initial spec, found "
-                f"{relevant_specs}"
-            )
-        return upsert_tree(
-            base=_get_param_value(relevant_specs=relevant_specs[:-1]),  # ty: ignore[invalid-argument-type]
-            to_upsert=current_spec,  # ty: ignore[invalid-argument-type]
+    if updates_previous and len(relevant_specs) <= 1:
+        raise ValueError(
+            "'updates_previous' cannot be specified on the initial date entry."
         )
-    return current_spec
+
+    if not updates_previous:
+        return current
+
+    base_value = _get_param_value(relevant_specs[:-1])
+    return upsert_tree(base=base_value, to_upsert=current)
+
+
+def _get_param_value_piecewise(
+    relevant_specs: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Resolve piecewise parameter value, handling `updates_previous` chains."""
+    current = relevant_specs[-1]
+    current.pop("note", None)
+    current.pop("reference", None)
+    updates_previous = current.pop("updates_previous", False)
+
+    if updates_previous and len(relevant_specs) <= 1:
+        raise ValueError(
+            "'updates_previous' cannot be specified on the initial date entry."
+        )
+
+    if not updates_previous:
+        return current.get("intervals", [])
+
+    base_intervals = _get_param_value_piecewise(relevant_specs[:-1])
+    return merge_piecewise_intervals(
+        base=base_intervals,
+        update=current.get("intervals", []),
+    )

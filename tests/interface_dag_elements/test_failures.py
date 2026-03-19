@@ -11,12 +11,8 @@ import pandas as pd
 import pytest
 from mettsim import middle_earth
 
-try:
-    import jax
-except ImportError:
-    jax = None
-
 from ttsim import InputData, MainTarget, OrigPolicyObjects, TTTargets, main
+from ttsim.interface_dag_elements.backend import jax
 from ttsim.interface_dag_elements.fail_if import (
     ConflictingActivePeriodsError,
     _param_with_active_periods,
@@ -78,37 +74,54 @@ _GENERIC_PARAM_SPEC = {
     **_GENERIC_PARAM_HEADER,
 }
 
-some_consecutive_int_lookup_table_param = ConsecutiveIntLookupTableParam(
-    value=ConsecutiveIntLookupTableParamValue(
-        bases_to_subtract=numpy.array([1]),
-        xnp=numpy,
-        values_to_look_up=numpy.array([1, 2, 3]),
-    ),
-    **_GENERIC_PARAM_SPEC,  # ty: ignore[invalid-argument-type]
-)
-
 some_dict_param = DictParam(
     value={"a": 1, "b": 2},
     **_GENERIC_PARAM_SPEC,  # ty: ignore[invalid-argument-type]
 )
 
 
-some_piecewise_polynomial_param = PiecewisePolynomialParam(
-    value=PiecewisePolynomialParamValue(
-        thresholds=numpy.array([1, 2, 3]),
-        intercepts=numpy.array([1, 2, 3]),
-        rates=numpy.array([1, 2, 3]),
-    ),
-    **_GENERIC_PARAM_SPEC,  # ty: ignore[invalid-argument-type]
-)
+def _make_consecutive_int_lookup_table_param(
+    xnp: ModuleType,
+) -> ConsecutiveIntLookupTableParam:
+    return ConsecutiveIntLookupTableParam(
+        value=ConsecutiveIntLookupTableParamValue(
+            bases_to_subtract=xnp.array([1]),
+            xnp=xnp,
+            values_to_look_up=xnp.array([1, 2, 3]),
+        ),
+        **_GENERIC_PARAM_SPEC,  # ty: ignore[invalid-argument-type]
+    )
+
+
+def _make_piecewise_polynomial_param(xnp: ModuleType) -> PiecewisePolynomialParam:
+    return PiecewisePolynomialParam(
+        value=PiecewisePolynomialParamValue(
+            thresholds=xnp.array([1, 2, 3]),
+            intercepts=xnp.array([1, 2, 3]),
+            coefficients=xnp.array([1, 2, 3]),
+        ),
+        **_GENERIC_PARAM_SPEC,  # ty: ignore[invalid-argument-type]
+    )
 
 
 @pytest.fixture
-def minimal_data_tree():
+def some_consecutive_int_lookup_table_param(
+    xnp: ModuleType,
+) -> ConsecutiveIntLookupTableParam:
+    return _make_consecutive_int_lookup_table_param(xnp)
+
+
+@pytest.fixture
+def some_piecewise_polynomial_param(xnp: ModuleType) -> PiecewisePolynomialParam:
+    return _make_piecewise_polynomial_param(xnp)
+
+
+@pytest.fixture
+def minimal_data_tree(xnp: ModuleType):
     return {
-        "hh_id": numpy.array([1, 2, 3]),
-        "p_id": numpy.array([1, 2, 3]),
-        "p_id_spouse": numpy.array([2, 1, -1]),
+        "hh_id": xnp.array([1, 2, 3]),
+        "p_id": xnp.array([1, 2, 3]),
+        "p_id_spouse": xnp.array([2, 1, -1]),
     }
 
 
@@ -766,29 +779,31 @@ def test_fail_if_input_df_mapper_has_incorrect_format(
 
 @pytest.mark.parametrize(
     (
-        "environment",
+        "env_factory",
         "tt_targets__tree",
         "match",
     ),
     [
         (
-            {
-                "some_piecewise_polynomial_param": some_piecewise_polynomial_param,
+            lambda xnp: {
+                "some_piecewise_polynomial_param": _make_piecewise_polynomial_param(
+                    xnp
+                ),
             },
             {"some_piecewise_polynomial_param": "res1"},
             "The data contains objects that cannot be cast to a pandas.DataFrame",
         ),
         (
-            {
+            lambda xnp: {
                 "some_consecutive_int_lookup_table_param": (
-                    some_consecutive_int_lookup_table_param
+                    _make_consecutive_int_lookup_table_param(xnp)
                 ),
             },
             {"some_consecutive_int_lookup_table_param": "res1"},
             "The data contains objects that cannot be cast to a pandas.DataFrame",
         ),
         (
-            {
+            lambda _xnp: {
                 "some_param_func_returning_list_of_length_2": some_param_func_returning_list_of_length_2,
             },
             {"some_param_func_returning_list_of_length_2": "res1"},
@@ -797,17 +812,18 @@ def test_fail_if_input_df_mapper_has_incorrect_format(
     ],
 )
 def test_fail_if_non_convertible_objects_in_results_tree_because_of_object_type(
-    environment,
+    env_factory,
     tt_targets__tree,
     minimal_data_tree,
     match,
+    xnp,
     backend,
 ):
     with pytest.raises(TypeError, match=match):
         main(
             main_target=MainTarget.results.df_with_nested_columns,
             input_data=InputData.tree(tree=minimal_data_tree),
-            policy_environment=environment,
+            policy_environment=env_factory(xnp),
             evaluation_date=datetime.date(2024, 1, 1),
             tt_targets=TTTargets.tree(tt_targets__tree),
             rounding=False,
@@ -1492,28 +1508,28 @@ def test_fail_if_policy_environment_is_invalid(policy_environment, match):
 
 
 @pytest.mark.parametrize(
-    "policy_environment",
+    "env_factory",
     [
         # Valid environment with policy functions
-        {
+        lambda _xnp: {
             "valid_func": policy_function(leaf_name="valid_func")(identity),
             "another_func": policy_function(leaf_name="another_func")(return_one),
         },
         # Valid environment with param functions
-        {
+        lambda _xnp: {
             "some_param_func_returning_array_of_length_2": some_param_func_returning_array_of_length_2,
         },
         # Valid environment with param objects
-        {
+        lambda xnp: {
             "some_dict_param": some_dict_param,
-            "some_piecewise_polynomial_param": some_piecewise_polynomial_param,
+            "some_piecewise_polynomial_param": _make_piecewise_polynomial_param(xnp),
         },
         # Valid environment with module types
-        {
+        lambda _xnp: {
             "numpy_module": numpy,
         },
         # Valid environment with nested structure
-        {
+        lambda _xnp: {
             "nested": {
                 "nested_func": policy_function(leaf_name="nested_func")(identity),
                 "some_param_func_returning_array_of_length_2": some_param_func_returning_array_of_length_2,
@@ -1521,7 +1537,7 @@ def test_fail_if_policy_environment_is_invalid(policy_environment, match):
             "some_dict_param": some_dict_param,
         },
         # Valid environment with mixed types
-        {
+        lambda _xnp: {
             "func": policy_function(leaf_name="func")(identity),
             "some_param_func_returning_array_of_length_2": some_param_func_returning_array_of_length_2,
             "some_dict_param": some_dict_param,
@@ -1529,9 +1545,9 @@ def test_fail_if_policy_environment_is_invalid(policy_environment, match):
         },
     ],
 )
-def test_policy_environment_is_invalid_passes(policy_environment):
+def test_policy_environment_is_invalid_passes(env_factory, xnp):
     """Test that valid environments pass the validation."""
-    policy_environment_is_invalid(policy_environment)
+    policy_environment_is_invalid(env_factory(xnp))
 
 
 def test_raises_error_if_p_id_is_passed_as_scalar(backend: Literal["jax", "numpy"]):
@@ -1677,12 +1693,13 @@ def test_fail_if_tt_dag_includes_policy_input_with_fail_msg_if_included_set(
 def test_fail_if_tt_dag_includes_policy_input_with_fail_msg_if_included_set_does_not_fail_if_overriden(
     minimal_data_tree: NestedData,
     backend: Literal["jax", "numpy"],
+    xnp: ModuleType,
 ):
     env = mettsim_environment(backend)
     env["fam_id"] = dummy_fam_id  # ty: ignore [invalid-assignment]
     env["sp_id"] = should_fail_sp_id  # ty: ignore [invalid-assignment]
 
-    minimal_data_tree["sp_id"] = numpy.array([0, 0, 1])  # ty: ignore [invalid-assignment]
+    minimal_data_tree["sp_id"] = xnp.array([0, 0, 1])  # ty: ignore [invalid-assignment]
 
     main(
         main_target=MainTarget.results.df_with_mapper,
@@ -1696,6 +1713,7 @@ def test_fail_if_tt_dag_includes_policy_input_with_fail_msg_if_included_set_does
 
 @pytest.mark.skipif(jax is None, reason="Jax is not installed")
 def test_backend_has_changed_from_jax_to_numpy_passes():
+    assert jax is not None
     policy_environment = main(
         main_target=MainTarget.policy_environment,
         policy_date_str="2000-01-01",
@@ -1704,9 +1722,9 @@ def test_backend_has_changed_from_jax_to_numpy_passes():
     )
     input_data = InputData.tree(
         tree={
-            "p_id": jax.numpy.array([0, 1, 2]),  # ty: ignore[possibly-missing-attribute]
+            "p_id": jax.numpy.array([0, 1, 2]),
             "property_tax": {
-                "acre_size_in_hectares": jax.numpy.array([5, 20, 200]),  # ty: ignore[possibly-missing-attribute]
+                "acre_size_in_hectares": jax.numpy.array([5, 20, 200]),
             },
         }
     )

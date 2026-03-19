@@ -6,13 +6,24 @@ repos:
       - id: check-useless-excludes
       # - id: identity  # Prints all files passed to pre-commits. Debugging.
   - repo: https://github.com/tox-dev/pyproject-fmt
-    rev: v2.12.1
+    rev: v2.18.1
     hooks:
       - id: pyproject-fmt
   - repo: https://github.com/lyz-code/yamlfix
     rev: 1.19.1
     hooks:
       - id: yamlfix
+  - repo: https://github.com/python-jsonschema/check-jsonschema
+    rev: 0.37.0
+    hooks:
+      - id: check-github-workflows
+      - id: check-jsonschema
+        name: Validate JSON/YAML files against schema
+        entry: check-jsonschema
+        language: python
+        files: ^src_mettsim/mettsim/middle_earth/.*\.(yaml|yml)$
+        args:
+          - --schemafile=src/ttsim/params-schema.json
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:
@@ -31,13 +42,13 @@ repos:
       - id: fix-byte-order-marker
         types:
           - text
-      - id: name-tests-test
-        args:
-          - --pytest-test-first
       - id: mixed-line-ending
         args:
           - --fix=lf
         description: Forces to replace line ending by the UNIX 'lf' character.
+      - id: name-tests-test
+        args:
+          - --pytest-test-first
       - id: no-commit-to-branch
         args:
           - --branch
@@ -48,7 +59,7 @@ repos:
     hooks:
       - id: yamllint
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.14.14
+    rev: v0.15.6
     hooks:
       - id: ruff-check
         args:
@@ -63,7 +74,7 @@ repos:
           - pyi
           - python
   - repo: https://github.com/kynan/nbstripout
-    rev: 0.9.0
+    rev: 0.9.1
     hooks:
       - id: nbstripout
         args:
@@ -80,16 +91,6 @@ repos:
         args:
           - --wrap
           - '88'
-        files: (CLAUDE\.md|README\.md|CHANGES\.md|CODE_OF_CONDUCT\.md)
-  - repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.36.1
-    hooks:
-      - id: check-jsonschema
-        name: Validate JSON/YAML files against schema
-        entry: check-jsonschema
-        language: python
-        files: ^src_mettsim/mettsim/middle_earth/.*\.(yaml|yml)$
-        args:
-          - --schemafile=src/ttsim/params-schema.json
+        files: (AGENTS\.md|CLAUDE\.md|README\.md|CHANGES\.md|CODE_OF_CONDUCT\.md|modules/.*\.md|profiles/.*\.md)
 ci:
   autoupdate_schedule: monthly

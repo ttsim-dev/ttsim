@@ -4,7 +4,7 @@ from pathlib import Path
 
 ROOT_PATH = Path(__file__).parent
 
-COLORMAP = {
+COLORMAP: dict[tuple[str, ...] | str, str] = {
     ("housing_benefits",): "red",
     ("orc_hunting_bounty",): "green",
     ("payroll_tax",): "gold",

@@ -27,6 +27,22 @@ if TYPE_CHECKING:
 
 _DASHED_ISO_DATE_REGEX = re.compile(r"\d{4}-\d{2}-\d{2}")
 
+_PARAM_METADATA_KEYS = frozenset({"note", "reference"})
+
+
+def param_has_substantive_content(
+    entry: dict[str, Any] | dict[str | int, Any] | list,
+) -> bool:
+    """Check whether a parameter date entry has substantive content.
+
+    Parameters do not have substantive content if they are empty or contain only
+    note and reference metadata. This happens when a parameter is revoked/abolished
+    and we have just passed a reference and a note to document this.
+    """
+    if isinstance(entry, list):
+        return bool(entry)
+    return any(k not in _PARAM_METADATA_KEYS for k in entry)
+
 
 def to_datetime(date: datetime.date | DashedISOString) -> datetime.date:
     if isinstance(date, datetime.date):

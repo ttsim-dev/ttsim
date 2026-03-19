@@ -166,27 +166,29 @@ SOME_DICT_PARAM = DictParam(
 )
 
 
-SOME_PIECEWISE_POLYNOMIAL_PARAM = PiecewisePolynomialParam(
-    value=PiecewisePolynomialParamValue(
-        thresholds=[1, 2, 3],
-        intercepts=[1, 2, 3],
-        rates=[1, 2, 3],
-    ),
-    start_date=datetime.date(2025, 1, 1),
-    end_date=datetime.date(2025, 12, 31),
-    name={
-        "de": "Ein piecewise polynomial param",
-        "en": "Some piecewise polynomial param",
-    },
-    description={
-        "de": "Ein piecewise polynomial param",
-        "en": "Some piecewise polynomial param",
-    },
-    unit=None,
-    reference_period=None,
-    note=None,
-    reference=None,
-)
+@pytest.fixture
+def some_piecewise_polynomial_param(xnp):
+    return PiecewisePolynomialParam(
+        value=PiecewisePolynomialParamValue(
+            thresholds=xnp.array([1, 2, 3]),
+            intercepts=xnp.array([1, 2, 3]),
+            coefficients=xnp.array([1, 2, 3]),
+        ),
+        start_date=datetime.date(2025, 1, 1),
+        end_date=datetime.date(2025, 12, 31),
+        name={
+            "de": "Ein piecewise polynomial param",
+            "en": "Some piecewise polynomial param",
+        },
+        description={
+            "de": "Ein piecewise polynomial param",
+            "en": "Some piecewise polynomial param",
+        },
+        unit=None,
+        reference_period=None,
+        note=None,
+        reference=None,
+    )
 
 
 @pytest.fixture(scope="module")
@@ -736,12 +738,14 @@ def test_user_provided_aggregate_by_p_id_specs(
     )
 
 
-def test_policy_environment_with_params_and_scalars_is_processed(xnp, dnp, backend):
+def test_policy_environment_with_params_and_scalars_is_processed(
+    xnp, dnp, backend, some_piecewise_polynomial_param
+):
     policy_environment = {
         "raw_param_spec": SOME_RAW_PARAM,
         "some_int_param": SOME_INT_PARAM,
         "some_dict_param": SOME_DICT_PARAM,
-        "some_piecewise_polynomial_param": SOME_PIECEWISE_POLYNOMIAL_PARAM,
+        "some_piecewise_polynomial_param": some_piecewise_polynomial_param,
         "some_int_scalar": 1,
         "some_float_scalar": 2.0,
         "some_bool_scalar": True,
@@ -765,7 +769,7 @@ def test_policy_environment_with_params_and_scalars_is_processed(xnp, dnp, backe
         "some_scalar_params_func": 1,
         "some_int_param": SOME_INT_PARAM.value,
         "some_dict_param": SOME_DICT_PARAM.value,
-        "some_piecewise_polynomial_param": SOME_PIECEWISE_POLYNOMIAL_PARAM.value,
+        "some_piecewise_polynomial_param": some_piecewise_polynomial_param.value,
         "some_int_scalar": 1,
         "some_float_scalar": 2.0,
         "some_bool_scalar": True,

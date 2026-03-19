@@ -147,7 +147,7 @@ def sum_by_p_id(
     fail_if_dtype_not_int(p_id_to_aggregate_by, agg_func="sum_by_p_id")
     fail_if_dtype_not_int(p_id_to_store_by, agg_func="sum_by_p_id")
 
-    if column.dtype in ["bool"]:
+    if column.dtype == "bool":
         column = column.astype(int)
 
     # Vectorized implementation using numpy_groupies

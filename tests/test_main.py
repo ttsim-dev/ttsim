@@ -1,12 +1,11 @@
 from __future__ import annotations
 
 import inspect
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import dags
 import dags.tree as dt
 import networkx as nx
-import numpy as np
 import optree
 import pandas as pd
 import pytest
@@ -36,6 +35,7 @@ from ttsim.entry_point import (
 from ttsim.interface_dag_elements.fail_if import format_list_linewise
 from ttsim.interface_dag_elements.interface_node_objects import (
     InputDependentInterfaceFunction,
+    InterfaceFunction,
     input_dependent_interface_function,
     interface_function,
 )
@@ -197,24 +197,33 @@ def test_main_target_class_is_complete() -> None:
 
 
 @pytest.mark.parametrize(
-    ("classmethod_instance", "expected_field_name"),
+    ("instance_factory", "expected_field_name"),
     [
         (
-            InputData.df_and_mapper(
+            lambda _xnp: InputData.df_and_mapper(
                 pd.DataFrame({"test": [1, 2]}), {"nested": {"key": "test"}}
             ),
             "df_and_mapper",
         ),
         (
-            InputData.df_with_nested_columns(pd.DataFrame({"test": [1, 2, 3]})),
+            lambda _xnp: InputData.df_with_nested_columns(
+                pd.DataFrame({"test": [1, 2, 3]})
+            ),
             "df_with_nested_columns",
         ),
-        (InputData.tree({"tree_data": {"key": [1, 2, 3]}}), "tree"),
-        (InputData.flat({"flat.key": [1, 2, 3]}), "flat"),  # ty: ignore[invalid-argument-type]
-        (InputData.qname({"qname.test": np.array([1, 2, 3])}), "qname"),
+        (lambda _xnp: InputData.tree({"tree_data": {"key": [1, 2, 3]}}), "tree"),
+        (
+            lambda _xnp: InputData.flat({"flat.key": [1, 2, 3]}),  # ty: ignore[invalid-argument-type]
+            "flat",
+        ),
+        (
+            lambda xnp: InputData.qname({"qname.test": xnp.array([1, 2, 3])}),
+            "qname",
+        ),
     ],
 )
-def test_input_data_classmethods(classmethod_instance, expected_field_name):
+def test_input_data_classmethods(instance_factory, expected_field_name, xnp):
+    classmethod_instance = instance_factory(xnp)
     # Test that the classmethod works and other fields are None
     all_fields = set(InputData.__dataclass_fields__.keys())
     for field in all_fields:
@@ -226,154 +235,180 @@ def test_input_data_classmethods(classmethod_instance, expected_field_name):
 
 
 @pytest.mark.parametrize(
-    ("classmethod_instance", "dict_instance"),
+    ("instance_factory", "dict_instance_factory"),
     [
         # TTTargets
         (
-            TTTargets.qname({"test": "value"}),
-            TTTargets(qname={"test": "value"}),  # ty: ignore[unknown-argument]
+            lambda _xnp: TTTargets.qname({"test": "value"}),
+            lambda _xnp: TTTargets(qname={"test": "value"}),  # ty: ignore[unknown-argument]
         ),
         (
-            TTTargets.tree({"wealth_tax": {"amount_y": None}}),
-            TTTargets(tree={"wealth_tax": {"amount_y": None}}),  # ty: ignore[unknown-argument]
+            lambda _xnp: TTTargets.tree({"wealth_tax": {"amount_y": None}}),
+            lambda _xnp: TTTargets(tree={"wealth_tax": {"amount_y": None}}),  # ty: ignore[unknown-argument]
         ),
         # OrigPolicyObjects
         (
-            OrigPolicyObjects.root(middle_earth.ROOT_PATH),
-            OrigPolicyObjects(root=middle_earth.ROOT_PATH),  # ty: ignore[unknown-argument]
+            lambda _xnp: OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+            lambda _xnp: OrigPolicyObjects(root=middle_earth.ROOT_PATH),  # ty: ignore[unknown-argument]
         ),
         (
-            OrigPolicyObjects.column_objects_and_param_functions({}),
-            OrigPolicyObjects(column_objects_and_param_functions={}),  # ty: ignore[unknown-argument]
+            lambda _xnp: OrigPolicyObjects.column_objects_and_param_functions({}),
+            lambda _xnp: OrigPolicyObjects(column_objects_and_param_functions={}),  # ty: ignore[unknown-argument]
         ),
         (
-            OrigPolicyObjects.param_specs({}),
-            OrigPolicyObjects(param_specs={}),  # ty: ignore[unknown-argument]
+            lambda _xnp: OrigPolicyObjects.param_specs({}),
+            lambda _xnp: OrigPolicyObjects(param_specs={}),  # ty: ignore[unknown-argument]
         ),
         # Labels
         (
-            Labels.input_columns({"test_column"}),
-            Labels(input_columns={"test_column"}),  # ty: ignore[unknown-argument]
+            lambda _xnp: Labels.input_columns({"test_column"}),
+            lambda _xnp: Labels(input_columns={"test_column"}),  # ty: ignore[unknown-argument]
         ),
         (
-            Labels.column_targets(["target1", "target2"]),
-            Labels(column_targets=["target1", "target2"]),  # ty: ignore[unknown-argument]
+            lambda _xnp: Labels.column_targets(["target1", "target2"]),
+            lambda _xnp: Labels(column_targets=["target1", "target2"]),  # ty: ignore[unknown-argument]
         ),
         (
-            Labels.grouping_levels(["level1"]),
-            Labels(grouping_levels=["level1"]),  # ty: ignore[unknown-argument]
+            lambda _xnp: Labels.grouping_levels(["level1"]),
+            lambda _xnp: Labels(grouping_levels=["level1"]),  # ty: ignore[unknown-argument]
         ),
         (
-            Labels.input_data_targets(["data_target"]),
-            Labels(input_data_targets=["data_target"]),  # ty: ignore[unknown-argument]
+            lambda _xnp: Labels.input_data_targets(["data_target"]),
+            lambda _xnp: Labels(input_data_targets=["data_target"]),  # ty: ignore[unknown-argument]
         ),
         (
-            Labels.param_targets(["param_target"]),
-            Labels(param_targets=["param_target"]),  # ty: ignore[unknown-argument]
+            lambda _xnp: Labels.param_targets(["param_target"]),
+            lambda _xnp: Labels(param_targets=["param_target"]),  # ty: ignore[unknown-argument]
         ),
         (
-            Labels.root_nodes({"root"}),
-            Labels(root_nodes={"root"}),  # ty: ignore[unknown-argument]
+            lambda _xnp: Labels.root_nodes({"root"}),
+            lambda _xnp: Labels(root_nodes={"root"}),  # ty: ignore[unknown-argument]
         ),
         (
-            Labels.top_level_namespace({"namespace"}),
-            Labels(top_level_namespace={"namespace"}),  # ty: ignore[unknown-argument]
+            lambda _xnp: Labels.top_level_namespace({"namespace"}),
+            lambda _xnp: Labels(top_level_namespace={"namespace"}),  # ty: ignore[unknown-argument]
         ),
         # Results
         (
-            Results.df_with_mapper(pd.DataFrame({"test": [1, 2, 3]})),
-            Results(df_with_mapper=pd.DataFrame({"test": [1, 2, 3]})),  # ty: ignore[unknown-argument]
+            lambda _xnp: Results.df_with_mapper(pd.DataFrame({"test": [1, 2, 3]})),
+            lambda _xnp: Results(df_with_mapper=pd.DataFrame({"test": [1, 2, 3]})),  # ty: ignore[unknown-argument]
         ),
         (
-            Results.df_with_nested_columns(pd.DataFrame({"nested": [1, 2]})),
-            Results(df_with_nested_columns=pd.DataFrame({"nested": [1, 2]})),  # ty: ignore[unknown-argument]
+            lambda _xnp: Results.df_with_nested_columns(
+                pd.DataFrame({"nested": [1, 2]})
+            ),
+            lambda _xnp: Results(
+                df_with_nested_columns=pd.DataFrame({"nested": [1, 2]})  # ty: ignore[unknown-argument]
+            ),
         ),
         (
-            Results.tree({"result_tree": {"data": [1, 2, 3]}}),
-            Results(tree={"result_tree": {"data": [1, 2, 3]}}),  # ty: ignore[unknown-argument]
+            lambda _xnp: Results.tree({"result_tree": {"data": [1, 2, 3]}}),
+            lambda _xnp: Results(tree={"result_tree": {"data": [1, 2, 3]}}),  # ty: ignore[unknown-argument]
         ),
         # RawResults
         (
-            RawResults.columns({"test": np.array([1, 2, 3])}),
-            RawResults(columns={"test": np.array([1, 2, 3])}),  # ty: ignore[unknown-argument]
+            lambda xnp: RawResults.columns({"test": xnp.array([1, 2, 3])}),
+            lambda xnp: RawResults(columns={"test": xnp.array([1, 2, 3])}),  # ty: ignore[unknown-argument]
         ),
         (
-            RawResults.params({"param": np.array([4, 5, 6])}),
-            RawResults(params={"param": np.array([4, 5, 6])}),  # ty: ignore[unknown-argument]
+            lambda xnp: RawResults.params({"param": xnp.array([4, 5, 6])}),
+            lambda xnp: RawResults(params={"param": xnp.array([4, 5, 6])}),  # ty: ignore[unknown-argument]
         ),
         (
-            RawResults.from_input_data({"input": np.array([7, 8, 9])}),
-            RawResults(from_input_data={"input": np.array([7, 8, 9])}),  # ty: ignore[unknown-argument]
+            lambda xnp: RawResults.from_input_data({"input": xnp.array([7, 8, 9])}),
+            lambda xnp: RawResults(from_input_data={"input": xnp.array([7, 8, 9])}),  # ty: ignore[unknown-argument]
         ),
         (
-            RawResults.combined({"combined": np.array([1, 2])}),
-            RawResults(combined={"combined": np.array([1, 2])}),  # ty: ignore[unknown-argument]
+            lambda xnp: RawResults.combined({"combined": xnp.array([1, 2])}),
+            lambda xnp: RawResults(combined={"combined": xnp.array([1, 2])}),  # ty: ignore[unknown-argument]
         ),
         # SpecializedEnvironment
         (
-            SpecializedEnvironment.without_tree_logic_and_with_derived_functions({}),
-            SpecializedEnvironment(without_tree_logic_and_with_derived_functions={}),  # ty: ignore[unknown-argument]
-        ),
-        (
-            SpecializedEnvironment.with_processed_params_and_scalars({}),
-            SpecializedEnvironment(with_processed_params_and_scalars={}),  # ty: ignore[unknown-argument]
-        ),
-        (
-            SpecializedEnvironment.with_partialled_params_and_scalars({}),
-            SpecializedEnvironment(with_partialled_params_and_scalars={}),  # ty: ignore[unknown-argument]
-        ),
-        (
-            SpecializedEnvironment.tt_dag(nx.DiGraph()),
-            SpecializedEnvironment(tt_dag=nx.DiGraph()),  # ty: ignore[unknown-argument]
-        ),
-        # SpecializedEnvironmentForPlottingAndTemplates
-        (
-            SpecializedEnvironmentForPlottingAndTemplates.qnames_to_derive_functions_from(
-                {"a"}
+            lambda _xnp: (
+                SpecializedEnvironment.without_tree_logic_and_with_derived_functions({})
             ),
-            SpecializedEnvironmentForPlottingAndTemplates(
-                qnames_to_derive_functions_from={"a"}  # ty: ignore[unknown-argument]
-            ),
-        ),
-        (
-            SpecializedEnvironmentForPlottingAndTemplates.without_tree_logic_and_with_derived_functions(
-                {}
-            ),
-            SpecializedEnvironmentForPlottingAndTemplates(
+            lambda _xnp: SpecializedEnvironment(
                 without_tree_logic_and_with_derived_functions={}  # ty: ignore[unknown-argument]
             ),
         ),
         (
-            SpecializedEnvironmentForPlottingAndTemplates.without_input_data_nodes_with_dummy_callables(
-                {}
+            lambda _xnp: SpecializedEnvironment.with_processed_params_and_scalars({}),
+            lambda _xnp: SpecializedEnvironment(with_processed_params_and_scalars={}),  # ty: ignore[unknown-argument]
+        ),
+        (
+            lambda _xnp: SpecializedEnvironment.with_partialled_params_and_scalars({}),
+            lambda _xnp: SpecializedEnvironment(with_partialled_params_and_scalars={}),  # ty: ignore[unknown-argument]
+        ),
+        (
+            lambda _xnp: SpecializedEnvironment.tt_dag(nx.DiGraph()),
+            lambda _xnp: SpecializedEnvironment(tt_dag=nx.DiGraph()),  # ty: ignore[unknown-argument]
+        ),
+        # SpecializedEnvironmentForPlottingAndTemplates
+        (
+            lambda _xnp: (
+                SpecializedEnvironmentForPlottingAndTemplates.qnames_to_derive_functions_from(
+                    {"a"}
+                )
             ),
-            SpecializedEnvironmentForPlottingAndTemplates(
+            lambda _xnp: SpecializedEnvironmentForPlottingAndTemplates(
+                qnames_to_derive_functions_from={"a"}  # ty: ignore[unknown-argument]
+            ),
+        ),
+        (
+            lambda _xnp: (
+                SpecializedEnvironmentForPlottingAndTemplates.without_tree_logic_and_with_derived_functions(
+                    {}
+                )
+            ),
+            lambda _xnp: SpecializedEnvironmentForPlottingAndTemplates(
+                without_tree_logic_and_with_derived_functions={}  # ty: ignore[unknown-argument]
+            ),
+        ),
+        (
+            lambda _xnp: (
+                SpecializedEnvironmentForPlottingAndTemplates.without_input_data_nodes_with_dummy_callables(
+                    {}
+                )
+            ),
+            lambda _xnp: SpecializedEnvironmentForPlottingAndTemplates(
                 without_input_data_nodes_with_dummy_callables={}  # ty: ignore[unknown-argument]
             ),
         ),
         (
-            SpecializedEnvironmentForPlottingAndTemplates.complete_tt_dag(nx.DiGraph()),
-            SpecializedEnvironmentForPlottingAndTemplates(complete_tt_dag=nx.DiGraph()),  # ty: ignore[unknown-argument]
+            lambda _xnp: SpecializedEnvironmentForPlottingAndTemplates.complete_tt_dag(
+                nx.DiGraph()
+            ),
+            lambda _xnp: SpecializedEnvironmentForPlottingAndTemplates(
+                complete_tt_dag=nx.DiGraph()  # ty: ignore[unknown-argument]
+            ),
         ),
         (
-            SpecializedEnvironmentForPlottingAndTemplates.with_processed_params_and_scalars(
-                {}
+            lambda _xnp: (
+                SpecializedEnvironmentForPlottingAndTemplates.with_processed_params_and_scalars(
+                    {}
+                )
             ),
-            SpecializedEnvironmentForPlottingAndTemplates(
+            lambda _xnp: SpecializedEnvironmentForPlottingAndTemplates(
                 with_processed_params_and_scalars={}  # ty: ignore[unknown-argument]
             ),
         ),
         (
-            SpecializedEnvironmentForPlottingAndTemplates.with_partialled_params_and_scalars(
-                {}
+            lambda _xnp: (
+                SpecializedEnvironmentForPlottingAndTemplates.with_partialled_params_and_scalars(
+                    {}
+                )
             ),
-            SpecializedEnvironmentForPlottingAndTemplates(
+            lambda _xnp: SpecializedEnvironmentForPlottingAndTemplates(
                 with_partialled_params_and_scalars={}  # ty: ignore[unknown-argument]
             ),
         ),
     ],
 )
-def test_main_args_can_be_passed_as_class_methods(classmethod_instance, dict_instance):
+def test_main_args_can_be_passed_as_class_methods(
+    instance_factory, dict_instance_factory, xnp
+):
+    classmethod_instance = instance_factory(xnp)
+    dict_instance = dict_instance_factory(xnp)
     # Get all field names from the dataclass
     cls = type(classmethod_instance)
     all_fields = set(cls.__dataclass_fields__.keys())
@@ -607,6 +642,7 @@ def test_resolve_dynamic_interface_objects_to_static_nodes_returns_correct_funct
             ).values()
         )
     )
+    assert isinstance(static_func, InterfaceFunction)
     assert static_func.original_function_name == expected_function_name
 
 
@@ -627,7 +663,7 @@ def test_resolve_dynamic_interface_objects_to_static_nodes_with_conflicting_cond
 
 
 def test_fail_if_static_root_node_is_missing():
-    flat_interface_objects = {
+    flat_interface_objects: dict[tuple[str, ...], Any] = {
         ("interface_function_a",): interface_function_a,
         ("interface_function_b",): interface_function_b,
         ("interface_function_c",): interface_function_c,
@@ -651,7 +687,7 @@ def test_fail_if_static_root_node_is_missing():
 
 
 def test_fail_if_dynamic_root_node_is_missing():
-    flat_interface_objects = {
+    flat_interface_objects: dict[tuple[str, ...], Any] = {
         ("a",): a,
         ("interface_function_a",): interface_function_a,
     }
@@ -676,7 +712,7 @@ def test_fail_if_dynamic_root_node_is_missing():
 
 
 def test_fail_if_inputs_to_create_dynamic_root_node_are_missing():
-    flat_interface_objects = {
+    flat_interface_objects: dict[tuple[str, ...], Any] = {
         ("some_idif_require_input_1",): some_idif_require_input_1,
     }
     dag = dags.create_dag(

@@ -71,9 +71,21 @@
                 { "type": "string", "enum": ["inf", "-inf"] }
               ]
             },
+            "intervals": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "interval": { "type": "string" }
+                },
+                "required": ["interval"],
+                "additionalProperties": true
+              }
+            },
             "reference": { "type": "string" },
             "note": { "type": "string" },
-            "deviation_from": { "type": "string" }
+            "deviation_from": { "type": "string" },
+            "updates_previous": { "type": "boolean" }
           },
           "additionalProperties": true
         }

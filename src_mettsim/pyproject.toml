@@ -1,8 +1,15 @@
+# ======================================================================================
+# Build system configuration
+# ======================================================================================
 [build-system]
 build-backend = "hatchling.build"
 requires = [ "hatchling" ]
 
+# ======================================================================================
+# Project metadata
+# ======================================================================================
 [project]
+# Basic information
 name = "mettsim"
 version = "0.0.0"
 description = "The Middle Earth Taxes and Transfers SIMulator"
@@ -19,12 +26,13 @@ maintainers = [
   { name = "Hans-Martin von Gaudecker", email = "hmgaudecker@uni-bonn.de" },
   { name = "Marvin Immesberger" },
 ]
+# About the project
 authors = [
   { name = "Hans-Martin von Gaudecker", email = "hmgaudecker@uni-bonn.de" },
   { name = "Marvin Immesberger" },
 ]
+# Dependencies and requirements
 requires-python = ">=3.11"
-
 classifiers = [
   "Intended Audience :: Science/Research",
   "License :: OSI Approved :: GNU Affero General Public License v3",
@@ -45,13 +53,9 @@ urls.Github = "https://github.com/ttsim-dev/ttsim"
 urls.Repository = "https://github.com/ttsim-dev/ttsim"
 urls.Tracker = "https://github.com/ttsim-dev/ttsim/issues"
 
-[tool.hatch.build.targets.sdist]
-exclude = [ "tests_middle_earth" ]
-only-packages = true
-
-[tool.hatch.build.targets.wheel]
-only-include = [ "." ]
-sources = [ "." ]
-
-[tool.hatch.metadata]
-allow-direct-references = true
+[tool.hatch]
+build.targets.sdist.exclude = [ "tests_middle_earth" ]
+build.targets.sdist.only-packages = true
+build.targets.wheel.only-include = [ "." ]
+build.targets.wheel.sources = [ "." ]
+metadata.allow-direct-references = true

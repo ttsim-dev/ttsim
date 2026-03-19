@@ -291,7 +291,7 @@ def with_partialled_params_and_scalars(
 
 def _apply_rounding(element: ColumnFunction, xnp: ModuleType) -> ColumnFunction:
     return (
-        element.rounding_spec.apply_rounding(element, xnp=xnp)  # ty: ignore[possibly-missing-attribute]
+        element.rounding_spec.apply_rounding(element, xnp=xnp)  # ty: ignore[unresolved-attribute]
         if getattr(element, "rounding_spec", False)
         else element
     )

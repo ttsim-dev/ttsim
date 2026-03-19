@@ -1,4 +1,5 @@
 import dataclasses
+from typing import Any
 
 import numpy
 import pytest
@@ -263,7 +264,7 @@ def test_month_based_phase_inout_last_year_error(xnp):
 
 def test_month_based_phase_inout_non_int_keys_error(xnp):
     """Test error when year keys are not integers."""
-    raw = {
+    raw: dict[str | int, Any] = {
         "first_year_to_consider": 2020,
         "last_year_to_consider": 2022,
         "2020": {1: {"years": 65, "months": 0}},  # String key instead of int
@@ -319,7 +320,7 @@ def test_year_based_phase_inout_last_year_error(xnp):
 
 def test_year_based_phase_inout_non_int_keys_error(xnp):
     """Test error when year keys are not integers."""
-    raw = {
+    raw: dict[str | int, Any] = {
         "first_year_to_consider": 2020,
         "last_year_to_consider": 2022,
         "2020": {"years": 65, "months": 0},  # String key instead of int
@@ -418,7 +419,7 @@ def test_dict_param_rejects_reference_key():
 
 def test_raw_param_with_nested_dict():
     """Test RawParam supports nested dict values."""
-    nested = {"level1": {"level2": {"level3": 42}}}
+    nested: dict[str | int, Any] = {"level1": {"level2": {"level3": 42}}}
     param = RawParam(value=nested)
     assert param.value == nested
     assert param.value["level1"]["level2"]["level3"] == 42
