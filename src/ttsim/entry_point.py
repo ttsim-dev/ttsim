@@ -322,16 +322,12 @@ def _resolve_dynamic_interface_objects_to_static_nodes(
 
     Fail if multiple functions with the same leaf name satisfy the include condition.
 
-    Parameters
-    ----------
-    flat_interface_objects
-        The interface objects to resolve.
-    input_qnames
-        The input qnames to check the include conditions against.
+    Args:
+        flat_interface_objects: The interface objects to resolve.
+        input_qnames: The input qnames to check the include conditions against.
 
-    Returns
-    -------
-    A dictionary of static interface objects.
+    Returns:
+        A dictionary of static interface objects.
 
     """
     static_nodes: dict[str, InterfaceFunction | InterfaceInput] = {}

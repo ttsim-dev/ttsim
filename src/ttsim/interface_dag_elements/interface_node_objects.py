@@ -21,14 +21,13 @@ ReturnType = TypeVar("ReturnType")
 class InterfaceNodeObject:
     """Base class for all objects operating on columns of data.
 
-    Examples
-    --------
-    - PolicyInputs
-    - PolicyFunctions
-    - GroupCreationFunctions
-    - AggByGroupFunctions
-    - AggByPIDFunctions
-    - TimeConversionFunctions
+    Examples:
+        - PolicyInputs
+        - PolicyFunctions
+        - GroupCreationFunctions
+        - AggByGroupFunctions
+        - AggByPIDFunctions
+        - TimeConversionFunctions
 
     Parameters are not ColumnObjectParamFunctions.
 
@@ -65,12 +64,11 @@ def interface_input(
     leaf_name: str | None = None,
     in_top_level_namespace: bool = False,
 ) -> Callable[[FunctionType[..., Any]], InterfaceInput]:
-    """
-    Decorator that makes a (dummy) function an `InterfaceInput`.
+    """Decorator that makes a (dummy) function an `InterfaceInput`.
 
-    Returns
-    -------
-    A decorator that returns an InterfaceInput object.
+    Returns:
+        A decorator that returns an InterfaceInput object.
+
     """
 
     def inner(func: FunctionType[..., Any]) -> InterfaceInput:
@@ -167,20 +165,17 @@ def interface_function(
     leaf_name: str | None = None,
     in_top_level_namespace: bool = False,
 ) -> Callable[[FunctionType[..., Any]], InterfaceFunction[..., Any]]:
-    """
-    Decorator that makes an `InterfaceFunction` from a function.
+    """Decorator that makes an `InterfaceFunction` from a function.
 
-    Parameters
-    ----------
-    leaf_name
-        The name that should be used as the PolicyFunction's leaf name in the DAG. If
-        omitted, we use the name of the function as defined.
-    in_top_level_namespace:
-        Whether the function is in the top-level namespace of the interface-DAG.
+    Args:
+        leaf_name: The name that should be used as the PolicyFunction's leaf name in
+            the DAG. If omitted, we use the name of the function as defined.
+        in_top_level_namespace: Whether the function is in the top-level namespace of
+            the interface-DAG.
 
-    Returns
-    -------
-    A decorator that returns an InterfaceFunction object.
+    Returns:
+        A decorator that returns an InterfaceFunction object.
+
     """
 
     def inner(func: FunctionType[..., Any]) -> InterfaceFunction:
@@ -257,29 +252,23 @@ def input_dependent_interface_function(
 ) -> Callable[
     [FunctionType[..., Any]], InputDependentInterfaceFunction[FunArgTypes, ReturnType]
 ]:
-    """
-    Decorator that makes an `InputDependentInterfaceFunction` from a function.
+    """Decorator that makes an `InputDependentInterfaceFunction` from a function.
 
-    Parameters
-    ----------
-    include_if_any_input_present
-        List of input names that must be present for the function to be used if any of
-        the inputs are present.
-    include_if_all_inputs_present
-        List of input names that must be present for the function to be used if all of
-        the inputs are present.
-    include_if_no_input_present
-        List of input names that must not be present for the function to be used if no
-        inputs are present.
-    leaf_name
-        The name that should be used as the function's leaf name in the DAG. If omitted,
-        we use the name of the function as defined.
-    in_top_level_namespace
-        Whether the function is in the top-level namespace of the interface-DAG.
+    Args:
+        include_if_any_input_present: List of input names that must be present for the
+            function to be used if any of the inputs are present.
+        include_if_all_inputs_present: List of input names that must be present for the
+            function to be used if all of the inputs are present.
+        include_if_no_input_present: List of input names that must not be present for
+            the function to be used if no inputs are present.
+        leaf_name: The name that should be used as the function's leaf name in the DAG.
+            If omitted, we use the name of the function as defined.
+        in_top_level_namespace: Whether the function is in the top-level namespace of
+            the interface-DAG.
 
-    Returns
-    -------
-    A decorator that returns an InputDependentInterfaceFunction object.
+    Returns:
+        A decorator that returns an InputDependentInterfaceFunction object.
+
     """
 
     def inner(

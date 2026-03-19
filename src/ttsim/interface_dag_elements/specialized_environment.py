@@ -106,23 +106,17 @@ def _add_derived_functions(
     Check that all targets have a corresponding function in the functions tree or can
     be taken from the data.
 
-    Parameters
-    ----------
-    column_objects_param_functions
-        Dict with qualified function names as keys and functions with qualified
-        arguments as values.
-    tt_targets
-        The list of targets with qualified names.
-    data
-        Dict with qualified data names as keys and arrays as values.
-    labels__top_level_namespace
-        Set of top-level namespaces.
+    Args:
+        column_objects_param_functions: Dict with qualified function names as keys
+            and functions with qualified arguments as values.
+        tt_targets: The list of targets with qualified names.
+        data: Dict with qualified data names as keys and arrays as values.
+        labels__top_level_namespace: Set of top-level namespaces.
 
-    Returns
-    -------
-    The specialized environment with derived functions (aggregations and time
-    conversions), and without tree logic, i.e. absolute qualified names in all keys
-    and function arguments.
+    Returns:
+        The specialized environment with derived functions (aggregations and time
+            conversions), and without tree logic, i.e. absolute qualified names in
+            all keys and function arguments.
 
     """
     # Create functions for different time units

@@ -62,20 +62,16 @@ def interface(
 ) -> go.Figure:
     """Plot the full interface DAG.
 
-    Parameters
-    ----------
-    include_fail_and_warn_nodes
-        Whether to include fail and warn nodes in the plot.
-    include_backend_nodes
-        Whether to include `backend`, `xnp`, and `dnp` in the plot.
-    show_node_description
-        Whether to show node descriptions on hover.
-    output_path
-        If provided, the figure is written to the path.
-    remove_orig_policy_objects__root
-        Whether to remove `orig_policy_objects__root` node from the plot.
-    node_colormap
-        Dictionary mapping namespace tuples to colors.
+    Args:
+        include_fail_and_warn_nodes: Whether to include fail and warn nodes in the
+            plot.
+        include_backend_nodes: Whether to include `backend`, `xnp`, and `dnp` in
+            the plot.
+        show_node_description: Whether to show node descriptions on hover.
+        output_path: If provided, the figure is written to the path.
+        remove_orig_policy_objects__root: Whether to remove
+            `orig_policy_objects__root` node from the plot.
+        node_colormap: Dictionary mapping namespace tuples to colors.
             - Tuples can represent any level of the namespace hierarchy (e.g.,
               ("input_data",) would be the first level,
               ("input_data", "df_and_mapper") the second level.
@@ -85,10 +81,11 @@ def interface(
               match will be used.
             - Fallback color is black.
             - Use any color from https://plotly.com/python/css-colors/
-        If None, cycle through colors at the uppermost level of the namespace hierarchy.
-    **kwargs
-        Additional keyword arguments. Will be passed to
-        plotly.graph_objects.Figure.layout.
+            If None, cycle through colors at the uppermost level of the namespace
+            hierarchy.
+        **kwargs: Additional keyword arguments. Will be passed to
+            plotly.graph_objects.Figure.layout.
+
     """
     interface_functions_and_inputs = load_flat_interface_functions_and_inputs()
     nodes_without_idifs = {

@@ -95,16 +95,12 @@ def intervals_to_thresholds(
 ]:
     """Extract threshold arrays from parsed or raw intervals.
 
-    Parameters
-    ----------
-    intervals
-        Either a list of ``portion.Interval`` objects (already parsed) or a list
-        of raw interval dicts containing an ``"interval"`` key with string
-        notation (e.g. ``"[0, 100)"``).
-    xnp
-        The backend module to use for array creation.
-    leaf_name
-        Name used in error messages during validation.
+    Args:
+        intervals: Either a list of ``portion.Interval`` objects (already parsed)
+            or a list of raw interval dicts containing an ``"interval"`` key with
+            string notation (e.g. ``"[0, 100)"``).
+        xnp: The backend module to use for array creation.
+        leaf_name: Name used in error messages during validation.
 
     """
     if intervals and isinstance(intervals[0], dict):

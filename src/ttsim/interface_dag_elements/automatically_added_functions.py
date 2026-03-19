@@ -143,19 +143,14 @@ def create_time_conversion_functions(
     * For functions referring to daily values, create yearly, monthly and weekly
       functions.
 
-    Parameters
-    ----------
-    functions
-        The functions dict with qualified function names as keys and functions as
-        values.
-    input_columns
-        The names of the input columns, represented by qualified names.
-    grouping_levels
-        The grouping levels.
+    Args:
+        qname_policy_environment: The policy environment with qualified names as keys.
+        input_columns: The names of the input columns, represented by qualified names.
+        grouping_levels: The grouping levels.
 
-    Returns
-    -------
-    The functions dict with the new time conversion functions.
+    Returns:
+        The functions dict with the new time conversion functions.
+
     """
     time_units = tuple(TIME_UNIT_IDS_TO_LABELS)
     pattern_all = get_re_pattern_for_all_time_units_and_groupings(
@@ -351,14 +346,13 @@ def _get_potential_agg_by_group_function_names_from_function_arguments(
 ) -> UnorderedQNames:
     """Get potential aggregation function names from function arguments.
 
-    Parameters
-    ----------
-    functions
-        Dictionary containing functions to build the DAG.
+    Args:
+        functions: Dictionary containing functions to build the DAG.
+        group_pattern: Compiled regex pattern for matching grouping suffixes.
 
-    Returns
-    -------
-    Set of potential aggregation targets.
+    Returns:
+        Set of potential aggregation targets.
+
     """
     all_names = {
         name for func in functions.values() for name in get_free_arguments(func)

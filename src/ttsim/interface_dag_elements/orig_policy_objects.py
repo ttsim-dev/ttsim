@@ -71,19 +71,15 @@ def param_specs(root: Path) -> FlatOrigParamSpecs:
 
 
 def _find_files_recursively(root: Path, suffix: Literal[".py", ".yaml"]) -> list[Path]:
-    """
-    Find all files with *suffix* in *root* and its subdirectories.
+    """Find all files with *suffix* in *root* and its subdirectories.
 
-    Parameters
-    ----------
-    root:
-        The path from which to start the search for Python files.
-    suffix:
-        The suffix of files to look for.
+    Args:
+        root: The path from which to start the search for Python files.
+        suffix: The suffix of files to look for.
 
-    Returns
-    -------
-    Absolute paths to all discovered files with *suffix*.
+    Returns:
+        Absolute paths to all discovered files with *suffix*.
+
     """
     names_to_exclude = {"__init__.py"}
     return [
@@ -97,16 +93,13 @@ def _tree_path_to_orig_column_objects_params_functions(
 ) -> FlatColumnObjectsParamFunctions:
     """Extract all active PolicyFunctions and GroupByFunctions from a module.
 
-    Parameters
-    ----------
-    path
-        The path to the module from which to extract the active functions.
-    root
-        The path to the directory that contains the functions.
+    Args:
+        path: The path to the module from which to extract the active functions.
+        root: The path to the directory that contains the functions.
 
-    Returns
-    -------
-    A flat tree of ColumnObjectParamFunctions.
+    Returns:
+        A flat tree of ColumnObjectParamFunctions.
+
     """
     module = load_module(path=path, root=root)
     tree_path = path.relative_to(root).parts
@@ -136,16 +129,13 @@ def load_module(path: Path, root: Path) -> ModuleType:
 def _tree_path_to_orig_yaml_object(path: Path, root: Path) -> FlatOrigParamSpecs:
     """Extract all active PolicyFunctions and GroupByFunctions from a module.
 
-    Parameters
-    ----------
-    path
-        The path to the yaml file from which to extract parameter specifications.
-    root
-        The path to the policy environment's root directory.
+    Args:
+        path: The path to the yaml file from which to extract parameter specifications.
+        root: The path to the policy environment's root directory.
 
-    Returns
-    -------
-    A flat tree of yaml contents.
+    Returns:
+        A flat tree of yaml contents.
+
     """
     raw_contents: dict[str, OrigParamSpec] = yaml.load(
         path.read_text(encoding="utf-8"),

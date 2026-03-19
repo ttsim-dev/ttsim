@@ -65,18 +65,12 @@ def piecewise_polynomial(
 
     Values outside the defined domain return NaN.
 
-    Parameters
-    ----------
-    x:
-        Array with values at which the piecewise polynomial is to be calculated.
-    parameters:
-        Thresholds defining the pieces and coefficients on each piece.
-    xnp:
-        The backend module to use for calculations.
+    Args:
+        x: Array with values at which the piecewise polynomial is to be calculated.
+        parameters: Thresholds defining the pieces and coefficients on each piece.
+        xnp: The backend module to use for calculations.
 
-    Returns
-    -------
-    out:
+    Returns:
         The value of `x` under the piecewise function.
 
     """

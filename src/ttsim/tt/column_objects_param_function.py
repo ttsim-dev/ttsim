@@ -95,19 +95,15 @@ class ColumnObject:
 
 @dataclass(frozen=True)
 class PolicyInput(ColumnObject):
-    """
-    A dummy function representing an input variable.
+    """A dummy function representing an input variable.
 
-    Parameters
-    ----------
-    data_type:
-        The data type of the input variable.
-    start_date:
-        The date from which the input is relevant / active (inclusive).
-    end_date:
-        The date until which the input is relevant / active (inclusive).
-    foreign_key_type:
-        Whether this is a foreign key and, if so, whether it may point to itself.
+    Args:
+        data_type: The data type of the input variable.
+        start_date: The date from which the input is relevant / active (inclusive).
+        end_date: The date until which the input is relevant / active (inclusive).
+        foreign_key_type: Whether this is a foreign key and, if so, whether it may
+            point to itself.
+
     """
 
     data_type: type[float | int | bool]
@@ -132,8 +128,7 @@ def policy_input(
     warn_msg_if_included: str | None = None,
     fail_msg_if_included: str | None = None,
 ) -> Callable[[FunctionType[..., Any]], PolicyInput]:
-    """
-    Decorator that makes a (dummy) function a `PolicyInput`.
+    """Decorate a (dummy) function to make it a `PolicyInput`.
 
     **Dates active (start_date, end_date):**
 
@@ -143,16 +138,15 @@ def policy_input(
 
     Adds the location of the rounding specification to a PolicyInput.
 
-    Parameters
-    ----------
-    start_date
-        The start date (inclusive) in the format YYYY-MM-DD (part of ISO 8601).
-    end_date
-        The end date (inclusive) in the format YYYY-MM-DD (part of ISO 8601).
+    Args:
+        start_date: The start date (inclusive) in the format YYYY-MM-DD (part of
+            ISO 8601).
+        end_date: The end date (inclusive) in the format YYYY-MM-DD (part of
+            ISO 8601).
 
-    Returns
-    -------
-    A decorator that returns a PolicyInput object.
+    Returns:
+        A decorator that returns a PolicyInput object.
+
     """
     start_date, end_date = _convert_and_validate_dates(start_date, end_date)
 
@@ -247,15 +241,12 @@ class ColumnFunction(ColumnObject, Generic[FunArgTypes, ReturnType]):
 def _fail_if_rounding_has_wrong_type(rounding_spec: RoundingSpec | None) -> None:
     """Check if rounding_spec has the correct type.
 
-    Parameters
-    ----------
-    rounding_spec
-        The rounding specification to check.
+    Args:
+        rounding_spec: The rounding specification to check.
 
-    Raises
-    ------
-    TypeError
-        If rounding_spec is not a RoundingSpec or None.
+    Raises:
+        TypeError: If rounding_spec is not a RoundingSpec or None.
+
     """
     if not isinstance(rounding_spec, RoundingSpec | None):
         raise TypeError(
@@ -265,21 +256,15 @@ def _fail_if_rounding_has_wrong_type(rounding_spec: RoundingSpec | None) -> None
 
 @dataclass(frozen=True)
 class PolicyFunction(ColumnFunction):
-    """
-    Computes a column based on at least one input column and/or parameters.
+    """Compute a column based on at least one input column and/or parameters.
 
-    Parameters
-    ----------
-    leaf_name:
-        The leaf name of the function in the functions tree.
-    function:
-        The function that is called when the PolicyFunction is evaluated.
-    start_date:
-        The date from which the function is active (inclusive).
-    end_date:
-        The date until which the function is active (inclusive).
-    rounding_spec:
-        The rounding specification.
+    Args:
+        leaf_name: The leaf name of the function in the functions tree.
+        function: The function that is called when the PolicyFunction is evaluated.
+        start_date: The date from which the function is active (inclusive).
+        end_date: The date until which the function is active (inclusive).
+        rounding_spec: The rounding specification.
+
     """
 
     vectorization_strategy: Literal["loop", "vectorize", "not_required"] = "vectorize"
@@ -353,8 +338,7 @@ def policy_function(
     warn_msg_if_included: str | None = None,
     fail_msg_if_included: str | None = None,
 ) -> Callable[[FunctionType[..., Any]], PolicyFunction]:
-    """
-    Decorator that makes a `PolicyFunction` from a function.
+    """Decorate a function to make it a `PolicyFunction`.
 
     PolicyFunctions are typically defined on scalars, but work on data columns (i.e.,
     arrays of the same length as `p_id`). TTSIM will handle this (see
@@ -362,29 +346,25 @@ def policy_function(
     functions that convert the parameters of the taxes and transfers system, which do
     not require any columns from the data.
 
-    Parameters
-    ----------
-    leaf_name
-        The name that should be used as the PolicyFunction's leaf name in the DAG. If
-        omitted, we use the name of the function as defined.
-    start_date
-        The start date (inclusive) in the format YYYY-MM-DD (part of ISO 8601).
-    end_date
-        The end date (inclusive) in the format YYYY-MM-DD (part of ISO 8601).
-    rounding_spec
-        The specification to be used for rounding.
-    vectorization_strategy:
-        Whether and how the function should be vectorized. Typically, functions will be
-        defined on scalars and will be vectorized by TTSIM. Stick to the default of
-        'vectorize'. Exceptions: 'loop' for constructs that cannot be vectorized by
-        numpy or jax; 'not_required' if the function works natively with arrays (e.g.,
-        joining two columns).
-    foreign_key_type:
-        Whether this is a foreign key and, if so, whether it may point to itself.
+    Args:
+        leaf_name: The name that should be used as the PolicyFunction's leaf name in
+            the DAG. If omitted, we use the name of the function as defined.
+        start_date: The start date (inclusive) in the format YYYY-MM-DD (part of
+            ISO 8601).
+        end_date: The end date (inclusive) in the format YYYY-MM-DD (part of
+            ISO 8601).
+        rounding_spec: The specification to be used for rounding.
+        vectorization_strategy: Whether and how the function should be vectorized.
+            Typically, functions will be defined on scalars and will be vectorized by
+            TTSIM. Stick to the default of 'vectorize'. Exceptions: 'loop' for
+            constructs that cannot be vectorized by numpy or jax; 'not_required' if
+            the function works natively with arrays (e.g., joining two columns).
+        foreign_key_type: Whether this is a foreign key and, if so, whether it may
+            point to itself.
 
-    Returns
-    -------
-    A decorator that returns a PolicyFunction object.
+    Returns:
+        A decorator that returns a PolicyFunction object.
+
     """
     start_date, end_date = _convert_and_validate_dates(start_date, end_date)
 
@@ -429,19 +409,14 @@ def reorder_ids(ids: IntColumn, xnp: ModuleType) -> IntColumn:
 
 @dataclass(frozen=True)
 class GroupCreationFunction(ColumnFunction):
-    """
-    A function that computes endogenous group_by IDs.
+    """A function that computes endogenous group_by IDs.
 
-    Parameters
-    ----------
-    leaf_name:
-        The leaf name of the function in the functions tree.
-    function:
-        The function calculating the group_by IDs.
-    start_date:
-        The date from which the function is active (inclusive).
-    end_date:
-        The date until which the function is active (inclusive).
+    Args:
+        leaf_name: The leaf name of the function in the functions tree.
+        function: The function calculating the group_by IDs.
+        start_date: The date from which the function is active (inclusive).
+        end_date: The date until which the function is active (inclusive).
+
     """
 
     def remove_tree_logic(
@@ -476,20 +451,15 @@ def group_creation_function(
     warn_msg_if_included: str | None = None,
     fail_msg_if_included: str | None = None,
 ) -> Callable[[FunctionType[..., Any]], GroupCreationFunction]:
-    """
-    Decorator that creates a group_by function from a function.
+    """Decorate a function to create a group_by function.
 
-    Parameters
-    ----------
-    leaf_name:
-        The leaf name of the function in the functions tree.
-    start_date:
-        The date from which the function is active (inclusive).
-    end_date:
-        The date until which the function is active (inclusive).
-    reorder:
-        Whether the created Group ID's should be reordered to be
-        consecutively numbered starting from 0.
+    Args:
+        leaf_name: The leaf name of the function in the functions tree.
+        start_date: The date from which the function is active (inclusive).
+        end_date: The date until which the function is active (inclusive).
+        reorder: Whether the created Group ID's should be reordered to be
+            consecutively numbered starting from 0.
+
     """
     start_date, end_date = _convert_and_validate_dates(start_date, end_date)
 
@@ -516,25 +486,19 @@ def group_creation_function(
 
 @dataclass(frozen=True)
 class AggByGroupFunction(ColumnFunction):
-    """
-    A function that is an aggregation of another column by some group id.
+    """A function that is an aggregation of another column by some group id.
 
-    Parameters
-    ----------
-    leaf_name:
-        The leaf name of the function in the functions tree.
-    function:
-        The function performing the aggregation.
-    start_date:
-        The date from which the function is active (inclusive).
-    end_date:
-        The date until which the function is active (inclusive).
-    params_key_for_rounding:
-        The key in the params dictionary that should be used for rounding.
-    skip_vectorization:
-        Whether the function should be vectorized.
-    orig_location:
-        The original location of the function, or "automatically generated".
+    Args:
+        leaf_name: The leaf name of the function in the functions tree.
+        function: The function performing the aggregation.
+        start_date: The date from which the function is active (inclusive).
+        end_date: The date until which the function is active (inclusive).
+        params_key_for_rounding: The key in the params dictionary that should be
+            used for rounding.
+        skip_vectorization: Whether the function should be vectorized.
+        orig_location: The original location of the function, or "automatically
+            generated".
+
     """
 
     # Default value is necessary because we have defaults in the superclass.
@@ -654,25 +618,19 @@ def _fail_if_other_arg_is_invalid(
 
 @dataclass(frozen=True)
 class AggByPIDFunction(ColumnFunction):
-    """
-    A function that is an aggregation of another column by some group id.
+    """A function that is an aggregation of another column by some group id.
 
-    Parameters
-    ----------
-    leaf_name:
-        The leaf name of the function in the functions tree.
-    function:
-        The function performing the aggregation.
-    start_date:
-        The date from which the function is active (inclusive).
-    end_date:
-        The date until which the function is active (inclusive).
-    params_key_for_rounding:
-        The key in the params dictionary that should be used for rounding.
-    skip_vectorization:
-        Whether the function should be vectorized.
-    orig_location:
-        The original location of the function, or "automatically generated".
+    Args:
+        leaf_name: The leaf name of the function in the functions tree.
+        function: The function performing the aggregation.
+        start_date: The date from which the function is active (inclusive).
+        end_date: The date until which the function is active (inclusive).
+        params_key_for_rounding: The key in the params dictionary that should be
+            used for rounding.
+        skip_vectorization: Whether the function should be vectorized.
+        orig_location: The original location of the function, or "automatically
+            generated".
+
     """
 
     # Default value is necessary because we have defaults in the superclass.
@@ -792,21 +750,15 @@ def _fail_if_other_p_id_is_invalid(
 
 @dataclass(frozen=True)
 class TimeConversionFunction(ColumnFunction):
-    """
-    A function that is a time conversion of another function.
+    """A function that is a time conversion of another function.
 
-    Parameters
-    ----------
-    leaf_name:
-        The leaf name of the function in the functions tree.
-    function:
-        The function performing the time conversion.
-    source:
-        The name of the source function or data column.
-    start_date:
-        The date from which the function is active (inclusive).
-    end_date:
-        The date until which the function is active (inclusive).
+    Args:
+        leaf_name: The leaf name of the function in the functions tree.
+        function: The function performing the time conversion.
+        source: The name of the source function or data column.
+        start_date: The date from which the function is active (inclusive).
+        end_date: The date until which the function is active (inclusive).
+
     """
 
     source: str | None = None
@@ -846,17 +798,15 @@ def _convert_and_validate_dates(
 ) -> tuple[datetime.date, datetime.date]:
     """Convert and validate date strings to datetime.date objects.
 
-    Parameters
-    ----------
-    start_date
-        The start date (inclusive) in the format YYYY-MM-DD (part of ISO 8601).
-    end_date
-        The end date (inclusive) in the format YYYY-MM-DD (part of ISO 8601).
+    Args:
+        start_date: The start date (inclusive) in the format YYYY-MM-DD (part of
+            ISO 8601).
+        end_date: The end date (inclusive) in the format YYYY-MM-DD (part of
+            ISO 8601).
 
-    Returns
-    -------
-    tuple[datetime.date, datetime.date]
+    Returns:
         The converted and validated start and end dates.
+
     """
     start_date = to_datetime(start_date)
     end_date = to_datetime(end_date)
@@ -871,19 +821,16 @@ def _convert_and_validate_dates(
 
 @dataclass(frozen=True)
 class ParamFunction(Generic[FunArgTypes, ReturnType]):
-    """
-    Compute a scalar or custom object from parameters of the taxes and transfers system.
+    """Compute a scalar or custom object from parameters.
 
-    Parameters
-    ----------
-    leaf_name:
-        The leaf name of the function in the objects tree.
-    start_date:
-        The date from which the function is active (inclusive).
-    end_date:
-        The date until which the function is active (inclusive).
-    function:
-        The function that is called when the ParamFunction is evaluated.
+    Operates on parameters of the taxes and transfers system.
+
+    Args:
+        leaf_name: The leaf name of the function in the objects tree.
+        start_date: The date from which the function is active (inclusive).
+        end_date: The date until which the function is active (inclusive).
+        function: The function that is called when the ParamFunction is evaluated.
+
     """
 
     leaf_name: str
@@ -948,8 +895,7 @@ def param_function(
     warn_msg_if_included: str | None = None,
     fail_msg_if_included: str | None = None,
 ) -> Callable[[FunctionType[..., Any]], ParamFunction[..., Any]]:
-    """
-    Decorator that makes a `ParamFunction` from a function.
+    """Decorate a function to make it a `ParamFunction`.
 
     ParamFunctions convert complex parameters (i.e., anything that is not a scalar, a
     flat homogenous dictionary, or a set of parameters of a piecewise polynomial
@@ -961,19 +907,17 @@ def param_function(
     params tree. They are typically defined as outermost keys in the yaml files with
     parameters of the taxes and transfers system.
 
-    Parameters
-    ----------
-    leaf_name
-        The name that should be used as the ParamFunction's leaf name in the DAG. If
-        omitted, we use the name of the function as defined.
-    start_date
-        The start date (inclusive) in the format YYYY-MM-DD (part of ISO 8601).
-    end_date
-        The end date (inclusive) in the format YYYY-MM-DD (part of ISO 8601).
+    Args:
+        leaf_name: The name that should be used as the ParamFunction's leaf name in
+            the DAG. If omitted, we use the name of the function as defined.
+        start_date: The start date (inclusive) in the format YYYY-MM-DD (part of
+            ISO 8601).
+        end_date: The end date (inclusive) in the format YYYY-MM-DD (part of
+            ISO 8601).
 
-    Returns
-    -------
-    A decorator that returns a ParamFunction object.
+    Returns:
+        A decorator that returns a ParamFunction object.
+
     """
     start_date, end_date = _convert_and_validate_dates(start_date, end_date)
 

@@ -60,41 +60,34 @@ def tt(
 ) -> go.Figure:
     """Plot the TT DAG.
 
-    Parameters
-    ----------
-    root
-        The root path.
-    primary_nodes
-        The primary nodes, specified as tree paths (e.g.,
-        `{("einkommensteuer", "abgeltungssteuer", "betrag_y_sn")}`) or qualified names
-        (e.g., `{"einkommensteuer__abgeltungssteuer__betrag_y_sn"}`). Primary nodes are
-        used to determine which other nodes to include in the plot based on the
-        selection_type. They may be root nodes (for descendants), end nodes (for
-        ancestors), or middle nodes (for neighbors). If not provided, the entire DAG is
-        plotted.
-    selection_type
-        The type of the DAG to plot. Can be one of:
+    Args:
+        root: The root path.
+        primary_nodes: The primary nodes, specified as tree paths (e.g.,
+            `{("einkommensteuer", "abgeltungssteuer", "betrag_y_sn")}`) or qualified
+            names (e.g., `{"einkommensteuer__abgeltungssteuer__betrag_y_sn"}`).
+            Primary nodes are used to determine which other nodes to include in the
+            plot based on the selection_type. They may be root nodes (for descendants),
+            end nodes (for ancestors), or middle nodes (for neighbors). If not
+            provided, the entire DAG is plotted.
+        selection_type: The type of the DAG to plot. Can be one of:
             - "neighbors": Plot the neighbors of the primary nodes.
             - "descendants": Plot the descendants of the primary nodes.
             - "ancestors": Plot the ancestors of the primary nodes.
             - "all_paths": All paths between the primary nodes are displayed (including
               any other nodes lying on these paths). You must pass at least two primary
               nodes.
-        If not provided, the entire DAG is plotted.
-    selection_depth
-        The depth of the selection. Only used if selection_type is "neighbors",
-        "descendants", or "ancestors".
-    include_params
-        Include params and param functions when plotting the DAG. Default is True.
-    show_node_description
-        Show a description of the node when hovering over it.
-    output_path
-        If provided, the figure is written to the path.
-    node_colormap
-        Dictionary mapping namespace patterns to colors. Patterns can be specified as
-        tuples or as qualified name strings (with ``__`` separators). Supports
-        glob-style patterns using ``*`` (match any characters), ``?`` (match single
-        character), and ``**`` (match any number of path segments).
+            If not provided, the entire DAG is plotted.
+        selection_depth: The depth of the selection. Only used if selection_type is
+            "neighbors", "descendants", or "ancestors".
+        include_params: Include params and param functions when plotting the DAG.
+            Default is True.
+        show_node_description: Show a description of the node when hovering over it.
+        output_path: If provided, the figure is written to the path.
+        node_colormap: Dictionary mapping namespace patterns to colors. Patterns can
+            be specified as tuples or as qualified name strings (with ``__``
+            separators). Supports glob-style patterns using ``*`` (match any
+            characters), ``?`` (match single character), and ``**`` (match any number
+            of path segments).
 
             - Tuples can represent any level of the namespace hierarchy (e.g.,
               ``("payroll_tax",)`` would be the first level,
@@ -115,32 +108,23 @@ def tt(
               defined wins.
             - Fallback color is black for nested namespaces, dimgray for top-level.
             - Use any color from https://plotly.com/python/css-colors/
-        If None, cycle through colors at the uppermost level of the namespace hierarchy.
-    policy_date_str
-        The date for which to plot the DAG.
-    orig_policy_objects
-        The orig policy objects.
-    input_data
-        The input data.
-    processed_data
-        The processed data.
-    labels
-        The labels.
-    policy_environment
-        The policy environment.
-    backend
-        The backend to use when executing main.
-    include_fail_nodes
-        Whether to include fail nodes when executing main.
-    include_warn_nodes
-        Whether to include warn nodes when executing main.
-    kwargs
-        Additional keyword arguments. Will be passed to
-        plotly.graph_objects.Figure.layout.
+            If None, cycle through colors at the uppermost level of the namespace
+            hierarchy.
+        policy_date_str: The date for which to plot the DAG.
+        orig_policy_objects: The orig policy objects.
+        input_data: The input data.
+        processed_data: The processed data.
+        labels: The labels.
+        policy_environment: The policy environment.
+        backend: The backend to use when executing main.
+        include_fail_nodes: Whether to include fail nodes when executing main.
+        include_warn_nodes: Whether to include warn nodes when executing main.
+        kwargs: Additional keyword arguments. Will be passed to
+            plotly.graph_objects.Figure.layout.
 
-    Returns
-    -------
-    The figure.
+    Returns:
+        The figure.
+
     """
     dag_with_node_metadata = _get_tt_dag_with_node_metadata(
         root=root,
