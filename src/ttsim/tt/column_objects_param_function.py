@@ -62,17 +62,15 @@ class FKType(StrEnum):
 class ColumnObject:
     """Base class for all objects operating on columns of data.
 
-    Examples
-    --------
-    - PolicyInputs
-    - PolicyFunctions
-    - GroupCreationFunctions
-    - AggByGroupFunctions
-    - AggByPIDFunctions
-    - TimeConversionFunctions
+    Examples:
+        - PolicyInputs
+        - PolicyFunctions
+        - GroupCreationFunctions
+        - AggByGroupFunctions
+        - AggByPIDFunctions
+        - TimeConversionFunctions
 
     Parameters are not ColumnObjectParamFunctions.
-
     """
 
     leaf_name: str

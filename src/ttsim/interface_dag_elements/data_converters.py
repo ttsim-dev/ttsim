@@ -38,8 +38,7 @@ def nested_data_to_df_with_nested_columns(
         index:
             The index to use for the DataFrame.
 
-    Returns
-    -------
+    Returns:
         A DataFrame.
     """
     flat_data_to_convert = dt.flatten_to_tree_paths(nested_data_to_convert)
@@ -66,8 +65,7 @@ def nested_data_to_df_with_mapped_columns(
         data_with_p_id:
             Some data structure with a "p_id" column.
 
-    Returns
-    -------
+    Returns:
         A DataFrame.
     """
     flat_data_to_convert = dt.flatten_to_tree_paths(nested_data_to_convert)
@@ -87,49 +85,45 @@ def df_with_mapped_columns_to_flat_data(
     xnp: ModuleType,
 ) -> FlatData:
     """Transform a pandas DataFrame to a flattened data structure.
-    `
-        Args
-        ----
-            inputs_tree_to_df_columns:
-                A nested dictionary that defines the structure of the inputs tree. The
-                elements of the tree paths are strings. Leaves can be:
 
-                - Strings that reference column names in the DataFrame.
-                - Numeric or boolean values (which will be broadcasted to match the
-                  DataFrame length)
-            df:
-                The pandas DataFrame containing the source data.
+    Args:
+        mapper: A nested dictionary that defines the structure of the inputs tree. The
+            elements of the tree paths are strings. Leaves can be:
 
-    Returns
-    -------
-            A flattened data structure containing the data organized according to the
-            mapping definition.
+            - Strings that reference column names in the DataFrame.
+            - Numeric or boolean values (which will be broadcasted to match the
+              DataFrame length)
+        df: The pandas DataFrame containing the source data.
+        backend: Backend to use for array creation.
+        xnp: The numpy-compatible module.
 
-    Examples
-    --------
-            >>> df = pd.DataFrame({
-            ...     "a": [1, 2, 3],
-            ...     "b": [4, 5, 6],
-            ...     "c": [7, 8, 9],
-            ... })
-            >>> inputs_tree_to_df_columns = {
-            ...     "n1": {
-            ...         "n2": "a",
-            ...         "n3": "b",
-            ...     },
-            ...     "n4": 3,
-            ... }
-            >>> result = create_data_tree(
-            ...     inputs_tree_to_df_columns=inputs_tree_to_df_columns,
-            ...     df=df,
-            ... )
-            >>> result
-            {
-                ("n1", "n2"): np.array([1, 2, 3]),
-                ("n1", "n3"): np.array([4, 5, 6]),
-                ("n4",): np.array([3, 3, 3]),
-            }
+    Returns:
+        A flattened data structure containing the data organized according to the
+        mapping definition.
 
+    Examples:
+        >>> df = pd.DataFrame({
+        ...     "a": [1, 2, 3],
+        ...     "b": [4, 5, 6],
+        ...     "c": [7, 8, 9],
+        ... })
+        >>> inputs_tree_to_df_columns = {
+        ...     "n1": {
+        ...         "n2": "a",
+        ...         "n3": "b",
+        ...     },
+        ...     "n4": 3,
+        ... }
+        >>> result = create_data_tree(
+        ...     inputs_tree_to_df_columns=inputs_tree_to_df_columns,
+        ...     df=df,
+        ... )
+        >>> result
+        {
+            ("n1", "n2"): np.array([1, 2, 3]),
+            ("n1", "n3"): np.array([4, 5, 6]),
+            ("n4",): np.array([3, 3, 3]),
+        }
 
     """
     path_to_array = {}
@@ -163,12 +157,10 @@ def df_with_nested_columns_to_flat_data(
         xnp:
             The numpy module.
 
-    Returns
-    -------
+    Returns:
         A flattened data structure.
 
-    Examples
-    --------
+    Examples:
         >>> df = pd.DataFrame({("a", "b"): [1, 2, 3], ("c",): [4, 5, 6]})
         >>> result = df_with_nested_columns_to_flat_data(df, xnp=np)
         >>> result
