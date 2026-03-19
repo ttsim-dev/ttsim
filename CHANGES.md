@@ -4,11 +4,11 @@ This is a record of all past `ttsim` releases and what went into them in reverse
 chronological order. We follow [semantic versioning](https://semver.org/) and all
 releases are available on [Anaconda.org](https://anaconda.org/conda-forge/ttsim).
 
-## Unreleased
+## v1.2.0 — 2026-03-19
 
 - {gh}`76` Refactor piecewise polynomial (implements GEP 8). ({ghuser}`hmgaudecker`,
   {ghuser}`MImmesberger`)
-- {gh}`86` Require `dags >= 0.5.0`. ({ghuser}`hmgaudecker`)
+- {gh}`86` Require `dags >= 0.5.1`. ({ghuser}`hmgaudecker`)
 - {gh}`83` Allow non-string annotations in vectorization. ({ghuser}`hmgaudecker`)
 - {gh}`80` Generalize type hints for time conversion functions. ({ghuser}`hmgaudecker`)
 - {gh}`75` Improve test coverage. ({ghuser}`MImmesberger`)
