@@ -47,7 +47,7 @@ def vectorize_function(
         _vectorized = numpy.vectorize(func)
 
         @functools.wraps(func)
-        def vectorized(*args: Any, **kwargs: Any) -> Any:  # type: ignore[misc]  # noqa: ANN401
+        def vectorized(*args: Any, **kwargs: Any) -> Any:  # noqa: ANN401
             return _vectorized(*args, **kwargs)
     elif vectorization_strategy == "vectorize":
         vectorized = _make_vectorizable(func, backend=backend, xnp=xnp)

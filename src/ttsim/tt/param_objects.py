@@ -157,7 +157,7 @@ class ConsecutiveIntLookupTableParamValue:
         )
         result = self.values_to_look_up[corrected_index]
         if scalar_input:
-            return result.flat[0]
+            return result.flatten()[0]
         return result
 
 

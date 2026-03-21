@@ -123,6 +123,7 @@ def test_partial_domain_returns_nan(xnp: ModuleType):
 
     x = xnp.array([-10.0, 50.0, 150.0, 300.0])
     result = piecewise_polynomial(x=x, parameters=params, xnp=xnp)
+    assert not isinstance(result, (int, float))
 
     assert numpy.isnan(result[0]), "Value below domain should be NaN"
     numpy.testing.assert_allclose(result[1], 5.0, atol=1e-7)
@@ -154,6 +155,7 @@ def test_neg_inf_to_zero_to_inf(xnp: ModuleType):
 
     x = xnp.array([-10.0, 0.0, 10.0])
     result = piecewise_polynomial(x=x, parameters=params, xnp=xnp)
+    assert not isinstance(result, (int, float))
 
     numpy.testing.assert_allclose(result[0], 0.0, atol=1e-7)
     numpy.testing.assert_allclose(result[1], 0.0, atol=1e-7)
