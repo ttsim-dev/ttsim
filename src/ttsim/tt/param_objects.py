@@ -150,11 +150,15 @@ class ConsecutiveIntLookupTableParamValue:
     def look_up(
         self: ConsecutiveIntLookupTableParamValue, *args: int
     ) -> float | int | bool:
+        scalar_input = all(getattr(a, "ndim", 0) == 0 for a in args)
         index = self.xnp.asarray(args)
         corrected_index = self.xnp.dot(
             (index - self.bases_to_subtract).T, self.lookup_multipliers
         )
-        return self.values_to_look_up[corrected_index]
+        result = self.values_to_look_up[corrected_index]
+        if scalar_input:
+            return result.flat[0]
+        return result
 
 
 @dataclass(frozen=True)
