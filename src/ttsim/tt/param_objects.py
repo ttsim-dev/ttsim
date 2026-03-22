@@ -152,6 +152,8 @@ class ConsecutiveIntLookupTableParamValue:
     ) -> float | int | bool:
         scalar_input = all(getattr(a, "ndim", 0) == 0 for a in args)
         index = self.xnp.asarray(args)
+        if scalar_input:
+            index = index.reshape(-1, 1)
         corrected_index = self.xnp.dot(
             (index - self.bases_to_subtract).T, self.lookup_multipliers
         )
