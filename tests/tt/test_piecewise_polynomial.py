@@ -89,13 +89,21 @@ def test_typical_evaluation(
     numpy.testing.assert_allclose(xnp.array(actual), expected, atol=0.01)
 
 
-def test_piecewise_polynomial_scalar_input(
+def test_piecewise_polynomial_scalar_input_is_scalar(
     parameters: PiecewisePolynomialParamValue,
     xnp: ModuleType,
 ):
-    """piecewise_polynomial accepts a scalar float and returns a numpy scalar."""
+    """piecewise_polynomial with scalar float returns a 0-d result."""
     result = piecewise_polynomial(x=30_000.0, parameters=parameters, xnp=xnp)
     assert getattr(result, "ndim", -1) == 0, f"Expected 0-d, got {type(result)}"
+
+
+def test_piecewise_polynomial_scalar_input_value(
+    parameters: PiecewisePolynomialParamValue,
+    xnp: ModuleType,
+):
+    """piecewise_polynomial with scalar float returns the correct value."""
+    result = piecewise_polynomial(x=30_000.0, parameters=parameters, xnp=xnp)
     numpy.testing.assert_allclose(result, 5275.825, atol=0.01)
 
 

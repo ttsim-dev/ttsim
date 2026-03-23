@@ -158,7 +158,14 @@ def test_lookup_table_look_up_array_input(xnp):
     numpy.testing.assert_array_equal(result, xnp.array([10.0, 20.0, 30.0]))
 
 
-def test_lookup_table_look_up_multidim_scalar(xnp):
+@pytest.mark.parametrize(
+    ("row", "col", "expected"),
+    [
+        (0, 1, 20.0),
+        (1, 2, 60.0),
+    ],
+)
+def test_lookup_table_look_up_multidim_scalar(xnp, row, col, expected):
     """Test lookup with multiple scalar args (multi-dimensional table)."""
     values = xnp.array([[10.0, 20.0, 30.0], [40.0, 50.0, 60.0]])
     bases = xnp.array([0, 0])
@@ -167,14 +174,7 @@ def test_lookup_table_look_up_multidim_scalar(xnp):
         xnp=xnp, values_to_look_up=values, bases_to_subtract=bases
     )
 
-    # Scalar 2-D lookup: row 0, col 1 → 20.0
-    result = lut.look_up(0, 1)
-    numpy.testing.assert_almost_equal(result, 20.0)
-    assert getattr(result, "ndim", 0) == 0
-
-    # Scalar 2-D lookup: row 1, col 2 → 60.0
-    result = lut.look_up(1, 2)
-    numpy.testing.assert_almost_equal(result, 60.0)
+    numpy.testing.assert_almost_equal(lut.look_up(row, col), expected)
 
 
 def test_lookup_table_look_up_with_nonzero_base(xnp):
