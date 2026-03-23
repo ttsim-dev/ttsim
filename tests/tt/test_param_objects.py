@@ -145,6 +145,38 @@ def test_lookup_table_look_up_single_dim(xnp):
     numpy.testing.assert_almost_equal(lut.look_up(2), 30.0)
 
 
+def test_lookup_table_look_up_array_input(xnp):
+    """Test lookup with array input returns array."""
+    values = xnp.array([10.0, 20.0, 30.0])
+    bases = xnp.array([0])
+
+    lut = ConsecutiveIntLookupTableParamValue(
+        xnp=xnp, values_to_look_up=values, bases_to_subtract=bases
+    )
+
+    result = lut.look_up(xnp.array([0, 1, 2]))
+    numpy.testing.assert_array_equal(result, xnp.array([10.0, 20.0, 30.0]))
+
+
+@pytest.mark.parametrize(
+    ("row", "col", "expected"),
+    [
+        (0, 1, 20.0),
+        (1, 2, 60.0),
+    ],
+)
+def test_lookup_table_look_up_multidim_scalar(xnp, row, col, expected):
+    """Test lookup with multiple scalar args (multi-dimensional table)."""
+    values = xnp.array([[10.0, 20.0, 30.0], [40.0, 50.0, 60.0]])
+    bases = xnp.array([0, 0])
+
+    lut = ConsecutiveIntLookupTableParamValue(
+        xnp=xnp, values_to_look_up=values, bases_to_subtract=bases
+    )
+
+    numpy.testing.assert_almost_equal(lut.look_up(row, col), expected)
+
+
 def test_lookup_table_look_up_with_nonzero_base(xnp):
     """Test lookup with non-zero base subtraction."""
     values = xnp.array([10.0, 20.0, 30.0])

@@ -60,7 +60,7 @@ def piecewise_polynomial(
     x: Float[Array, " n_pp_values"] | float,
     parameters: PiecewisePolynomialParamValue,
     xnp: ModuleType,
-) -> Float[Array, " n_pp_values"]:
+) -> Float[Array, " n_pp_values"] | float:
     """Calculate value of the piecewise function at `x`.
 
     Values outside the defined domain return NaN.
@@ -74,6 +74,10 @@ def piecewise_polynomial(
         The value of `x` under the piecewise function.
 
     """
+    scalar_input = getattr(x, "ndim", 0) == 0
+    if scalar_input:
+        x = xnp.asarray([x])
+
     n_intervals = parameters.coefficients.shape[0]
     order = parameters.coefficients.shape[1]
     # Get interval of requested value
@@ -96,7 +100,11 @@ def piecewise_polynomial(
 
     # NaN for out-of-domain values
     out_of_domain = (selected_bin < 0) | (selected_bin >= n_intervals)
-    return xnp.where(out_of_domain, xnp.array(float("nan")), result)
+    result = xnp.where(out_of_domain, xnp.array(float("nan")), result)
+
+    if scalar_input:
+        return result[0]
+    return result
 
 
 def get_piecewise_parameters(

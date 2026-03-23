@@ -194,7 +194,13 @@ def _frozen_safe_update_wrapper(
         if hasattr(wrapped, attr):
             object.__setattr__(wrapper, attr, getattr(wrapped, attr))
 
-    getattr(wrapper, "__dict__", {}).update(getattr(wrapped, "__dict__", {}))
+    # Copy remaining __dict__ entries, but exclude __annotate__ to avoid
+    # overriding __annotations__ on Python 3.14+, where setting __annotate__
+    # on a function invalidates its cached __annotations__.
+    wrapped_dict = getattr(wrapped, "__dict__", {})
+    getattr(wrapper, "__dict__", {}).update(
+        {k: v for k, v in wrapped_dict.items() if k != "__annotate__"}
+    )
 
 
 @dataclass(frozen=True)

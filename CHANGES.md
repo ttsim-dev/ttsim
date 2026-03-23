@@ -4,6 +4,11 @@ This is a record of all past `ttsim` releases and what went into them in reverse
 chronological order. We follow [semantic versioning](https://semver.org/) and all
 releases are available on [Anaconda.org](https://anaconda.org/conda-forge/ttsim).
 
+## Unreleased
+
+- {gh}`92` Let piecewise polynomials return scalars if the input is a scalar.
+  ({ghuser}`MImmesberger`)
+
 ## v1.2.0 — 2026-03-19
 
 - {gh}`76` Refactor piecewise polynomial (implements GEP 8). ({ghuser}`hmgaudecker`,
