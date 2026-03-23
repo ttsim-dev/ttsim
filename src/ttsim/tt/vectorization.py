@@ -44,11 +44,13 @@ def vectorize_function(
 
     vectorized: FunctionType[..., Any]
     if vectorization_strategy == "loop":
-        _vectorized = numpy.vectorize(func)
-
-        @functools.wraps(func)
-        def vectorized(*args: Any, **kwargs: Any) -> Any:  # noqa: ANN401
-            return _vectorized(*args, **kwargs)
+        assigned = (
+            "__signature__",
+            "__globals__",
+            "__closure__",
+            *functools.WRAPPER_ASSIGNMENTS,
+        )
+        vectorized = functools.wraps(func, assigned=assigned)(numpy.vectorize(func))
     elif vectorization_strategy == "vectorize":
         vectorized = _make_vectorizable(func, backend=backend, xnp=xnp)
     else:
