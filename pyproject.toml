@@ -73,6 +73,79 @@ build.targets.wheel.sources = [ "src" ]
 metadata.allow-direct-references = true
 version.source = "vcs"
 
+[tool.pixi]
+[tool.pixi.dependencies]
+ipywidgets = "*"
+jupyterlab = "*"
+numpy_groupies = "*"
+numpydoc = "*"
+openpyxl = "*"
+pandas = ">=3"
+portion = "*"
+prek = "*"
+pygments = "*"
+pygraphviz = "*"
+pyyaml = "*"
+snakeviz = ">=2.2.2"
+tabulate = "*"
+toml = "*"
+[tool.pixi.environments]
+py311 = [ "py311", "tests" ]
+py312 = [ "py312", "tests" ]
+py313 = [ "py313", "tests" ]
+py314 = [ "py314", "tests" ]
+py314-cuda = [ "py314", "tests", "cuda" ]
+py314-jax = [ "py314", "tests", "jax" ]
+type-checking = [ "py314", "type-checking" ]
+type-checking-jax = [ "py314", "type-checking-jax", "jax" ]
+py314-metal = [ "py314", "tests", "metal" ]
+[tool.pixi.feature]
+cuda.platforms = [ "linux-64" ]
+cuda.system-requirements = { cuda = "13" }
+cuda.target.linux-64.pypi-dependencies.jax = { version = ">=0.8", extras = [ "cuda13" ] }
+cuda.target.linux-64.tasks.tests-jax = "pytest --backend=jax"
+jax.platforms = [ "linux-64", "osx-arm64", "win-64" ]
+jax.pypi-dependencies.jax = ">=0.8"
+jax.target.linux-64.tasks.tests-jax = "pytest --backend=jax"
+jax.target.osx-arm64.tasks.tests-jax = "dot -c && pytest --backend=jax"
+jax.target.win-64.tasks.tests-jax = "pytest --backend=jax"
+metal.platforms = [ "osx-arm64" ]
+metal.target.osx-arm64.pypi-dependencies.jax = ">=0.8"
+metal.target.osx-arm64.pypi-dependencies.jax-metal = ">=0.1.1"
+py311.dependencies.python = "~=3.11.0"
+py312.dependencies.python = "~=3.12.0"
+py313.dependencies.python = "~=3.13.0"
+py314.dependencies.python = "~=3.14.0"
+tests.pypi-dependencies.types-PyYAML = "*"
+tests.pypi-dependencies.types-pytz = "*"
+tests.pypi-dependencies.pytest-cov = "*"
+tests.pypi-dependencies.pytest-xdist = "*"
+tests.target.linux-64.tasks.tests = "pytest"
+tests.target.linux-64.tasks.tests-with-cov = "pytest --cov-report=xml --cov=./"
+tests.target.osx-64.tasks.tests = "dot -c && pytest"  # needed for pygraphviz on macOS
+tests.target.osx-64.tasks.tests-with-cov = "dot -c && pytest --cov-report=xml --cov=./"  # needed for pygraphviz on macOS
+tests.target.osx-arm64.tasks.tests = "dot -c && pytest"  # needed for pygraphviz on macOS
+tests.target.osx-arm64.tasks.tests-with-cov = "dot -c && pytest --cov-report=xml --cov=./"  # needed for pygraphviz on macOS
+tests.target.win-64.tasks.tests = "pytest"
+tests.target.win-64.tasks.tests-with-cov = "pytest --cov-report=xml --cov=./"
+type-checking.pypi-dependencies.ty = "*"
+type-checking.pypi-dependencies.types-PyYAML = "*"
+type-checking.pypi-dependencies.types-pytz = "*"
+type-checking.tasks.ty = "ty check"
+type-checking-jax.pypi-dependencies.ty = "*"
+type-checking-jax.pypi-dependencies.types-PyYAML = "*"
+type-checking-jax.pypi-dependencies.types-pytz = "*"
+type-checking-jax.tasks.ty-jax = "ty check"
+[tool.pixi.pypi-dependencies]
+# jax-datetime = { git = "https://github.com/google/jax-datetime.git" }
+jaxtyping = "*"
+mettsim = { path = "src_mettsim", editable = true }
+pdbp = "*"
+ttsim-backend = { path = ".", editable = true }
+[tool.pixi.workspace]
+channels = [ "conda-forge" ]
+platforms = [ "linux-64", "osx-64", "osx-arm64", "win-64" ]
+
 [tool.ruff]
 fix = true
 unsafe-fixes = false
@@ -247,76 +320,3 @@ ini_options.testpaths = [ "tests", "src_mettsim/tests_middle_earth" ]
 line_length = 88
 none_representation = "null"
 sequence_style = "block_style"
-
-[tool.pixi]
-[tool.pixi.dependencies]
-ipywidgets = "*"
-jupyterlab = "*"
-numpy_groupies = "*"
-numpydoc = "*"
-openpyxl = "*"
-pandas = ">=3"
-portion = "*"
-prek = "*"
-pygments = "*"
-pygraphviz = "*"
-pyyaml = "*"
-snakeviz = ">=2.2.2"
-tabulate = "*"
-toml = "*"
-[tool.pixi.environments]
-py311 = [ "py311", "tests" ]
-py312 = [ "py312", "tests" ]
-py313 = [ "py313", "tests" ]
-py314 = [ "py314", "tests" ]
-py314-cuda = [ "py314", "tests", "cuda" ]
-py314-jax = [ "py314", "tests", "jax" ]
-type-checking = [ "py314", "type-checking" ]
-type-checking-jax = [ "py314", "type-checking-jax", "jax" ]
-py314-metal = [ "py314", "tests", "metal" ]
-[tool.pixi.feature]
-cuda.platforms = [ "linux-64" ]
-cuda.system-requirements = { cuda = "13" }
-cuda.target.linux-64.pypi-dependencies.jax = { version = ">=0.8", extras = [ "cuda13" ] }
-cuda.target.linux-64.tasks.tests-jax = "pytest --backend=jax"
-jax.platforms = [ "linux-64", "osx-arm64", "win-64" ]
-jax.pypi-dependencies.jax = ">=0.8"
-jax.target.linux-64.tasks.tests-jax = "pytest --backend=jax"
-jax.target.osx-arm64.tasks.tests-jax = "dot -c && pytest --backend=jax"
-jax.target.win-64.tasks.tests-jax = "pytest --backend=jax"
-metal.platforms = [ "osx-arm64" ]
-metal.target.osx-arm64.pypi-dependencies.jax = ">=0.8"
-metal.target.osx-arm64.pypi-dependencies.jax-metal = ">=0.1.1"
-py311.dependencies.python = "~=3.11.0"
-py312.dependencies.python = "~=3.12.0"
-py313.dependencies.python = "~=3.13.0"
-py314.dependencies.python = "~=3.14.0"
-tests.pypi-dependencies.types-PyYAML = "*"
-tests.pypi-dependencies.types-pytz = "*"
-tests.pypi-dependencies.pytest-cov = "*"
-tests.pypi-dependencies.pytest-xdist = "*"
-tests.target.linux-64.tasks.tests = "pytest"
-tests.target.linux-64.tasks.tests-with-cov = "pytest --cov-report=xml --cov=./"
-tests.target.osx-64.tasks.tests = "dot -c && pytest"  # needed for pygraphviz on macOS
-tests.target.osx-64.tasks.tests-with-cov = "dot -c && pytest --cov-report=xml --cov=./"  # needed for pygraphviz on macOS
-tests.target.osx-arm64.tasks.tests = "dot -c && pytest"  # needed for pygraphviz on macOS
-tests.target.osx-arm64.tasks.tests-with-cov = "dot -c && pytest --cov-report=xml --cov=./"  # needed for pygraphviz on macOS
-tests.target.win-64.tasks.tests = "pytest"
-tests.target.win-64.tasks.tests-with-cov = "pytest --cov-report=xml --cov=./"
-type-checking.pypi-dependencies.ty = "*"
-type-checking.pypi-dependencies.types-PyYAML = "*"
-type-checking.pypi-dependencies.types-pytz = "*"
-type-checking.tasks.ty = "ty check"
-type-checking-jax.pypi-dependencies.ty = "*"
-type-checking-jax.pypi-dependencies.types-PyYAML = "*"
-type-checking-jax.pypi-dependencies.types-pytz = "*"
-type-checking-jax.tasks.ty-jax = "ty check"
-[tool.pixi.pypi-dependencies]
-# jax-datetime = { git = "https://github.com/google/jax-datetime.git" }
-jaxtyping = "*"
-mettsim = { path = "src_mettsim", editable = true }
-pdbp = "*"
-ttsim-backend = { path = ".", editable = true }
-[tool.pixi.workspace]
-channels = [ "conda-forge" ]
-platforms = [ "linux-64", "osx-64", "osx-arm64", "win-64" ]
