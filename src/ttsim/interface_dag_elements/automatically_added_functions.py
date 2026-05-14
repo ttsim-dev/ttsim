@@ -4,7 +4,7 @@ import inspect
 from typing import TYPE_CHECKING, cast, overload
 
 import dags.tree as dt
-from dags import get_free_arguments, rename_arguments
+from dags import get_annotations, get_free_arguments, rename_arguments
 
 from ttsim.interface_dag_elements.shared import (
     get_base_name_and_grouping_suffix,
@@ -105,7 +105,12 @@ def _convertibles(
         if isinstance(e, (ColumnObject, ScalarParam))
         or (
             isinstance(e, ParamFunction)
-            and e.function.__annotations__["return"] in {"float", "int"}
+            # `e.function` may be a dags wrapper (`ParamFunction.remove_tree_logic`
+            # routes through `get_one_function_without_tree_logic`, i.e.
+            # `rename_arguments`), whose `__annotations__` is the forwarder
+            # shape. `dags.get_annotations` recovers the return annotation
+            # from `__signature__`.
+            and get_annotations(e.function)["return"] in {"float", "int"}
         )
     }
 

@@ -13,7 +13,7 @@ import networkx as nx
 import numpy
 import optree
 import pandas as pd
-from dags import create_dag, get_free_arguments
+from dags import create_dag, get_annotations, get_free_arguments
 from dags.tree.validation import fail_if_paths_are_invalid
 
 from ttsim.interface_dag_elements.backend import jax
@@ -999,8 +999,12 @@ def passed_scalar_inputs_for_natively_vectorized_functions(
 
     root_nodes_supposed_to_be_arrays: set[str] = set()
     for func in nodes_with_root_node_inputs.values():
-        args = get_free_arguments(cast("Callable[..., Any]", func.function))
-        annotations = func.function.__annotations__
+        # `func.function` may be a dags wrapper (e.g. `rename_arguments`),
+        # whose `__annotations__` is the `*args, **kwargs` forwarder shape.
+        # `dags.get_annotations` recovers the user view from `__signature__`.
+        callable_function = cast("Callable[..., Any]", func.function)
+        args = get_free_arguments(callable_function)
+        annotations = get_annotations(callable_function)
         for arg in args:
             if arg in scalars_in_processed_data and "Column" in annotations[arg]:
                 root_nodes_supposed_to_be_arrays.add(str(dt.tree_path_from_qname(arg)))
