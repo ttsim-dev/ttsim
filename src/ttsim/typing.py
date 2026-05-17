@@ -55,19 +55,20 @@ UserFloatColumn: TypeAlias = FloatColumn | pd.Series
 UserIntColumn: TypeAlias = IntColumn | pd.Series
 UserBoolColumn: TypeAlias = BoolColumn | pd.Series
 
+# `DashedISOString`: a string representing a date in the format 'YYYY-MM-DD'.
 DashedISOString: TypeAlias = str
-"""A string representing a date in the format 'YYYY-MM-DD'."""
 
 # Simple runtime aliases. They sit at module scope (not under
 # `TYPE_CHECKING`) so beartype-decorated entry points can resolve them.
+#
+# - `RawParamValue`: the value field of a `RawParam`.
+# - `UnorderedQNames`: a set of qualified names.
+# - `OrderedQNames`: a tuple or a list of qualified names.
+# - `QNameStrings`: any iterable of qualified names.
 RawParamValue: TypeAlias = dict[str | int, Any]
-"""The value field of a RawParam."""
 UnorderedQNames: TypeAlias = set[str]
-"""A set of qualified names."""
 OrderedQNames: TypeAlias = tuple[str, ...] | list[str]
-"""A tuple or a list of qualified names."""
 QNameStrings: TypeAlias = Iterable[str]
-"""A list, tuple, or set of qualified names."""
 
 # Data-tree aliases. Hoisted out of TYPE_CHECKING so @beartype-decorated
 # user-boundary entry points (InputData.tree/.flat/.qname, TTTargets.tree)

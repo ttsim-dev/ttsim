@@ -19,6 +19,15 @@ ROUNDING_DIRECTION = Literal["up", "down", "nearest"]
 P = ParamSpec("P")
 
 
+# See ttsim.tt.vectorization for the rationale: prevent the user's scalar
+# annotations from leaking onto the column-typed wrapper.
+_WRAPPER_ASSIGNMENTS_NO_ANNOTATIONS: tuple[str, ...] = tuple(
+    a
+    for a in functools.WRAPPER_ASSIGNMENTS
+    if a not in ("__annotations__", "__annotate__")
+)
+
+
 @beartype(conf=ROUNDING_SPEC_CONF)
 @dataclass(frozen=True)
 class RoundingSpec:
@@ -60,7 +69,7 @@ class RoundingSpec:
             Function with rounding applied.
         """
 
-        @functools.wraps(func)
+        @functools.wraps(func, assigned=_WRAPPER_ASSIGNMENTS_NO_ANNOTATIONS)
         def wrapper(*args: P.args, **kwargs: P.kwargs) -> FloatColumn:
             out = func(*args, **kwargs)
 

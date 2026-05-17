@@ -23,6 +23,21 @@ if TYPE_CHECKING:
 BACKEND_TO_MODULE = {"jax": "jax.numpy", "numpy": "numpy"}
 
 
+# `functools.WRAPPER_ASSIGNMENTS` minus the annotation attributes. Used at
+# every `functools.wraps` site that wraps a user policy function: if we let
+# the user's scalar annotations leak onto the column-typed wrapper,
+# beartype rejects the wrapper's column-typed arguments against the
+# wrapper's inherited scalar signature.
+#
+# `__annotate__` is the PEP 649 (Python 3.14+) deferred-evaluation pair to
+# `__annotations__` and needs the same treatment.
+_WRAPPER_ASSIGNMENTS_NO_ANNOTATIONS: tuple[str, ...] = tuple(
+    a
+    for a in functools.WRAPPER_ASSIGNMENTS
+    if a not in ("__annotations__", "__annotate__")
+)
+
+
 def vectorize_function(
     func: Callable[..., Any],
     vectorization_strategy: Literal["loop", "vectorize"],
@@ -52,7 +67,7 @@ def vectorize_function(
             "__signature__",
             "__globals__",
             "__closure__",
-            *functools.WRAPPER_ASSIGNMENTS,
+            *_WRAPPER_ASSIGNMENTS_NO_ANNOTATIONS,
         )
         vectorized = functools.wraps(func, assigned=assigned)(numpy.vectorize(func))
     elif vectorization_strategy == "vectorize":
@@ -110,7 +125,9 @@ def _make_vectorizable(
 
     # assign created function
     new_func = scope[func.__name__]  # ty: ignore[unresolved-attribute]
-    _vectorized = functools.wraps(func)(new_func)
+    _vectorized = functools.wraps(func, assigned=_WRAPPER_ASSIGNMENTS_NO_ANNOTATIONS)(
+        new_func
+    )
 
     # For functions whose argument names are renamed dynamically, we need to match the
     # argument names, since the vectorization works on the AST level, which is not
