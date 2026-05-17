@@ -36,8 +36,9 @@ if TYPE_CHECKING:
         SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
         SpecEnvWithPartialledParamsAndScalars,
         SpecEnvWithProcessedParamsAndScalars,
-        UnorderedQNames,
     )
+
+from ttsim.typing import UnorderedQNames  # noqa: TC001, E402
 
 
 @interface_input(in_top_level_namespace=True)
