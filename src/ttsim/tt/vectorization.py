@@ -13,6 +13,8 @@ import numpy
 from dags import get_annotations
 from dags.signature import rename_arguments
 
+from ttsim.exceptions import TTSIMError
+
 if TYPE_CHECKING:
     from types import FunctionType, ModuleType
 
@@ -427,7 +429,7 @@ def _is_lambda_function(obj: object) -> bool:
     return isinstance(obj, types.FunctionType) and obj.__name__ == "<lambda>"
 
 
-class TranslateToVectorizableError(ValueError):
+class TranslateToVectorizableError(TTSIMError, ValueError):
     """Error when function cannot be translated into vectorizable compatible format."""
 
 
