@@ -11,13 +11,21 @@ import networkx as nx
 
 from ttsim.entry_point import main
 from ttsim.interface_dag_elements.fail_if import format_errors_and_warnings
-from ttsim.main_args import OrigPolicyObjects, TTTargets
+from ttsim.main_args import (
+    Labels,
+    OrigPolicyObjects,
+    TTTargets,
+)
 from ttsim.main_target import MainTarget
 from ttsim.plot.dag.shared import NodeMetaData, get_figure
 from ttsim.tt import (
     ParamFunction,
     ParamObject,
     TimeConversionFunction,
+)
+from ttsim.typing import (
+    DashedISOString,
+    PolicyEnvironment,
 )
 
 if TYPE_CHECKING:

@@ -4,7 +4,10 @@ import datetime
 import functools
 import itertools
 import textwrap
-from collections.abc import Callable
+from collections.abc import (
+    Callable,
+    Iterable,
+)
 from dataclasses import dataclass
 from types import ModuleType
 from typing import TYPE_CHECKING, Any, Literal, cast

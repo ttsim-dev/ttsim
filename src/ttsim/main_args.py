@@ -9,11 +9,17 @@ from beartype import beartype
 
 from ttsim._beartype_conf import INPUT_DATA_CONF, TT_TARGETS_CONF
 from ttsim.typing import (
+    FlatColumnObjectsParamFunctions,
     FlatData,
+    FlatOrigParamSpecs,
     NestedData,
     NestedStrings,
+    OrderedQNames,
     QNameData,
     QNameStrings,
+    SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
+    SpecEnvWithPartialledParamsAndScalars,
+    SpecEnvWithProcessedParamsAndScalars,
     UnorderedQNames,
 )
 

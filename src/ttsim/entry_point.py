@@ -42,6 +42,7 @@ from ttsim.main_target import MainTarget, MainTargetABC
 from ttsim.typing import (
     DashedISOString,
     FlatInterfaceObjects,
+    NestedTargetDict,
     PolicyEnvironment,
     QNameData,
     UnorderedQNames,

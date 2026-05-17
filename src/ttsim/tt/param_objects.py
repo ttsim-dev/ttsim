@@ -4,17 +4,22 @@ from dataclasses import dataclass, field
 from types import ModuleType
 from typing import TYPE_CHECKING, Any, Literal, cast
 
-from jaxtyping import Float
+from jaxtyping import Bool, Float, Int
 
 from ttsim.typing import NestedLookupDict
+
+try:
+    from jax import Array
+except ImportError:
+    import numpy as _np
+
+    Array = _np.ndarray
 
 PLACEHOLDER_VALUE = object()
 PLACEHOLDER_FIELD = field(default_factory=lambda: PLACEHOLDER_VALUE)
 
 if TYPE_CHECKING:
     import datetime
-
-    from jaxtyping import Array, Bool, Int
 
 
 @dataclass(frozen=True)

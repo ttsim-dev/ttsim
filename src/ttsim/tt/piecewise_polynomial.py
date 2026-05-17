@@ -14,6 +14,13 @@ from ttsim.tt.interval_utils import (
 )
 from ttsim.tt.param_objects import PiecewisePolynomialParamValue
 
+try:
+    from jax import Array
+except ImportError:
+    import numpy as _np
+
+    Array = _np.ndarray
+
 if TYPE_CHECKING:
     from types import ModuleType
 

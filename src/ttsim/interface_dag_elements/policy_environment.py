@@ -33,7 +33,13 @@ from ttsim.tt.column_objects_param_function import (
 )
 from ttsim.tt.interval_utils import merge_piecewise_intervals
 from ttsim.tt.piecewise_polynomial import PIECEWISE_TYPES, get_piecewise_parameters
-from ttsim.typing import FlatOrigParamSpecs
+from ttsim.typing import (
+    FlatColumnObjectsParamFunctions,
+    FlatOrigParamSpecs,
+    NestedColumnObjectsParamFunctions,
+    NestedParamObjects,
+    OrigParamSpec,
+)
 
 if TYPE_CHECKING:
     from types import ModuleType

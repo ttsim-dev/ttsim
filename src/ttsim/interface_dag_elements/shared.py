@@ -3,28 +3,25 @@ from __future__ import annotations
 import datetime
 import re
 from copy import copy
-from typing import TYPE_CHECKING, Any, TypeAlias, overload
+from typing import Any, TypeAlias, overload
 
 import optree
 
-from ttsim.typing import DashedISOString, OrderedQNames
+from ttsim.typing import (
+    DashedISOString,
+    OrderedQNames,
+    PolicyEnvironment,
+    SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
+    SpecEnvWithPartialledParamsAndScalars,
+    SpecEnvWithProcessedParamsAndScalars,
+)
 
-if TYPE_CHECKING:
-    from ttsim.typing import (
-        DashedISOString,
-        OrderedQNames,
-        PolicyEnvironment,
-        SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
-        SpecEnvWithPartialledParamsAndScalars,
-        SpecEnvWithProcessedParamsAndScalars,
-    )
-
-    SomeEnv: TypeAlias = (
-        PolicyEnvironment
-        | SpecEnvWithoutTreeLogicAndWithDerivedFunctions
-        | SpecEnvWithProcessedParamsAndScalars
-        | SpecEnvWithPartialledParamsAndScalars
-    )
+SomeEnv: TypeAlias = (
+    PolicyEnvironment
+    | SpecEnvWithoutTreeLogicAndWithDerivedFunctions
+    | SpecEnvWithProcessedParamsAndScalars
+    | SpecEnvWithPartialledParamsAndScalars
+)
 
 
 _DASHED_ISO_DATE_REGEX = re.compile(r"\d{4}-\d{2}-\d{2}")

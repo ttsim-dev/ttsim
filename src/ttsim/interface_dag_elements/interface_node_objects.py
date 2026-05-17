@@ -56,7 +56,7 @@ class InterfaceInput(InterfaceNodeObject):
     interface modules) makes `func.__annotations__["return"]` a string form,
     not the live type object.
     """
-    docstring: str
+    docstring: str | None
 
     def remove_tree_logic(
         self,
@@ -82,7 +82,7 @@ def interface_input(
             leaf_name=leaf_name or func.__name__,  # ty: ignore[unresolved-attribute]
             in_top_level_namespace=in_top_level_namespace,
             return_type=func.__annotations__["return"],
-            docstring=inspect.getdoc(func),  # ty: ignore [invalid-argument-type]
+            docstring=inspect.getdoc(func),
         )
 
     return inner

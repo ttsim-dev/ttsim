@@ -9,6 +9,7 @@ execution).
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import TYPE_CHECKING, Literal, cast, overload
 
 import dags.tree as dt

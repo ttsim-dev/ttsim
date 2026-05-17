@@ -7,6 +7,14 @@ from typing import TYPE_CHECKING, Any, cast
 
 import numpy
 import portion
+from jaxtyping import Float
+
+try:
+    from jax import Array
+except ImportError:
+    import numpy as _np
+
+    Array = _np.ndarray
 
 if TYPE_CHECKING:
     from types import ModuleType

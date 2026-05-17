@@ -25,6 +25,7 @@ from ttsim.tt.column_objects_param_function import (
 )
 from ttsim.tt.param_objects import ScalarParam
 from ttsim.typing import (
+    FlatColumnObjects,
     OrderedQNames,
     PolicyEnvironment,
     UnorderedQNames,
