@@ -4,6 +4,7 @@ from enum import StrEnum
 from typing import TYPE_CHECKING, Literal, overload
 
 from ttsim.tt import aggregation_jax, aggregation_numpy
+from ttsim.typing import BoolColumn, FloatColumn, IntColumn
 
 if TYPE_CHECKING:
     from ttsim.typing import BoolColumn, FloatColumn, IntColumn

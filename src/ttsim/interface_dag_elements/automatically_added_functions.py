@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import inspect
+from collections.abc import Callable
 from typing import TYPE_CHECKING, cast, overload
 
 import dags.tree as dt
@@ -23,6 +24,11 @@ from ttsim.tt.column_objects_param_function import (
     TimeConversionFunction,
 )
 from ttsim.tt.param_objects import ScalarParam
+from ttsim.typing import (
+    OrderedQNames,
+    PolicyEnvironment,
+    UnorderedQNames,
+)
 from ttsim.unit_converters import (
     TIME_UNIT_IDS_TO_LABELS,
     per_d_to_per_m,

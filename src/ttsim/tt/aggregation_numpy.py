@@ -5,6 +5,8 @@ from typing import TYPE_CHECKING
 import numpy
 import numpy_groupies as npg
 
+from ttsim.typing import BoolColumn, FloatColumn, IntColumn
+
 if TYPE_CHECKING:
     from ttsim.typing import BoolColumn, FloatColumn, IntColumn
 

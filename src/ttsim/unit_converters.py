@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any, overload
 
 import numpy as np
 import pandas as pd
+from jaxtyping import Float
 
 if TYPE_CHECKING:
     from jaxtyping import Array, Float, Int

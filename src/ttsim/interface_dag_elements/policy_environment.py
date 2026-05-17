@@ -3,6 +3,7 @@ from __future__ import annotations
 import copy
 import datetime
 from collections.abc import Callable
+from types import ModuleType
 from typing import TYPE_CHECKING, Any
 
 import dags.tree as dt
@@ -32,6 +33,7 @@ from ttsim.tt.column_objects_param_function import (
 )
 from ttsim.tt.interval_utils import merge_piecewise_intervals
 from ttsim.tt.piecewise_polynomial import PIECEWISE_TYPES, get_piecewise_parameters
+from ttsim.typing import FlatOrigParamSpecs
 
 if TYPE_CHECKING:
     from types import ModuleType

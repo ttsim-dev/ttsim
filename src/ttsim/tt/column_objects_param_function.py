@@ -6,7 +6,16 @@ import inspect
 from collections.abc import Callable
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import TYPE_CHECKING, Any, Generic, Literal, ParamSpec, TypeVar
+from types import ModuleType
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Generic,
+    Literal,
+    ParamSpec,
+    TypeVar,
+    no_type_check,
+)
 
 import dags.tree as dt
 from beartype import beartype
@@ -40,6 +49,7 @@ from ttsim.tt.aggregation import (
 )
 from ttsim.tt.rounding import RoundingSpec
 from ttsim.tt.vectorization import vectorize_function
+from ttsim.typing import DashedISOString, IntColumn, UnorderedQNames
 
 if TYPE_CHECKING:
     from types import ModuleType
@@ -113,7 +123,10 @@ class PolicyInput(ColumnObject):
 
     """
 
-    data_type: type[float | int | bool]
+    data_type: Any
+    """Annotated as `Any` because callers pass the literal annotation from
+    `func.__annotations__["return"]`, which is a string form under
+    `from __future__ import annotations`, not the live type object."""
     foreign_key_type: FKType = FKType.IRRELEVANT
     warn_msg_if_included: str | None = None
     fail_msg_if_included: str | None = None
@@ -228,6 +241,8 @@ class ColumnFunction(ColumnObject, Generic[FunArgTypes, ReturnType]):
         # Expose the signature of the wrapped function for dependency resolution
         _frozen_safe_update_wrapper(self, self.function)
 
+    @no_type_check  # beartype claw + 'from __future__ import annotations' confuses
+    # PEP 612 ParamSpec resolution; this method is a thin pass-through anyway.
     def __call__(
         self,
         *args: FunArgTypes.args,
@@ -924,6 +939,7 @@ class ParamFunction(Generic[FunArgTypes, ReturnType]):
         # Expose the signature of the wrapped function for dependency resolution
         _frozen_safe_update_wrapper(self, self.function)
 
+    @no_type_check  # see ColumnFunction.__call__ for rationale.
     def __call__(
         self,
         *args: FunArgTypes.args,

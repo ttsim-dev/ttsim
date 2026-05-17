@@ -1,18 +1,20 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from types import ModuleType
 from typing import TYPE_CHECKING, Any, Literal, cast
+
+from jaxtyping import Float
+
+from ttsim.typing import NestedLookupDict
 
 PLACEHOLDER_VALUE = object()
 PLACEHOLDER_FIELD = field(default_factory=lambda: PLACEHOLDER_VALUE)
 
 if TYPE_CHECKING:
     import datetime
-    from types import ModuleType
 
-    from jaxtyping import Array, Bool, Float, Int
-
-    from ttsim.typing import NestedLookupDict
+    from jaxtyping import Array, Bool, Int
 
 
 @dataclass(frozen=True)

@@ -39,7 +39,13 @@ from ttsim.main_args import (
     TTTargets,
 )
 from ttsim.main_target import MainTarget, MainTargetABC
-from ttsim.typing import DashedISOString
+from ttsim.typing import (
+    DashedISOString,
+    FlatInterfaceObjects,
+    PolicyEnvironment,
+    QNameData,
+    UnorderedQNames,
+)
 
 if TYPE_CHECKING:
     from ttsim.typing import (

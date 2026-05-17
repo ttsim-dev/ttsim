@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from types import ModuleType
 from typing import TYPE_CHECKING, Literal, get_args
 
 import numpy
 import portion
+from jaxtyping import Float
 
 from ttsim.tt.interval_utils import (
     intervals_to_thresholds,

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, TypeVar
 
 import pandas as pd
@@ -13,6 +14,7 @@ from ttsim.typing import (
     NestedStrings,
     QNameData,
     QNameStrings,
+    UnorderedQNames,
 )
 
 if TYPE_CHECKING:

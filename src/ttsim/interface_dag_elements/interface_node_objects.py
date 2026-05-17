@@ -3,9 +3,11 @@ from __future__ import annotations
 import inspect
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Generic, ParamSpec, TypeVar
+from typing import TYPE_CHECKING, Any, Generic, ParamSpec, TypeVar, no_type_check
 
 import dags.tree as dt
+
+from ttsim.typing import UnorderedQNames
 
 if TYPE_CHECKING:
     from ttsim.typing import UnorderedQNames
@@ -128,6 +130,8 @@ class InterfaceFunction(InterfaceNodeObject, Generic[FunArgTypes, ReturnType]):
         # Expose the signature of the wrapped function for dependency resolution
         _frozen_safe_update_wrapper(self, self.function)
 
+    @no_type_check  # beartype claw + 'from __future__ import annotations' confuses
+    # PEP 612 ParamSpec resolution; this method is a thin pass-through anyway.
     def __call__(
         self,
         *args: FunArgTypes.args,

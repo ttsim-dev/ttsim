@@ -7,6 +7,8 @@ from typing import TYPE_CHECKING, Any, TypeAlias, overload
 
 import optree
 
+from ttsim.typing import DashedISOString, OrderedQNames
+
 if TYPE_CHECKING:
     from ttsim.typing import (
         DashedISOString,

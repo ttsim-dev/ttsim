@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from types import ModuleType
 from typing import TYPE_CHECKING, Any, cast
 
 import numpy

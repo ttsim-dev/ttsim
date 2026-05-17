@@ -89,10 +89,10 @@ else:
     NestedData = Mapping[str, FloatColumn | IntColumn | BoolColumn | Mapping]
     NestedStrings = Mapping[str, str | Mapping]
 
+# `FlatData`: flattened tree mapping TTSIM tree paths (tuple) to 1-d arrays.
+# `QNameData`: mapping of qualified-name strings to 1-d arrays.
 FlatData: TypeAlias = Mapping[tuple[str, ...], FloatColumn | IntColumn | BoolColumn]
-"""Flattened tree mapping TTSIM paths to 1d arrays."""
 QNameData: TypeAlias = Mapping[str, FloatColumn | IntColumn | BoolColumn]
-"""Mapping of qualified name paths to 1d arrays."""
 
 if TYPE_CHECKING:
     # Names below are TYPE_CHECKING-only because they either reference
@@ -222,4 +222,30 @@ if TYPE_CHECKING:
     SpecEnvWithPartialledParamsAndScalars = Mapping[str, ColumnFunction]
     """Map qualified names to column functions that depend on columns only."""
 
+if TYPE_CHECKING:
     NestedLookupDict: TypeAlias = dict[int, float | int | bool | "NestedLookupDict"]
+else:
+    # Recursive aliases stringified as inner attribute names are unresolvable
+    # by beartype; widen the runtime form to `dict[int, object]`.
+    NestedLookupDict = dict[int, object]
+
+
+if not TYPE_CHECKING:
+    # Loose runtime stubs for the aliases that reference ColumnObject etc.;
+    # importing the precise definitions at runtime would create a cycle
+    # through ttsim.tt. beartype only needs the alias to exist as a Mapping
+    # subtype.
+    PolicyEnvironment: TypeAlias = Mapping[str, object]
+    FlatPolicyEnvironment: TypeAlias = Mapping[tuple[str, ...], object]
+    FlatColumnObjectsParamFunctions: TypeAlias = Mapping[tuple[str, ...], object]
+    FlatColumnObjects: TypeAlias = Mapping[str, object]
+    NestedPolicyInputs: TypeAlias = Mapping[str, object]
+    NestedColumnObjectsParamFunctions: TypeAlias = dict
+    NestedParamObjects: TypeAlias = dict
+    FlatOrigParamSpecs: TypeAlias = dict
+    SpecEnvWithoutTreeLogicAndWithDerivedFunctions: TypeAlias = Mapping[str, object]
+    SpecEnvWithProcessedParamsAndScalars: TypeAlias = Mapping[str, object]
+    SpecEnvWithPartialledParamsAndScalars: TypeAlias = Mapping[str, object]
+    FlatInterfaceObjects: TypeAlias = Mapping[tuple[str, ...], object]
+    NestedInputsMapper: TypeAlias = Mapping[str, object]
+    OrigParamSpec: TypeAlias = Mapping[object, object]
