@@ -9,8 +9,17 @@ from enum import StrEnum
 from typing import TYPE_CHECKING, Any, Generic, Literal, ParamSpec, TypeVar
 
 import dags.tree as dt
+from beartype import beartype
 from dags import rename_arguments
 
+from ttsim._beartype_conf import (
+    AGGREGATION_CONF,
+    GROUP_CREATION_CONF,
+    PARAM_FUNCTION_CONF,
+    POLICY_FUNCTION_CONF,
+    POLICY_INPUT_CONF,
+)
+from ttsim.exceptions import PolicyFunctionDefinitionError
 from ttsim.interface_dag_elements.shared import to_datetime
 from ttsim.tt.aggregation import (
     AggType,
@@ -118,6 +127,7 @@ class PolicyInput(ColumnObject):
         return self
 
 
+@beartype(conf=POLICY_INPUT_CONF)
 def policy_input(
     *,
     start_date: str | datetime.date = DEFAULT_START_DATE,
@@ -329,6 +339,7 @@ class PolicyFunction(ColumnFunction):
         )
 
 
+@beartype(conf=POLICY_FUNCTION_CONF)
 def policy_function(
     *,
     leaf_name: str | None = None,
@@ -371,6 +382,9 @@ def policy_function(
     start_date, end_date = _convert_and_validate_dates(start_date, end_date)
 
     def inner(func: Callable[..., Any]) -> PolicyFunction:
+        _fail_if_annotations_mismatch_vectorization_strategy(
+            func=func, vectorization_strategy=vectorization_strategy
+        )
         return PolicyFunction(
             leaf_name=leaf_name or func.__name__,  # ty: ignore[unresolved-attribute]
             function=func,
@@ -385,6 +399,66 @@ def policy_function(
         )
 
     return inner
+
+
+_SCALAR_TYPES_FOR_POLICY_FUNCTION_CONTRACT: tuple[type, ...] = (int, float, bool)
+
+
+def _fail_if_annotations_mismatch_vectorization_strategy(
+    func: Callable[..., Any],
+    vectorization_strategy: Literal["loop", "vectorize", "not_required"],
+) -> None:
+    """Validate the @policy_function dual-mode annotation contract.
+
+    The contract:
+
+    - `vectorization_strategy != "not_required"` (default; ttsim will
+      auto-vectorize the function): parameters must be annotated with
+      scalar types (int, float, bool). Column annotations on such a
+      function indicate a category error — ttsim plans to vectorize, but
+      the user already wrote array-direct code.
+    - `vectorization_strategy == "not_required"`: ttsim leaves the
+      function alone, so parameters must be annotated with column types
+      (FloatColumn, IntColumn, BoolColumn). Scalar annotations on such a
+      function are misleading at the type-checker boundary.
+
+    Raised at decoration time so the violation surfaces on import, not at
+    DAG-build time.
+    """
+    annotations = getattr(func, "__annotations__", {}) or {}
+    # Avoid importing ttsim.typing at module scope to skirt import cycles.
+    from ttsim.typing import BoolColumn, FloatColumn, IntColumn  # noqa: PLC0415
+
+    column_types: tuple[Any, ...] = (FloatColumn, IntColumn, BoolColumn)
+    func_qualname = getattr(func, "__qualname__", getattr(func, "__name__", "<func>"))
+
+    if vectorization_strategy == "not_required":
+        for name, annot in annotations.items():
+            if name == "return":
+                continue
+            if annot in _SCALAR_TYPES_FOR_POLICY_FUNCTION_CONTRACT:
+                msg = (
+                    f"@policy_function with vectorization_strategy='not_required' "
+                    f"requires column annotations (FloatColumn / IntColumn / "
+                    f"BoolColumn) on its parameters. Function {func_qualname!r} "
+                    f"has `{name}: {annot.__name__}` — change to the column alias."
+                )
+                raise PolicyFunctionDefinitionError(msg)
+    else:
+        for name, annot in annotations.items():
+            if name == "return":
+                continue
+            if annot in column_types:
+                annot_name = getattr(annot, "__name__", str(annot))
+                msg = (
+                    f"@policy_function with "
+                    f"vectorization_strategy={vectorization_strategy!r} requires "
+                    f"scalar annotations (int / float / bool) on its parameters. "
+                    f"Function {func_qualname!r} has `{name}: {annot_name}` — "
+                    f"change to the scalar type (or set "
+                    f"vectorization_strategy='not_required')."
+                )
+                raise PolicyFunctionDefinitionError(msg)
 
 
 def reorder_ids(ids: IntColumn, xnp: ModuleType) -> IntColumn:
@@ -444,6 +518,7 @@ class GroupCreationFunction(ColumnFunction):
         )
 
 
+@beartype(conf=GROUP_CREATION_CONF)
 def group_creation_function(
     *,
     leaf_name: str | None = None,
@@ -530,6 +605,7 @@ class AggByGroupFunction(ColumnFunction):
         )
 
 
+@beartype(conf=AGGREGATION_CONF)
 def agg_by_group_function(
     *,
     leaf_name: str | None = None,
@@ -662,6 +738,7 @@ class AggByPIDFunction(ColumnFunction):
         )
 
 
+@beartype(conf=AGGREGATION_CONF)
 def agg_by_p_id_function(
     *,
     leaf_name: str | None = None,
@@ -889,6 +966,7 @@ class ParamFunction(Generic[FunArgTypes, ReturnType]):
         )
 
 
+@beartype(conf=PARAM_FUNCTION_CONF)
 def param_function(
     *,
     leaf_name: str | None = None,

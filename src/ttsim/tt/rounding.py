@@ -3,6 +3,7 @@ from __future__ import annotations
 import functools
 from collections.abc import Callable
 from dataclasses import dataclass
+from types import ModuleType
 from typing import TYPE_CHECKING, Literal, ParamSpec, get_args
 
 from beartype import beartype
@@ -10,8 +11,6 @@ from beartype import beartype
 from ttsim._beartype_conf import ROUNDING_SPEC_CONF
 
 if TYPE_CHECKING:
-    from types import ModuleType
-
     from ttsim.typing import FloatColumn
 
 
