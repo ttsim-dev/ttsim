@@ -430,4 +430,4 @@ def test_rounding_preserves_function_name(xnp):
 
     rounded_func = rs.apply_rounding(my_custom_function, xnp=xnp)
 
-    assert rounded_func.__name__ == "my_custom_function"
+    assert rounded_func.__name__ == "my_custom_function"  # ty: ignore[unresolved-attribute]

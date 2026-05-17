@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import functools
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Literal, ParamSpec, get_args
 
 if TYPE_CHECKING:
-    from types import FunctionType, ModuleType
+    from types import ModuleType
 
     from ttsim.typing import FloatColumn
 
@@ -42,9 +43,9 @@ class RoundingSpec:
 
     def apply_rounding(
         self,
-        func: FunctionType[P, FloatColumn],
+        func: Callable[P, FloatColumn],
         xnp: ModuleType,
-    ) -> FunctionType[P, FloatColumn]:
+    ) -> Callable[P, FloatColumn]:
         """Decorator to round the output of a function.
 
         Args:

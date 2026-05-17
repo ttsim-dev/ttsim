@@ -1,5 +1,25 @@
 from __future__ import annotations
 
+import os
+
+# Patch jaxtyping's "..." sentinel to survive pickling before any
+# jaxtyping-subscripted type is created. See the module docstring.
+from ttsim import _jaxtyping_patch  # noqa: F401
+
+# Register beartype's package claw before any ttsim submodule imports so
+# every ttsim.* module loads with runtime type checks installed via
+# INTERNAL_CONF. User-facing constructors stack an explicit
+# @beartype(conf=...) decorator that maps violations to the relevant
+# project exception (see ttsim._beartype_conf).
+#
+# Env-var gated during rollout; flip to always-on at merge.
+if os.environ.get("TTSIM_BEARTYPE_CLAW", "0") != "0":
+    from beartype.claw import beartype_package
+
+    from ttsim._beartype_conf import INTERNAL_CONF
+
+    beartype_package("ttsim", conf=INTERNAL_CONF)
+
 try:
     # Import the version from _version.py which is dynamically created by
     # setuptools-scm upon installing the project with pip.

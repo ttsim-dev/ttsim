@@ -54,7 +54,7 @@ UserFloatColumn: TypeAlias = FloatColumn | pd.Series
 UserIntColumn: TypeAlias = IntColumn | pd.Series
 UserBoolColumn: TypeAlias = BoolColumn | pd.Series
 
-DashedISOString = str
+DashedISOString: TypeAlias = str
 """A string representing a date in the format 'YYYY-MM-DD'."""
 
 # Simple runtime aliases. They sit at module scope (not under

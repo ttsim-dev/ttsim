@@ -5,6 +5,7 @@ import functools
 import inspect
 import textwrap
 import types
+from collections.abc import Callable
 from importlib import import_module
 from types import ModuleType
 from typing import TYPE_CHECKING, Any, Literal, cast
@@ -16,18 +17,18 @@ from dags.signature import rename_arguments
 from ttsim.exceptions import TTSIMError
 
 if TYPE_CHECKING:
-    from types import FunctionType, ModuleType
+    from types import ModuleType
 
 
 BACKEND_TO_MODULE = {"jax": "jax.numpy", "numpy": "numpy"}
 
 
 def vectorize_function(
-    func: FunctionType[..., Any],
+    func: Callable[..., Any],
     vectorization_strategy: Literal["loop", "vectorize"],
     backend: Literal["numpy", "jax"],
     xnp: ModuleType,
-) -> FunctionType[..., Any]:
+) -> Callable[..., Any]:
     """Returns a new PolicyFunction with the function attribute vectorized.
 
     Args:
@@ -45,7 +46,7 @@ def vectorize_function(
 
     """
 
-    vectorized: FunctionType[..., Any]
+    vectorized: Callable[..., Any]
     if vectorization_strategy == "loop":
         assigned = (
             "__signature__",
@@ -64,17 +65,17 @@ def vectorize_function(
 
     # Update annotations and signature to reflect that the inputs are now expected to be
     # arrays.
-    vectorized.__signature__ = _create_vectorized_signature(func)  # ty: ignore[invalid-assignment]
+    vectorized.__signature__ = _create_vectorized_signature(func)  # ty: ignore[unresolved-attribute]
     vectorized.__annotations__ = _create_vectorized_annotations(func)
 
     return vectorized
 
 
 def _make_vectorizable(
-    func: FunctionType[..., Any],
+    func: Callable[..., Any],
     backend: str,
     xnp: ModuleType,
-) -> FunctionType[..., Any]:
+) -> Callable[..., Any]:
     """Redefine function to be vectorizable given backend.
 
     Args:
@@ -95,10 +96,10 @@ def _make_vectorizable(
     tree = _make_vectorizable_ast(func, module=module, xnp=xnp)
 
     # recreate scope of function, add array library
-    scope = dict(func.__globals__)
-    if func.__closure__:
-        closure_vars = func.__code__.co_freevars
-        closure_cells = [c.cell_contents for c in func.__closure__]
+    scope = dict(func.__globals__)  # ty: ignore[unresolved-attribute]
+    if func.__closure__:  # ty: ignore[unresolved-attribute]
+        closure_vars = func.__code__.co_freevars  # ty: ignore[unresolved-attribute]
+        closure_cells = [c.cell_contents for c in func.__closure__]  # ty: ignore[unresolved-attribute]
         scope.update(dict(zip(closure_vars, closure_cells, strict=False)))
 
     scope[module] = import_module(module)
@@ -108,7 +109,7 @@ def _make_vectorizable(
     exec(compiled, scope)  # noqa: S102
 
     # assign created function
-    new_func = scope[func.__name__]
+    new_func = scope[func.__name__]  # ty: ignore[unresolved-attribute]
     _vectorized = functools.wraps(func)(new_func)
 
     # For functions whose argument names are renamed dynamically, we need to match the
@@ -127,7 +128,7 @@ def _make_vectorizable(
 
 
 def make_vectorizable_source(
-    func: FunctionType[..., Any],
+    func: Callable[..., Any],
     backend: str,
     xnp: ModuleType,
 ) -> str:
@@ -154,7 +155,7 @@ def make_vectorizable_source(
 
 
 def _make_vectorizable_ast(
-    func: FunctionType[..., Any],
+    func: Callable[..., Any],
     module: str,
     xnp: ModuleType,
 ) -> ast.Module:
@@ -170,14 +171,14 @@ def _make_vectorizable_ast(
     tree = _func_to_ast(func)
 
     # get function location for error messages
-    func_loc = f"{func.__module__}/{func.__name__}"
+    func_loc = f"{func.__module__}/{func.__name__}"  # ty: ignore[unresolved-attribute]
 
     # transform tree nodes
     new_tree = Transformer(module, func_loc, xnp).visit(tree)
     return ast.fix_missing_locations(new_tree)
 
 
-def _func_to_ast(func: FunctionType[..., Any]) -> ast.Module:
+def _func_to_ast(func: Callable[..., Any]) -> ast.Module:
     source = inspect.getsource(func)
     source_dedented = textwrap.dedent(source)
     source_without_decorators = _remove_decorator_lines(source_dedented)
@@ -505,7 +506,7 @@ def _module_from_backend(backend: str) -> str:
 # ======================================================================================
 
 
-def _create_vectorized_signature(func: FunctionType[..., Any]) -> inspect.Signature:
+def _create_vectorized_signature(func: Callable[..., Any]) -> inspect.Signature:
     """Create a signature for the vectorized function."""
     parameters = [
         inspect.Parameter(
@@ -522,7 +523,7 @@ def _create_vectorized_signature(func: FunctionType[..., Any]) -> inspect.Signat
     return inspect.Signature(parameters=parameters, return_annotation=return_annotation)
 
 
-def _create_vectorized_annotations(func: FunctionType[..., Any]) -> dict[str, Any]:
+def _create_vectorized_annotations(func: Callable[..., Any]) -> dict[str, Any]:
     """Create annotations for the vectorized function."""
     parameters_and_return = ["return", *inspect.signature(func).parameters]
     annotations = get_annotations(func, default="IntColumn | FloatColumn | BoolColumn")

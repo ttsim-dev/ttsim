@@ -70,28 +70,19 @@ class RoundingSpecError(TTSIMError):
     """Raised when a `RoundingSpec` is constructed with invalid arguments."""
 
 
-# Re-export of legacy exceptions that pre-date this hierarchy. Their primary
-# definition lives at the original site; importing them here is deferred to
-# avoid an import cycle (the defining modules sit deep in the package and
-# may transitively need other ttsim modules at import time).
-def __getattr__(name: str) -> type[Exception]:
-    if name == "ConflictingActivePeriodsError":
-        from ttsim.interface_dag_elements.fail_if import (
-            ConflictingActivePeriodsError,
-        )
-
-        return ConflictingActivePeriodsError
-    if name == "TranslateToVectorizableError":
-        from ttsim.tt.vectorization import TranslateToVectorizableError
-
-        return TranslateToVectorizableError
-    msg = f"module {__name__!r} has no attribute {name!r}"
-    raise AttributeError(msg)
+# Two legacy exceptions pre-date this hierarchy and keep their definition
+# sites (`ttsim.interface_dag_elements.fail_if` and `ttsim.tt.vectorization`)
+# to avoid breaking existing imports. Their base classes have been changed
+# to `TTSIMError`, so they are caught by `except TTSIMError`. Import them
+# directly from their defining modules — importing here would create an
+# import cycle:
+#
+# - `from ttsim.interface_dag_elements.fail_if import ConflictingActivePeriodsError`
+# - `from ttsim.tt.vectorization import TranslateToVectorizableError`
 
 
 __all__ = [
     "AggregationDefinitionError",
-    "ConflictingActivePeriodsError",
     "EntryPointError",
     "GroupCreationDefinitionError",
     "InputDataError",
@@ -101,5 +92,4 @@ __all__ = [
     "RoundingSpecError",
     "TTSIMError",
     "TTTargetsError",
-    "TranslateToVectorizableError",
 ]

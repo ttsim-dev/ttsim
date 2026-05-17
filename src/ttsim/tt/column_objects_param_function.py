@@ -3,6 +3,7 @@ from __future__ import annotations
 import datetime
 import functools
 import inspect
+from collections.abc import Callable
 from dataclasses import dataclass
 from enum import StrEnum
 from typing import TYPE_CHECKING, Any, Generic, Literal, ParamSpec, TypeVar
@@ -32,8 +33,7 @@ from ttsim.tt.rounding import RoundingSpec
 from ttsim.tt.vectorization import vectorize_function
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-    from types import FunctionType, ModuleType
+    from types import ModuleType
 
     from ttsim.typing import (
         DashedISOString,
@@ -125,7 +125,7 @@ def policy_input(
     foreign_key_type: FKType = FKType.IRRELEVANT,
     warn_msg_if_included: str | None = None,
     fail_msg_if_included: str | None = None,
-) -> Callable[[FunctionType[..., Any]], PolicyInput]:
+) -> Callable[[Callable[..., Any]], PolicyInput]:
     """Decorate a (dummy) function to make it a `PolicyInput`.
 
     **Dates active (start_date, end_date):**
@@ -148,9 +148,9 @@ def policy_input(
     """
     start_date, end_date = _convert_and_validate_dates(start_date, end_date)
 
-    def inner(func: FunctionType[..., Any]) -> PolicyInput:
+    def inner(func: Callable[..., Any]) -> PolicyInput:
         return PolicyInput(
-            leaf_name=func.__name__,
+            leaf_name=func.__name__,  # ty: ignore[unresolved-attribute]
             data_type=func.__annotations__["return"],
             start_date=start_date,
             end_date=end_date,
@@ -164,9 +164,7 @@ def policy_input(
     return inner
 
 
-def _frozen_safe_update_wrapper(
-    wrapper: object, wrapped: FunctionType[..., Any]
-) -> None:
+def _frozen_safe_update_wrapper(wrapper: object, wrapped: Callable[..., Any]) -> None:
     """Update a frozen wrapper dataclass to look like the wrapped function.
 
     This is necessary because the wrapper is a frozen dataclass, so we cannot
@@ -209,7 +207,7 @@ class ColumnFunction(ColumnObject, Generic[FunArgTypes, ReturnType]):
     Base class for all functions operating on columns of data.
     """
 
-    function: FunctionType[FunArgTypes, ReturnType]
+    function: Callable[FunArgTypes, ReturnType]
     rounding_spec: RoundingSpec | None = None
     foreign_key_type: FKType = FKType.IRRELEVANT
     warn_msg_if_included: str | None = None
@@ -235,7 +233,7 @@ class ColumnFunction(ColumnObject, Generic[FunArgTypes, ReturnType]):
     @property
     def original_function_name(self) -> str:
         """The name of the wrapped function."""
-        return self.function.__name__
+        return self.function.__name__  # ty: ignore[unresolved-attribute]
 
     def is_active(self, policy_date: datetime.date) -> bool:
         """Check if the function is active at a given date."""
@@ -341,7 +339,7 @@ def policy_function(
     foreign_key_type: FKType = FKType.IRRELEVANT,
     warn_msg_if_included: str | None = None,
     fail_msg_if_included: str | None = None,
-) -> Callable[[FunctionType[..., Any]], PolicyFunction]:
+) -> Callable[[Callable[..., Any]], PolicyFunction]:
     """Decorate a function to make it a `PolicyFunction`.
 
     PolicyFunctions are typically defined on scalars, but work on data columns (i.e.,
@@ -372,9 +370,9 @@ def policy_function(
     """
     start_date, end_date = _convert_and_validate_dates(start_date, end_date)
 
-    def inner(func: FunctionType[..., Any]) -> PolicyFunction:
+    def inner(func: Callable[..., Any]) -> PolicyFunction:
         return PolicyFunction(
-            leaf_name=leaf_name or func.__name__,
+            leaf_name=leaf_name or func.__name__,  # ty: ignore[unresolved-attribute]
             function=func,
             start_date=start_date,
             end_date=end_date,
@@ -454,7 +452,7 @@ def group_creation_function(
     reorder: bool = True,
     warn_msg_if_included: str | None = None,
     fail_msg_if_included: str | None = None,
-) -> Callable[[FunctionType[..., Any]], GroupCreationFunction]:
+) -> Callable[[Callable[..., Any]], GroupCreationFunction]:
     """Decorate a function to create a group_by function.
 
     Args:
@@ -467,8 +465,8 @@ def group_creation_function(
     """
     start_date, end_date = _convert_and_validate_dates(start_date, end_date)
 
-    def decorator(func: FunctionType[..., Any]) -> GroupCreationFunction:
-        _leaf_name = func.__name__ if leaf_name is None else leaf_name
+    def decorator(func: Callable[..., Any]) -> GroupCreationFunction:
+        _leaf_name = func.__name__ if leaf_name is None else leaf_name  # ty: ignore[unresolved-attribute]
         func_with_reorder = lambda **kwargs: reorder_ids(  # noqa: E731
             ids=func(**kwargs),
             xnp=kwargs["xnp"],
@@ -540,10 +538,10 @@ def agg_by_group_function(
     agg_type: AggType,
     warn_msg_if_included: str | None = None,
     fail_msg_if_included: str | None = None,
-) -> Callable[[FunctionType[..., Any]], AggByGroupFunction]:
+) -> Callable[[Callable[..., Any]], AggByGroupFunction]:
     start_date, end_date = _convert_and_validate_dates(start_date, end_date)
 
-    agg_registry: dict[AggType, FunctionType[..., Any]] = {
+    agg_registry: dict[AggType, Callable[..., Any]] = {
         AggType.SUM: grouped_sum,
         AggType.MEAN: grouped_mean,
         AggType.MAX: grouped_max,
@@ -553,8 +551,8 @@ def agg_by_group_function(
         AggType.COUNT: grouped_count,
     }
 
-    def inner(func: FunctionType[..., Any]) -> AggByGroupFunction:
-        orig_location = f"{func.__module__}.{func.__name__}"
+    def inner(func: Callable[..., Any]) -> AggByGroupFunction:
+        orig_location = f"{func.__module__}.{func.__name__}"  # ty: ignore[unresolved-attribute]
         args = set(inspect.signature(func).parameters)
         group_ids = {p for p in args if p.endswith("_id")}
         _fail_if_group_id_is_invalid(group_ids, orig_location)
@@ -571,13 +569,13 @@ def agg_by_group_function(
             mapper=mapper,
         )
         return AggByGroupFunction(
-            leaf_name=leaf_name or func.__name__,
+            leaf_name=leaf_name or func.__name__,  # ty: ignore[unresolved-attribute]
             function=agg_func,
             start_date=start_date,
             end_date=end_date,
             description=str(inspect.getdoc(func)),
             foreign_key_type=FKType.IRRELEVANT,
-            orig_location=f"{func.__module__}.{func.__name__}",
+            orig_location=f"{func.__module__}.{func.__name__}",  # ty: ignore[unresolved-attribute]
             warn_msg_if_included=warn_msg_if_included,
             fail_msg_if_included=fail_msg_if_included,
         )
@@ -672,10 +670,10 @@ def agg_by_p_id_function(
     agg_type: AggType,
     warn_msg_if_included: str | None = None,
     fail_msg_if_included: str | None = None,
-) -> Callable[[FunctionType[..., Any]], AggByPIDFunction]:
+) -> Callable[[Callable[..., Any]], AggByPIDFunction]:
     start_date, end_date = _convert_and_validate_dates(start_date, end_date)
 
-    agg_registry: dict[AggType, FunctionType[..., Any]] = {
+    agg_registry: dict[AggType, Callable[..., Any]] = {
         AggType.SUM: sum_by_p_id,
         AggType.MEAN: mean_by_p_id,
         AggType.MAX: max_by_p_id,
@@ -685,8 +683,8 @@ def agg_by_p_id_function(
         AggType.COUNT: count_by_p_id,
     }
 
-    def inner(func: FunctionType[..., Any]) -> AggByPIDFunction:
-        orig_location = f"{func.__module__}.{func.__name__}"
+    def inner(func: Callable[..., Any]) -> AggByPIDFunction:
+        orig_location = f"{func.__module__}.{func.__name__}"  # ty: ignore[unresolved-attribute]
         args = set(inspect.signature(func).parameters)
         other_p_ids = {
             p
@@ -718,13 +716,13 @@ def agg_by_p_id_function(
             mapper=mapper,
         )
         return AggByPIDFunction(
-            leaf_name=leaf_name or func.__name__,
+            leaf_name=leaf_name or func.__name__,  # ty: ignore[unresolved-attribute]
             function=agg_func,
             start_date=start_date,
             end_date=end_date,
             description=str(inspect.getdoc(func)),
             foreign_key_type=FKType.IRRELEVANT,
-            orig_location=f"{func.__module__}.{func.__name__}",
+            orig_location=f"{func.__module__}.{func.__name__}",  # ty: ignore[unresolved-attribute]
             warn_msg_if_included=warn_msg_if_included,
             fail_msg_if_included=fail_msg_if_included,
         )
@@ -840,7 +838,7 @@ class ParamFunction(Generic[FunArgTypes, ReturnType]):
     leaf_name: str
     start_date: datetime.date
     end_date: datetime.date
-    function: FunctionType[FunArgTypes, ReturnType]
+    function: Callable[FunArgTypes, ReturnType]
     description: str
     warn_msg_if_included: str | None = None
     fail_msg_if_included: str | None = None
@@ -864,7 +862,7 @@ class ParamFunction(Generic[FunArgTypes, ReturnType]):
     @property
     def original_function_name(self) -> str:
         """The name of the wrapped function."""
-        return self.function.__name__
+        return self.function.__name__  # ty: ignore[unresolved-attribute]
 
     def is_active(self, policy_date: datetime.date) -> bool:
         """Check if the function is active at a given date."""
@@ -898,7 +896,7 @@ def param_function(
     end_date: str | datetime.date = DEFAULT_END_DATE,
     warn_msg_if_included: str | None = None,
     fail_msg_if_included: str | None = None,
-) -> Callable[[FunctionType[..., Any]], ParamFunction[..., Any]]:
+) -> Callable[[Callable[..., Any]], ParamFunction[..., Any]]:
     """Decorate a function to make it a `ParamFunction`.
 
     ParamFunctions convert complex parameters (i.e., anything that is not a scalar, a
@@ -925,9 +923,9 @@ def param_function(
     """
     start_date, end_date = _convert_and_validate_dates(start_date, end_date)
 
-    def inner(func: FunctionType[..., Any]) -> ParamFunction:
+    def inner(func: Callable[..., Any]) -> ParamFunction:
         return ParamFunction(
-            leaf_name=leaf_name or func.__name__,
+            leaf_name=leaf_name or func.__name__,  # ty: ignore[unresolved-attribute]
             function=func,
             start_date=start_date,
             end_date=end_date,
