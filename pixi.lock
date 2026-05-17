@@ -20006,8 +20006,8 @@ packages:
   timestamp: 1733367480074
 - pypi: ./
   name: ttsim-backend
-  version: 1.2.1.dev5+g519bd700f.d20260517
-  sha256: 285c66f86fd431025bbada5207c3c5072f44f72a7c58dbd2fc7ac1cfb8f6479b
+  version: 1.2.1.dev14+g14a1ab19f.d20260517
+  sha256: 6e062c4e65b688ae3f03d25821572b0ffa0e6055302395006e43f4c1686271d1
   requires_dist:
   - beartype>=0.18
   - dags>=0.5.1

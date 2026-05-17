@@ -122,6 +122,9 @@ tests.pypi-dependencies.types-PyYAML = "*"
 tests.pypi-dependencies.types-pytz = "*"
 tests.pypi-dependencies.pytest-cov = "*"
 tests.pypi-dependencies.pytest-xdist = "*"
+# Activate the package-wide beartype claw whenever the tests env is in use
+# (env-var-gated during the rollout PR; flip to always-on at merge).
+tests.activation.env.TTSIM_BEARTYPE_CLAW = "1"
 tests.target.linux-64.tasks.tests = "pytest"
 tests.target.linux-64.tasks.tests-with-cov = "pytest --cov-report=xml --cov=./"
 tests.target.osx-64.tasks.tests = "dot -c && pytest"  # needed for pygraphviz on macOS
