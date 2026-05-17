@@ -1,15 +1,78 @@
+"""Type aliases used across ttsim.
+
+The aliases split into two groups:
+
+1. Runtime-resolvable aliases at module scope. These can be referenced from
+   `@beartype`-decorated signatures (column-type, scalar-type, simple-name
+   aliases, and the "user-boundary" `User*` aliases that accept the wider
+   set of inputs users may pass).
+2. Aliases that reference forward types (`ColumnObject`, `ParamFunction`,
+   `ParamObject`, …) and would create import cycles at runtime. These stay
+   inside the `TYPE_CHECKING` block and must be referenced from runtime
+   annotations only via the `__future__.annotations` string form (which
+   ttsim's defining modules opt into).
+"""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Literal, Protocol, TypeAlias, overload
 
+import numpy as np
+import pandas as pd
+from jaxtyping import Bool, Float, Int
+
+# `jax` is an optional runtime dependency; the NumPy-only test envs do not
+# install it. Resolve `Array` to the JAX type when available, else fall
+# back to `np.ndarray` so the column-type aliases below stay
+# runtime-resolvable for beartype either way.
+try:
+    from jax import Array
+except ImportError:  # pragma: no cover - exercised in numpy-only envs
+    Array = np.ndarray  # ty: ignore[invalid-assignment]
+
+# Canonical column types: jaxtyping-tagged 1-d arrays from either backend
+# (NumPy or JAX). Union with `np.ndarray` so the NumPy backend's untagged
+# arrays satisfy the same alias — without this beartype rejects every
+# NumPy-backed column under the package-wide claw.
+BoolColumn: TypeAlias = Bool[Array | np.ndarray, " n_obs"]
+IntColumn: TypeAlias = Int[Array | np.ndarray, " n_obs"]
+FloatColumn: TypeAlias = Float[Array | np.ndarray, " n_obs"]
+
+# Canonical scalar types (used inside ttsim once user input has been
+# converted to a single concrete numeric kind).
+ScalarFloat: TypeAlias = float | np.floating
+ScalarInt: TypeAlias = int | np.integer
+ScalarBool: TypeAlias = bool | np.bool_
+
+# User-boundary aliases (Decision 8): the wider set ttsim accepts from
+# users on the way in. Internal code should narrow to the canonical alias
+# above via explicit `_canonicalize_*` helpers.
+UserScalarFloat: TypeAlias = float | int | np.floating | np.integer
+UserScalarInt: TypeAlias = int | np.integer
+UserScalarBool: TypeAlias = bool | np.bool_
+UserFloatColumn: TypeAlias = FloatColumn | pd.Series
+UserIntColumn: TypeAlias = IntColumn | pd.Series
+UserBoolColumn: TypeAlias = BoolColumn | pd.Series
+
+DashedISOString = str
+"""A string representing a date in the format 'YYYY-MM-DD'."""
+
+# Simple runtime aliases. They sit at module scope (not under
+# `TYPE_CHECKING`) so beartype-decorated entry points can resolve them.
+RawParamValue: TypeAlias = dict[str | int, Any]
+"""The value field of a RawParam."""
+UnorderedQNames: TypeAlias = set[str]
+"""A set of qualified names."""
+OrderedQNames: TypeAlias = tuple[str, ...] | list[str]
+"""A tuple or a list of qualified names."""
+
 if TYPE_CHECKING:
-    from jaxtyping import Array, Bool, Float, Int
-
-    BoolColumn: TypeAlias = Bool[Array, " n_obs"]
-    IntColumn: TypeAlias = Int[Array, " n_obs"]
-    FloatColumn: TypeAlias = Float[Array, " n_obs"]
-
-    # Make these available for import from other modules.
+    # Names below are TYPE_CHECKING-only because they either reference
+    # types that would cause an import cycle at runtime (ColumnObject,
+    # ParamFunction, ParamObject, PolicyInput, ColumnFunction,
+    # InterfaceFunction, InterfaceInput) or use `Iterable` / `Iterator`
+    # in ways that beartype need not see (no `@beartype` decorator
+    # consumes them in a checked signature).
     import datetime
     from collections.abc import Iterable, Iterator, Mapping
 
@@ -68,9 +131,6 @@ if TYPE_CHECKING:
 
         def keys(self) -> Iterable[str | datetime.date]: ...
 
-    DashedISOString = str
-    """A string representing a date in the format 'YYYY-MM-DD'."""
-
     from dags.tree.typing import (  # noqa: F401
         NestedInputStructureDict,
         NestedTargetDict,
@@ -86,9 +146,6 @@ if TYPE_CHECKING:
     ]
     """Flattened tree of interface objects."""
 
-    # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-    # Possible leaves of the various trees.
-    # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     from ttsim.tt import (
         ColumnFunction,
         ColumnObject,
@@ -97,9 +154,6 @@ if TYPE_CHECKING:
         PolicyInput,
     )
 
-    # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-    # Tree-like data structures for input, processing, and output; including metadata.
-    # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     NestedData = Mapping[str, FloatColumn | IntColumn | BoolColumn | "NestedData"]
     """Tree mapping TTSIM paths to 1d arrays."""
     FlatData = Mapping[tuple[str, ...], FloatColumn | IntColumn | BoolColumn]
@@ -110,22 +164,10 @@ if TYPE_CHECKING:
     """Mapping of qualified name paths to 1d arrays."""
     QNameStrings = Iterable[str]
     """A list, tuple, or set of qualified names."""
-    RawParamValue: TypeAlias = dict[str | int, Any]
-    """The value field of a RawParam."""
 
-    # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-    # Collections of names etc.
-    # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     NestedStrings = Mapping[str, "str | NestedStrings"]
     """Tree mapping TTSIM paths to df columns or type hints."""
-    UnorderedQNames = set[str]
-    """A set of qualified names."""
-    OrderedQNames: TypeAlias = tuple[str, ...] | list[str]
-    """A tuple or a list of qualified names."""
 
-    # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-    # Tree-like data structures for policy objects
-    # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     NestedPolicyInputs = Mapping[str, "PolicyInput | NestedPolicyInputs"]
     """Tree of policy inputs."""
     FlatColumnObjects = Mapping[str, ColumnObject]
