@@ -313,6 +313,7 @@ type-checking-jax.pypi-dependencies.types-pytz = "*"
 type-checking-jax.tasks.ty-jax = "ty check"
 [tool.pixi.pypi-dependencies]
 # jax-datetime = { git = "https://github.com/google/jax-datetime.git" }
+dags = { git = "https://github.com/OpenSourceEconomics/dags.git", rev = "87ff051" }
 jaxtyping = "*"
 mettsim = { path = "src_mettsim", editable = true }
 pdbp = "*"
