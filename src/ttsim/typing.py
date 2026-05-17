@@ -28,7 +28,7 @@ from jaxtyping import Bool, Float, Int
 try:
     from jax import Array
 except ImportError:  # pragma: no cover - exercised in numpy-only envs
-    Array = np.ndarray  # ty: ignore[invalid-assignment]
+    Array = np.ndarray
 
 # Canonical column types: jaxtyping-tagged 1-d arrays from either backend
 # (NumPy or JAX). Union with `np.ndarray` so the NumPy backend's untagged
