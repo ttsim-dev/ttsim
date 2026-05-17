@@ -105,11 +105,6 @@ def _convertibles(
         if isinstance(e, (ColumnObject, ScalarParam))
         or (
             isinstance(e, ParamFunction)
-            # `e.function` may be a dags wrapper (`ParamFunction.remove_tree_logic`
-            # routes through `get_one_function_without_tree_logic`, i.e.
-            # `rename_arguments`), whose `__annotations__` is the forwarder
-            # shape. `dags.get_annotations` recovers the return annotation
-            # from `__signature__`.
             and get_annotations(e.function)["return"] in {"float", "int"}
         )
     }

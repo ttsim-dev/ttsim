@@ -31,7 +31,7 @@ classifiers = [
 ]
 dynamic = [ "version" ]
 dependencies = [
-  "dags>=0.5.1",
+  "dags>=0.6",
   "ipywidgets",
   "kaleido>=1.1",
   "networkx>=3.5",

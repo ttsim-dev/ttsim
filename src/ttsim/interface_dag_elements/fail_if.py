@@ -999,9 +999,6 @@ def passed_scalar_inputs_for_natively_vectorized_functions(
 
     root_nodes_supposed_to_be_arrays: set[str] = set()
     for func in nodes_with_root_node_inputs.values():
-        # `func.function` may be a dags wrapper (e.g. `rename_arguments`),
-        # whose `__annotations__` is the `*args, **kwargs` forwarder shape.
-        # `dags.get_annotations` recovers the user view from `__signature__`.
         callable_function = cast("Callable[..., Any]", func.function)
         args = get_free_arguments(callable_function)
         annotations = get_annotations(callable_function)
