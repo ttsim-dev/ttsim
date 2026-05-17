@@ -31,8 +31,10 @@ classifiers = [
 ]
 dynamic = [ "version" ]
 dependencies = [
+  "beartype>=0.18",
   "dags>=0.5.1",
   "ipywidgets",
+  "jaxtyping>=0.2",
   "kaleido>=1.1",
   "networkx>=3.5",
   "numpy",
