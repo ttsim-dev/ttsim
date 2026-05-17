@@ -38,7 +38,7 @@ if TYPE_CHECKING:
         SpecEnvWithProcessedParamsAndScalars,
     )
 
-from ttsim.typing import UnorderedQNames  # noqa: TC001, E402
+from ttsim.typing import UnorderedQNames
 
 
 @interface_input(in_top_level_namespace=True)
