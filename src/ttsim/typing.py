@@ -15,6 +15,7 @@ The aliases split into two groups:
 
 from __future__ import annotations
 
+from collections.abc import Iterable, Mapping
 from typing import TYPE_CHECKING, Any, Literal, Protocol, TypeAlias, overload
 
 import numpy as np
@@ -65,6 +66,32 @@ UnorderedQNames: TypeAlias = set[str]
 """A set of qualified names."""
 OrderedQNames: TypeAlias = tuple[str, ...] | list[str]
 """A tuple or a list of qualified names."""
+QNameStrings: TypeAlias = Iterable[str]
+"""A list, tuple, or set of qualified names."""
+
+# Data-tree aliases. Hoisted out of TYPE_CHECKING so @beartype-decorated
+# user-boundary entry points (InputData.tree/.flat/.qname, TTTargets.tree)
+# can resolve them at decoration time.
+if TYPE_CHECKING:
+    # Recursive aliases for ty: precise nested types with the narrow recursive
+    # form ttsim's call sites expect.
+    NestedData: TypeAlias = Mapping[
+        str, "FloatColumn | IntColumn | BoolColumn | NestedData"
+    ]
+    """Tree mapping TTSIM paths to 1d arrays."""
+    NestedStrings: TypeAlias = Mapping[str, "str | NestedStrings"]
+    """Tree mapping TTSIM paths to df columns or type hints."""
+else:
+    # Runtime aliases for beartype: the recursive form's stringified inner
+    # type is not a valid Python attribute name, so beartype cannot resolve
+    # it. Widen to a one-level Mapping; the per-element type still narrows.
+    NestedData = Mapping[str, FloatColumn | IntColumn | BoolColumn | Mapping]
+    NestedStrings = Mapping[str, str | Mapping]
+
+FlatData: TypeAlias = Mapping[tuple[str, ...], FloatColumn | IntColumn | BoolColumn]
+"""Flattened tree mapping TTSIM paths to 1d arrays."""
+QNameData: TypeAlias = Mapping[str, FloatColumn | IntColumn | BoolColumn]
+"""Mapping of qualified name paths to 1d arrays."""
 
 if TYPE_CHECKING:
     # Names below are TYPE_CHECKING-only because they either reference
@@ -74,7 +101,7 @@ if TYPE_CHECKING:
     # in ways that beartype need not see (no `@beartype` decorator
     # consumes them in a checked signature).
     import datetime
-    from collections.abc import Iterable, Iterator, Mapping
+    from collections.abc import Iterator
 
     class OrigParamSpec(Protocol):
         """A dictionary with patterns for header and parameters at one point in time."""
@@ -154,19 +181,8 @@ if TYPE_CHECKING:
         PolicyInput,
     )
 
-    NestedData = Mapping[str, FloatColumn | IntColumn | BoolColumn | "NestedData"]
-    """Tree mapping TTSIM paths to 1d arrays."""
-    FlatData = Mapping[tuple[str, ...], FloatColumn | IntColumn | BoolColumn]
-    """Flattened tree mapping TTSIM paths to 1d arrays."""
     NestedInputsMapper = Mapping[str, str | bool | int | float | "NestedInputsMapper"]
     """Tree mapping TTSIM paths to df columns or constants."""
-    QNameData = Mapping[str, FloatColumn | IntColumn | BoolColumn]
-    """Mapping of qualified name paths to 1d arrays."""
-    QNameStrings = Iterable[str]
-    """A list, tuple, or set of qualified names."""
-
-    NestedStrings = Mapping[str, "str | NestedStrings"]
-    """Tree mapping TTSIM paths to df columns or type hints."""
 
     NestedPolicyInputs = Mapping[str, "PolicyInput | NestedPolicyInputs"]
     """Tree of policy inputs."""

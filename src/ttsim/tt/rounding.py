@@ -5,6 +5,10 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Literal, ParamSpec, get_args
 
+from beartype import beartype
+
+from ttsim._beartype_conf import ROUNDING_SPEC_CONF
+
 if TYPE_CHECKING:
     from types import ModuleType
 
@@ -16,6 +20,7 @@ ROUNDING_DIRECTION = Literal["up", "down", "nearest"]
 P = ParamSpec("P")
 
 
+@beartype(conf=ROUNDING_SPEC_CONF)
 @dataclass(frozen=True)
 class RoundingSpec:
     base: int | float

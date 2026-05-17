@@ -3,21 +3,27 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, TypeVar
 
+import pandas as pd
+from beartype import beartype
+
+from ttsim._beartype_conf import INPUT_DATA_CONF, TT_TARGETS_CONF
+from ttsim.typing import (
+    FlatData,
+    NestedData,
+    NestedStrings,
+    QNameData,
+    QNameStrings,
+)
+
 if TYPE_CHECKING:
     from pathlib import Path
 
     import networkx as nx
-    import pandas as pd
 
     from ttsim.typing import (
         FlatColumnObjectsParamFunctions,
-        FlatData,
         FlatOrigParamSpecs,
-        NestedData,
-        NestedStrings,
         OrderedQNames,
-        QNameData,
-        QNameStrings,
         SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
         SpecEnvWithPartialledParamsAndScalars,
         SpecEnvWithProcessedParamsAndScalars,
@@ -99,6 +105,7 @@ class InputData(MainArg):
         raise RuntimeError("Use any of the class methods to instantiate this class.")
 
     @classmethod
+    @beartype(conf=INPUT_DATA_CONF)
     def df_and_mapper(cls, df: pd.DataFrame, mapper: NestedStrings) -> InputData:
         """A df with arbitrary columns and a nested dictionary mapping expected inputs
         to column names in this df."""
@@ -109,6 +116,7 @@ class InputData(MainArg):
         )
 
     @classmethod
+    @beartype(conf=INPUT_DATA_CONF)
     def df_with_nested_columns(cls, df_with_nested_columns: pd.DataFrame) -> InputData:
         """A df with a MultiIndex in the column dimension, elements correspond to
         expected tree paths."""
@@ -119,16 +127,19 @@ class InputData(MainArg):
         )
 
     @classmethod
+    @beartype(conf=INPUT_DATA_CONF)
     def tree(cls, tree: NestedData) -> InputData:
         """A nested dictionary mapping expected input names to vectors of data."""
         return _set_single_field(cls=cls, field_name="tree", field_value=tree)
 
     @classmethod
+    @beartype(conf=INPUT_DATA_CONF)
     def flat(cls, flat: FlatData) -> InputData:
         """A dictionary mapping tree paths to vectors of data."""
         return _set_single_field(cls=cls, field_name="flat", field_value=flat)
 
     @classmethod
+    @beartype(conf=INPUT_DATA_CONF)
     def qname(cls, qname: QNameData) -> InputData:
         """A dictionary mapping qualified names to vectors of data."""
         return _set_single_field(cls=cls, field_name="qname", field_value=qname)
@@ -310,11 +321,13 @@ class TTTargets(MainArg):
         _fix_classmethod_namespace_conflicts(self)
 
     @classmethod
+    @beartype(conf=TT_TARGETS_CONF)
     def qname(cls, qname: QNameStrings) -> TTTargets:
         """TT targets using qualified names."""
         return _set_single_field(cls=cls, field_name="qname", field_value=qname)
 
     @classmethod
+    @beartype(conf=TT_TARGETS_CONF)
     def tree(cls, tree: NestedStrings) -> TTTargets:
         """TT targets using nested tree structure."""
         return _set_single_field(cls=cls, field_name="tree", field_value=tree)
