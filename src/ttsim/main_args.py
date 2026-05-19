@@ -14,6 +14,7 @@ from ttsim.typing import (
     FlatOrigParamSpecs,
     NestedData,
     NestedStrings,
+    NestedTargetDict,
     OrderedQNames,
     QNameData,
     QNameStrings,
@@ -323,7 +324,7 @@ class Results(MainArg):
 @dataclass(frozen=True)
 class TTTargets(MainArg):
     qname: QNameStrings | None = None
-    tree: NestedStrings | None = None
+    tree: NestedTargetDict | None = None
 
     def __post_init__(self) -> None:
         _fix_classmethod_namespace_conflicts(self)
@@ -336,7 +337,7 @@ class TTTargets(MainArg):
 
     @classmethod
     @beartype(conf=TT_TARGETS_CONF)
-    def tree(cls, tree: NestedStrings) -> TTTargets:
+    def tree(cls, tree: NestedTargetDict) -> TTTargets:
         """TT targets using nested tree structure."""
         return _set_single_field(cls=cls, field_name="tree", field_value=tree)
 
