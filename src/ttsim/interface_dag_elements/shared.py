@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime
 import re
+from collections.abc import Mapping
 from copy import copy
 from typing import Any, TypeAlias, overload
 
@@ -158,7 +159,7 @@ def create_tree_from_path_and_value(
     return nested_dict
 
 
-def merge_trees(left: dict[str, Any], right: dict[str, Any]) -> dict[str, Any]:
+def merge_trees(left: Mapping[Any, Any], right: Mapping[Any, Any]) -> dict[Any, Any]:
     """Merge two pytrees, raising an error if a path is present in both trees.
 
     Args:
@@ -175,7 +176,9 @@ def merge_trees(left: dict[str, Any], right: dict[str, Any]) -> dict[str, Any]:
     return upsert_tree(base=left, to_upsert=right)
 
 
-def upsert_tree(base: dict[str, Any], to_upsert: dict[str, Any]) -> dict[str, Any]:
+def upsert_tree(
+    base: Mapping[Any, Any], to_upsert: Mapping[Any, Any]
+) -> dict[Any, Any]:
     """Upsert a tree into another tree for trees defined by dictionaries only.
 
     Note: In case of conflicting trees, the to_upsert takes precedence.
@@ -195,7 +198,7 @@ def upsert_tree(base: dict[str, Any], to_upsert: dict[str, Any]) -> dict[str, An
         The merged dictionary.
 
     """
-    result = base.copy()
+    result = dict(base)
 
     for key, value in to_upsert.items():
         base_value = result.get(key)
@@ -208,10 +211,10 @@ def upsert_tree(base: dict[str, Any], to_upsert: dict[str, Any]) -> dict[str, An
 
 
 def upsert_path_and_value(
-    base: dict[str, Any],
+    base: Mapping[Any, Any],
     path_to_upsert: tuple[str, ...],
     value_to_upsert: Any = None,  # noqa: ANN401
-) -> dict[str, Any]:
+) -> dict[Any, Any]:
     """Update tree with a path and value.
 
     The path is a list of strings that represent the keys in the nested dictionary. If
@@ -226,10 +229,10 @@ def upsert_path_and_value(
 
 
 def insert_path_and_value(
-    base: dict[str, Any],
+    base: Mapping[Any, Any],
     path_to_insert: tuple[str, ...],
     value_to_insert: Any = None,  # noqa: ANN401
-) -> dict[str, Any]:
+) -> dict[Any, Any]:
     """Insert a path and value into a tree.
 
     The path is a list of strings that represent the keys in the nested dictionary. The

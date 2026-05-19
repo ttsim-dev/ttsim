@@ -56,7 +56,10 @@ _ORIGINAL_META_DTYPE_GETITEM = _array_types._MetaAbstractDtype.__getitem__  # no
 _ARRAY_TYPE_AND_DIM_PAIR_LEN = 2
 
 
-def _patched_meta_dtype_getitem(cls: type, item: object) -> object:
+def _patched_meta_dtype_getitem(
+    cls: _array_types._MetaAbstractDtype,
+    item: tuple[object, object],
+) -> object:
     """Translate a bare `Ellipsis` axis spec to the string `"..."`.
 
     Stringified annotations such as `Int[Array, ...]` (under `from __future__
@@ -67,7 +70,7 @@ def _patched_meta_dtype_getitem(cls: type, item: object) -> object:
         array_type, dim_spec = item
         if dim_spec is Ellipsis:
             item = (array_type, "...")
-    return _ORIGINAL_META_DTYPE_GETITEM(cls, item)
+    return _ORIGINAL_META_DTYPE_GETITEM(cls, item)  # ty: ignore[invalid-argument-type]
 
 
-_array_types._MetaAbstractDtype.__getitem__ = _patched_meta_dtype_getitem  # noqa: SLF001
+_array_types._MetaAbstractDtype.__getitem__ = _patched_meta_dtype_getitem  # noqa: SLF001  # ty: ignore[invalid-assignment]
