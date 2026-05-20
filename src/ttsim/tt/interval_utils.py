@@ -84,11 +84,18 @@ def merge_piecewise_intervals(
     return result
 
 
-def _bound_to_float(v: float) -> float:
-    """Convert a portion bound (including portion.inf) to a Python float."""
-    if v == -portion.inf:
+def _bound_to_float(v: float | portion.const._PInf | portion.const._NInf) -> float:
+    """Convert a portion bound (including `portion.inf`) to a Python float.
+
+    `portion` exposes its positive/negative infinity sentinels only as the
+    private classes `portion.const._PInf` / `_NInf` (the singletons are
+    `portion.inf` / `-portion.inf`). They are the actual runtime types of a
+    parsed interval's bounds, so the annotation and the `isinstance` narrowing
+    must reference them directly.
+    """
+    if isinstance(v, portion.const._NInf):  # noqa: SLF001
         return float("-inf")
-    if v == portion.inf:
+    if isinstance(v, portion.const._PInf):  # noqa: SLF001
         return float("inf")
     return float(v)
 
