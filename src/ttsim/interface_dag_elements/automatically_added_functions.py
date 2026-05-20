@@ -28,6 +28,7 @@ from ttsim.typing import (
     FlatColumnObjects,
     OrderedQNames,
     PolicyEnvironment,
+    QNameStrings,
     UnorderedQNames,
 )
 from ttsim.unit_converters import (
@@ -282,7 +283,7 @@ def _create_function_for_time_unit(
 def create_agg_by_group_functions(
     column_functions: dict[str, ColumnFunction],
     input_columns: UnorderedQNames,
-    tt_targets: OrderedQNames,
+    tt_targets: QNameStrings,
     grouping_levels: OrderedQNames,
 ) -> FlatColumnObjects:
     gp = group_pattern(grouping_levels)

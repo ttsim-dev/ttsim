@@ -38,7 +38,7 @@ if TYPE_CHECKING:
         SpecEnvWithProcessedParamsAndScalars,
     )
 
-from ttsim.typing import UnorderedQNames
+from ttsim.typing import FlatTTTargets, QNameStrings, UnorderedQNames
 
 
 @interface_input(in_top_level_namespace=True)
@@ -49,7 +49,7 @@ def rounding() -> bool:
 @interface_function()
 def without_tree_logic_and_with_derived_functions(
     policy_environment: PolicyEnvironment,
-    tt_targets__qname: OrderedQNames,
+    tt_targets__qname: FlatTTTargets,
     labels__input_columns: UnorderedQNames,
     labels__top_level_namespace: UnorderedQNames,
     labels__grouping_levels: OrderedQNames,
@@ -92,7 +92,7 @@ def _remove_tree_logic_from_policy_environment(
 
 def _add_derived_functions(
     qname_env_without_tree_logic: dict[str, ColumnObject | ParamFunction | ParamObject],
-    tt_targets: OrderedQNames,
+    tt_targets: QNameStrings,
     input_columns: UnorderedQNames,
     grouping_levels: OrderedQNames,
 ) -> SpecEnvWithoutTreeLogicAndWithDerivedFunctions:

@@ -47,6 +47,7 @@ if TYPE_CHECKING:
     from typing import Any
 
     from ttsim.typing import (
+        FlatTTTargets,
         OrderedQNames,
         PolicyEnvironment,
         SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
@@ -91,7 +92,7 @@ def qnames_to_derive_functions_from(
 def without_tree_logic_and_with_derived_functions(
     policy_environment: PolicyEnvironment,
     qnames_to_derive_functions_from: UnorderedQNames,
-    tt_targets__qname: OrderedQNames,
+    tt_targets__qname: FlatTTTargets,
     labels__input_columns: UnorderedQNames,
     labels__all_qnames_in_policy_environment: UnorderedQNames,
     labels__top_level_namespace: UnorderedQNames,
@@ -137,7 +138,7 @@ def without_input_data_nodes_with_dummy_callables(
 @interface_function()
 def complete_tt_dag(
     without_input_data_nodes_with_dummy_callables: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,  # noqa: E501
-    tt_targets__qname: OrderedQNames,
+    tt_targets__qname: FlatTTTargets,
     labels__all_qnames_in_policy_environment: UnorderedQNames,
     labels__input_columns: UnorderedQNames,
 ) -> nx.DiGraph:

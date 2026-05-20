@@ -22,6 +22,7 @@ if TYPE_CHECKING:
     from types import ModuleType
 
     from ttsim.typing import (
+        FlatTTTargets,
         OrderedQNames,
         PolicyEnvironment,
         QNameData,
@@ -177,7 +178,7 @@ def fail_if_multiple_time_units_for_same_base_name_and_group(
 
 @interface_function()
 def input_data_targets(
-    tt_targets__qname: OrderedQNames,
+    tt_targets__qname: FlatTTTargets,
     input_columns: UnorderedQNames,
 ) -> OrderedQNames:
     """
@@ -189,7 +190,7 @@ def input_data_targets(
 @interface_function()
 def column_targets(
     specialized_environment__with_partialled_params_and_scalars: SpecEnvWithPartialledParamsAndScalars,  # noqa: E501
-    tt_targets__qname: OrderedQNames,
+    tt_targets__qname: FlatTTTargets,
     input_data_targets: OrderedQNames,
 ) -> OrderedQNames:
     """The (qualified) names of the targets that are column functions."""
@@ -205,7 +206,7 @@ def column_targets(
 @interface_function()
 def param_targets(
     specialized_environment__without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,  # noqa: E501
-    tt_targets__qname: OrderedQNames,
+    tt_targets__qname: FlatTTTargets,
     column_targets: OrderedQNames,
     input_data_targets: OrderedQNames,
 ) -> OrderedQNames:

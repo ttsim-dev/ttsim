@@ -72,15 +72,16 @@ QNameStrings: TypeAlias = Iterable[str]
 
 
 if TYPE_CHECKING:
-    # Real definition lives in `dags.tree.typing` and is a recursive
-    # `Mapping[str, str | None | NestedTargetDict]`. ty consumes the
-    # narrow form.
-    from dags.tree.typing import NestedTargetDict
+    # Real definitions live in `dags.tree.typing` and are recursive
+    # `Mapping[str, str | None | <self>]` aliases. ty consumes the narrow
+    # form.
+    from dags.tree.typing import NestedInputStructureDict, NestedTargetDict
 else:
     # beartype cannot resolve the stringified recursive form; widen the
     # runtime alias to a one-level Mapping (Mapping itself is enough to
     # satisfy beartype's isinstance check).
     NestedTargetDict: TypeAlias = Mapping[str, object]
+    NestedInputStructureDict: TypeAlias = Mapping[str, object]
 
 # Data-tree aliases. Hoisted out of TYPE_CHECKING so @beartype-decorated
 # user-boundary entry points (InputData.tree/.flat/.qname, TTTargets.tree)
@@ -105,6 +106,11 @@ else:
 # `QNameData`: mapping of qualified-name strings to 1-d arrays.
 FlatData: TypeAlias = Mapping[tuple[str, ...], FloatColumn | IntColumn | BoolColumn]
 QNameData: TypeAlias = Mapping[str, FloatColumn | IntColumn | BoolColumn]
+
+# `FlatTTTargets`: a flattened target tree, mapping each qualified name to its
+# leaf value (`None` to compute the target, a string to rename it). Produced by
+# `dags.tree.flatten_to_qnames` on a `NestedTargetDict` / `NestedStrings`.
+FlatTTTargets: TypeAlias = Mapping[str, str | None]
 
 if TYPE_CHECKING:
     # Names below are TYPE_CHECKING-only because they either reference
@@ -170,8 +176,6 @@ if TYPE_CHECKING:
         def __iter__(self) -> Iterator[str | datetime.date]: ...
 
         def keys(self) -> Iterable[str | datetime.date]: ...
-
-    from dags.tree.typing import NestedInputStructureDict  # noqa: F401
 
     from ttsim.interface_dag_elements.interface_node_objects import (
         InterfaceFunction,
