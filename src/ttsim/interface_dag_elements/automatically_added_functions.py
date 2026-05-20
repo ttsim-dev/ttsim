@@ -5,7 +5,7 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING, cast, overload
 
 import dags.tree as dt
-from dags import get_annotations, get_free_arguments, rename_arguments, with_signature
+from dags import get_annotations, get_free_arguments, rename_arguments
 
 from ttsim.interface_dag_elements.shared import (
     get_base_name_and_grouping_suffix,
@@ -28,10 +28,9 @@ from ttsim.tt.param_objects import ScalarParam
 from ttsim.tt.type_resolution import (
     ResolvedKind,
     TypeResolutionError,
-    column_kind_to_type_string,
-    resolve_agg_output_kind,
     resolve_kind_of_annotation,
     resolve_kind_of_column_function,
+    synthesize_typed_aggregation_wrapper,
     vectorized_column_kind,
 )
 from ttsim.typing import (
@@ -376,30 +375,17 @@ def create_agg_by_group_functions(
                 column_functions=column_functions,
                 qname_policy_environment=qname_policy_environment,
             )
-            output_kind = resolve_agg_output_kind(
-                AggType.SUM,
-                source_kind,
-                node_name=abgfn,
-            )
-            # Stamp a concrete return annotation onto the `grouped_sum`
-            # wrapper. `grouped_sum`'s runtime implementation signature
-            # widens to `FloatColumn | IntColumn`; left untouched, that
-            # union becomes the node's producer type and the DAG's
-            # annotation-consistency check rejects it against a concretely
-            # typed consumer. `with_signature` writes the resolved type
-            # onto `__signature__`, which `dags` reads when building the
-            # DAG.
-            return_type_string = column_kind_to_type_string(output_kind)
-            agg_func = with_signature(
+            # Stamp concrete column-type annotations onto the `grouped_sum`
+            # wrapper. Its runtime implementation signature widens to
+            # `FloatColumn | IntColumn`; left untouched, that union becomes
+            # the node's producer type and the DAG's annotation-consistency
+            # check rejects it against a concretely typed consumer (Bug E).
+            agg_func = synthesize_typed_aggregation_wrapper(
                 rename_arguments(func=grouped_sum, mapper=mapper),
-                args={
-                    base_name_with_time_unit: column_kind_to_type_string(source_kind),
-                    group_id_name: "IntColumn",
-                    "num_segments": "int",
-                    "backend": "Literal['numpy', 'jax']",
-                },
-                return_annotation=return_type_string,
-                enforce=False,
+                agg_type=AggType.SUM,
+                source_column_kind=source_kind,
+                column_param_name=base_name_with_time_unit,
+                node_name=abgfn,
             )
             out[abgfn] = AggByGroupFunction(
                 leaf_name=dt.tree_path_from_qname(abgfn)[-1],

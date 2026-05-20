@@ -22,11 +22,12 @@ The sweep is strict: a node it must resolve but cannot raises
 `TypeResolutionError` rather than silently falling back to a union.
 """
 
+import inspect
 from collections.abc import Callable
 from enum import Enum, auto
 from types import MappingProxyType
 
-from dags import get_annotations
+from dags import get_annotations, with_signature
 
 from ttsim.exceptions import TTSIMError
 from ttsim.tt.aggregation import AggType
@@ -299,6 +300,81 @@ def resolve_agg_output_kind(
             f"Allowed source kinds for {agg_type.value!r}: {allowed}."
         )
         raise TypeResolutionError(msg) from None
+
+
+def synthesize_typed_aggregation_wrapper(
+    renamed_func: Callable[..., object],
+    *,
+    agg_type: AggType,
+    source_column_kind: ResolvedKind | None,
+    column_param_name: str | None,
+    node_name: str,
+) -> Callable[..., object]:
+    """Stamp concrete column-type annotations onto an aggregation wrapper.
+
+    An aggregation primitive (`grouped_sum`, `sum_by_p_id`, …) carries an
+    imprecise `FloatColumn | IntColumn`-style union on its runtime
+    implementation signature, because its precise per-dtype return types
+    live only on `@overload` stacks. Left on the DAG node, that union
+    defeats the annotation-consistency check (Bug E). This function
+    rewrites the renamed aggregation wrapper's `__signature__` so it
+    advertises the concrete column types resolved from the source column's
+    kind and the aggregation rule table.
+
+    Args:
+        renamed_func: The aggregation primitive already adapted to the
+            DAG's argument names via `dags.rename_arguments`.
+        agg_type: The kind of aggregation.
+        source_column_kind: The `ResolvedKind` of the aggregated source
+            column. `None` only for `COUNT`, which has no source column.
+        column_param_name: The renamed parameter holding the source
+            column. `None` only for `COUNT`.
+        node_name: The qualified name of the aggregation node, for error
+            messages.
+
+    Returns:
+        The wrapper with a concretely typed `__signature__`.
+
+    Raises:
+        TypeResolutionError: If `agg_type` cannot be applied to
+            `source_column_kind`, or a non-`COUNT` aggregation is missing
+            its source column information.
+    """
+    if agg_type != AggType.COUNT and (
+        source_column_kind is None or column_param_name is None
+    ):
+        msg = (
+            f"Aggregation {agg_type.value!r} for node {node_name!r} requires a "
+            f"source column to synthesize a typed wrapper."
+        )
+        raise TypeResolutionError(msg)
+
+    output_kind = resolve_agg_output_kind(
+        agg_type,
+        source_column_kind if source_column_kind is not None else ResolvedKind.OTHER,
+        node_name=node_name,
+    )
+    return_type_string = column_kind_to_type_string(output_kind)
+
+    args: dict[str, str] = {}
+    for name in inspect.signature(renamed_func).parameters:
+        if name == column_param_name and source_column_kind is not None:
+            args[name] = column_kind_to_type_string(source_column_kind)
+        elif name == "num_segments":
+            args[name] = "int"
+        elif name == "backend":
+            args[name] = "Literal['numpy', 'jax']"
+        else:
+            # Every remaining parameter of an aggregation primitive is a
+            # group identifier or a person-pointer column — all integer
+            # columns.
+            args[name] = "IntColumn"
+    return with_signature(
+        renamed_func,
+        args=args,
+        return_annotation=return_type_string,
+        enforce=False,
+    )
 
 
 # Hand-written aggregation rule table: per `AggType`, the input-column-kind

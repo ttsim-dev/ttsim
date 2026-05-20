@@ -48,6 +48,12 @@ from ttsim.tt.aggregation import (
     sum_by_p_id,
 )
 from ttsim.tt.rounding import RoundingSpec
+from ttsim.tt.type_resolution import (
+    TypeResolutionError,
+    resolve_kind_of_annotation,
+    synthesize_typed_aggregation_wrapper,
+    vectorized_column_kind,
+)
 from ttsim.tt.vectorization import vectorize_function
 from ttsim.typing import DashedISOString, IntColumn, UnorderedQNames
 
@@ -649,15 +655,22 @@ def agg_by_group_function(
         _fail_if_group_id_is_invalid(group_ids, orig_location)
         group_id = group_ids.pop()
         other_args = args - {group_id, "num_segments", "backend"}
+        column_name: str | None
         if agg_type == AggType.COUNT:
             _fail_if_other_arg_is_present(other_args, orig_location)
             mapper = {"group_id": group_id}
+            column_name = None
         else:
             _fail_if_other_arg_is_invalid(other_args, orig_location)
-            mapper = {"group_id": group_id, "column": other_args.pop()}
-        agg_func = rename_arguments(
-            func=agg_registry[agg_type],
+            column_name = other_args.pop()
+            mapper = {"group_id": group_id, "column": column_name}
+        agg_func = _make_typed_aggregation_function(
+            primitive=agg_registry[agg_type],
             mapper=mapper,
+            agg_type=agg_type,
+            func=func,
+            column_name=column_name,
+            node_name=orig_location,
         )
         return AggByGroupFunction(
             leaf_name=leaf_name or func.__name__,  # ty: ignore[unresolved-attribute]
@@ -707,6 +720,71 @@ def _fail_if_other_arg_is_invalid(
             "backend for aggregations. Got: "
             f"{', '.join(other_args) if other_args else 'nothing'} in {orig_location}.",
         )
+
+
+def _make_typed_aggregation_function(
+    primitive: Callable[..., Any],
+    mapper: dict[str, str],
+    agg_type: AggType,
+    func: Callable[..., Any],
+    column_name: str | None,
+    node_name: str,
+) -> Callable[..., Any]:
+    """Adapt an aggregation primitive to the DAG and stamp concrete types.
+
+    The primitive (`grouped_sum`, `sum_by_p_id`, …) is first renamed to the
+    DAG's argument names, then — when the source column's kind can be
+    resolved from the decorated function's annotation — given a concretely
+    typed `__signature__`. The primitive's runtime implementation signature
+    carries an imprecise `FloatColumn | IntColumn`-style union; resolving
+    the concrete output type from the source column's declared kind and the
+    aggregation rule table lets the aggregation node advertise an honest
+    producer type to the DAG's annotation-consistency check.
+
+    A `COUNT` aggregation always resolves (its output is an `IntColumn`
+    regardless of input). For the value aggregations, a decorated function
+    whose source-column parameter is unannotated keeps the primitive's
+    imprecise union — the user, not the build-time sweep, owns that node,
+    so it is left as-is rather than failing decoration.
+
+    Args:
+        primitive: The aggregation primitive.
+        mapper: The `rename_arguments` mapper from primitive parameter names
+            to DAG argument names.
+        agg_type: The kind of aggregation.
+        func: The user's decorated function; its annotation of `column_name`
+            declares the source column's kind.
+        column_name: The DAG argument name of the source column, or `None`
+            for `COUNT`.
+        node_name: The function's original location, for error messages.
+
+    Returns:
+        The renamed aggregation wrapper, concretely typed where resolvable.
+    """
+    renamed = rename_arguments(func=primitive, mapper=mapper)
+    source_column_kind = None
+    if column_name is not None:
+        annotations = getattr(func, "__annotations__", {}) or {}
+        try:
+            source_column_kind = vectorized_column_kind(
+                resolve_kind_of_annotation(
+                    annotations.get(column_name, ""),
+                    node_name=f"{node_name} (column {column_name!r})",
+                ),
+                node_name=f"{node_name} (column {column_name!r})",
+            )
+        except TypeResolutionError:
+            # The decorated function's source-column parameter is
+            # unannotated or carries a non-numeric annotation. Leave the
+            # primitive's imprecise union in place.
+            return renamed
+    return synthesize_typed_aggregation_wrapper(
+        renamed,
+        agg_type=agg_type,
+        source_column_kind=source_column_kind,
+        column_param_name=column_name,
+        node_name=node_name,
+    )
 
 
 @dataclass(frozen=True)
@@ -786,6 +864,7 @@ def agg_by_p_id_function(
         other_args = args - {*other_p_ids, "p_id", "num_segments", "backend"}
         _fail_if_p_id_is_not_present(args, orig_location)
         _fail_if_other_p_id_is_invalid(other_p_ids, orig_location)
+        column_name: str | None
         if agg_type == AggType.COUNT:
             _fail_if_other_arg_is_present(other_args, orig_location)
             mapper = {
@@ -794,18 +873,24 @@ def agg_by_p_id_function(
                 "num_segments": "num_segments",
                 "backend": "backend",
             }
+            column_name = None
         else:
             _fail_if_other_arg_is_invalid(other_args, orig_location)
+            column_name = other_args.pop()
             mapper = {
-                "column": other_args.pop(),
+                "column": column_name,
                 "p_id_to_aggregate_by": other_p_ids.pop(),
                 "p_id_to_store_by": "p_id",
                 "num_segments": "num_segments",
                 "backend": "backend",
             }
-        agg_func = rename_arguments(
-            func=agg_registry[agg_type],
+        agg_func = _make_typed_aggregation_function(
+            primitive=agg_registry[agg_type],
             mapper=mapper,
+            agg_type=agg_type,
+            func=func,
+            column_name=column_name,
+            node_name=orig_location,
         )
         return AggByPIDFunction(
             leaf_name=leaf_name or func.__name__,  # ty: ignore[unresolved-attribute]
