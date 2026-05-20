@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Literal, get_args
 
 import numpy
 import portion
-from jaxtyping import Float
+from jaxtyping import Float, Int
 
 from ttsim.tt.interval_utils import (
     intervals_to_thresholds,
@@ -28,7 +28,7 @@ except ImportError:
 if TYPE_CHECKING:
     from types import ModuleType
 
-    from jaxtyping import Array, Float
+    from jaxtyping import Array, Float, Int
 
 FUNC_TYPES = Literal[
     "piecewise_constant",
@@ -70,7 +70,7 @@ if set(OPTIONS_REGISTRY.keys()) != set(get_args(FUNC_TYPES)):
 
 
 def piecewise_polynomial(
-    x: Float[Array, " n_pp_values"] | float,
+    x: Float[Array, " n_pp_values"] | Int[Array, " n_pp_values"] | float | int,
     parameters: PiecewisePolynomialParamValue,
     xnp: ModuleType,
 ) -> Float[Array, " n_pp_values"] | float:
@@ -194,9 +194,12 @@ def _check_and_get_coefficients(
 def _check_and_get_intercepts(
     leaf_name: str,
     parameter_list: list[dict[str, int | float | str]],
-    lower_thresholds: Float[Array, " n_segments"],
-    upper_thresholds: Float[Array, " n_segments"],
-    coefficients: Float[Array, "n_intervals n_coefficients"],
+    lower_thresholds: Float[Array, " n_segments"] | Int[Array, " n_segments"],
+    upper_thresholds: Float[Array, " n_segments"] | Int[Array, " n_segments"],
+    coefficients: (
+        Float[Array, "n_intervals n_coefficients"]
+        | Int[Array, "n_intervals n_coefficients"]
+    ),
     xnp: ModuleType,
 ) -> Float[Array, " n_segments"]:
     """Check and extract intercept data. If necessary create intercepts."""
@@ -230,14 +233,19 @@ def _check_and_get_intercepts(
 
 
 def _create_intercepts(
-    lower_thresholds: Float[Array, " n_segments"],
-    upper_thresholds: Float[Array, " n_segments"],
-    coefficients: Float[Array, "n_intervals n_coefficients"],
+    lower_thresholds: Float[Array, " n_segments"] | Int[Array, " n_segments"],
+    upper_thresholds: Float[Array, " n_segments"] | Int[Array, " n_segments"],
+    coefficients: (
+        Float[Array, "n_intervals n_coefficients"]
+        | Int[Array, "n_intervals n_coefficients"]
+    ),
     intercept_at_lowest_threshold: float,
     xnp: ModuleType,
 ) -> Float[Array, " n_segments"]:
     """Create intercepts from raw data."""
-    intercepts: list[float | Float[Array, ""]] = [intercept_at_lowest_threshold]
+    intercepts: list[float | Float[Array, ""] | Int[Array, ""]] = [
+        intercept_at_lowest_threshold
+    ]
     for up_thr in upper_thresholds[:-1]:
         intercepts.append(
             _calculate_one_intercept(
@@ -253,11 +261,14 @@ def _create_intercepts(
 
 
 def _calculate_one_intercept(
-    x: float | Float[Array, ""],
-    lower_thresholds: Float[Array, " n_segments"],
-    upper_thresholds: Float[Array, " n_segments"],
-    coefficients: Float[Array, "n_intervals n_coefficients"],
-    intercepts: Float[Array, " n_segments"],
+    x: float | Float[Array, ""] | Int[Array, ""],
+    lower_thresholds: Float[Array, " n_segments"] | Int[Array, " n_segments"],
+    upper_thresholds: Float[Array, " n_segments"] | Int[Array, " n_segments"],
+    coefficients: (
+        Float[Array, "n_intervals n_coefficients"]
+        | Int[Array, "n_intervals n_coefficients"]
+    ),
+    intercepts: Float[Array, " n_segments"] | Int[Array, " n_segments"],
     xnp: ModuleType,
 ) -> float | Float[Array, ""]:
     """Calculate the intercept for the segment `x` lies in.
