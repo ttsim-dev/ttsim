@@ -70,16 +70,28 @@ if set(OPTIONS_REGISTRY.keys()) != set(get_args(FUNC_TYPES)):
 
 
 def piecewise_polynomial(
-    x: Float[Array, " n_pp_values"] | Int[Array, " n_pp_values"] | float | int,
+    x: (
+        Float[Array, " n_pp_values"]
+        | Int[Array, " n_pp_values"]
+        | Float[Array, ""]
+        | Int[Array, ""]
+        | float
+        | int
+    ),
     parameters: PiecewisePolynomialParamValue,
     xnp: ModuleType,
-) -> Float[Array, " n_pp_values"] | float:
+) -> Float[Array, " n_pp_values"] | Float[Array, ""] | float:
     """Calculate value of the piecewise function at `x`.
 
     Values outside the defined domain return NaN.
 
+    For a 1-d array `x` the result is a 1-d array of the same length; for a
+    scalar `x` (a Python number or a 0-d array) the result is a scalar — a
+    0-d array under the JAX backend, a `numpy.float64` (a `float` subclass)
+    under NumPy.
+
     Args:
-        x: Array with values at which the piecewise polynomial is to be calculated.
+        x: Value(s) at which the piecewise polynomial is to be calculated.
         parameters: Thresholds defining the pieces and coefficients on each piece.
         xnp: The backend module to use for calculations.
 
