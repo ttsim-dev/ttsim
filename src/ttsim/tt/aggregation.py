@@ -4,10 +4,10 @@ from enum import StrEnum
 from typing import TYPE_CHECKING, Literal, overload
 
 from ttsim.tt import aggregation_jax, aggregation_numpy
-from ttsim.typing import BoolColumn, FloatColumn, IntColumn
+from ttsim.typing import BoolColumn, DatetimeColumn, FloatColumn, IntColumn
 
 if TYPE_CHECKING:
-    from ttsim.typing import BoolColumn, FloatColumn, IntColumn
+    from ttsim.typing import BoolColumn, DatetimeColumn, FloatColumn, IntColumn
 
 
 class AggType(StrEnum):
@@ -125,11 +125,11 @@ def grouped_max(
 
 
 def grouped_max(
-    column: FloatColumn | IntColumn,
+    column: FloatColumn | IntColumn | DatetimeColumn,
     group_id: IntColumn,
     num_segments: int,
     backend: Literal["numpy", "jax"],
-) -> FloatColumn | IntColumn:
+) -> FloatColumn | IntColumn | DatetimeColumn:
     if backend == "numpy":
         return aggregation_numpy.grouped_max(column, group_id)
     return aggregation_jax.grouped_max(column, group_id, num_segments)
@@ -154,11 +154,11 @@ def grouped_min(
 
 
 def grouped_min(
-    column: FloatColumn | IntColumn,
+    column: FloatColumn | IntColumn | DatetimeColumn,
     group_id: IntColumn,
     num_segments: int,
     backend: Literal["numpy", "jax"],
-) -> FloatColumn | IntColumn:
+) -> FloatColumn | IntColumn | DatetimeColumn:
     if backend == "numpy":
         return aggregation_numpy.grouped_min(column, group_id)
     return aggregation_jax.grouped_min(column, group_id, num_segments)

@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from ttsim.typing import (
         FlatData,
         QNameData,
+        QNameResults,
         SpecEnvWithProcessedParamsAndScalars,
         UnorderedQNames,
     )
@@ -55,7 +56,7 @@ def from_input_data(
 def params(
     labels__param_targets: OrderedQNames,
     specialized_environment__with_processed_params_and_scalars: SpecEnvWithProcessedParamsAndScalars,  # noqa: E501
-) -> QNameData:
+) -> QNameResults:
     """The parameters that have been requested as targets.
 
     Possibly includes outputs of param_functions.

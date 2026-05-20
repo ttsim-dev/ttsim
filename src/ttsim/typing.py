@@ -16,11 +16,12 @@ The aliases split into two groups:
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
-from typing import TYPE_CHECKING, Any, Literal, Protocol, TypeAlias, overload
+from typing import TYPE_CHECKING, Annotated, Any, Literal, Protocol, TypeAlias, overload
 
 import numpy as np
 import pandas as pd
-from jaxtyping import Bool, Float, Int
+from beartype.vale import Is
+from jaxtyping import Bool, Float, Int, Shaped
 
 # `jax` is an optional runtime dependency; the NumPy-only test envs do not
 # install it. Resolve `Array` to the JAX type when available, else fall
@@ -38,6 +39,13 @@ except ImportError:  # pragma: no cover - exercised in numpy-only envs
 BoolColumn: TypeAlias = Bool[Array | np.ndarray, " n_obs"]
 IntColumn: TypeAlias = Int[Array | np.ndarray, " n_obs"]
 FloatColumn: TypeAlias = Float[Array | np.ndarray, " n_obs"]
+# jaxtyping has no datetime dtype tag, so a beartype `Is` validator enforces
+# the `datetime64` dtype. Hoisted to module scope (like the other column
+# aliases) so the claw can resolve it at decoration time.
+DatetimeColumn: TypeAlias = Annotated[
+    Shaped[np.ndarray, " n_obs"],
+    Is[lambda a: np.issubdtype(a.dtype, np.datetime64)],
+]
 
 # Canonical scalar types (used inside ttsim once user input has been
 # converted to a single concrete numeric kind).
@@ -106,6 +114,19 @@ else:
 # `QNameData`: mapping of qualified-name strings to 1-d arrays.
 FlatData: TypeAlias = Mapping[tuple[str, ...], FloatColumn | IntColumn | BoolColumn]
 QNameData: TypeAlias = Mapping[str, FloatColumn | IntColumn | BoolColumn]
+
+# Results aliases. A results tree's leaves are not only columns: processed
+# param values are genuinely heterogeneous (scalars, dicts, lookup arrays,
+# dates). Use an honest-wide `object` leaf rather than enumerating a union.
+# `QNameResults`: flat mapping of qualified names to heterogeneous values.
+QNameResults: TypeAlias = Mapping[str, object]
+if TYPE_CHECKING:
+    # `NestedResults`: recursive results tree for ty (precise nested form).
+    NestedResults: TypeAlias = Mapping[str, "object | NestedResults"]
+else:
+    # beartype cannot resolve the stringified recursive inner name; widen the
+    # runtime alias to a one-level Mapping.
+    NestedResults = Mapping[str, object]
 
 # User-boundary data aliases (Decision 8 / GEP-09). User-facing `InputData.*`
 # factories accept a wider leaf type than the canonical column aliases above:
