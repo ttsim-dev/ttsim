@@ -14,8 +14,19 @@ import numpy
 from beartype import beartype
 from dags import get_annotations
 from dags.signature import forwarder_annotations, rename_arguments
+from jaxtyping import Bool, Float, Int
 
 from ttsim import typing as ttsim_typing
+
+# Backend-agnostic array type: union the (optional) JAX `Array` with
+# `numpy.ndarray` so 0-d `Float[_BackendArray, ""]` annotations accept
+# scalars from either backend (see `ttsim.typing` column aliases).
+try:
+    from jax import Array as _JaxArray
+
+    _BackendArray = _JaxArray | numpy.ndarray
+except ImportError:
+    _BackendArray = numpy.ndarray
 from ttsim._beartype_conf import INTERNAL_CONF
 from ttsim.exceptions import TTSIMError
 from ttsim.tt.type_resolution import (
@@ -669,6 +680,10 @@ def _build_beartype_checkable_wrapper(
 # guards against structural misuse (a string / mapping / `None` reaching a
 # numeric node) without enforcing exact array dtype — ttsim data columns
 # are loosely dtyped and a vectorized node broadcasts scalar arguments.
+#
+# A "scalar" argument is a Python number / NumPy scalar under the NumPy
+# backend, but a 0-d array under JAX (policy parameters materialize as 0-d
+# `jax.Array`s). The union therefore also admits 0-d jaxtyping arrays.
 _WIDE_NUMERIC_ALIAS = "_TTSIMVectorizedNumeric"
 _WIDE_NUMERIC_UNION = (
     ttsim_typing.FloatColumn
@@ -677,6 +692,9 @@ _WIDE_NUMERIC_UNION = (
     | ttsim_typing.ScalarFloat
     | ttsim_typing.ScalarInt
     | ttsim_typing.ScalarBool
+    | Float[_BackendArray, ""]
+    | Int[_BackendArray, ""]
+    | Bool[_BackendArray, ""]
 )
 
 # The set of narrow column-type annotation strings the auto-vectorizer
