@@ -14,11 +14,25 @@ from ttsim import _jaxtyping_patch  # noqa: F401
 #
 # Env-var gated during rollout; flip to always-on at merge.
 if os.environ.get("TTSIM_BEARTYPE_CLAW", "0") != "0":
+    import warnings
+
     from beartype.claw import beartype_package
+    from beartype.roar import BeartypeClawDecorWarning
 
     from ttsim._beartype_conf import INTERNAL_CONF
 
     beartype_package("ttsim", conf=INTERNAL_CONF)
+
+    # `@interface_input` produces a non-callable `InterfaceInput` metadata
+    # dataclass. The claw cannot `@beartype` a non-callable object, so it
+    # warns once per such object on import. There is nothing to type-check
+    # on a pure data holder, so suppress exactly that known-harmless case;
+    # any other `BeartypeClawDecorWarning` still surfaces.
+    warnings.filterwarnings(
+        "ignore",
+        message=r'Object "InterfaceInput\(',
+        category=BeartypeClawDecorWarning,
+    )
 
 try:
     # Import the version from _version.py which is dynamically created by

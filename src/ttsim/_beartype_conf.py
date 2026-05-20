@@ -15,7 +15,7 @@ exception hierarchy at the user boundary. The decorators stack on top of
 the package claw and take precedence at the call sites they cover.
 """
 
-from beartype import BeartypeConf, BeartypeDecorPlace, BeartypeStrategy
+from beartype import BeartypeConf, BeartypeStrategy
 
 from ttsim.exceptions import (
     AggregationDefinitionError,
@@ -69,16 +69,6 @@ INTERNAL_CONF = BeartypeConf(
     is_color=False,
     is_pep484_tower=True,
     strategy=BeartypeStrategy.On,
-    # Place `@beartype` as the innermost decorator, applied directly to the
-    # bare `def` before any other decorator runs. ttsim's interface and
-    # column-object decorators (`@interface_input`, `@interface_function`,
-    # `@policy_function`, …) return dataclass *instances*, not functions.
-    # With the default `LAST_BEFORE_DECOR_HOSTILE` placement, the claw
-    # applies `@beartype` after those decorators and then chokes on the
-    # non-callable result (`BeartypeDecorWrappeeException: Uncallable
-    # "InterfaceInput(...)" not decoratable`). `LAST` guarantees `@beartype`
-    # only ever wraps the plain underlying function.
-    claw_decor_place_func=BeartypeDecorPlace.LAST,
 )
 
 ENTRY_POINT_CONF = project_conf(EntryPointError)
