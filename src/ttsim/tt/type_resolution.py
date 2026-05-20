@@ -22,18 +22,14 @@ The sweep is strict: a node it must resolve but cannot raises
 `TypeResolutionError` rather than silently falling back to a union.
 """
 
+from collections.abc import Callable
 from enum import Enum, auto
-from typing import TYPE_CHECKING
+from types import MappingProxyType
 
 from dags import get_annotations
 
 from ttsim.exceptions import TTSIMError
 from ttsim.tt.aggregation import AggType
-
-if TYPE_CHECKING:
-    from collections.abc import Callable, Mapping
-
-    from ttsim.tt.column_objects_param_function import ColumnFunction
 
 
 class TypeResolutionError(TTSIMError):
@@ -85,35 +81,54 @@ _COLUMN_KINDS: frozenset[ResolvedKind] = frozenset(
 # Map a `ResolvedKind` to the canonical column-type alias name. Used to
 # stamp a concrete return annotation onto a synthesized wrapper via
 # `dags.with_signature`.
-_COLUMN_KIND_TO_TYPE_STRING: "Mapping[ResolvedKind, str]" = {
-    ResolvedKind.FLOAT_COLUMN: "FloatColumn",
-    ResolvedKind.INT_COLUMN: "IntColumn",
-    ResolvedKind.BOOL_COLUMN: "BoolColumn",
-}
+_COLUMN_KIND_TO_TYPE_STRING = MappingProxyType(
+    {
+        ResolvedKind.FLOAT_COLUMN: "FloatColumn",
+        ResolvedKind.INT_COLUMN: "IntColumn",
+        ResolvedKind.BOOL_COLUMN: "BoolColumn",
+    },
+)
 
 # Map an annotation string (as it appears on a function's `__signature__`,
 # whether scalar-thinking source code or an already-vectorized wrapper) to
 # the `ResolvedKind` it denotes.
-_ANNOTATION_STRING_TO_KIND: "Mapping[str, ResolvedKind]" = {
-    "FloatColumn": ResolvedKind.FLOAT_COLUMN,
-    "IntColumn": ResolvedKind.INT_COLUMN,
-    "BoolColumn": ResolvedKind.BOOL_COLUMN,
-    "float": ResolvedKind.FLOAT_SCALAR,
-    "int": ResolvedKind.INT_SCALAR,
-    "bool": ResolvedKind.BOOL_SCALAR,
-}
+_ANNOTATION_STRING_TO_KIND = MappingProxyType(
+    {
+        "FloatColumn": ResolvedKind.FLOAT_COLUMN,
+        "IntColumn": ResolvedKind.INT_COLUMN,
+        "BoolColumn": ResolvedKind.BOOL_COLUMN,
+        "float": ResolvedKind.FLOAT_SCALAR,
+        "int": ResolvedKind.INT_SCALAR,
+        "bool": ResolvedKind.BOOL_SCALAR,
+    },
+)
+
+# The beartype claw resolves a stringified column alias to a live
+# `jaxtyping` type object. Such an object has no `IntColumn`-style name;
+# its repr reads `Int[ndarray, 'n_obs']`. Map the leading dtype tag back to
+# the column `ResolvedKind`.
+_COLUMN_KIND_OF_JAXTYPING_TEXT = MappingProxyType(
+    {
+        "Float": ResolvedKind.FLOAT_COLUMN,
+        "Int": ResolvedKind.INT_COLUMN,
+        "Bool": ResolvedKind.BOOL_COLUMN,
+    },
+)
+
 
 # A scalar policy function declares scalar annotations; after
 # auto-vectorization the node operates on the corresponding column. Map the
 # scalar kind to the column kind it becomes once vectorized.
-_SCALAR_KIND_TO_COLUMN_KIND: "Mapping[ResolvedKind, ResolvedKind]" = {
-    ResolvedKind.FLOAT_SCALAR: ResolvedKind.FLOAT_COLUMN,
-    ResolvedKind.INT_SCALAR: ResolvedKind.INT_COLUMN,
-    ResolvedKind.BOOL_SCALAR: ResolvedKind.BOOL_COLUMN,
-    ResolvedKind.FLOAT_COLUMN: ResolvedKind.FLOAT_COLUMN,
-    ResolvedKind.INT_COLUMN: ResolvedKind.INT_COLUMN,
-    ResolvedKind.BOOL_COLUMN: ResolvedKind.BOOL_COLUMN,
-}
+_SCALAR_KIND_TO_COLUMN_KIND = MappingProxyType(
+    {
+        ResolvedKind.FLOAT_SCALAR: ResolvedKind.FLOAT_COLUMN,
+        ResolvedKind.INT_SCALAR: ResolvedKind.INT_COLUMN,
+        ResolvedKind.BOOL_SCALAR: ResolvedKind.BOOL_COLUMN,
+        ResolvedKind.FLOAT_COLUMN: ResolvedKind.FLOAT_COLUMN,
+        ResolvedKind.INT_COLUMN: ResolvedKind.INT_COLUMN,
+        ResolvedKind.BOOL_COLUMN: ResolvedKind.BOOL_COLUMN,
+    },
+)
 
 
 def column_kind_to_type_string(kind: ResolvedKind) -> str:
@@ -172,19 +187,28 @@ def resolve_kind_of_annotation(
     key = annotation if isinstance(annotation, str) else getattr(
         annotation, "__name__", str(annotation)
     )
-    return _ANNOTATION_STRING_TO_KIND.get(key, ResolvedKind.OTHER)
+    direct = _ANNOTATION_STRING_TO_KIND.get(key)
+    if direct is not None:
+        return direct
+    # The beartype claw resolves stringified column aliases to live
+    # `jaxtyping` type objects whose name reads `Int[ndarray, 'n_obs']`
+    # rather than `IntColumn`. Probe the textual form for the dtype tag.
+    return _COLUMN_KIND_OF_JAXTYPING_TEXT.get(
+        _jaxtyping_dtype_tag(key),
+        ResolvedKind.OTHER,
+    )
 
 
 def resolve_kind_of_column_function(
-    func: "ColumnFunction | Callable[..., object]",
+    func: Callable[..., object],
     *,
     node_name: str,
 ) -> ResolvedKind:
     """Resolve the output `ResolvedKind` of a column function.
 
-    The function may be a `ColumnFunction`, a bare callable, or a `dags`
-    wrapper (`rename_arguments` / `with_signature`) whose
-    `__annotations__` is the `*args, **kwargs` forwarder shape;
+    The function may be a `ColumnFunction` (which is callable), a bare
+    callable, or a `dags` wrapper (`rename_arguments` / `with_signature`)
+    whose `__annotations__` is the `*args, **kwargs` forwarder shape;
     `dags.get_annotations` recovers the typed view from `__signature__`.
 
     Args:
@@ -286,31 +310,55 @@ def resolve_agg_output_kind(
 #
 # `test_type_resolution.py` cross-checks this table against the `@overload`
 # stacks in `ttsim.tt.aggregation` and hard-fails on divergence.
-AGG_RULE_TABLE: "Mapping[AggType, Mapping[ResolvedKind, ResolvedKind]]" = {
-    AggType.SUM: {
-        ResolvedKind.FLOAT_COLUMN: ResolvedKind.FLOAT_COLUMN,
-        ResolvedKind.INT_COLUMN: ResolvedKind.INT_COLUMN,
-        ResolvedKind.BOOL_COLUMN: ResolvedKind.INT_COLUMN,
+AGG_RULE_TABLE = MappingProxyType(
+    {
+        AggType.SUM: MappingProxyType(
+            {
+                ResolvedKind.FLOAT_COLUMN: ResolvedKind.FLOAT_COLUMN,
+                ResolvedKind.INT_COLUMN: ResolvedKind.INT_COLUMN,
+                ResolvedKind.BOOL_COLUMN: ResolvedKind.INT_COLUMN,
+            },
+        ),
+        AggType.MEAN: MappingProxyType(
+            {
+                ResolvedKind.FLOAT_COLUMN: ResolvedKind.FLOAT_COLUMN,
+                ResolvedKind.INT_COLUMN: ResolvedKind.FLOAT_COLUMN,
+                ResolvedKind.BOOL_COLUMN: ResolvedKind.FLOAT_COLUMN,
+            },
+        ),
+        AggType.MAX: MappingProxyType(
+            {
+                ResolvedKind.FLOAT_COLUMN: ResolvedKind.FLOAT_COLUMN,
+                ResolvedKind.INT_COLUMN: ResolvedKind.INT_COLUMN,
+            },
+        ),
+        AggType.MIN: MappingProxyType(
+            {
+                ResolvedKind.FLOAT_COLUMN: ResolvedKind.FLOAT_COLUMN,
+                ResolvedKind.INT_COLUMN: ResolvedKind.INT_COLUMN,
+            },
+        ),
+        AggType.ANY: MappingProxyType(
+            {
+                ResolvedKind.INT_COLUMN: ResolvedKind.BOOL_COLUMN,
+                ResolvedKind.BOOL_COLUMN: ResolvedKind.BOOL_COLUMN,
+            },
+        ),
+        AggType.ALL: MappingProxyType(
+            {
+                ResolvedKind.INT_COLUMN: ResolvedKind.BOOL_COLUMN,
+                ResolvedKind.BOOL_COLUMN: ResolvedKind.BOOL_COLUMN,
+            },
+        ),
     },
-    AggType.MEAN: {
-        ResolvedKind.FLOAT_COLUMN: ResolvedKind.FLOAT_COLUMN,
-        ResolvedKind.INT_COLUMN: ResolvedKind.FLOAT_COLUMN,
-        ResolvedKind.BOOL_COLUMN: ResolvedKind.FLOAT_COLUMN,
-    },
-    AggType.MAX: {
-        ResolvedKind.FLOAT_COLUMN: ResolvedKind.FLOAT_COLUMN,
-        ResolvedKind.INT_COLUMN: ResolvedKind.INT_COLUMN,
-    },
-    AggType.MIN: {
-        ResolvedKind.FLOAT_COLUMN: ResolvedKind.FLOAT_COLUMN,
-        ResolvedKind.INT_COLUMN: ResolvedKind.INT_COLUMN,
-    },
-    AggType.ANY: {
-        ResolvedKind.INT_COLUMN: ResolvedKind.BOOL_COLUMN,
-        ResolvedKind.BOOL_COLUMN: ResolvedKind.BOOL_COLUMN,
-    },
-    AggType.ALL: {
-        ResolvedKind.INT_COLUMN: ResolvedKind.BOOL_COLUMN,
-        ResolvedKind.BOOL_COLUMN: ResolvedKind.BOOL_COLUMN,
-    },
-}
+)
+
+
+def _jaxtyping_dtype_tag(text: str) -> str:
+    """Return the leading dtype tag of a `jaxtyping` type object's name.
+
+    A claw-resolved column annotation reads `Int[ndarray, 'n_obs']`; the
+    tag is the substring before the first `[`. A non-`jaxtyping` string is
+    returned unchanged (and will simply miss the lookup table).
+    """
+    return text.split("[", 1)[0]

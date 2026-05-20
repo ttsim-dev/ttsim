@@ -7,11 +7,18 @@ If a primitive's overloads ever change without the table being updated, the
 test hard-fails, so the table cannot silently rot.
 """
 
+import os
 import typing
 
+import numpy as np
 import pytest
+from dags import get_annotations
 
 from ttsim.exceptions import TTSIMError
+from ttsim.interface_dag_elements.automatically_added_functions import (
+    create_agg_by_group_functions,
+)
+from ttsim.tt import ColumnFunction, policy_function
 from ttsim.tt.aggregation import (
     AggType,
     grouped_all,
@@ -43,12 +50,24 @@ _AGG_TYPE_TO_PRIMITIVE = {
     AggType.ALL: grouped_all,
 }
 
-# Map a column-type alias name to its `ResolvedKind`.
-_TYPE_STRING_TO_COLUMN_KIND = {
-    "FloatColumn": ResolvedKind.FLOAT_COLUMN,
-    "IntColumn": ResolvedKind.INT_COLUMN,
-    "BoolColumn": ResolvedKind.BOOL_COLUMN,
-}
+def _column_kind_of_overload_annotation(annotation: object) -> ResolvedKind:
+    """Map an `@overload` column annotation to its `ResolvedKind`.
+
+    The annotation is either the alias-name string (`"IntColumn"`, under
+    `from __future__ import annotations`) or the live `jaxtyping` type
+    object (when the beartype claw has resolved it). The `jaxtyping`
+    object's `repr` names the dtype (`Float`/`Int`/`Bool`), so a substring
+    probe classifies both forms.
+    """
+    text = annotation if isinstance(annotation, str) else repr(annotation)
+    if "Float" in text:
+        return ResolvedKind.FLOAT_COLUMN
+    if "Int" in text:
+        return ResolvedKind.INT_COLUMN
+    if "Bool" in text:
+        return ResolvedKind.BOOL_COLUMN
+    msg = f"Unrecognized overload column annotation: {annotation!r}"
+    raise AssertionError(msg)
 
 
 def _overload_rules(primitive: typing.Callable[..., object]) -> dict[
@@ -58,8 +77,8 @@ def _overload_rules(primitive: typing.Callable[..., object]) -> dict[
     rules: dict[ResolvedKind, ResolvedKind] = {}
     for overload in typing.get_overloads(primitive):
         annotations = overload.__annotations__
-        input_kind = _TYPE_STRING_TO_COLUMN_KIND[annotations["column"]]
-        output_kind = _TYPE_STRING_TO_COLUMN_KIND[annotations["return"]]
+        input_kind = _column_kind_of_overload_annotation(annotations["column"])
+        output_kind = _column_kind_of_overload_annotation(annotations["return"])
         rules[input_kind] = output_kind
     return rules
 
@@ -72,8 +91,20 @@ def test_agg_rule_table_agrees_with_overload_stacks(agg_type: AggType) -> None:
 
 
 def test_count_primitive_returns_int_column() -> None:
-    """`grouped_count` has the single return annotation `IntColumn`."""
-    assert grouped_count.__annotations__["return"] == "IntColumn"
+    """`grouped_count`'s return annotation resolves to `INT_COLUMN`.
+
+    The annotation appears either as the string `"IntColumn"` (under
+    `from __future__ import annotations`) or as the live `jaxtyping`
+    type object (when the beartype claw has resolved it); both must
+    resolve to `INT_COLUMN`, which is what `AGG_RULE_TABLE` encodes for
+    `COUNT`.
+    """
+    annotation = grouped_count.__annotations__["return"]
+    if isinstance(annotation, str):
+        assert annotation == "IntColumn"
+    else:
+        # Claw-resolved live type object; its repr names the alias kind.
+        assert "Int" in repr(annotation)
 
 
 def test_resolve_agg_output_kind_count_ignores_input() -> None:
@@ -129,6 +160,16 @@ def test_resolve_kind_of_annotation_scalar_type_object() -> None:
     assert resolve_kind_of_annotation(int, node_name="x") == ResolvedKind.INT_SCALAR
 
 
+def test_resolve_kind_of_annotation_live_jaxtyping_type() -> None:
+    """A claw-resolved live `jaxtyping` column type resolves to its column kind."""
+    from ttsim.typing import IntColumn  # noqa: PLC0415
+
+    assert (
+        resolve_kind_of_annotation(IntColumn, node_name="x")
+        == ResolvedKind.INT_COLUMN
+    )
+
+
 def test_resolve_kind_of_annotation_unknown_is_other() -> None:
     """An annotation denoting neither a numeric column nor scalar is `OTHER`."""
     assert (
@@ -179,3 +220,62 @@ def test_column_kind_to_type_string_scalar_raises() -> None:
 def test_type_resolution_error_is_ttsim_error() -> None:
     """`TypeResolutionError` is part of the `TTSIMError` hierarchy."""
     assert issubclass(TypeResolutionError, TTSIMError)
+
+
+def _auto_agg_wrapper_from_int_source() -> typing.Callable[..., object]:
+    """Build the synthesized `x_hh` aggregation wrapper for an int source `x`."""
+
+    @policy_function()
+    def x(p_id: int) -> int:
+        return p_id
+
+    column_functions: dict[str, ColumnFunction] = {
+        "x": x.remove_tree_logic(
+            tree_path=("x",),
+            top_level_namespace={"x", "p_id"},
+        ),
+    }
+    derived = create_agg_by_group_functions(
+        column_functions=column_functions,
+        qname_policy_environment={},
+        input_columns=set(),
+        tt_targets=("x_hh",),
+        grouping_levels=("hh",),
+    )
+    wrapper = derived["x_hh"]
+    assert isinstance(wrapper, ColumnFunction)
+    return wrapper.function
+
+
+def test_auto_agg_wrapper_carries_concrete_return_annotation() -> None:
+    """The synthesized `x_hh` wrapper for an int source declares `-> IntColumn`.
+
+    Without the build-time resolution sweep the wrapper would advertise the
+    imprecise `FloatColumn | IntColumn` union that `grouped_sum`'s runtime
+    implementation signature carries.
+    """
+    annotations = get_annotations(_auto_agg_wrapper_from_int_source())
+    assert annotations["return"] == "IntColumn"
+
+
+@pytest.mark.skipif(
+    os.environ.get("TTSIM_BEARTYPE_CLAW", "0") == "0",
+    reason="Requires the beartype claw to be active.",
+)
+def test_auto_agg_wrapper_rejects_misused_source_column() -> None:
+    """Calling the synthesized wrapper with a non-column source raises a claw violation.
+
+    The wrapper forwards to the claw-decorated `grouped_sum`, so a misused
+    source column surfaces as a `beartype` hint violation.
+    """
+    from beartype.roar import BeartypeCallHintViolation  # noqa: PLC0415
+
+    wrapper = _auto_agg_wrapper_from_int_source()
+    group_ids = np.array([0, 0, 1])
+    with pytest.raises(BeartypeCallHintViolation):
+        wrapper(
+            x="not a column",
+            hh_id=group_ids,
+            num_segments=2,
+            backend="numpy",
+        )
