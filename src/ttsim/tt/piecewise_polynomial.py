@@ -237,7 +237,7 @@ def _create_intercepts(
     xnp: ModuleType,
 ) -> Float[Array, " n_segments"]:
     """Create intercepts from raw data."""
-    intercepts = [intercept_at_lowest_threshold]
+    intercepts: list[float | Float[Array, ""]] = [intercept_at_lowest_threshold]
     for up_thr in upper_thresholds[:-1]:
         intercepts.append(
             _calculate_one_intercept(
@@ -253,14 +253,23 @@ def _create_intercepts(
 
 
 def _calculate_one_intercept(
-    x: float,
+    x: float | Float[Array, ""],
     lower_thresholds: Float[Array, " n_segments"],
     upper_thresholds: Float[Array, " n_segments"],
     coefficients: Float[Array, "n_intervals n_coefficients"],
     intercepts: Float[Array, " n_segments"],
     xnp: ModuleType,
-) -> float:
-    """Calculate the intercept for the segment `x` lies in."""
+) -> float | Float[Array, ""]:
+    """Calculate the intercept for the segment `x` lies in.
+
+    `x` is one upper threshold drawn from `upper_thresholds`; iterating an
+    array yields a 0-d array under the JAX backend and a `numpy.float64`
+    (a `float` subclass) under NumPy.
+
+    Returns a Python `float` for the out-of-range / NaN case, otherwise the
+    scalar selected (and incremented) out of `intercepts` — likewise a 0-d
+    array under JAX, a `numpy.float64` under NumPy.
+    """
     # Check if value lies within the defined range.
     if (x < lower_thresholds[0]) or (x > upper_thresholds[-1]) or xnp.isnan(x):
         return float("nan")
