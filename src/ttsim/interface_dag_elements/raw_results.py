@@ -1,23 +1,23 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from collections.abc import Callable
 
 import dags.tree as dt
 
 from ttsim.interface_dag_elements.interface_node_objects import interface_function
 
-if TYPE_CHECKING:
-    from collections.abc import Callable
-
-    from ttsim.typing import (
-        FlatData,
-        QNameData,
-        QNameResults,
-        SpecEnvWithProcessedParamsAndScalars,
-        UnorderedQNames,
-    )
-
-from ttsim.typing import OrderedQNames
+# Hoisted out of `TYPE_CHECKING` so the beartype claw can resolve these
+# aliases on the `@interface_function`-decorated signatures below; the
+# module uses `from __future__ import annotations`, so the claw resolves
+# stringified annotations via module globals.
+from ttsim.typing import (
+    FlatData,
+    OrderedQNames,
+    QNameData,
+    QNameResults,
+    SpecEnvWithProcessedParamsAndScalars,
+    UnorderedQNames,
+)
 
 
 @interface_function()

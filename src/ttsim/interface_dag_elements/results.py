@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import dags.tree as dt
 import numpy
@@ -12,15 +12,16 @@ from ttsim.interface_dag_elements.data_converters import (
 )
 from ttsim.interface_dag_elements.interface_node_objects import interface_function
 
-if TYPE_CHECKING:
-    from ttsim.typing import (
-        FlatData,
-        IntColumn,
-        NestedResults,
-        NestedStrings,
-        QNameData,
-        QNameResults,
-    )
+# Hoisted out of `TYPE_CHECKING` so the beartype claw can resolve these
+# aliases on the `@interface_function`-decorated signatures below.
+from ttsim.typing import (
+    FlatData,
+    IntColumn,
+    NestedResults,
+    NestedStrings,
+    QNameData,
+    QNameResults,
+)
 
 
 @interface_function()

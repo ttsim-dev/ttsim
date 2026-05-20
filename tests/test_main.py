@@ -213,7 +213,7 @@ def test_main_target_class_is_complete() -> None:
         ),
         (lambda _xnp: InputData.tree({"tree_data": {"key": [1, 2, 3]}}), "tree"),
         (
-            lambda _xnp: InputData.flat({"flat.key": [1, 2, 3]}),  # ty: ignore[invalid-argument-type]
+            lambda _xnp: InputData.flat({("flat", "key"): [1, 2, 3]}),
             "flat",
         ),
         (

@@ -50,6 +50,7 @@ from ttsim.typing import (
     FlatTTTargets,
     NestedData,
     NestedInputsMapper,
+    NestedResults,
     NestedStrings,
     NestedTargetDict,
     OrderedQNames,
@@ -235,7 +236,7 @@ def any_paths_are_invalid(
 
 @fail_function(include_if_all_elements_present=["results__df_with_mapper"])
 def paths_are_missing_in_targets_tree_mapper(
-    results__tree: NestedData,
+    results__tree: NestedResults,
     tt_targets__tree: NestedStrings,
 ) -> None:
     """Fail if the data paths are missing in the mapping of paths to column names."""
@@ -465,7 +466,7 @@ def group_variables_are_not_constant_within_groups(
 )
 def non_convertible_objects_in_results_tree(
     processed_data: QNameData,
-    results__tree: NestedData,
+    results__tree: NestedResults,
     backend: Literal["numpy", "jax"],
     xnp: ModuleType,
 ) -> None:
