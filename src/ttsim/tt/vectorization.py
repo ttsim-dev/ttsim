@@ -11,9 +11,12 @@ from types import ModuleType
 from typing import TYPE_CHECKING, Any, Literal, cast
 
 import numpy
+from beartype import beartype
 from dags import get_annotations
-from dags.signature import rename_arguments
+from dags.signature import forwarder_annotations, rename_arguments
 
+from ttsim import typing as ttsim_typing
+from ttsim._beartype_conf import INTERNAL_CONF
 from ttsim.exceptions import TTSIMError
 from ttsim.tt.type_resolution import (
     ResolvedKind,
@@ -84,14 +87,17 @@ def vectorize_function(
             "Use 'loop' or 'vectorize'.",
         )
 
-    # Update annotations and signature to reflect that the inputs are now expected to be
-    # arrays. The annotations carry the concrete column-type aliases resolved
-    # via `ttsim.tt.type_resolution`, so the synthesized node advertises an
-    # honest producer type to the DAG's annotation-consistency check.
-    vectorized.__signature__ = _create_vectorized_signature(func)  # ty: ignore[unresolved-attribute]
-    vectorized.__annotations__ = _create_vectorized_annotations(func)
-
-    return vectorized
+    # Wrap the vectorized callable in a typed forwarder whose parameters and
+    # return are annotated with the concrete column-type aliases resolved via
+    # `ttsim.tt.type_resolution`. The forwarder advertises an honest producer
+    # type to the DAG's annotation-consistency check and — being a real-
+    # parameter, non-isomorphic, non-nested function defined against
+    # `ttsim.typing` — is itself directly `@beartype`-decorable.
+    return _build_beartype_checkable_wrapper(
+        vectorized,
+        annotations=_create_vectorized_annotations(func),
+        node_name=getattr(func, "__name__", "<vectorized node>"),
+    )
 
 
 def _make_vectorizable(
@@ -531,21 +537,172 @@ def _module_from_backend(backend: str) -> str:
 # ======================================================================================
 
 
-def _create_vectorized_signature(func: Callable[..., Any]) -> inspect.Signature:
-    """Create a signature for the vectorized function."""
-    parameters = [
-        inspect.Parameter(
-            name=param.name,
-            kind=param.kind,
-            default=param.default,
-            annotation=scalar_type_to_array_type(param.annotation),
-        )
-        for param in inspect.signature(func).parameters.values()
-    ]
-    return_annotation = scalar_type_to_array_type(
-        inspect.signature(func).return_annotation
+def _build_beartype_checkable_wrapper(
+    vectorized: Callable[..., Any],
+    *,
+    annotations: dict[str, Any],
+    node_name: str,
+) -> Callable[..., Any]:
+    """Wrap a vectorized callable in a directly `@beartype`-decorable forwarder.
+
+    The auto-vectorized callable produced by `numpy.vectorize` or the
+    AST-rewrite path is an *isomorphic* wrapper: its code object is a bare
+    `*args, **kwargs` forwarder, and `functools.wraps` / `dags` copy
+    `__wrapped__` and `__module__` from the scalar user policy function.
+    beartype unwraps isomorphic wrappers down to that scalar leaf and then
+    resolves string forward references (`"FloatColumn"`, …) against the
+    *leaf's* module globals — a module where the column aliases are not
+    importable — raising `BeartypeCallHintForwardRefException`.
+
+    This builds a genuine, real-parameter forwarder around the vectorized
+    callable. Being non-isomorphic (its code object declares the actual
+    parameter names) beartype stops unwrapping at it; being defined against
+    `ttsim.typing`'s namespace its string column annotations resolve.
+
+    `@beartype` resolves the string forward references on `__annotations__`
+    into live `jaxtyping` type objects and writes them back. `dags`'
+    annotation-consistency check is string-based and would reject those
+    live objects against the `"FloatColumn"`-style strings other nodes
+    advertise. So after decoration `__annotations__` is reset to the
+    `*args, **kwargs` forwarder shape: beartype's check is already compiled
+    and survives the reset, while `dags.get_annotations` falls back to the
+    `__signature__` — which keeps the concrete column-type *strings*.
+    beartype enforces the resolved types; `dags` sees the strings.
+
+    Wide vs narrow split: beartype's runtime check and `dags`'
+    annotation-consistency check want different granularity.
+
+    - `dags` compares a producer node's return against a consumer node's
+      parameter and must distinguish `FloatColumn` from `IntColumn` from
+      `BoolColumn` (a producer feeding an incompatibly typed consumer is a
+      real DAG bug). It reads the *narrow* column-type strings off
+      `__signature__`.
+    - beartype's runtime check guards against *structural* misuse — a
+      string / list / mapping / `None` reaching a numeric node. It must
+      *not* enforce exact array dtype: ttsim data columns are loosely
+      dtyped (an `int`-valued column legitimately feeds a `float`-typed
+      policy function), and a vectorized node broadcasts scalar arguments.
+      So beartype checks every numeric parameter and the return against the
+      *wide* "any numeric column or scalar" union.
+
+    The narrow per-kind column strings live on `__signature__` for `dags`;
+    the wide numeric union is what beartype compiles its check against.
+    Whether a vectorized node should enforce exact column dtypes is a
+    separate, project-wide decision deliberately left out of scope here.
+
+    Args:
+        vectorized: The auto-vectorized callable to forward to.
+        annotations: Column-type annotation strings keyed by parameter name
+            plus `"return"`, as produced by `_create_vectorized_annotations`.
+        node_name: The wrapped function's name, used for the forwarder's
+            `__name__` / `__qualname__` (kept dotless so beartype does not
+            misclassify the forwarder as a lexically nested callable).
+
+    Returns:
+        A typed forwarder, decorated with `@beartype` under `INTERNAL_CONF`.
+    """
+    sig = inspect.signature(vectorized)
+    param_names = list(sig.parameters)
+
+    # The forwarder mirrors the vectorized callable's parameter list verbatim
+    # — same names, same order — and forwards every argument positionally.
+    params_src = ", ".join(param_names)
+    forwarder_name = f"_vectorized_{node_name}"
+    source = (
+        f"def {forwarder_name}({params_src}):\n"
+        f"    return _ttsim_vectorized_impl({params_src})\n"
     )
-    return inspect.Signature(parameters=parameters, return_annotation=return_annotation)
+    # The namespace beartype resolves the string annotations against: the
+    # wide numeric union it checks numeric arguments against, and the
+    # forwarded implementation.
+    namespace: dict[str, Any] = {
+        "_ttsim_vectorized_impl": vectorized,
+        _WIDE_NUMERIC_ALIAS: _WIDE_NUMERIC_UNION,
+    }
+    exec(compile(source, "<ttsim-vectorized-node>", "exec"), namespace)  # noqa: S102
+    forwarder = namespace[forwarder_name]
+
+    # beartype-enforced annotations: every numeric parameter and the return
+    # is checked against the "any numeric column or scalar" union.
+    # Non-numeric annotations (the `OTHER` pass-through strings — partialled
+    # parameter objects, lookup tables, …) are dropped: they are arbitrary
+    # ttsim types not resolvable from `ttsim.typing`, and beartype-checking
+    # them is not the point of the structural guard.
+    forwarder.__annotations__ = {
+        name: _WIDE_NUMERIC_ALIAS
+        for name in ("return", *param_names)
+        if _is_numeric_annotation(annotations.get(name))
+    }
+    # `__signature__` carries the narrow column strings for `dags` (which
+    # only compares producer returns against consumer parameters).
+    forwarder.__signature__ = inspect.Signature(
+        parameters=[
+            inspect.Parameter(
+                name=name,
+                kind=sig.parameters[name].kind,
+                default=sig.parameters[name].default,
+                annotation=annotations.get(name, inspect.Parameter.empty),
+            )
+            for name in param_names
+        ],
+        return_annotation=annotations.get("return", inspect.Parameter.empty),
+    )
+    # `ttsim.typing` is where the column aliases live; pointing `__module__`
+    # there keeps the forwarder consistent for any tooling that resolves
+    # annotations via `sys.modules[fn.__module__]`.
+    forwarder.__module__ = "ttsim.typing"
+
+    checked = beartype(conf=INTERNAL_CONF)(forwarder)
+    # `@beartype` rewrote `__annotations__` to live `jaxtyping` objects while
+    # compiling its check. Reset both the wrapper's and the forwarder's
+    # `__annotations__` to the `*args, **kwargs` forwarder shape so
+    # `dags.get_annotations` reads the column-type *strings* off
+    # `__signature__` instead — its consistency check is string-based.
+    forwarder.__annotations__ = forwarder_annotations()
+    checked.__annotations__ = forwarder_annotations()
+    checked.__signature__ = forwarder.__signature__
+    return checked
+
+
+# The "any numeric column or scalar" union the vectorized-node forwarder's
+# numeric parameters and return are checked against. The runtime check
+# guards against structural misuse (a string / mapping / `None` reaching a
+# numeric node) without enforcing exact array dtype — ttsim data columns
+# are loosely dtyped and a vectorized node broadcasts scalar arguments.
+_WIDE_NUMERIC_ALIAS = "_TTSIMVectorizedNumeric"
+_WIDE_NUMERIC_UNION = (
+    ttsim_typing.FloatColumn
+    | ttsim_typing.IntColumn
+    | ttsim_typing.BoolColumn
+    | ttsim_typing.ScalarFloat
+    | ttsim_typing.ScalarInt
+    | ttsim_typing.ScalarBool
+)
+
+# The set of narrow column-type annotation strings the auto-vectorizer
+# stamps; together with the un-annotated fallback union they denote a
+# numeric node parameter / return that beartype checks against the wide
+# numeric union. Any other annotation string is a non-numeric `OTHER`
+# pass-through and is left untouched.
+_NUMERIC_ANNOTATION_STRINGS: frozenset[str] = frozenset(
+    {
+        "FloatColumn",
+        "IntColumn",
+        "BoolColumn",
+        "IntColumn | FloatColumn | BoolColumn",
+    },
+)
+
+
+def _is_numeric_annotation(annotation: object) -> bool:
+    """Return whether an auto-vectorizer annotation denotes a numeric node.
+
+    A column-type string (or the un-annotated fallback union) denotes a
+    numeric node parameter / return that beartype should check against the
+    wide numeric union. Anything else is a non-numeric `OTHER` annotation
+    (a partialled parameter object, a lookup table, …).
+    """
+    return isinstance(annotation, str) and annotation in _NUMERIC_ANNOTATION_STRINGS
 
 
 def _create_vectorized_annotations(func: Callable[..., Any]) -> dict[str, Any]:
