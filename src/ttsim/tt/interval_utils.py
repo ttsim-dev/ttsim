@@ -9,12 +9,17 @@ import numpy
 import portion
 from jaxtyping import Float
 
+# `intervals_to_thresholds` builds its outputs with NumPy regardless of the
+# active backend, so the array type in its return annotation must accept
+# `np.ndarray`. Union the (optional) JAX `Array` with `np.ndarray` so the
+# beartype claw resolves the annotation in both numpy-only and JAX envs --
+# bare `jax.Array` would reject the NumPy outputs under the JAX env.
 try:
-    from jax import Array
-except ImportError:
-    import numpy as _np
+    from jax import Array as _JaxArray
 
-    Array = _np.ndarray
+    Array = _JaxArray | numpy.ndarray
+except ImportError:
+    Array = numpy.ndarray
 
 if TYPE_CHECKING:
     from types import ModuleType
