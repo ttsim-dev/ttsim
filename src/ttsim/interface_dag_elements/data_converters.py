@@ -1,21 +1,24 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal
+from types import ModuleType
+from typing import Any, Literal
 
 import dags.tree as dt
 import numpy
 import pandas as pd
 
-if TYPE_CHECKING:
-    from types import ModuleType
-
-    from ttsim.typing import (
-        FlatData,
-        NestedData,
-        NestedInputsMapper,
-        NestedStrings,
-        QNameData,
-    )
+# Hoisted to runtime scope so the beartype claw can resolve these aliases on
+# decorated signatures. The module uses `from __future__ import annotations`,
+# so beartype sees stringified annotations and resolves them via module
+# globals; names hidden in `TYPE_CHECKING` are invisible at decoration time.
+# All names below are runtime-resolvable in `ttsim.typing`.
+from ttsim.typing import (
+    FlatData,
+    NestedData,
+    NestedInputsMapper,
+    NestedStrings,
+    QNameData,
+)
 
 
 def _get_p_id_index(data_with_p_id: NestedData | QNameData | FlatData) -> pd.Index:

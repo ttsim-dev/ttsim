@@ -9,8 +9,10 @@ execution).
 
 from __future__ import annotations
 
+import datetime
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Literal, cast, overload
+from types import ModuleType
+from typing import TYPE_CHECKING, Any, Literal, cast, overload
 
 import dags.tree as dt
 import networkx as nx
@@ -40,22 +42,21 @@ from ttsim.tt.param_objects import ParamObject
 from ttsim.unit_converters import TIME_UNIT_IDS_TO_LABELS
 
 if TYPE_CHECKING:
-    import datetime
     import re
-    from collections.abc import Callable
-    from types import ModuleType
-    from typing import Any
 
-    from ttsim.typing import (
-        FlatTTTargets,
-        PolicyEnvironment,
-        SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
-        SpecEnvWithPartialledParamsAndScalars,
-        SpecEnvWithProcessedParamsAndScalars,
-        UnorderedQNames,
-    )
-
-from ttsim.typing import OrderedQNames
+# Hoisted to runtime scope so the beartype claw can resolve these aliases on
+# decorated signatures. The module uses `from __future__ import annotations`,
+# so names hidden in `TYPE_CHECKING` are invisible to beartype at decoration
+# time. All names below are runtime-resolvable in `ttsim.typing`.
+from ttsim.typing import (
+    FlatTTTargets,
+    OrderedQNames,
+    PolicyEnvironment,
+    SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
+    SpecEnvWithPartialledParamsAndScalars,
+    SpecEnvWithProcessedParamsAndScalars,
+    UnorderedQNames,
+)
 
 
 @interface_function()

@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import datetime
 import functools
-from typing import TYPE_CHECKING, Literal
+from types import ModuleType
+from typing import Literal
 
 import dags.tree as dt
+import networkx as nx
 from dags import concatenate_functions, create_dag, get_free_arguments
 
 from ttsim.interface_dag_elements.automatically_added_functions import (
@@ -23,24 +26,22 @@ from ttsim.tt.column_objects_param_function import (
 )
 from ttsim.tt.param_objects import ParamObject, RawParam
 
-if TYPE_CHECKING:
-    import datetime
-    from types import ModuleType
-
-    import networkx as nx
-
-    from ttsim.typing import (
-        PolicyEnvironment,
-        QNameData,
-        SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
-        SpecEnvWithPartialledParamsAndScalars,
-        SpecEnvWithProcessedParamsAndScalars,
-    )
-
+# Hoisted to runtime scope so the beartype claw can resolve these aliases on
+# decorated signatures. The module uses `from __future__ import annotations`,
+# so beartype sees stringified annotations and resolves them via module
+# globals; names hidden in `TYPE_CHECKING` are invisible at decoration time.
+# `networkx` is already a hard runtime dependency of ttsim (imported at
+# runtime in sibling interface modules), so the import is moved up rather
+# than left under `TYPE_CHECKING`.
 from ttsim.typing import (
     FlatTTTargets,
     OrderedQNames,
+    PolicyEnvironment,
+    QNameData,
     QNameStrings,
+    SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
+    SpecEnvWithPartialledParamsAndScalars,
+    SpecEnvWithProcessedParamsAndScalars,
     UnorderedQNames,
 )
 
