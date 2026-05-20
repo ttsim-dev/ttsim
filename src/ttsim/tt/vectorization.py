@@ -15,6 +15,12 @@ from dags import get_annotations
 from dags.signature import rename_arguments
 
 from ttsim.exceptions import TTSIMError
+from ttsim.tt.type_resolution import (
+    ResolvedKind,
+    column_kind_to_type_string,
+    resolve_kind_of_annotation,
+    vectorized_column_kind,
+)
 
 if TYPE_CHECKING:
     from types import ModuleType
@@ -79,7 +85,9 @@ def vectorize_function(
         )
 
     # Update annotations and signature to reflect that the inputs are now expected to be
-    # arrays.
+    # arrays. The annotations carry the concrete column-type aliases resolved
+    # via `ttsim.tt.type_resolution`, so the synthesized node advertises an
+    # honest producer type to the DAG's annotation-consistency check.
     vectorized.__signature__ = _create_vectorized_signature(func)  # ty: ignore[unresolved-attribute]
     vectorized.__annotations__ = _create_vectorized_annotations(func)
 
@@ -551,12 +559,27 @@ def _create_vectorized_annotations(func: Callable[..., Any]) -> dict[str, Any]:
 
 
 def scalar_type_to_array_type(orig_type: str | type) -> str:
-    """Convert a scalar type to the corresponding array type."""
+    """Convert a scalar (or already-column) type annotation to a column type.
+
+    A scalar policy function declares scalar annotations; after
+    vectorization the node operates on the corresponding column. The
+    column-kind resolution defers to `ttsim.tt.type_resolution` so the
+    build-time type-resolution sweep and the vectorizer share a single
+    annotation vocabulary.
+
+    Annotations the resolver classifies as `OTHER` — anything that is
+    neither a numeric scalar nor a numeric column, including the
+    `IntColumn | FloatColumn | BoolColumn` union used as the fallback for
+    an un-annotated node — are passed through unchanged.
+    """
     if not isinstance(orig_type, str):
         orig_type = getattr(orig_type, "__name__", str(orig_type))
-    registry = {
-        "int": "IntColumn",
-        "float": "FloatColumn",
-        "bool": "BoolColumn",
-    }
-    return registry.get(orig_type, orig_type)
+    if not orig_type or orig_type == "_empty":
+        # An un-annotated parameter or return; nothing to convert.
+        return orig_type
+    kind = resolve_kind_of_annotation(orig_type, node_name="<vectorized node>")
+    if kind == ResolvedKind.OTHER:
+        return orig_type
+    return column_kind_to_type_string(
+        vectorized_column_kind(kind, node_name="<vectorized node>"),
+    )
