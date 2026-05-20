@@ -23,13 +23,14 @@ if TYPE_CHECKING:
 
     from ttsim.typing import (
         FlatTTTargets,
-        OrderedQNames,
         PolicyEnvironment,
         QNameData,
         SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
         SpecEnvWithPartialledParamsAndScalars,
         UnorderedQNames,
     )
+
+from ttsim.typing import OrderedQNames
 
 
 @interface_function()

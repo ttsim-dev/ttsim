@@ -11,11 +11,12 @@ if TYPE_CHECKING:
 
     from ttsim.typing import (
         FlatData,
-        OrderedQNames,
         QNameData,
         SpecEnvWithProcessedParamsAndScalars,
         UnorderedQNames,
     )
+
+from ttsim.typing import OrderedQNames
 
 
 @interface_function()

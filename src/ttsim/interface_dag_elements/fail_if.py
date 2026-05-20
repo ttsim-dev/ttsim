@@ -53,7 +53,6 @@ if TYPE_CHECKING:
         NestedInputsMapper,
         NestedStrings,
         NestedTargetDict,
-        OrderedQNames,
         OrigParamSpec,
         PolicyEnvironment,
         QNameData,
@@ -62,6 +61,8 @@ if TYPE_CHECKING:
         SpecEnvWithProcessedParamsAndScalars,
         UnorderedQNames,
     )
+
+from ttsim.typing import OrderedQNames
 
 
 class KeyErrorMessage(str):

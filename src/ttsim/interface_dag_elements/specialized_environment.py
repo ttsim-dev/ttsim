@@ -30,7 +30,6 @@ if TYPE_CHECKING:
     import networkx as nx
 
     from ttsim.typing import (
-        OrderedQNames,
         PolicyEnvironment,
         QNameData,
         SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
@@ -38,7 +37,12 @@ if TYPE_CHECKING:
         SpecEnvWithProcessedParamsAndScalars,
     )
 
-from ttsim.typing import FlatTTTargets, QNameStrings, UnorderedQNames
+from ttsim.typing import (
+    FlatTTTargets,
+    OrderedQNames,
+    QNameStrings,
+    UnorderedQNames,
+)
 
 
 @interface_input(in_top_level_namespace=True)
