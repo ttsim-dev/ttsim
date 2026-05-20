@@ -8,6 +8,7 @@ import pytest
 from pandas._testing import assert_series_equal
 
 from ttsim import InputData, TTTargets, main
+from ttsim.exceptions import PolicyFunctionDefinitionError, RoundingSpecError
 from ttsim.tt import (
     RoundingSpec,
     policy_function,
@@ -85,7 +86,7 @@ def test_decorator():
 
 
 def test_malformed_rounding_specs():
-    with pytest.raises(TypeError):
+    with pytest.raises(PolicyFunctionDefinitionError):
 
         @policy_function(rounding_spec={"base": 1, "direction": "updsf"})  # ty: ignore[invalid-argument-type]
         def test_func():
@@ -253,16 +254,19 @@ def test_rounding_spec(rounding_spec, input_values, exp_output, xnp):
 @pytest.mark.parametrize(
     ("base", "direction", "to_add_after_rounding", "match"),
     [
-        (1, "upper", 0, "`direction` must be one of"),
-        (5, "closest", 0, "`direction` must be one of"),
-        ("0.1", "down", 0, "base needs to be a number"),
-        (5, "up", "0", "Additive part must be a number"),
+        (1, "upper", 0, "parameter direction='upper' violates type hint"),
+        (5, "closest", 0, "parameter direction='closest' violates type hint"),
+        ("0.1", "down", 0, "parameter base='0.1' violates type hint"),
+        (5, "up", "0", "parameter to_add_after_rounding='0' violates type hint"),
     ],
 )
 def test_rounding_spec_validation(base, direction, to_add_after_rounding, match):
-    """Test validation of RoundingSpec parameters."""
-    expected_exception = TypeError if "be a number" in match else ValueError
-    with pytest.raises(expected_exception, match=match):
+    """Reject `RoundingSpec` arguments whose type violates the field annotations.
+
+    The `@beartype`-checked constructor raises `RoundingSpecError` for a bad
+    `direction` literal or non-numeric `base` / `to_add_after_rounding`.
+    """
+    with pytest.raises(RoundingSpecError, match=match):
         RoundingSpec(
             base=base,
             direction=direction,
