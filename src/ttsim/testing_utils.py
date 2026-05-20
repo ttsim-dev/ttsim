@@ -26,19 +26,22 @@ from ttsim.main_args import InputData, OrigPolicyObjects, TTTargets
 
 # Hoisted out of TYPE_CHECKING: the beartype claw evaluates PEP 526 local-variable
 # annotations at runtime, so every annotation name used inside a function body must
-# be a real runtime name.
-from ttsim.typing import NestedData, NestedInputStructureDict
+# be a real runtime name. `FlatColumnObjectsParamFunctions` / `FlatOrigParamSpecs`
+# appear on a beartype-checked signature (`check_env_completeness`), so they too need
+# to resolve at runtime; both have runtime-resolvable stubs in `ttsim.typing`.
+from ttsim.typing import (
+    FlatColumnObjectsParamFunctions,
+    FlatOrigParamSpecs,
+    NestedData,
+    NestedInputStructureDict,
+)
 
 # Set display options to show all columns without truncation
 pd.set_option("display.max_columns", None)
 pd.set_option("display.width", None)
 
 if TYPE_CHECKING:
-    from ttsim.typing import (
-        FlatColumnObjectsParamFunctions,
-        FlatOrigParamSpecs,
-        PolicyEnvironment,
-    )
+    from ttsim.typing import PolicyEnvironment
 
 
 @lru_cache(maxsize=100)
