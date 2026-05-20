@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import datetime
 import inspect
 from functools import lru_cache
+from pathlib import Path
+from types import ModuleType
 from typing import TYPE_CHECKING, Literal
 
 import dags
@@ -26,10 +29,6 @@ pd.set_option("display.max_columns", None)
 pd.set_option("display.width", None)
 
 if TYPE_CHECKING:
-    import datetime
-    from pathlib import Path
-    from types import ModuleType
-
     from ttsim.typing import (
         FlatColumnObjectsParamFunctions,
         FlatOrigParamSpecs,
