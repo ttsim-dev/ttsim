@@ -200,8 +200,8 @@ class RawParam(ParamObject):
 class PiecewisePolynomialInterval:
     """A single interval of a piecewise polynomial."""
 
-    intercept: float | Float[Array, ""]
-    coefficients: Float[Array, " n_coefficients"]
+    intercept: float | Float[Array, ""] | Int[Array, ""]
+    coefficients: Float[Array, " n_coefficients"] | Int[Array, " n_coefficients"]
 
     _MIN_COEFFICIENTS_LINEAR = 1
     _MIN_COEFFICIENTS_QUADRATIC = 2
@@ -245,9 +245,14 @@ class PiecewisePolynomialParamValue:
         (n_intervals, 1) with all zeros.
     """
 
-    thresholds: Float[Array, " n_thresholds"]
-    intercepts: Float[Array, " n_intervals"]
-    coefficients: Float[Array, "n_intervals n_coefficients"]
+    # Thresholds, intercepts, and coefficients are parsed from YAML and may be
+    # integer- or float-dtyped, so each accepts both jaxtyping array kinds.
+    thresholds: Float[Array, " n_thresholds"] | Int[Array, " n_thresholds"]
+    intercepts: Float[Array, " n_intervals"] | Int[Array, " n_intervals"]
+    coefficients: (
+        Float[Array, "n_intervals n_coefficients"]
+        | Int[Array, "n_intervals n_coefficients"]
+    )
 
     def __getitem__(self, index: int) -> PiecewisePolynomialInterval:
         return PiecewisePolynomialInterval(
