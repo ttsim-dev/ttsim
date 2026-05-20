@@ -10,7 +10,7 @@ from collections.abc import (
 )
 from dataclasses import dataclass
 from types import ModuleType
-from typing import TYPE_CHECKING, Any, Literal, cast
+from typing import Any, Literal, cast
 
 import dags.tree as dt
 import networkx as nx
@@ -41,28 +41,26 @@ from ttsim.tt.param_objects import (
     ParamObject,
 )
 
-if TYPE_CHECKING:
-    from collections.abc import Iterable
-
-    from ttsim.interface_dag_elements.input_data import FlatData
-    from ttsim.typing import (
-        FlatColumnObjectsParamFunctions,
-        FlatOrigParamSpecs,
-        FlatTTTargets,
-        NestedData,
-        NestedInputsMapper,
-        NestedStrings,
-        NestedTargetDict,
-        OrigParamSpec,
-        PolicyEnvironment,
-        QNameData,
-        SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
-        SpecEnvWithPartialledParamsAndScalars,
-        SpecEnvWithProcessedParamsAndScalars,
-        UnorderedQNames,
-    )
-
-from ttsim.typing import OrderedQNames
+# Hoisted out of `TYPE_CHECKING` so the beartype claw can resolve these
+# forward references when decorating this module's functions.
+from ttsim.typing import (
+    FlatColumnObjectsParamFunctions,
+    FlatData,
+    FlatOrigParamSpecs,
+    FlatTTTargets,
+    NestedData,
+    NestedInputsMapper,
+    NestedStrings,
+    NestedTargetDict,
+    OrderedQNames,
+    OrigParamSpec,
+    PolicyEnvironment,
+    QNameData,
+    SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
+    SpecEnvWithPartialledParamsAndScalars,
+    SpecEnvWithProcessedParamsAndScalars,
+    UnorderedQNames,
+)
 
 
 class KeyErrorMessage(str):

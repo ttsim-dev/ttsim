@@ -76,7 +76,6 @@ def piecewise_polynomial(
         | Float[Array, ""]
         | Int[Array, ""]
         | float
-        | int
     ),
     parameters: PiecewisePolynomialParamValue,
     xnp: ModuleType,

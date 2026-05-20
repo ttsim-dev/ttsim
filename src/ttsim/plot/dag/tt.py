@@ -4,14 +4,16 @@ import copy
 import itertools
 import textwrap
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal
+from typing import Any, Literal
 
 import dags.tree as dt
 import networkx as nx
+import plotly.graph_objects as go
 
 from ttsim.entry_point import main
 from ttsim.interface_dag_elements.fail_if import format_errors_and_warnings
 from ttsim.main_args import (
+    InputData,
     Labels,
     OrigPolicyObjects,
     TTTargets,
@@ -23,23 +25,15 @@ from ttsim.tt import (
     ParamObject,
     TimeConversionFunction,
 )
+
+# Hoisted out of `TYPE_CHECKING` so the beartype claw can resolve these
+# forward references when decorating this module's functions.
 from ttsim.typing import (
     DashedISOString,
     PolicyEnvironment,
+    QNameData,
+    SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
 )
-
-if TYPE_CHECKING:
-    from pathlib import Path
-
-    import plotly.graph_objects as go
-
-    from ttsim.main_args import InputData, Labels
-    from ttsim.typing import (
-        DashedISOString,
-        PolicyEnvironment,
-        QNameData,
-        SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
-    )
 
 
 def tt(
