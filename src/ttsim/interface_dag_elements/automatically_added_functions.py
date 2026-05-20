@@ -210,7 +210,7 @@ def create_time_conversion_functions(
 def _create_one_set_of_time_conversion_functions(
     base_name: str,
     qname_source: str,
-    element: ColumnObject,
+    element: ColumnObject | ParamFunction | ScalarParam,
     time_unit: str,
     grouping_suffix: str,
     time_units: OrderedQNames,
@@ -221,6 +221,13 @@ def _create_one_set_of_time_conversion_functions(
         if isinstance(element, ColumnFunction)
         else set()
     )
+    # `ScalarParam.start_date`/`end_date` are typed `date | None`, but every
+    # convertible element in the policy environment carries concrete dates
+    # (column objects and param functions always do; scalar params are built
+    # with explicit `start_date`/`end_date`). Pin the dates here so the
+    # `TimeConversionFunction` constructor receives non-optional values.
+    start_date = element.start_date or DEFAULT_START_DATE
+    end_date = element.end_date or DEFAULT_END_DATE
 
     for target_time_unit in [tu for tu in time_units if tu != time_unit]:
         new_name = f"{base_name}_{target_time_unit}{grouping_suffix}"
@@ -246,8 +253,8 @@ def _create_one_set_of_time_conversion_functions(
                 ],
             ),
             source=qname_source,
-            start_date=element.start_date,
-            end_date=element.end_date,
+            start_date=start_date,
+            end_date=end_date,
             description=(
                 f"Time conversion of {dt.tree_path_from_qname(qname_source)} "
                 f"from per {time_unit} to per {target_time_unit}"

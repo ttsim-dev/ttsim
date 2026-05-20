@@ -9,8 +9,14 @@ from jaxtyping import Bool, Float, Int
 
 from ttsim.typing import NestedLookupDict
 
+# Backend-agnostic array type: union the (optional) JAX `Array` with
+# `np.ndarray` so `Float[Array, ...]`/`Int[Array, ...]` annotations accept
+# NumPy arrays under the JAX env. Bare `jax.Array` would make the package
+# claw reject every NumPy-backed value (see `ttsim.typing` column aliases).
 try:
-    from jax import Array
+    from jax import Array as _JaxArray
+
+    Array = _JaxArray | np.ndarray
 except ImportError:
     Array = np.ndarray
 
@@ -257,10 +263,16 @@ def get_consecutive_int_lookup_table_param_value(
     """Get the parameters for a N-dimensional lookup table."""
     bases_to_substract = {}
 
-    # Function is recursive to step through all levels of dict
+    # Function is recursive to step through all levels of dict. The leaves of
+    # `NestedLookupDict` may be int, float, or bool, so the produced array can
+    # be of any of those dtypes -- match `values_to_look_up`'s union.
     def process_level(
         i: int, level_i_dict: NestedLookupDict
-    ) -> Float[Array | np.ndarray, ...]:
+    ) -> (
+        Float[Array | np.ndarray, ...]
+        | Int[Array | np.ndarray, ...]
+        | Bool[Array | np.ndarray, ...]
+    ):
         sorted_keys = sorted(level_i_dict.keys())
         bases_to_substract[i] = min(xnp.asarray(sorted_keys))
         if isinstance(level_i_dict[sorted_keys[0]], dict):

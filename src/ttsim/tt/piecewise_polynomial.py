@@ -14,12 +14,16 @@ from ttsim.tt.interval_utils import (
 )
 from ttsim.tt.param_objects import PiecewisePolynomialParamValue
 
+# Backend-agnostic array type: union the (optional) JAX `Array` with
+# `numpy.ndarray` so `Float[Array, ...]` annotations accept NumPy arrays
+# under the JAX env. Bare `jax.Array` would make the package claw reject
+# every NumPy-backed value (see `ttsim.typing` column aliases).
 try:
-    from jax import Array
-except ImportError:
-    import numpy as _np
+    from jax import Array as _JaxArray
 
-    Array = _np.ndarray
+    Array = _JaxArray | numpy.ndarray
+except ImportError:
+    Array = numpy.ndarray
 
 if TYPE_CHECKING:
     from types import ModuleType
