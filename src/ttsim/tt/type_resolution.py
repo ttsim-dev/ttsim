@@ -184,8 +184,10 @@ def resolve_kind_of_annotation(
             f"with a concrete column or scalar type."
         )
         raise TypeResolutionError(msg)
-    key = annotation if isinstance(annotation, str) else getattr(
-        annotation, "__name__", str(annotation)
+    key = (
+        annotation
+        if isinstance(annotation, str)
+        else getattr(annotation, "__name__", str(annotation))
     )
     direct = _ANNOTATION_STRING_TO_KIND.get(key)
     if direct is not None:

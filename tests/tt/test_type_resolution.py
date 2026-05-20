@@ -50,6 +50,7 @@ _AGG_TYPE_TO_PRIMITIVE = {
     AggType.ALL: grouped_all,
 }
 
+
 def _column_kind_of_overload_annotation(annotation: object) -> ResolvedKind:
     """Map an `@overload` column annotation to its `ResolvedKind`.
 
@@ -70,9 +71,9 @@ def _column_kind_of_overload_annotation(annotation: object) -> ResolvedKind:
     raise AssertionError(msg)
 
 
-def _overload_rules(primitive: typing.Callable[..., object]) -> dict[
-    ResolvedKind, ResolvedKind
-]:
+def _overload_rules(
+    primitive: typing.Callable[..., object],
+) -> dict[ResolvedKind, ResolvedKind]:
     """Extract the input-kind -> output-kind mapping from a primitive's overloads."""
     rules: dict[ResolvedKind, ResolvedKind] = {}
     for overload in typing.get_overloads(primitive):
@@ -165,8 +166,7 @@ def test_resolve_kind_of_annotation_live_jaxtyping_type() -> None:
     from ttsim.typing import IntColumn  # noqa: PLC0415
 
     assert (
-        resolve_kind_of_annotation(IntColumn, node_name="x")
-        == ResolvedKind.INT_COLUMN
+        resolve_kind_of_annotation(IntColumn, node_name="x") == ResolvedKind.INT_COLUMN
     )
 
 
