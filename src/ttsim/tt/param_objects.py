@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any, Literal, cast
 import numpy as np
 from jaxtyping import Bool, Float, Int
 
-from ttsim.typing import NestedLookupDict
+from ttsim.typing import DictParamValue, NestedLookupDict
 
 # Backend-agnostic array type: union the (optional) JAX `Array` with
 # `np.ndarray` so `Float[Array, ...]`/`Int[Array, ...]` annotations accept
@@ -76,17 +76,11 @@ class ScalarParam(ParamObject):
 @dataclass(frozen=True)
 class DictParam(ParamObject):
     """
-    A parameter directly read from a YAML file that is a flat dictionary.
+    A parameter directly read from a YAML file that is a (possibly nested)
+    dictionary.
     """
 
-    value: (
-        dict[str, int]
-        | dict[str, float]
-        | dict[str, bool]
-        | dict[int, int]
-        | dict[int, float]
-        | dict[int, bool]
-    ) = PLACEHOLDER_FIELD
+    value: DictParamValue = PLACEHOLDER_FIELD
     note: str | None = None
     reference: str | None = None
 

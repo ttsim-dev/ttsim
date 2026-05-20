@@ -4,6 +4,7 @@ import datetime
 from typing import Any
 
 import pytest
+from beartype.roar import BeartypeCallHintViolation
 from mettsim import middle_earth
 
 from ttsim import Labels, MainTarget, OrigPolicyObjects, TTTargets, main, plot
@@ -510,9 +511,8 @@ def test_fail_if_selection_type_is_all_paths_and_less_than_two_primary_nodes():
 
 
 def test_fail_if_invalid_selection_type():
-    with pytest.raises(
-        ValueError, match="Invalid selection type: invalid_selection_type"
-    ):
+    """An invalid `selection_type` is rejected by the beartype claw."""
+    with pytest.raises(BeartypeCallHintViolation, match="selection_type"):
         plot.dag.tt(
             root=middle_earth.ROOT_PATH,
             primary_nodes={"payroll_tax__amount_y"},

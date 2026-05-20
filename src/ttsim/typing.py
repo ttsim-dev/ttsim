@@ -287,6 +287,19 @@ else:
     NestedLookupDict = dict[int, object]
 
 
+# `DictParamValue`: the value of a `DictParam` read from YAML. Keys are
+# strings or integers; leaves are YAML scalars or further nested dicts
+# (dict params may be merged recursively across policy dates).
+if TYPE_CHECKING:
+    DictParamValue: TypeAlias = dict[
+        str | int, "int | float | bool | str | DictParamValue"
+    ]
+else:
+    # beartype cannot resolve the stringified recursive inner name; widen the
+    # runtime form to a one-level dict with a bare `dict` for nested levels.
+    DictParamValue = dict[str | int, int | float | bool | str | dict]
+
+
 if not TYPE_CHECKING:
     # Loose runtime stubs for the aliases that reference ColumnObject etc.;
     # importing the precise definitions at runtime would create a cycle

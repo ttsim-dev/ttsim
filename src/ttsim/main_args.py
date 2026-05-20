@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, TypeVar
 
+import networkx as nx
 import pandas as pd
 from beartype import beartype
 
@@ -28,8 +29,6 @@ from ttsim.typing import (
 
 if TYPE_CHECKING:
     from pathlib import Path
-
-    import networkx as nx
 
     from ttsim.typing import (
         FlatColumnObjectsParamFunctions,

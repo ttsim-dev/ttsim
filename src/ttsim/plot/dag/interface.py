@@ -6,6 +6,10 @@ from typing import TYPE_CHECKING, Any, cast
 import dags
 import dags.tree as dt
 
+# Hoisted out of `TYPE_CHECKING` so the beartype claw can resolve the
+# `go.Figure` return annotation on the decorated functions below.
+import plotly.graph_objects as go
+
 from ttsim.entry_point import load_flat_interface_functions_and_inputs
 from ttsim.interface_dag_elements.interface_node_objects import (
     FailFunction,
@@ -19,8 +23,6 @@ from ttsim.plot.dag.shared import NodeMetaData, get_figure
 
 if TYPE_CHECKING:
     from pathlib import Path
-
-    import plotly.graph_objects as go
 
 INTERFACE_COLORMAP: dict[tuple[str, ...] | str, str] = {
     ("policy_date",): "gold",

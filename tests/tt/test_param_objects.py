@@ -440,9 +440,9 @@ def test_dict_param_rejects_note_key():
 
 
 def test_dict_param_rejects_reference_key():
-    """Test DictParam rejects a string-valued 'reference' entry via the claw."""
-    with pytest.raises(BeartypeCallHintViolation, match="parameter value"):
-        DictParam(value={"reference": "some_ref", "other": 2})  # ty: ignore[invalid-argument-type]
+    """Test DictParam raises ValueError when 'reference' is a key in value."""
+    with pytest.raises(ValueError, match="'note' and 'reference' cannot be keys"):
+        DictParam(value={"reference": "some_ref", "other": 2})
 
 
 # =============================================================================
