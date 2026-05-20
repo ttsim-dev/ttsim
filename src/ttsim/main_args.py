@@ -10,7 +10,6 @@ from beartype import beartype
 from ttsim._beartype_conf import INPUT_DATA_CONF, TT_TARGETS_CONF
 from ttsim.typing import (
     FlatColumnObjectsParamFunctions,
-    FlatData,
     FlatOrigParamSpecs,
     NestedData,
     NestedStrings,
@@ -22,6 +21,9 @@ from ttsim.typing import (
     SpecEnvWithPartialledParamsAndScalars,
     SpecEnvWithProcessedParamsAndScalars,
     UnorderedQNames,
+    UserFlatData,
+    UserNestedData,
+    UserQNameData,
 )
 
 if TYPE_CHECKING:
@@ -106,9 +108,13 @@ class DfAndMapper:
 class InputData(MainArg):
     df_and_mapper: DfAndMapper | None
     df_with_nested_columns: pd.DataFrame | None
-    tree: NestedData | None
-    flat: FlatData | None
-    qname: QNameData | None
+    # The data factories are user-input boundaries (Decision 8 / GEP-09), so
+    # they take the wide `User*` aliases: users legitimately pass `pd.Series`
+    # and plain sequences alongside backend arrays. Canonicalization to the
+    # narrow `NestedData` / `FlatData` / `QNameData` forms happens downstream.
+    tree: UserNestedData | None
+    flat: UserFlatData | None
+    qname: UserQNameData | None
 
     def __init__(self, *args: Any, **kwargs: Any):  # noqa: ANN401, ARG002, ANN204
         raise RuntimeError("Use any of the class methods to instantiate this class.")
@@ -137,19 +143,19 @@ class InputData(MainArg):
 
     @classmethod
     @beartype(conf=INPUT_DATA_CONF)
-    def tree(cls, tree: NestedData) -> InputData:
+    def tree(cls, tree: UserNestedData) -> InputData:
         """A nested dictionary mapping expected input names to vectors of data."""
         return _set_single_field(cls=cls, field_name="tree", field_value=tree)
 
     @classmethod
     @beartype(conf=INPUT_DATA_CONF)
-    def flat(cls, flat: FlatData) -> InputData:
+    def flat(cls, flat: UserFlatData) -> InputData:
         """A dictionary mapping tree paths to vectors of data."""
         return _set_single_field(cls=cls, field_name="flat", field_value=flat)
 
     @classmethod
     @beartype(conf=INPUT_DATA_CONF)
-    def qname(cls, qname: QNameData) -> InputData:
+    def qname(cls, qname: UserQNameData) -> InputData:
         """A dictionary mapping qualified names to vectors of data."""
         return _set_single_field(cls=cls, field_name="qname", field_value=qname)
 

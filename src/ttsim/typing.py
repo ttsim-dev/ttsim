@@ -107,6 +107,29 @@ else:
 FlatData: TypeAlias = Mapping[tuple[str, ...], FloatColumn | IntColumn | BoolColumn]
 QNameData: TypeAlias = Mapping[str, FloatColumn | IntColumn | BoolColumn]
 
+# User-boundary data aliases (Decision 8 / GEP-09). User-facing `InputData.*`
+# factories accept a wider leaf type than the canonical column aliases above:
+# users legitimately pass `pd.Series` and plain Python lists/sequences of
+# numbers, which internal code canonicalizes to backend arrays. Keep these
+# strictly at the `@beartype`-decorated user boundary; internal call sites use
+# the narrow `NestedData` / `FlatData` / `QNameData` forms.
+UserColumn: TypeAlias = (
+    FloatColumn | IntColumn | BoolColumn | pd.Series | list[float | int | bool]
+)
+# `UserNestedData` is a recursive tree like `NestedData`; use the same
+# two-definition pattern (precise for ty, widened one-level Mapping for the
+# beartype claw, which cannot resolve the stringified recursive inner name).
+if TYPE_CHECKING:
+    UserNestedData: TypeAlias = Mapping[str, "UserColumn | UserNestedData"]
+else:
+    UserNestedData = Mapping[str, UserColumn | Mapping]
+# `UserNestedData`: user-boundary tree mapping TTSIM paths to columns, Series,
+# or sequences.
+# `UserFlatData`: user-boundary flat mapping of tree paths to the same.
+# `UserQNameData`: user-boundary mapping of qualified names to the same.
+UserFlatData: TypeAlias = Mapping[tuple[str, ...], UserColumn]
+UserQNameData: TypeAlias = Mapping[str, UserColumn]
+
 # `FlatTTTargets`: a flattened target tree, mapping each qualified name to its
 # leaf value (`None` to compute the target, a string to rename it). Produced by
 # `dags.tree.flatten_to_qnames` on a `NestedTargetDict` / `NestedStrings`.
