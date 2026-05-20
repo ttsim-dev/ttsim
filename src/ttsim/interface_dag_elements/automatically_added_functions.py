@@ -5,7 +5,7 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING, cast, overload
 
 import dags.tree as dt
-from dags import get_annotations, get_free_arguments, rename_arguments
+from dags import get_annotations, get_free_arguments, rename_arguments, with_signature
 
 from ttsim.interface_dag_elements.shared import (
     get_base_name_and_grouping_suffix,
@@ -13,7 +13,7 @@ from ttsim.interface_dag_elements.shared import (
     get_re_pattern_for_specific_time_units_and_groupings,
     group_pattern,
 )
-from ttsim.tt.aggregation import grouped_sum
+from ttsim.tt.aggregation import AggType, grouped_sum
 from ttsim.tt.column_objects_param_function import (
     DEFAULT_END_DATE,
     DEFAULT_START_DATE,
@@ -21,9 +21,19 @@ from ttsim.tt.column_objects_param_function import (
     ColumnFunction,
     ColumnObject,
     ParamFunction,
+    PolicyInput,
     TimeConversionFunction,
 )
 from ttsim.tt.param_objects import ScalarParam
+from ttsim.tt.type_resolution import (
+    ResolvedKind,
+    TypeResolutionError,
+    column_kind_to_type_string,
+    resolve_agg_output_kind,
+    resolve_kind_of_annotation,
+    resolve_kind_of_column_function,
+    vectorized_column_kind,
+)
 from ttsim.typing import (
     FlatColumnObjects,
     OrderedQNames,
@@ -289,10 +299,33 @@ def _create_function_for_time_unit(
 
 def create_agg_by_group_functions(
     column_functions: dict[str, ColumnFunction],
+    qname_policy_environment: PolicyEnvironment,
     input_columns: UnorderedQNames,
     tt_targets: QNameStrings,
     grouping_levels: OrderedQNames,
 ) -> FlatColumnObjects:
+    """Create auto-aggregation functions, each with a concrete return annotation.
+
+    Auto-aggregations are sum aggregations of an individual-level source
+    column. The source column's kind (float / int / bool) determines the
+    aggregation's output kind via the hand-written rule table in
+    `ttsim.tt.type_resolution` (SUM: float -> float, int -> int,
+    bool -> int). The synthesized `grouped_sum` wrapper is stamped with that
+    concrete return annotation so the DAG's annotation-consistency check
+    never sees an imprecise `FloatColumn | IntColumn` union for the node.
+
+    Args:
+        column_functions: Qualified-name to column function mapping.
+        qname_policy_environment: The flat policy environment, used to look
+            up `PolicyInput` declarations of pure input-column sources so
+            their dtype can be resolved.
+        input_columns: The qualified names of the input data columns.
+        tt_targets: The requested targets.
+        grouping_levels: The grouping levels.
+
+    Returns:
+        Qualified-name to `AggByGroupFunction` mapping.
+    """
     gp = group_pattern(grouping_levels)
     all_functions_and_data = {
         **column_functions,
@@ -336,10 +369,37 @@ def create_agg_by_group_functions(
                 continue
 
             group_id = match.group("group")
-            mapper = {"group_id": f"{group_id}_id", "column": base_name_with_time_unit}
-            agg_func = rename_arguments(
-                func=grouped_sum,
-                mapper=mapper,
+            group_id_name = f"{group_id}_id"
+            mapper = {"group_id": group_id_name, "column": base_name_with_time_unit}
+            source_kind = _resolve_source_column_kind(
+                source_name=base_name_with_time_unit,
+                column_functions=column_functions,
+                qname_policy_environment=qname_policy_environment,
+            )
+            output_kind = resolve_agg_output_kind(
+                AggType.SUM,
+                source_kind,
+                node_name=abgfn,
+            )
+            # Stamp a concrete return annotation onto the `grouped_sum`
+            # wrapper. `grouped_sum`'s runtime implementation signature
+            # widens to `FloatColumn | IntColumn`; left untouched, that
+            # union becomes the node's producer type and the DAG's
+            # annotation-consistency check rejects it against a concretely
+            # typed consumer. `with_signature` writes the resolved type
+            # onto `__signature__`, which `dags` reads when building the
+            # DAG.
+            return_type_string = column_kind_to_type_string(output_kind)
+            agg_func = with_signature(
+                rename_arguments(func=grouped_sum, mapper=mapper),
+                args={
+                    base_name_with_time_unit: column_kind_to_type_string(source_kind),
+                    group_id_name: "IntColumn",
+                    "num_segments": "int",
+                    "backend": "Literal['numpy', 'jax']",
+                },
+                return_annotation=return_type_string,
+                enforce=False,
             )
             out[abgfn] = AggByGroupFunction(
                 leaf_name=dt.tree_path_from_qname(abgfn)[-1],
@@ -353,6 +413,58 @@ def create_agg_by_group_functions(
                 ),
             )
     return out
+
+
+def _resolve_source_column_kind(
+    source_name: str,
+    column_functions: dict[str, ColumnFunction],
+    qname_policy_environment: PolicyEnvironment,
+) -> ResolvedKind:
+    """Resolve the column kind of an auto-aggregation source column.
+
+    The source of an auto-aggregation is an individual-level column. It is
+    either a column function in the DAG (resolve from its return
+    annotation) or a pure input column declared by a `PolicyInput` (resolve
+    from the input's `data_type`). Either annotation may be scalar-typed
+    (a not-yet-vectorized scalar policy function, a `PolicyInput` declared
+    `-> int`); `vectorized_column_kind` promotes a scalar kind to the
+    column kind the node carries once it operates on data.
+
+    Args:
+        source_name: The qualified name of the source column.
+        column_functions: Qualified-name to column function mapping.
+        qname_policy_environment: The flat policy environment.
+
+    Returns:
+        The source column's `ResolvedKind` (always a column kind).
+
+    Raises:
+        TypeResolutionError: If neither a column function nor a typed
+            `PolicyInput` declares the source's kind.
+    """
+    source_function = column_functions.get(source_name)
+    if source_function is not None:
+        kind = resolve_kind_of_column_function(
+            source_function,
+            node_name=source_name,
+        )
+        return vectorized_column_kind(kind, node_name=source_name)
+
+    policy_input = qname_policy_environment.get(source_name)
+    if isinstance(policy_input, PolicyInput):
+        kind = resolve_kind_of_annotation(
+            policy_input.data_type,
+            node_name=source_name,
+        )
+        return vectorized_column_kind(kind, node_name=source_name)
+
+    msg = (
+        f"Cannot resolve the dtype of auto-aggregation source column "
+        f"{source_name!r}: it is neither a column function in the DAG nor a "
+        f"`PolicyInput` with a declared `data_type`. A concrete source dtype "
+        f"is required to synthesize a typed aggregation wrapper."
+    )
+    raise TypeResolutionError(msg)
 
 
 def _get_potential_agg_by_group_function_names_from_function_arguments(

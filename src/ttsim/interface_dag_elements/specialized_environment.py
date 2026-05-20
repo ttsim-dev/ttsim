@@ -144,6 +144,7 @@ def _add_derived_functions(
     # Create aggregation functions by group.
     aggregate_by_group_functions = create_agg_by_group_functions(
         column_functions=column_functions,
+        qname_policy_environment=qname_env_without_tree_logic,
         input_columns=input_columns,
         tt_targets=tt_targets,
         grouping_levels=grouping_levels,
