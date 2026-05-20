@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime
 import functools
+from collections.abc import Callable
 from types import ModuleType
 from typing import Literal
 
@@ -289,7 +290,15 @@ def with_partialled_params_and_scalars(
     return processed_functions
 
 
-def _apply_rounding(element: ColumnFunction, xnp: ModuleType) -> ColumnFunction:
+def _apply_rounding(
+    element: ColumnFunction, xnp: ModuleType
+) -> ColumnFunction | Callable[..., object]:
+    """Apply the element's rounding spec, if any.
+
+    `RoundingSpec.apply_rounding` returns a plain wrapper function, not a
+    `ColumnFunction`, so the return type is the union of the unrounded
+    `ColumnFunction` and the rounded plain callable.
+    """
     return (
         element.rounding_spec.apply_rounding(element, xnp=xnp)  # ty: ignore[unresolved-attribute]
         if getattr(element, "rounding_spec", False)

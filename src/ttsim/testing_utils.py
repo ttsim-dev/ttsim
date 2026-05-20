@@ -5,7 +5,7 @@ import inspect
 from functools import lru_cache
 from pathlib import Path
 from types import ModuleType
-from typing import TYPE_CHECKING, Any, Literal
+from typing import Any, Literal
 
 import dags
 import dags.tree as dt
@@ -29,19 +29,19 @@ from ttsim.main_args import InputData, OrigPolicyObjects, TTTargets
 # be a real runtime name. `FlatColumnObjectsParamFunctions` / `FlatOrigParamSpecs`
 # appear on a beartype-checked signature (`check_env_completeness`), so they too need
 # to resolve at runtime; both have runtime-resolvable stubs in `ttsim.typing`.
+# `PolicyEnvironment` is the return annotation of the claw-decorated
+# `cached_policy_environment`, so it must resolve at runtime too.
 from ttsim.typing import (
     FlatColumnObjectsParamFunctions,
     FlatOrigParamSpecs,
     NestedData,
     NestedInputStructureDict,
+    PolicyEnvironment,
 )
 
 # Set display options to show all columns without truncation
 pd.set_option("display.max_columns", None)
 pd.set_option("display.width", None)
-
-if TYPE_CHECKING:
-    from ttsim.typing import PolicyEnvironment
 
 
 @lru_cache(maxsize=100)
