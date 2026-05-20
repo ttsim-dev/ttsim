@@ -76,7 +76,9 @@ class KeyErrorMessage(str):
 class ConflictingActivePeriodsError(TTSIMError):
     def __init__(
         self,
-        affected_column_objects: list[ColumnObject],
+        affected_column_objects: list[
+            ColumnObject | ParamFunction | _ParamWithActivePeriod
+        ],
         path: OrderedQNames,
         overlap_start: datetime.date,
         overlap_end: datetime.date,
@@ -211,7 +213,7 @@ def active_periods_overlap(
         for (start1, end1), (start2, end2) in itertools.combinations(active_period, 2):
             if start1 <= end2 and start2 <= end1:
                 raise ConflictingActivePeriodsError(
-                    affected_column_objects=cast("list[ColumnObject]", objects),
+                    affected_column_objects=objects,
                     path=path,
                     overlap_start=max(start1, start2),
                     overlap_end=min(end1, end2),
