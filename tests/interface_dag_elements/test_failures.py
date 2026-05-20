@@ -69,8 +69,8 @@ _GENERIC_PARAM_HEADER = {
     "reference_period": None,
 }
 _GENERIC_PARAM_SPEC = {
-    "start_date": "2024-01-01",
-    "end_date": "2024-12-31",
+    "start_date": datetime.date(2024, 1, 1),
+    "end_date": datetime.date(2024, 12, 31),
     **_GENERIC_PARAM_HEADER,
 }
 
