@@ -31,7 +31,7 @@ from ttsim.tt import (
 )
 
 if TYPE_CHECKING:
-    from ttsim.typing import FloatColumn, IntColumn, RawParamValue
+    from ttsim.typing import IntColumn, RawParamValue
 
 
 @policy_input()
@@ -708,7 +708,7 @@ def test_user_provided_aggregate_by_p_id_specs(
     xnp,
 ):
     @policy_function(leaf_name=leaf_name, vectorization_strategy="not_required")
-    def source() -> FloatColumn:
+    def source() -> IntColumn:
         return xnp.array([100, 200, 300])
 
     policy_environment = merge_trees(
