@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from types import ModuleType
 from typing import TYPE_CHECKING, Any, Literal, cast
 
+import numpy as np
 from jaxtyping import Bool, Float, Int
 
 from ttsim.typing import NestedLookupDict
@@ -11,9 +12,7 @@ from ttsim.typing import NestedLookupDict
 try:
     from jax import Array
 except ImportError:
-    import numpy as _np
-
-    Array = _np.ndarray
+    Array = np.ndarray
 
 PLACEHOLDER_VALUE = object()
 PLACEHOLDER_FIELD = field(default_factory=lambda: PLACEHOLDER_VALUE)
@@ -130,19 +129,19 @@ class ConsecutiveIntLookupTableParamValue:
     bases_to_subtract: Int[Array, "n_rows n_cols"]
     lookup_multipliers: Int[Array, "n_rows n_cols"]
     values_to_look_up: (
-        Float[Array, "n_rows n_cols"]
-        | Int[Array, "n_rows n_cols"]
-        | Bool[Array, "n_rows n_cols"]
+        Float[Array | np.ndarray, ...]
+        | Int[Array | np.ndarray, ...]
+        | Bool[Array | np.ndarray, ...]
     )
     xnp: ModuleType
 
     def __init__(
         self,
         xnp: ModuleType,
-        values_to_look_up: Float[Array, "n_rows n_cols"]
-        | Int[Array, "n_rows n_cols"]
-        | Bool[Array, "n_rows n_cols"],
-        bases_to_subtract: Int[Array, "n_rows n_cols"],
+        values_to_look_up: Float[Array | np.ndarray, ...]
+        | Int[Array | np.ndarray, ...]
+        | Bool[Array | np.ndarray, ...],
+        bases_to_subtract: Int[Array | np.ndarray, ...],
     ) -> None:
         self.xnp = xnp
         self.values_to_look_up = values_to_look_up.flatten()
@@ -259,7 +258,7 @@ def get_consecutive_int_lookup_table_param_value(
     # Function is recursive to step through all levels of dict
     def process_level(
         i: int, level_i_dict: NestedLookupDict
-    ) -> Float[Array, "n_rows n_cols"]:
+    ) -> Float[Array | np.ndarray, ...]:
         sorted_keys = sorted(level_i_dict.keys())
         bases_to_substract[i] = min(xnp.asarray(sorted_keys))
         if isinstance(level_i_dict[sorted_keys[0]], dict):
