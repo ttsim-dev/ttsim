@@ -43,7 +43,9 @@ class ParamObject:
             "Euros / Square Meter",
         ]
     ) = None
-    reference_period: None | Literal["Year", "Quarter", "Month", "Week", "Day"] = None
+    reference_period: (
+        None | Literal["Year", "Quarter", "Month", "Week", "Day", "Hour"]
+    ) = None
     name: dict[Literal["de", "en"], str] | None = None
     description: dict[Literal["de", "en"], str] | None = None
 
