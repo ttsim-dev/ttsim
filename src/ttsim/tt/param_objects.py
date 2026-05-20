@@ -162,8 +162,26 @@ class ConsecutiveIntLookupTableParamValue:
         )
 
     def look_up(
-        self: ConsecutiveIntLookupTableParamValue, *args: int
-    ) -> float | int | bool:
+        self: ConsecutiveIntLookupTableParamValue,
+        *args: int | np.integer | Int[Array | np.ndarray, ...],
+    ) -> (
+        float
+        | int
+        | bool
+        | np.floating
+        | np.integer
+        | np.bool_
+        | Float[Array | np.ndarray, ...]
+        | Int[Array | np.ndarray, ...]
+        | Bool[Array | np.ndarray, ...]
+    ):
+        """Look up value(s) for the given index argument(s).
+
+        Each argument is a scalar integer index or an integer array of
+        indices (one per table dimension). Scalar arguments yield a scalar
+        result — a 0-d array under JAX, a numpy scalar under NumPy; array
+        arguments yield an array of the looked-up values.
+        """
         scalar_input = all(getattr(a, "ndim", 0) == 0 for a in args)
         index = self.xnp.asarray(args)
         if scalar_input:
