@@ -2,6 +2,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+# Hoisted out of `TYPE_CHECKING` so the beartype claw can resolve these
+# forward references when decorating this module's functions.
+from ttsim.typing import BoolColumn, FloatColumn, IntColumn
+
 try:
     import jax.numpy as jnp
     from jax.ops import (
