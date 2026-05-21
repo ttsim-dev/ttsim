@@ -9,6 +9,7 @@ import networkx as nx
 import optree
 import pandas as pd
 import pytest
+from beartype.roar import BeartypeCallHintParamViolation
 from mettsim import middle_earth
 
 from ttsim import (
@@ -456,9 +457,10 @@ def test_fail_if_main_targets_not_among_nodes(main_targets, nodes, error_match) 
 
 
 def test_harmonize_inputs_main_args_input():
+    df = pd.DataFrame({"a": [1], "b": [2], "p_id": [0]})
     x = {
         "input_data": InputData.df_and_mapper(
-            df="cannot use df because comparison fails",  # ty: ignore[invalid-argument-type]
+            df=df,
             mapper={"c": "a", "d": "b", "p_id": "p_id"},
         ),
         "tt_targets": TTTargets.tree({"e": "f"}),
@@ -472,8 +474,8 @@ def test_harmonize_inputs_main_args_input():
     }
     harmonized = _harmonize_inputs(inputs=x)
 
+    assert harmonized.pop("input_data__df_and_mapper__df") is df
     assert harmonized == {
-        "input_data__df_and_mapper__df": "cannot use df because comparison fails",
         "input_data__df_and_mapper__mapper": {"c": "a", "d": "b", "p_id": "p_id"},
         "tt_targets__tree": {"e": "f"},
         "policy_date_str": "2025-01-01",
@@ -546,17 +548,32 @@ def test_fail_if_input_structure_is_invalid(dict_inputs):
 
 
 @pytest.mark.parametrize(
-    "main_target",
+    ("main_target", "expected_error", "match"),
     [
-        ["a", "b"],
-        {"a": {"b": None}, "c": None},
-        {"a": {"b": None, "c": None}},
+        # A list is not an accepted `main_target` type. With the package
+        # claw on it is rejected at the beartype boundary; with the claw
+        # off `_harmonize_main_target`'s body rejects it.
+        (
+            ["a", "b"],
+            (BeartypeCallHintParamViolation, ValueError),
+            r"violates type hint|must be a single qualified name",
+        ),
+        (
+            {"a": {"b": None}, "c": None},
+            ValueError,
+            "must be a single qualified name, a tuple, or a dict",
+        ),
+        (
+            {"a": {"b": None, "c": None}},
+            ValueError,
+            "must be a single qualified name, a tuple, or a dict",
+        ),
     ],
 )
-def test_harmonize_main_target_fails_for_multiple_elements(main_target):
-    with pytest.raises(
-        ValueError, match="must be a single qualified name, a tuple, or a dict"
-    ):
+def test_harmonize_main_target_fails_for_multiple_elements(
+    main_target, expected_error, match
+):
+    with pytest.raises(expected_error, match=match):
         _harmonize_main_target(main_target=main_target)
 
 

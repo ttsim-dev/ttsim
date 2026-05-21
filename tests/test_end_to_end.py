@@ -104,12 +104,8 @@ def benefit(income_m: float) -> float:
 @pytest.mark.parametrize(
     "input_data_arg",
     [
-        # Correct way to do it
         InputData.df_and_mapper(df=DF_FOR_MAPPER, mapper=INPUT_DF_MAPPER),
         InputData.df_with_nested_columns(DF_WITH_NESTED_COLUMNS),
-        # May or may not continue to work.
-        {"df_and_mapper": {"df": DF_FOR_MAPPER, "mapper": INPUT_DF_MAPPER}},
-        {"df_with_nested_columns": DF_WITH_NESTED_COLUMNS},
     ],
 )
 def test_end_to_end(input_data_arg, backend: Literal["numpy", "jax"]):

@@ -12,6 +12,7 @@ import pytest
 from mettsim import middle_earth
 
 from ttsim import InputData, MainTarget, OrigPolicyObjects, TTTargets, main
+from ttsim.exceptions import InputDataError, TTTargetsError
 from ttsim.interface_dag_elements.backend import jax
 from ttsim.interface_dag_elements.fail_if import (
     ConflictingActivePeriodsError,
@@ -98,7 +99,7 @@ def _make_piecewise_polynomial_param(xnp: ModuleType) -> PiecewisePolynomialPara
         value=PiecewisePolynomialParamValue(
             thresholds=xnp.array([1, 2, 3]),
             intercepts=xnp.array([1, 2, 3]),
-            coefficients=xnp.array([1, 2, 3]),
+            coefficients=xnp.array([[1], [2], [3]]),
         ),
         **_GENERIC_PARAM_SPEC,  # ty: ignore[invalid-argument-type]
     )
@@ -1369,40 +1370,50 @@ def test_fail_if_input_df_mapper_p_id_is_missing_via_main(
 @pytest.mark.parametrize(
     (
         "tt_targets__tree",
+        "expected_error",
         "match",
     ),
     [
+        # Non-string keys and non-dict trees are structural violations caught
+        # by the `@beartype` boundary on `TTTargets.tree`.
         (
             {
                 1: None,
                 "number_of_individuals_kin": None,
             },
-            "Key 1 in tt_targets__tree must be a string but",
+            TTTargetsError,
+            "dict key int 1 not instance of str",
         ),
+        # A non-`None`, non-string leaf passes the boundary's `Mapping[str,
+        # object]` check and reaches the curated downstream validator.
         (
             {
                 "number_of_individuals_kin": 1,
             },
+            TypeError,
             r"Leaf at tt_targets__tree\[number_of_individuals_kin\] is invalid",
         ),
         (
             ["number_of_individuals_kin"],
-            "tt_targets__tree must be a dict, got",
+            TTTargetsError,
+            r"not instance of .*Mapping",
         ),
         (
             "number_of_individuals_kin",
-            "tt_targets__tree must be a dict, got",
+            TTTargetsError,
+            r"not instance of .*Mapping",
         ),
     ],
 )
 def test_invalid_tt_targets_tree(
     tt_targets__tree,
+    expected_error,
     match,
     backend: Literal["jax", "numpy"],
     xnp: ModuleType,
     minimal_data_tree,
 ):
-    with pytest.raises(TypeError, match=match):
+    with pytest.raises(expected_error, match=match):
         main(
             main_target=MainTarget.results.df_with_nested_columns,
             backend=backend,
@@ -1566,16 +1577,7 @@ def test_raises_error_if_p_id_is_passed_as_scalar(backend: Literal["jax", "numpy
 
 
 def test_invalid_input_data_as_object_via_main(backend: Literal["jax", "numpy"]):
-    # Matches both `TypeError` and `ValueError` because on WSL2 the DAG execution order
-    # consistently differs from all other tested platforms:
-    # 1. `fail_if.input_data_tree_is_invalid` -> TypeError: "input_data__tree must be a dict"
-    #    -> runs before `fail_if.any_paths_are_invalid` on all tested platforms except WSL2
-    # 2. `fail_if.any_paths_are_invalid` -> ValueError: "argument type ... not in flattenable types"
-    #    -> runs before `fail_if.input_data_tree_is_invalid` on WSL2
-    with pytest.raises(
-        (TypeError, ValueError),
-        match=r"(input_data__tree must be a dict, got|argument type .* is not in the flattenalbe types)",
-    ):
+    with pytest.raises(InputDataError, match=r"not instance of .*Mapping"):
         main(
             main_target=MainTarget.results.df_with_nested_columns,
             policy_date_str="2025-01-01",

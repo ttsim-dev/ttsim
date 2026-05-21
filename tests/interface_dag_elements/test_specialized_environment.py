@@ -172,7 +172,7 @@ def some_piecewise_polynomial_param(xnp):
         value=PiecewisePolynomialParamValue(
             thresholds=xnp.array([1, 2, 3]),
             intercepts=xnp.array([1, 2, 3]),
-            coefficients=xnp.array([1, 2, 3]),
+            coefficients=xnp.array([[1], [2], [3]]),
         ),
         start_date=datetime.date(2025, 1, 1),
         end_date=datetime.date(2025, 12, 31),

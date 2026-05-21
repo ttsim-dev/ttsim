@@ -141,13 +141,18 @@ else:
 UserColumn: TypeAlias = (
     FloatColumn | IntColumn | BoolColumn | pd.Series | list[float | int | bool]
 )
-# `UserNestedData` is a recursive tree like `NestedData`; use the same
-# two-definition pattern (precise for ty, widened one-level Mapping for the
-# beartype claw, which cannot resolve the stringified recursive inner name).
+# `UserNestedData` is a recursive tree like `NestedData`; use the
+# two-definition pattern (precise for ty, widened for the beartype claw).
+# The runtime form uses an honest-wide `object` leaf — like `NestedResults`
+# — so the `InputData.tree` beartype boundary admits scalars and other
+# malformed-but-plausible leaves, letting ttsim's `fail_if` validators
+# raise their curated, path-listing diagnostics instead of a generic
+# beartype message. beartype still enforces the `Mapping[str, ...]`
+# structure (string keys, dict shape).
 if TYPE_CHECKING:
     UserNestedData: TypeAlias = Mapping[str, "UserColumn | UserNestedData"]
 else:
-    UserNestedData = Mapping[str, UserColumn | Mapping]
+    UserNestedData = Mapping[str, object]
 # `UserNestedData`: user-boundary tree mapping TTSIM paths to columns, Series,
 # or sequences.
 # `UserFlatData`: user-boundary flat mapping of tree paths to the same.
