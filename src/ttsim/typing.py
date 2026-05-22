@@ -26,9 +26,13 @@ from jaxtyping import Bool, Float, Int, Shaped
 # `jax` is an optional runtime dependency; the NumPy-only test envs do not
 # install it. Resolve `Array` to the JAX type when available, else fall
 # back to `np.ndarray` so the column-type aliases below stay
-# runtime-resolvable for beartype either way.
+# runtime-resolvable for beartype either way. `Array` is only ever an
+# assignment target (never a direct `import` binding), so ty infers its
+# type from both branches instead of flagging a conflicting declaration.
 try:
-    from jax import Array
+    from jax import Array as _JaxArray
+
+    Array = _JaxArray
 except ImportError:  # pragma: no cover - exercised in numpy-only envs
     Array = np.ndarray
 

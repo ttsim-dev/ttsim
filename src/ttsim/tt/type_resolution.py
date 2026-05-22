@@ -23,6 +23,8 @@ The sweep is strict: a node it must resolve but cannot raises
 """
 
 import inspect
+import types
+import typing
 from collections.abc import Callable
 from enum import Enum, auto
 from types import MappingProxyType
@@ -185,6 +187,16 @@ def resolve_kind_of_annotation(
             f"with a concrete column or scalar type."
         )
         raise TypeResolutionError(msg)
+    # A claw- / `get_annotations`-resolved column alias is a live union of
+    # per-backend `jaxtyping` types (`Int[Array, ...] | Int[ndarray, ...]`),
+    # whose `__name__` is the unhelpful `"Union"`. Resolve each member; the
+    # alias's kind is well-defined only when they all agree.
+    if typing.get_origin(annotation) in (types.UnionType, typing.Union):
+        member_kinds = {
+            resolve_kind_of_annotation(arg, node_name=node_name)
+            for arg in typing.get_args(annotation)
+        }
+        return member_kinds.pop() if len(member_kinds) == 1 else ResolvedKind.OTHER
     key = (
         annotation
         if isinstance(annotation, str)
