@@ -1,8 +1,20 @@
 from __future__ import annotations
 
+from pathlib import Path
+
+import ttsim.interface_dag_elements
 from ttsim.interface_dag_elements.interface_node_objects import InterfaceFunction
-from ttsim.interface_dag_elements.tt_targets import qname, tree
+from ttsim.interface_dag_elements.orig_policy_objects import load_module
 from ttsim.tt import param_function, policy_function, policy_input
+
+# The package claw rewrites normally-imported `interface_dag_elements` modules,
+# binding each callable `InterfaceFunction` instance into a bound method. Re-load
+# the module via `load_module` — claw-free, exactly how the interface DAG obtains
+# these objects — to assert on the pristine instances.
+_IFACE_DIR = Path(ttsim.interface_dag_elements.__file__).parent
+_tt_targets = load_module(_IFACE_DIR / "tt_targets.py", _IFACE_DIR)
+qname = _tt_targets.qname
+tree = _tt_targets.tree
 
 
 def identity(x: int) -> int:
