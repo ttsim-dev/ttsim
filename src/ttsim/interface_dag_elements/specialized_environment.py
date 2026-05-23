@@ -183,6 +183,16 @@ def with_processed_params_and_scalars(
             # Leave nodes not in the data what they are.
             all_nodes[n] = f
 
+    # Pick up scalars in `processed_data` whose qname is not a node in
+    # `without_tree_logic_and_with_derived_functions` — e.g. the yearly source
+    # `x_y` for a `policy_input` `x_m`, where the time-conversion machinery
+    # produces conversions *away* from `x_y` (`x_m`, `x_w`, `x_d`) but never
+    # creates `x_y` itself as a self-node. Without this, the scalar drops out of
+    # the env and the derived consumer's argument remains an unbound root node.
+    for qname, value in processed_data.items():
+        if qname not in all_nodes and isinstance(value, int | float | bool):
+            all_nodes[qname] = value
+
     must_set_evaluation_date = (
         # Never need to do anything if the evaluation date is set in the data.
         "evaluation_year" not in processed_data

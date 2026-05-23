@@ -882,10 +882,6 @@ def test_scalars_in_input_data_become_part_of_specialized_environment(xnp, backe
     assert root_nodes == set()
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="https://github.com/ttsim-dev/ttsim/issues/79",
-)
 def test_derived_time_converted_scalar_not_in_processed_environment(xnp, backend):
     """Scalar inputs are partialled correctly.
 
