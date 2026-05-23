@@ -14,6 +14,8 @@ if TYPE_CHECKING:
     from types import ModuleType
     from typing import Literal
 
+    from ttsim.typing import UserFlatData
+
 
 DF_WITH_NESTED_COLUMNS = pd.DataFrame(
     {
@@ -470,24 +472,23 @@ def test_input_data_reordering_with_distinct_values(
 
 
 def test_derived_time_converted_scalar_can_partialled(xnp, backend):
-    """Scalar inputs are partialled correctly.
-
-    Scalar inputs are partialled also if they replace a function that is derived from
-    a policy input.
+    """A scalar passed via `InputData.flat` (the advanced opt-out) that
+    drives a derived time-conversion function is partialled in and doesn't
+    show up as a root node of the tt_dag.
     """
     policy_environment = {
         "p_id": p_id,
         "income_m": income_m,
         "benefit": benefit,
     }
-    input_data = {
-        "p_id": xnp.array([1, 2, 3]),
-        "income_y": 12000,
+    input_data: UserFlatData = {
+        ("p_id",): xnp.array([1, 2, 3]),
+        ("income_y",): 12000,
     }
     root_nodes = main(
         main_target=MainTarget.labels.root_nodes,
         policy_environment=policy_environment,
-        input_data=InputData.tree(input_data),
+        input_data=InputData.flat(input_data),
         tt_targets=TTTargets.tree({"benefit": None}),
         policy_date_str="2024-01-01",
         evaluation_date_str="2024-01-01",

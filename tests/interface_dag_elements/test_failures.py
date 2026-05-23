@@ -1998,9 +1998,14 @@ def test_endogenous_p_id_among_targets_via_main(xnp):
         )
 
 
-def test_pass_scalars_for_natively_vectorized_functions(
+def test_scalar_inputs_in_tree_are_broadcast_to_p_id_length(
     xnp: ModuleType, backend: Literal["numpy", "jax"]
 ):
+    """Scalar leaves in an `InputData.tree` are broadcast to length-``n_obs``,
+    so they feed natively-vectorized consumers (aggregations, group creation)
+    without error. Users who want partial-application instead must opt in via
+    ``InputData.flat``.
+    """
     input_data_tree = {
         "age": 30,
         "kin_id": 0,
@@ -2026,34 +2031,20 @@ def test_pass_scalars_for_natively_vectorized_functions(
         },
         "wealth": 10000,
     }
-    with pytest.raises(
-        ValueError,
-        match="The following root nodes must be passed as arrays or series, but were "
-        "passed as scalars in the input data:\n\n"
-        "    - \\('age',\\)\n"
-        "    - \\('kin_id',\\)\n"
-        "    - \\('p_id_parent_1',\\)\n"
-        "    - \\('p_id_parent_2',\\)\n"
-        "    - \\('p_id_spouse',\\)\n"
-        "    - \\('parent_is_noble',\\)\n"
-        "    - \\('payroll_tax', 'child_tax_credit', 'p_id_recipient'\\)\n"
-        "    - \\('wealth',\\)\n\n"
-        "To fix this, pass them as arrays \\(numpy, jax\\.numpy\\) or pd\\.Series matching "
-        "the length of `p_id`\\.",
-    ):
-        main(
-            main_target=MainTarget.results.df_with_nested_columns,
-            policy_date_str="2025-01-01",
-            input_data=InputData.tree(input_data_tree),
-            tt_targets=TTTargets.tree(
-                {
-                    "wealth_tax": {"amount_y": None},
-                    "property_tax": {"amount_y": None},
-                    "payroll_tax": {"amount_y": None},
-                    "orc_hunting_bounty": {"amount": None},
-                    "housing_benefits": {"amount_y_fam": None},
-                }
-            ),
-            orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
-            backend=backend,
-        )
+    result = main(
+        main_target=MainTarget.results.df_with_nested_columns,
+        policy_date_str="2025-01-01",
+        input_data=InputData.tree(input_data_tree),
+        tt_targets=TTTargets.tree(
+            {
+                "wealth_tax": {"amount_y": None},
+                "property_tax": {"amount_y": None},
+                "payroll_tax": {"amount_y": None},
+                "orc_hunting_bounty": {"amount": None},
+                "housing_benefits": {"amount_y_fam": None},
+            }
+        ),
+        orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+        backend=backend,
+    )
+    assert len(result) == 3

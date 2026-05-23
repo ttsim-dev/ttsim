@@ -29,6 +29,7 @@ from ttsim.tt import (
     policy_function,
     policy_input,
 )
+from ttsim.typing import UserFlatData
 
 if TYPE_CHECKING:
     from ttsim.typing import IntColumn, RawParamValue
@@ -861,18 +862,20 @@ def test_can_override_ttsim_objects_with_data(
 
 
 def test_scalars_in_input_data_become_part_of_specialized_environment(xnp, backend):
+    """`InputData.flat` is the advanced opt-out: scalars there are partialled
+    into derived consumers and don't show up as root nodes of the tt_dag."""
     policy_environment = {
         "identity": identity,
         "identity_plus_one": identity_plus_one,
     }
-    input_data = {
-        "p_id": xnp.array([1, 2, 3]),
-        "identity": 1,
+    input_data: UserFlatData = {
+        ("p_id",): xnp.array([1, 2, 3]),
+        ("identity",): 1,
     }
     root_nodes = main(
         main_target=MainTarget.labels.root_nodes,
         policy_environment=policy_environment,
-        input_data=InputData.tree(input_data),
+        input_data=InputData.flat(input_data),
         tt_targets=TTTargets.tree({"identity_plus_one": None}),
         policy_date=datetime.date(2024, 1, 1),
         evaluation_date_str="2024-01-01",
@@ -883,23 +886,22 @@ def test_scalars_in_input_data_become_part_of_specialized_environment(xnp, backe
 
 
 def test_derived_time_converted_scalar_not_in_processed_environment(xnp, backend):
-    """Scalar inputs are partialled correctly.
-
-    Scalars in input_data that are dependencies of derived functions should be
-    included in the processed environment."""
+    """Scalars provided via `InputData.flat` (the advanced opt-out) that are
+    sources for derived time-conversion functions get partialled in and don't
+    show up as root nodes of the tt_dag."""
     policy_environment = {
         "p_id": p_id,
         "income_m": income_m,
         "benefit": benefit,
     }
-    input_data = {
-        "p_id": xnp.array([1, 2, 3]),
-        "income_y": 12000,
+    input_data: UserFlatData = {
+        ("p_id",): xnp.array([1, 2, 3]),
+        ("income_y",): 12000,
     }
     root_nodes = main(
         main_target=MainTarget.labels.root_nodes,
         policy_environment=policy_environment,
-        input_data=InputData.tree(input_data),
+        input_data=InputData.flat(input_data),
         tt_targets=TTTargets.tree({"benefit": None}),
         policy_date_str="2024-01-01",
         evaluation_date_str="2024-01-01",

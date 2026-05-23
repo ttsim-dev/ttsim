@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Literal
 
 import dags.tree as dt
+import numpy
 
 from ttsim.interface_dag_elements.data_converters import (
     df_with_mapped_columns_to_flat_data,
@@ -97,7 +98,22 @@ def flat_from_tree(
     xnp: ModuleType,  # noqa: ARG001
 ) -> FlatData:
     """The input data as a flat dictionary of arrays."""
-    return dt.flatten_to_tree_paths(tree)
+    # Broadcast scalar leaves to length-`n_obs` arrays so the tree input
+    # path produces the same shape as the df-based paths. Users who want
+    # scalars partialled into derived consumers must opt in by supplying
+    # their data via `InputData.flat`, which bypasses this conversion.
+    flat = dt.flatten_to_tree_paths(tree)
+    p_id = flat.get(("p_id",))
+    # If `p_id` is missing or itself a scalar, we don't know `n_obs`; pass
+    # the tree through unchanged and let downstream `fail_if` nodes raise
+    # the actionable error.
+    if p_id is None or not hasattr(p_id, "__len__"):
+        return flat
+    n_obs = len(p_id)
+    return {
+        path: value if hasattr(value, "__len__") else numpy.full(n_obs, value)
+        for path, value in flat.items()
+    }
 
 
 @interface_function()
