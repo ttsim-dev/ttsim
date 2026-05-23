@@ -24,6 +24,18 @@ def test_columns_is_interface_function():
     assert isinstance(columns, InterfaceFunction)
 
 
+def _identity_p_id_inputs(xnp, n: int) -> dict:
+    """Minimal `input_data__flat` + sort indices for tests that don't care
+    about row order — the original `p_id` array is already sorted, so the
+    sort is the identity permutation.
+    """
+    return {
+        "input_data__flat": {("p_id",): xnp.arange(n)},
+        "input_data__sort_indices": xnp.arange(n),
+        "xnp": xnp,
+    }
+
+
 def test_columns_filters_to_root_nodes(xnp):
     processed_data = {
         "p_id": xnp.array([0, 1, 2]),
@@ -40,6 +52,7 @@ def test_columns_filters_to_root_nodes(xnp):
         labels__root_nodes=root_nodes,
         processed_data=processed_data,
         tt_function=tt_function,
+        **_identity_p_id_inputs(xnp, n=3),
     )
 
     # Only root_nodes should be passed to tt_function
@@ -65,6 +78,7 @@ def test_columns_calls_tt_function_with_filtered_data(xnp):
         labels__root_nodes=root_nodes,
         processed_data=processed_data,
         tt_function=tt_function,
+        **_identity_p_id_inputs(xnp, n=2),
     )
 
     # Verify tt_function was called with only root_nodes data
@@ -86,6 +100,7 @@ def test_columns_returns_tt_function_output(xnp):
         labels__root_nodes=root_nodes,
         processed_data=processed_data,
         tt_function=tt_function,
+        **_identity_p_id_inputs(xnp, n=2),
     )
 
     assert result == expected_output
@@ -102,6 +117,7 @@ def test_columns_with_empty_root_nodes(xnp):
         labels__root_nodes=root_nodes,
         processed_data=processed_data,
         tt_function=tt_function,
+        **_identity_p_id_inputs(xnp, n=2),
     )
 
     assert result == {}
@@ -290,6 +306,9 @@ def test_columns_dependencies():
         "labels__root_nodes",
         "processed_data",
         "tt_function",
+        "input_data__flat",
+        "input_data__sort_indices",
+        "xnp",
     }
 
 

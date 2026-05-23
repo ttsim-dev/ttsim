@@ -960,37 +960,6 @@ def param_function_depends_on_column_objects(
 
 
 @fail_function()
-def endogenous_p_id_among_targets(
-    labels__column_targets: OrderedQNames,
-) -> None:
-    """Fail if any p_id_* columns are requested as targets.
-
-    A ValueError is raised if any endogenous target name starts with `p_id_`. These
-    columns contain internal ID mappings that would not be meaningful after reverting
-    the internal `p_id` column to the original `p_id` column.
-    """
-
-    p_id_targets = [
-        str(dt.tree_path_from_qname(target))
-        for target in labels__column_targets
-        if target.startswith("p_id_")
-    ]
-
-    if p_id_targets:
-        formatted = format_list_linewise(p_id_targets)
-        msg = (
-            "The following endogenous p_id_* columns were requested as targets, but "
-            "these contain internal ID mappings that are not meaningful after "
-            "reverting the internal `p_id` column to the original `p_id` column:\n\n"
-            f"{formatted}\n\n"
-            "Please remove these from your targets specification. If you need "
-            "these endogenous person identifiers, please add your request to "
-            "https://github.com/ttsim-dev/ttsim/issues/43"
-        )
-        raise ValueError(msg)
-
-
-@fail_function()
 def passed_scalar_inputs_for_natively_vectorized_functions(
     tt_function_set_annotations: bool,
     specialized_environment__with_processed_params_and_scalars: SpecEnvWithProcessedParamsAndScalars,

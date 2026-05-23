@@ -6,6 +6,9 @@ releases are available on [Anaconda.org](https://anaconda.org/conda-forge/ttsim)
 
 ## Unreleased
 
+- {gh}`108` Allow endogenously-computed `p_id_*` columns as targets — the interface DAG
+  reverse-translates internal indices back to user-space `p_id` values, preserving the
+  `-1` no-link sentinel. ({ghuser}`hmgaudecker`)
 - {gh}`107` Broadcast scalar leaves in `InputData.tree` to length-`n_obs` arrays.
   `InputData.flat` keeps the scalar-as-input opt-out for users who want
   partial-application. ({ghuser}`hmgaudecker`)

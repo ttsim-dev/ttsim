@@ -20,7 +20,6 @@ from ttsim.interface_dag_elements.fail_if import (
     _ParamWithActivePeriod,
     active_periods_overlap,
     assert_valid_ttsim_pytree,
-    endogenous_p_id_among_targets,
     foreign_keys_are_invalid_in_data,
     group_ids_are_outside_top_level_namespace,
     group_variables_are_not_constant_within_groups,
@@ -42,7 +41,6 @@ from ttsim.tt import (
     DictParam,
     PiecewisePolynomialParam,
     PiecewisePolynomialParamValue,
-    ScalarParam,
     group_creation_function,
     param_function,
     policy_function,
@@ -1937,64 +1935,6 @@ def test_param_function_depends_on_column_objects_via_main(
                 "invalid_param_function": invalid_param_function,
                 "some_policy_function": some_policy_function,
             },
-        )
-
-
-def test_endogenous_p_id_among_targets_direct():
-    """Test that p_id_* columns are not allowed as targets."""
-    targets_with_p_id = ["p_id_child", "valid_target", "p_id_parent"]
-    pattern = re.compile(
-        r"p_id_\* columns were requested as targets, but these contain internal "
-        r"""ID mappings.+p_id_child',\)",\n    "\('p_id_parent.""",
-        re.DOTALL,
-    )
-    with pytest.raises(ValueError, match=pattern):
-        endogenous_p_id_among_targets(labels__column_targets=targets_with_p_id)
-
-
-def test_endogenous_p_id_among_targets_passes_with_valid_targets():
-    """Test that validation passes when no p_id_* columns are in targets."""
-    valid_targets = ["income", "tax", "benefit"]
-
-    # Should not raise any exception
-    endogenous_p_id_among_targets(labels__column_targets=valid_targets)
-
-
-def test_endogenous_p_id_among_targets_via_main(xnp):
-    """Test that p_id_* columns are not allowed as targets via main."""
-    date = datetime.date(2023, 1, 1)
-    with pytest.raises(
-        ValueError,
-        match=(
-            r"p_id_\* columns were requested as targets, but these contain internal ID"
-        ),
-    ):
-        main(
-            main_target=MainTarget.results.df_with_nested_columns,
-            policy_environment={
-                "p_id_person": policy_function(
-                    start_date=date,
-                    end_date=date,
-                    leaf_name="p_id_person",
-                )(identity),
-                "policy_year": ScalarParam(
-                    value=date.year,
-                    start_date=date,
-                    end_date=date,
-                ),
-                "policy_month": ScalarParam(
-                    value=date.month,
-                    start_date=date,
-                    end_date=date,
-                ),
-                "policy_day": ScalarParam(
-                    value=date.day,
-                    start_date=date,
-                    end_date=date,
-                ),
-            },
-            tt_targets=TTTargets.tree({"p_id": None, "p_id_person": None}),
-            input_data=InputData.tree(tree={"p_id": xnp.array([0, 1, 2])}),
         )
 
 
