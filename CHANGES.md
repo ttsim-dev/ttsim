@@ -6,6 +6,8 @@ releases are available on [Anaconda.org](https://anaconda.org/conda-forge/ttsim)
 
 ## Unreleased
 
+- {gh}`106` Document the JAX-optional-runtime-dependency constraint that governs how
+  column-type aliases must be imported. ({ghuser}`hmgaudecker`)
 - {gh}`105` Load policy modules under their canonical Python import name so
   `cloudpickle.dumps(tt_function)` works. ({ghuser}`hmgaudecker`)
 - {gh}`104` Fix partialling of scalar inputs that drive derived time-conversion
