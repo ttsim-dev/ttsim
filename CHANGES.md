@@ -10,9 +10,8 @@ releases are available on [Anaconda.org](https://anaconda.org/conda-forge/ttsim)
   user-facing boundaries (`InputDataError`, `EntryPointError`, `TTTargetsError`,
   `PolicyFunctionDefinitionError`, …) so malformed input is rejected with curated
   errors. ({ghuser}`hmgaudecker`)
-- {gh}`99` Read dags-wrapper annotations via `dags.get_annotations` so ttsim keeps
-  working once dags wrappers advertise the `*args, **kwargs` forwarder shape on
-  `__annotations__`. ({ghuser}`hmgaudecker`)
+- {gh}`99` Require `dags >= 0.6`; adapt to its new wrapper annotations.
+  ({ghuser}`hmgaudecker`)
 - {gh}`92` Let piecewise polynomials return scalars if the input is a scalar.
   ({ghuser}`MImmesberger`)
 
