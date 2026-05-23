@@ -882,15 +882,12 @@ def test_scalars_in_input_data_become_part_of_specialized_environment(xnp, backe
     assert root_nodes == set()
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="https://github.com/ttsim-dev/ttsim/issues/79",
-)
-def test_derived_time_converted_scalar_not_in_processed_environment(xnp, backend):
-    """Scalar inputs are partialled correctly.
-
-    Scalars in input_data that are dependencies of derived functions should be
-    included in the processed environment."""
+def test_derived_time_converted_scalar_drives_derived_consumer(xnp, backend):
+    """A scalar input whose qname is the source unit of a derived time-conversion
+    function (`income_y` for `income_m` here) reaches the derived consumer's
+    body: requesting `benefit` succeeds, returns `income_y / 12 * 0.5` for
+    every row, and the scalar does not surface as an unbound root node.
+    """
     policy_environment = {
         "p_id": p_id,
         "income_m": income_m,
@@ -900,15 +897,17 @@ def test_derived_time_converted_scalar_not_in_processed_environment(xnp, backend
         "p_id": xnp.array([1, 2, 3]),
         "income_y": 12000,
     }
-    root_nodes = main(
-        main_target=MainTarget.labels.root_nodes,
-        policy_environment=policy_environment,
-        input_data=InputData.tree(input_data),
-        tt_targets=TTTargets.tree({"benefit": None}),
-        policy_date_str="2024-01-01",
-        evaluation_date_str="2024-01-01",
-        backend=backend,
-        include_warn_nodes=False,
-        include_fail_nodes=False,
-    )
+    common_kwargs = {
+        "policy_environment": policy_environment,
+        "input_data": InputData.tree(input_data),
+        "tt_targets": TTTargets.tree({"benefit": None}),
+        "policy_date_str": "2024-01-01",
+        "evaluation_date_str": "2024-01-01",
+        "backend": backend,
+        "include_warn_nodes": False,
+        "include_fail_nodes": False,
+    }
+    root_nodes = main(main_target=MainTarget.labels.root_nodes, **common_kwargs)  # ty: ignore[invalid-argument-type]
     assert root_nodes == set()
+    result = main(main_target=MainTarget.results.tree, **common_kwargs)  # ty: ignore[invalid-argument-type]
+    numpy.testing.assert_allclose(result["benefit"], numpy.full(3, 500.0))

@@ -183,6 +183,19 @@ def with_processed_params_and_scalars(
             # Leave nodes not in the data what they are.
             all_nodes[n] = f
 
+    # Register scalars in `processed_data` whose qname is not a DAG node so
+    # the derived consumer that depends on them can partial them out. The
+    # canonical case is the time-conversion source unit `x_y` for a
+    # `policy_input` `x_m`: the time-conversion machinery produces
+    # conversions *away* from `x_y` (`x_m`, `x_w`, `x_d`) but never creates
+    # `x_y` itself as a self-node, so without this loop the derived
+    # consumer's `x_y` argument would remain an unbound root node. The
+    # `qname not in all_nodes` guard skips entries the loop above already
+    # inserted as processed-data overrides of existing DAG nodes.
+    for qname, value in processed_data.items():
+        if qname not in all_nodes and isinstance(value, int | float | bool):
+            all_nodes[qname] = value
+
     must_set_evaluation_date = (
         # Never need to do anything if the evaluation date is set in the data.
         "evaluation_year" not in processed_data

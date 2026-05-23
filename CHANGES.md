@@ -6,6 +6,8 @@ releases are available on [Anaconda.org](https://anaconda.org/conda-forge/ttsim)
 
 ## Unreleased
 
+- {gh}`104` Fix partialling of scalar inputs that drive derived time-conversion
+  functions. ({ghuser}`hmgaudecker`)
 - {gh}`103` Add symmetric qname I/O: `results.df_with_qname_columns` return format with
   flat qname-string columns, and `InputData.qname` factory that accepts a dictionary
   keyed by qualified names. ({ghuser}`hmgaudecker`)
