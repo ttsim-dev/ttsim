@@ -1,8 +1,8 @@
 """Type aliases used across ttsim.
 
-Bottom line: JAX must remain an *optional* runtime dependency of ttsim.
-That constraint dictates how the column-type aliases below are defined
-and how every module that references them must import them.
+Keep JAX an *optional* runtime dependency of ttsim. That constraint
+dictates how the column-type aliases below are defined and how every
+module that references them must import them.
 
 The load-bearing mechanism is in `jaxtyping`. `Bool`, `Float`, `Int`, and
 `Shaped` can be imported at runtime without pulling JAX in. `jaxtyping.Array`
@@ -43,9 +43,6 @@ Do's and don'ts for files that reference the aliases below:
 - DO leave the column registry (`ttsim.tt.column_objects_param_function`)
   returning string-form annotations. Eagerly resolving them would
   re-introduce the JAX import.
-
-See `.ai-instructions/modules/jax.md` for the cross-project version of
-this rule.
 """
 
 from __future__ import annotations
