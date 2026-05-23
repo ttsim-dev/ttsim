@@ -15,11 +15,9 @@ jobs:
   run-tests:
     name: Run tests for ${{ matrix.os }} on ${{ matrix.environment }}
     runs-on: ${{ matrix.os }}
-    # Enable the package-wide beartype claw for the rollout PR. Flip to
-    # always-on (remove this env block + the gate in ttsim/__init__.py)
-    # at merge.
-    env:
-      TTSIM_BEARTYPE_CLAW: '1'
+    # The package-wide beartype claw is off by default while the decision on
+    # GEP-09 is pending. It will be activated by default once GEP-09 is
+    # resolved.
     strategy:
       fail-fast: false
       matrix:
