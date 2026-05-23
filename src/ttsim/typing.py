@@ -1,6 +1,6 @@
 """Type aliases used across ttsim.
 
-Bottom line: JAX must remain an *optional* runtime dependency of ttsim.
+Bottom line: JAX shall remain an *optional* runtime dependency of ttsim.
 That constraint dictates how the column-type aliases below are defined
 and how every module that references them must import them.
 
