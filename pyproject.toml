@@ -122,10 +122,11 @@ tests.pypi-dependencies.types-PyYAML = "*"
 tests.pypi-dependencies.types-pytz = "*"
 tests.pypi-dependencies.pytest-cov = "*"
 tests.pypi-dependencies.pytest-xdist = "*"
-# The package-wide beartype claw is off by default while the decision on
-# GEP-09 is pending. To activate it locally for testing, set
-# `TTSIM_BEARTYPE_CLAW=1` in the shell environment. It will be activated by
-# default once GEP-09 is resolved.
+# Run internal tests with the package-wide beartype claw on. The claw is
+# env-var-gated (see `ttsim/__init__.py`); users of a released package
+# leave `TTSIM_BEARTYPE_CLAW` unset and never see it. The gate stays in
+# place until GEP-09's decision on the rollout lands.
+tests.activation.env.TTSIM_BEARTYPE_CLAW = "1"
 tests.target.linux-64.tasks.tests = "pytest"
 tests.target.linux-64.tasks.tests-with-cov = "pytest --cov-report=xml --cov=./"
 tests.target.osx-64.tasks.tests = "dot -c && pytest"  # needed for pygraphviz on macOS
