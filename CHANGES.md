@@ -6,6 +6,10 @@ releases are available on [Anaconda.org](https://anaconda.org/conda-forge/ttsim)
 
 ## Unreleased
 
+- {gh}`101` Adopt the package-wide beartype claw with a typed exception hierarchy at
+  user-facing boundaries (`InputDataError`, `EntryPointError`, `TTTargetsError`,
+  `PolicyFunctionDefinitionError`, …) so malformed input is rejected with curated
+  errors. ({ghuser}`hmgaudecker`)
 - {gh}`99` Read dags-wrapper annotations via `dags.get_annotations` so ttsim keeps
   working once dags wrappers advertise the `*args, **kwargs` forwarder shape on
   `__annotations__`. ({ghuser}`hmgaudecker`)
