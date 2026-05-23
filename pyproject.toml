@@ -133,11 +133,11 @@ tests.target.osx-arm64.tasks.tests = "dot -c && pytest"  # needed for pygraphviz
 tests.target.osx-arm64.tasks.tests-with-cov = "dot -c && pytest --cov-report=xml --cov=./"  # needed for pygraphviz on macOS
 tests.target.win-64.tasks.tests = "pytest"
 tests.target.win-64.tasks.tests-with-cov = "pytest --cov-report=xml --cov=./"
-type-checking.pypi-dependencies.ty = "*"
+type-checking.pypi-dependencies.ty = "==0.0.23"
 type-checking.pypi-dependencies.types-PyYAML = "*"
 type-checking.pypi-dependencies.types-pytz = "*"
 type-checking.tasks.ty = "ty check"
-type-checking-jax.pypi-dependencies.ty = "*"
+type-checking-jax.pypi-dependencies.ty = "==0.0.23"
 type-checking-jax.pypi-dependencies.types-PyYAML = "*"
 type-checking-jax.pypi-dependencies.types-pytz = "*"
 type-checking-jax.tasks.ty-jax = "ty check"
