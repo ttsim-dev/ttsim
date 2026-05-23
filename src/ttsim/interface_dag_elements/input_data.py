@@ -106,16 +106,38 @@ def flat_from_tree(
     xnp: ModuleType,  # noqa: ARG001
 ) -> FlatData:
     """The input data as a flat dictionary of arrays."""
+    # Broadcast scalar leaves to length-`n_obs` arrays so the tree input
+    # path produces the same shape as the df-based paths. Users who want
+    # scalars partialled into derived consumers must opt in by supplying
+    # their data via `InputData.flat`, which bypasses this conversion. Any
     # `pd.Series` leaves go through `_canonicalize_input_dtype` so
-    # nullable / pyarrow dtypes are normalised to numpy.
-    return {
-        path: (
-            _canonicalize_input_dtype(value, numpy)
-            if isinstance(value, pd.Series)
-            else value
-        )
-        for path, value in dt.flatten_to_tree_paths(tree).items()
-    }
+    # nullable / pyarrow dtypes are normalised. The canonicaliser and the
+    # broadcast use `numpy` rather than `xnp` so the user's dtype survives
+    # this stage intact; the backend conversion happens once in
+    # `processed_data._canonicalize_input_dtype` so the JAX int32 downcast
+    # under `jax_enable_x64=False` doesn't fire here and shrink the
+    # downstream pandas-index dtype.
+    flat = dt.flatten_to_tree_paths(tree)
+    p_id = flat.get(("p_id",))
+    if p_id is None or not hasattr(p_id, "__len__"):
+        return {
+            path: (
+                _canonicalize_input_dtype(value, numpy)
+                if isinstance(value, pd.Series)
+                else value
+            )
+            for path, value in flat.items()
+        }
+    n_obs = len(p_id)
+    out: FlatData = {}
+    for path, value in flat.items():
+        if not hasattr(value, "__len__"):
+            out[path] = numpy.full(n_obs, value)
+        elif isinstance(value, pd.Series):
+            out[path] = _canonicalize_input_dtype(value, numpy)
+        else:
+            out[path] = value
+    return out
 
 
 @input_dependent_interface_function(
@@ -127,20 +149,27 @@ def flat_from_qname(
     xnp: ModuleType,  # noqa: ARG001
 ) -> FlatData:
     """The input data as a flat dictionary of arrays."""
-    # `pd.Series` leaves go through `_canonicalize_input_dtype` directly so
-    # nullable / pyarrow dtypes are normalised; plain Python lists /
-    # sequences first become numpy arrays so the canonicaliser sees the
-    # already-narrow input type its claw enforces. Backend arrays
-    # (`numpy.ndarray`, JAX `Array`) pass through `numpy.asarray` as well,
-    # which is a no-op for numpy arrays and pulls JAX arrays back to numpy
-    # so the canonicaliser sees one uniform input type.
-    return {
-        dt.tree_path_from_qname(q): _canonicalize_input_dtype(
-            value if isinstance(value, pd.Series) else numpy.asarray(value),
-            numpy,
-        )
-        for q, value in qname.items()
-    }
+    # Mirror `flat_from_tree`'s scalar-broadcast handling so the two input
+    # paths produce shape-compatible outputs. `pd.Series` leaves go through
+    # `_canonicalize_input_dtype` directly so nullable / pyarrow dtypes are
+    # normalised; backend arrays and plain Python sequences pass through
+    # `numpy.asarray`. Scalar leaves are broadcast to length-`n_obs` via
+    # `numpy.full` when `p_id` is present, matching the behaviour of
+    # `flat_from_tree`. Using `numpy` (not `xnp`) at this stage preserves
+    # the user's dtype; backend conversion happens later in
+    # `processed_data`.
+    flat = {dt.tree_path_from_qname(q): value for q, value in qname.items()}
+    p_id = flat.get(("p_id",))
+    n_obs = len(p_id) if p_id is not None and hasattr(p_id, "__len__") else None
+    out: FlatData = {}
+    for path, value in flat.items():
+        if isinstance(value, pd.Series):
+            out[path] = _canonicalize_input_dtype(value, numpy)
+        elif not hasattr(value, "__len__"):
+            out[path] = numpy.full(n_obs, value) if n_obs is not None else value
+        else:
+            out[path] = _canonicalize_input_dtype(numpy.asarray(value), numpy)
+    return out
 
 
 @interface_function()

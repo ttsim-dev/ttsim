@@ -29,6 +29,7 @@ from ttsim.tt import (
     policy_function,
     policy_input,
 )
+from ttsim.typing import UserFlatData
 
 if TYPE_CHECKING:
     from ttsim.typing import IntColumn, RawParamValue
@@ -861,18 +862,20 @@ def test_can_override_ttsim_objects_with_data(
 
 
 def test_scalars_in_input_data_become_part_of_specialized_environment(xnp, backend):
+    """`InputData.flat` is the advanced opt-out: scalars there are partialled
+    into derived consumers and don't show up as root nodes of the tt_dag."""
     policy_environment = {
         "identity": identity,
         "identity_plus_one": identity_plus_one,
     }
-    input_data = {
-        "p_id": xnp.array([1, 2, 3]),
-        "identity": 1,
+    input_data: UserFlatData = {
+        ("p_id",): xnp.array([1, 2, 3]),
+        ("identity",): 1,
     }
     root_nodes = main(
         main_target=MainTarget.labels.root_nodes,
         policy_environment=policy_environment,
-        input_data=InputData.tree(input_data),
+        input_data=InputData.flat(input_data),
         tt_targets=TTTargets.tree({"identity_plus_one": None}),
         policy_date=datetime.date(2024, 1, 1),
         evaluation_date_str="2024-01-01",
@@ -882,24 +885,26 @@ def test_scalars_in_input_data_become_part_of_specialized_environment(xnp, backe
     assert root_nodes == set()
 
 
-def test_derived_time_converted_scalar_drives_derived_consumer(xnp, backend):
-    """A scalar input whose qname is the source unit of a derived time-conversion
-    function (`income_y` for `income_m` here) reaches the derived consumer's
-    body: requesting `benefit` succeeds, returns `income_y / 12 * 0.5` for
-    every row, and the scalar does not surface as an unbound root node.
+def test_flat_scalar_drives_derived_time_converted_consumer(xnp, backend):
+    """A scalar input supplied via `InputData.flat` (the advanced opt-out
+    that preserves scalar leaves) whose qname is the source unit of a
+    derived time-conversion function (`income_y` for `income_m` here)
+    reaches the derived consumer: `benefit` returns `income_y / 12 * 0.5`
+    for every row, and the scalar does not surface as an unbound root
+    node.
     """
     policy_environment = {
         "p_id": p_id,
         "income_m": income_m,
         "benefit": benefit,
     }
-    input_data = {
-        "p_id": xnp.array([1, 2, 3]),
-        "income_y": 12000,
+    input_data: UserFlatData = {
+        ("p_id",): xnp.array([1, 2, 3]),
+        ("income_y",): 12000,
     }
     common_kwargs = {
         "policy_environment": policy_environment,
-        "input_data": InputData.tree(input_data),
+        "input_data": InputData.flat(input_data),
         "tt_targets": TTTargets.tree({"benefit": None}),
         "policy_date_str": "2024-01-01",
         "evaluation_date_str": "2024-01-01",

@@ -6,6 +6,9 @@ releases are available on [Anaconda.org](https://anaconda.org/conda-forge/ttsim)
 
 ## Unreleased
 
+- {gh}`107` Broadcast scalar leaves in `InputData.tree` to length-`n_obs` arrays.
+  `InputData.flat` keeps the scalar-as-input opt-out for users who want
+  partial-application. ({ghuser}`hmgaudecker`)
 - {gh}`106` Document the JAX-optional-runtime-dependency constraint that governs how
   column-type aliases must be imported. ({ghuser}`hmgaudecker`)
 - {gh}`105` Load policy modules under their canonical Python import name so
