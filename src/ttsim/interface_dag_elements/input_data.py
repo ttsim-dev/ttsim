@@ -3,6 +3,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Literal
 
 import dags.tree as dt
+import numpy
+import pandas as pd
 
 from ttsim.interface_dag_elements.data_converters import (
     df_with_mapped_columns_to_flat_data,
@@ -13,11 +15,12 @@ from ttsim.interface_dag_elements.interface_node_objects import (
     interface_function,
     interface_input,
 )
+from ttsim.interface_dag_elements.processed_data import (
+    _canonicalize_input_dtype,
+)
 
 if TYPE_CHECKING:
     from types import ModuleType
-
-    import pandas as pd
 
     from ttsim.typing import (
         FlatData,
@@ -97,7 +100,16 @@ def flat_from_tree(
     xnp: ModuleType,  # noqa: ARG001
 ) -> FlatData:
     """The input data as a flat dictionary of arrays."""
-    return dt.flatten_to_tree_paths(tree)
+    # `pd.Series` leaves go through `_canonicalize_input_dtype` so
+    # nullable / pyarrow dtypes are normalised to numpy.
+    return {
+        path: (
+            _canonicalize_input_dtype(value, numpy)
+            if isinstance(value, pd.Series)
+            else value
+        )
+        for path, value in dt.flatten_to_tree_paths(tree).items()
+    }
 
 
 @interface_function()

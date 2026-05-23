@@ -6,6 +6,9 @@ releases are available on [Anaconda.org](https://anaconda.org/conda-forge/ttsim)
 
 ## Unreleased
 
+- {gh}`102` Canonicalize input dtypes: coerce uint columns to signed int, normalize
+  pandas-nullable / Float64 / pyarrow columns to numpy (NA→NaN for floats, fail for
+  int/bool with NA). Closes #97, #94. ({ghuser}`hmgaudecker`)
 - {gh}`101` Adopt the package-wide beartype claw with a typed exception hierarchy at
   user-facing boundaries (`InputDataError`, `EntryPointError`, `TTTargetsError`,
   `PolicyFunctionDefinitionError`, …) so malformed input is rejected with curated

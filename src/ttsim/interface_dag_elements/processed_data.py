@@ -1,16 +1,70 @@
 from __future__ import annotations
 
+from types import ModuleType
 from typing import TYPE_CHECKING
 
 import dags.tree as dt
+import numpy as np
+import pandas as pd
+from jaxtyping import Shaped
 
 from ttsim.interface_dag_elements.interface_node_objects import interface_function
 from ttsim.tt.column_objects_param_function import reorder_ids
+from ttsim.typing import Array, IntColumn
 
 if TYPE_CHECKING:
-    from types import ModuleType
+    from ttsim.typing import FlatData, QNameData
 
-    from ttsim.typing import FlatData, IntColumn, QNameData
+
+def _canonicalize_input_dtype(
+    arr: Shaped[Array | np.ndarray, " n_obs"] | pd.Series,
+    xnp: ModuleType,
+) -> Shaped[Array | np.ndarray, " n_obs"]:
+    """Canonicalize a column to a backend-native dtype the TT DAG can operate on.
+
+    Handles three families of pandas extension dtypes uniformly with plain
+    numpy / JAX arrays:
+
+    - **Float** (numpy float, pandas-nullable ``Float64``, ``float[pyarrow]``)
+      → ``float64`` with ``pd.NA`` mapped to ``NaN``.
+    - **Unsigned integer** (numpy uint, ``UInt*``, ``uint*[pyarrow]``) →
+      ``int64`` so signed arithmetic on them does not underflow into a huge
+      positive value. ``UInt*`` and ``uint*[pyarrow]`` enter the Series
+      branch and are caught by ``is_integer_dtype`` there, which subsumes
+      both signed and unsigned nullable dtypes; the result is the same
+      ``int64`` cast.
+    - **Signed integer / Bool** (nullable / pyarrow variants) → numpy
+      ``int64`` / ``bool_`` when the column has no missing values; left as
+      an object-dtype array with ``pd.NA`` in place otherwise, for the
+      ``input_data_has_int_or_bool_missing_values`` fail-if to surface.
+    """
+    if isinstance(arr, pd.Series):
+        return _canonicalize_series(arr, xnp)
+    if pd.api.types.is_unsigned_integer_dtype(arr):
+        return xnp.asarray(arr, dtype=xnp.int64)
+    return xnp.asarray(arr)
+
+
+def _canonicalize_series(
+    arr: pd.Series,
+    xnp: ModuleType,
+) -> Shaped[Array | np.ndarray, " n_obs"]:
+    """Series-only branch of `_canonicalize_input_dtype`."""
+    dtype = arr.dtype
+    if pd.api.types.is_float_dtype(dtype):
+        return xnp.asarray(arr.astype("float64"))
+    if pd.api.types.is_bool_dtype(dtype):
+        if arr.isna().any():
+            return arr.to_numpy(dtype=object)
+        return xnp.asarray(arr.astype("bool"))
+    # `is_integer_dtype` matches both signed and unsigned nullable / pyarrow
+    # variants, so `UInt*` / ``uint*[pyarrow]`` Series take the same int64
+    # cast as their signed counterparts.
+    if pd.api.types.is_integer_dtype(dtype):
+        if arr.isna().any():
+            return arr.to_numpy(dtype=object)
+        return xnp.asarray(arr.astype("int64"))
+    return xnp.asarray(arr)
 
 
 @interface_function(in_top_level_namespace=True)
@@ -25,7 +79,7 @@ def processed_data(
     The transformations will be undone when going from raw results to results.
     """
 
-    orig_p_ids = xnp.asarray(input_data__flat[("p_id",)])
+    orig_p_ids = _canonicalize_input_dtype(input_data__flat[("p_id",)], xnp)
     sorted_orig_p_ids = orig_p_ids[input_data__sort_indices]
     internal_p_ids = xnp.arange(len(orig_p_ids))
 
@@ -39,7 +93,7 @@ def processed_data(
             processed_input_data[qname] = data
             continue
 
-        sorted_data = xnp.asarray(data[input_data__sort_indices])
+        sorted_data = _canonicalize_input_dtype(data[input_data__sort_indices], xnp)
 
         if path[-1].endswith("_id"):
             processed_input_data[qname] = reorder_ids(ids=sorted_data, xnp=xnp)

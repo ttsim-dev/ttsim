@@ -5,7 +5,10 @@ import pandas as pd
 import pytest
 
 from ttsim.interface_dag_elements.input_data import sort_indices
-from ttsim.interface_dag_elements.processed_data import processed_data
+from ttsim.interface_dag_elements.processed_data import (
+    _canonicalize_input_dtype,
+    processed_data,
+)
 
 
 @pytest.fixture
@@ -112,6 +115,72 @@ def test_processed_data_single_column(xnp):
         ),
         pd.DataFrame(expected),
     )
+
+
+def _pyarrow_uint32_series():
+    pytest.importorskip("pyarrow")
+    return pd.Series([0, 100], dtype="uint32[pyarrow]")
+
+
+@pytest.mark.parametrize(
+    "uint_input_factory",
+    [
+        lambda: numpy.array([0, 100], dtype=numpy.uint8),
+        lambda: numpy.array([0, 100], dtype=numpy.uint16),
+        lambda: numpy.array([0, 100], dtype=numpy.uint32),
+        lambda: numpy.array([0, 100], dtype=numpy.uint64),
+        lambda: pd.Series([0, 100], dtype=numpy.uint32),
+        lambda: pd.Series([0, 100], dtype="UInt32"),
+        _pyarrow_uint32_series,
+    ],
+    ids=[
+        "numpy_uint8",
+        "numpy_uint16",
+        "numpy_uint32",
+        "numpy_uint64",
+        "pd_series_numpy_uint32",
+        "pd_series_UInt32_nullable",
+        "pd_series_uint32_pyarrow",
+    ],
+)
+def test_canonicalize_input_dtype_returns_signed_array(uint_input_factory, xnp):
+    """Coerced output is a signed integer (exact width depends on the backend:
+    int64 on numpy, int32 on jax with the default x64-disabled config).
+    """
+    uint_input = uint_input_factory()
+    result = _canonicalize_input_dtype(uint_input, xnp)
+    assert result.dtype.kind == "i"
+    assert int(result[0]) == 0
+    assert int(result[1]) == 100
+    # Subtracting a larger value stays signed instead of wrapping into a huge
+    # positive uint value.
+    assert int(result[0] - xnp.asarray(1230, dtype=result.dtype)) == -1230
+
+
+def test_canonicalize_input_dtype_passes_non_uint_through(xnp):
+    arr = numpy.array([-5, 0, 5], dtype=numpy.int32)
+    result = _canonicalize_input_dtype(arr, xnp)
+    assert result.dtype == xnp.int32
+    assert int(result[0]) == -5
+
+
+def test_processed_data_coerces_uint_columns_to_signed(xnp):
+    input_data__flat = {
+        ("p_id",): numpy.array([5, 7], dtype=numpy.uint32),
+        ("wage",): numpy.array([0, 100], dtype=numpy.uint32),
+    }
+    result = processed_data(
+        input_data__flat=input_data__flat,
+        input_data__sort_indices=sort_indices(
+            input_data__flat=input_data__flat, xnp=xnp
+        ),
+        xnp=xnp,
+    )
+    assert result["wage"].dtype.kind == "i"
+    # Subtraction stays signed instead of underflowing into uint wraparound.
+    diff = result["wage"] - xnp.asarray([1230, 50], dtype=result["wage"].dtype)
+    assert int(diff[0]) == -1230
+    assert int(diff[1]) == 50
 
 
 def test_processed_data_single_row(xnp):
