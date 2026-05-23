@@ -326,6 +326,47 @@ def input_data_is_invalid(input_data__flat: FlatData, xnp: ModuleType) -> None:
 
 
 @fail_function(include_if_any_element_present=["input_data__flat"])
+def input_data_has_int_or_bool_missing_values(input_data__flat: FlatData) -> None:
+    """Fail when an integer or boolean input column has missing values.
+
+    Float columns map ``pd.NA`` to ``NaN`` silently, but neither numpy
+    integer nor numpy boolean dtypes have a missing-value sentinel. Surface
+    the columns and their first offending row position so the user can
+    either fill the missing values or convert the column to a float type
+    that supports NaN.
+    """
+    offending: list[tuple[tuple[str, ...], int]] = []
+    for path, data in input_data__flat.items():
+        if getattr(data, "dtype", None) != numpy.dtype(object):
+            continue
+        series = pd.Series(data)
+        na_mask = series.isna()
+        if not na_mask.any():
+            continue
+        non_na = series[~na_mask]
+        if non_na.empty:
+            offending.append((path, int(numpy.argmax(na_mask.to_numpy()))))
+            continue
+        sample = non_na.iloc[0]
+        if isinstance(sample, bool | numpy.bool_ | int | numpy.integer):
+            offending.append((path, int(numpy.argmax(na_mask.to_numpy()))))
+    if offending:
+        formatted = "\n".join(
+            f"    - {dt.qname_from_tree_path(path)}: first NA at row {row}"
+            for path, row in offending
+        )
+        msg = format_errors_and_warnings(
+            "The following integer or boolean input columns contain missing "
+            "values, which cannot be represented in numpy integer / bool "
+            "dtypes:\n"
+            f"{formatted}\n\n"
+            "Fill the missing values, or convert the column to a float type "
+            "that supports NaN."
+        )
+        raise ValueError(msg)
+
+
+@fail_function(include_if_any_element_present=["input_data__flat"])
 def input_data_uint64_values_overflow_int64(input_data__flat: FlatData) -> None:
     """Fail when a uint64 input column has any value outside the int64 range.
 

@@ -47,6 +47,9 @@ class FailIf(MainTargetABC):
     group_variables_are_not_constant_within_groups: str = (
         "fail_if__group_variables_are_not_constant_within_groups"
     )
+    input_data_has_int_or_bool_missing_values: str = (
+        "fail_if__input_data_has_int_or_bool_missing_values"
+    )
     input_data_is_invalid: str = "fail_if__input_data_is_invalid"
     input_data_tree_is_invalid: str = "fail_if__input_data_tree_is_invalid"
     input_data_uint64_values_overflow_int64: str = (

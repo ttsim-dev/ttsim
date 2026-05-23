@@ -6,7 +6,7 @@ import pytest
 
 from ttsim.interface_dag_elements.input_data import sort_indices
 from ttsim.interface_dag_elements.processed_data import (
-    _coerce_uint_to_int64,
+    _canonicalize_input_dtype,
     processed_data,
 )
 
@@ -143,12 +143,12 @@ def _pyarrow_uint32_series():
         "pd_series_uint32_pyarrow",
     ],
 )
-def test_coerce_uint_to_int64_returns_signed_array(uint_input_factory, xnp):
+def test_canonicalize_input_dtype_returns_signed_array(uint_input_factory, xnp):
     """Coerced output is a signed integer (exact width depends on the backend:
     int64 on numpy, int32 on jax with the default x64-disabled config).
     """
     uint_input = uint_input_factory()
-    result = _coerce_uint_to_int64(uint_input, xnp)
+    result = _canonicalize_input_dtype(uint_input, xnp)
     assert result.dtype.kind == "i"
     assert int(result[0]) == 0
     assert int(result[1]) == 100
@@ -157,9 +157,9 @@ def test_coerce_uint_to_int64_returns_signed_array(uint_input_factory, xnp):
     assert int(result[0] - xnp.asarray(1230, dtype=result.dtype)) == -1230
 
 
-def test_coerce_uint_to_int64_passes_non_uint_through(xnp):
+def test_canonicalize_input_dtype_passes_non_uint_through(xnp):
     arr = numpy.array([-5, 0, 5], dtype=numpy.int32)
-    result = _coerce_uint_to_int64(arr, xnp)
+    result = _canonicalize_input_dtype(arr, xnp)
     assert result.dtype == xnp.int32
     assert int(result[0]) == -5
 

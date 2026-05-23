@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Literal
 
 import dags.tree as dt
 import numpy
+import pandas as pd
 
 from ttsim.interface_dag_elements.data_converters import (
     df_with_mapped_columns_to_flat_data,
@@ -14,11 +15,12 @@ from ttsim.interface_dag_elements.interface_node_objects import (
     interface_function,
     interface_input,
 )
+from ttsim.interface_dag_elements.processed_data import (
+    _canonicalize_input_dtype,
+)
 
 if TYPE_CHECKING:
     from types import ModuleType
-
-    import pandas as pd
 
     from ttsim.typing import (
         FlatData,
@@ -101,7 +103,9 @@ def flat_from_tree(
     # Broadcast scalar leaves to length-`n_obs` arrays so the tree input
     # path produces the same shape as the df-based paths. Users who want
     # scalars partialled into derived consumers must opt in by supplying
-    # their data via `InputData.flat`, which bypasses this conversion.
+    # their data via `InputData.flat`, which bypasses this conversion. Any
+    # `pd.Series` leaves go through `_canonicalize_input_dtype` so
+    # nullable / pyarrow dtypes are normalised to numpy.
     flat = dt.flatten_to_tree_paths(tree)
     p_id = flat.get(("p_id",))
     # If `p_id` is missing or itself a scalar, we don't know `n_obs`; pass
@@ -110,10 +114,15 @@ def flat_from_tree(
     if p_id is None or not hasattr(p_id, "__len__"):
         return flat
     n_obs = len(p_id)
-    return {
-        path: value if hasattr(value, "__len__") else numpy.full(n_obs, value)
-        for path, value in flat.items()
-    }
+    out: FlatData = {}
+    for path, value in flat.items():
+        if not hasattr(value, "__len__"):
+            out[path] = numpy.full(n_obs, value)
+        elif isinstance(value, pd.Series):
+            out[path] = _canonicalize_input_dtype(value, numpy)
+        else:
+            out[path] = value
+    return out
 
 
 @interface_function()

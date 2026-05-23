@@ -6,6 +6,10 @@ releases are available on [Anaconda.org](https://anaconda.org/conda-forge/ttsim)
 
 ## Unreleased
 
+- {gh}`109` Canonicalize pandas-nullable and pyarrow-backed input dtypes: float-nullable
+  / float-pyarrow columns are converted to `float64` with `pd.NA → NaN`; integer /
+  boolean nullable variants are coerced to `int64` / `bool` when NA-free, and rejected
+  with a per-column + per-row error otherwise. ({ghuser}`hmgaudecker`)
 - {gh}`108` Allow endogenously-computed `p_id_*` columns as targets — the interface DAG
   reverse-translates internal indices back to user-space `p_id` values, preserving the
   `-1` no-link sentinel. ({ghuser}`hmgaudecker`)
