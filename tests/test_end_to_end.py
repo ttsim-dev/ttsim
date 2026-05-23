@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import dags.tree as dt
+import numpy
 import pandas as pd
 import pytest
 from mettsim import middle_earth
@@ -45,6 +46,20 @@ DF_FOR_MAPPER = pd.DataFrame(
         "wealth": [0.0, 0.0, 0.0],
     },
 )
+
+
+INPUT_QNAME_DATA = {
+    "age": numpy.array([10, 30, 30]),
+    "kin_id": numpy.array([0, 0, 0]),
+    "p_id": numpy.array([2, 0, 1]),
+    "p_id_parent_1": numpy.array([0, -1, -1]),
+    "p_id_parent_2": numpy.array([1, -1, -1]),
+    "p_id_spouse": numpy.array([-1, 1, 0]),
+    "parent_is_noble": numpy.array([False, False, False]),
+    "wealth": numpy.array([0.0, 0.0, 0.0]),
+    "payroll_tax__child_tax_credit__p_id_recipient": numpy.array([0, -1, -1]),
+    "payroll_tax__income__gross_wage_y": numpy.array([0, 10000, 0]),
+}
 
 
 INPUT_DF_MAPPER = {
@@ -106,6 +121,7 @@ def benefit(income_m: float) -> float:
     [
         InputData.df_and_mapper(df=DF_FOR_MAPPER, mapper=INPUT_DF_MAPPER),
         InputData.df_with_nested_columns(DF_WITH_NESTED_COLUMNS),
+        InputData.qname(INPUT_QNAME_DATA),
     ],
 )
 def test_end_to_end(input_data_arg, backend: Literal["numpy", "jax"]):
@@ -155,6 +171,51 @@ def test_uint_wage_input_does_not_underflow(
     assert float(amount_y[0]) == 0.0
     assert float(amount_y[1]) == 0.0
     assert float(amount_y[2]) == 0.0
+
+
+def test_df_with_qname_columns_has_qname_string_columns(
+    backend: Literal["numpy", "jax"],
+):
+    """Flat qname-named columns survive adding/removing targets without changing
+    the column index depth — unlike `df_with_nested_columns` which uses a
+    MultiIndex whose depth tracks the deepest target.
+    """
+    result = main(
+        main_target=MainTarget.results.df_with_qname_columns,
+        input_data=InputData.df_with_nested_columns(DF_WITH_NESTED_COLUMNS),
+        tt_targets=TTTargets.tree(
+            {
+                "payroll_tax": {
+                    "amount_y": None,
+                    "child_tax_credit": {"amount_m": None},
+                },
+            }
+        ),
+        policy_date_str="2025-01-01",
+        rounding=False,
+        orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+        backend=backend,
+    )
+    assert list(result.columns) == [
+        "payroll_tax__amount_y",
+        "payroll_tax__child_tax_credit__amount_m",
+    ]
+    assert result.index.name == "p_id"
+    assert list(result.index) == [2, 0, 1]
+    pd.testing.assert_series_equal(
+        result["payroll_tax__amount_y"].reset_index(drop=True),
+        EXPECTED_TT_RESULTS["payroll_tax_amount_y"].reset_index(drop=True),
+        check_dtype=False,
+        check_names=False,
+    )
+    pd.testing.assert_series_equal(
+        result["payroll_tax__child_tax_credit__amount_m"].reset_index(drop=True),
+        EXPECTED_TT_RESULTS["payroll_tax_child_tax_credit_amount_m"].reset_index(
+            drop=True
+        ),
+        check_dtype=False,
+        check_names=False,
+    )
 
 
 def test_can_create_input_template(backend: Literal["numpy", "jax"]):

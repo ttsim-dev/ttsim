@@ -56,6 +56,34 @@ def nested_data_to_df_with_nested_columns(
     )
 
 
+def nested_data_to_df_with_qname_columns(
+    nested_data_to_convert: NestedResults,
+    index: pd.Index,
+) -> pd.DataFrame:
+    """Convert a nested data structure to a DataFrame with qname-string columns.
+
+    Each output column is named with the qualified-name string for its tree path
+    (parts joined by `__`). The column index is a flat `str` index regardless
+    of how deeply nested the input is, so adding or removing targets does not
+    change the column-index depth.
+
+    Args:
+        nested_data_to_convert:
+            A nested data structure.
+        index:
+            The index to use for the DataFrame.
+
+    Returns:
+        A DataFrame with qname-string columns.
+    """
+    flat_data_to_convert = dt.flatten_to_qnames(nested_data_to_convert)
+
+    return pd.DataFrame(
+        flat_data_to_convert,
+        index=index,
+    )
+
+
 def nested_data_to_df_with_mapped_columns(
     nested_data_to_convert: NestedResults,
     nested_outputs_df_column_names: NestedStrings,

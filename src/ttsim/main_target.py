@@ -92,6 +92,7 @@ class FailIf(MainTargetABC):
 class Results(MainTargetABC):
     df_with_mapper: str = "results__df_with_mapper"
     df_with_nested_columns: str = "results__df_with_nested_columns"
+    df_with_qname_columns: str = "results__df_with_qname_columns"
     tree: str = "results__tree"
 
 
@@ -158,6 +159,7 @@ class InputData(MainTargetABC):
     df_and_mapper: type[DfAndMapper] = field(default=DfAndMapper)
     df_with_nested_columns: str = "input_data__df_with_nested_columns"
     flat: str = "input_data__flat"
+    qname: str = "input_data__qname"
     sort_indices: str = "input_data__sort_indices"
     tree: str = "input_data__tree"
 

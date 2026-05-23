@@ -27,6 +27,7 @@ if TYPE_CHECKING:
         IntColumn,
         NestedData,
         NestedInputsMapper,
+        QNameData,
     )
 
 
@@ -50,6 +51,11 @@ def df_with_nested_columns() -> pd.DataFrame:
 @interface_input()
 def tree() -> NestedData:
     """The input data as a nested dictionary of arrays."""
+
+
+@interface_input()
+def qname() -> QNameData:
+    """The input data as a flat dictionary keyed by qualified names."""
 
 
 @input_dependent_interface_function(
@@ -109,6 +115,31 @@ def flat_from_tree(
             else value
         )
         for path, value in dt.flatten_to_tree_paths(tree).items()
+    }
+
+
+@input_dependent_interface_function(
+    include_if_all_inputs_present=["input_data__qname"],
+    leaf_name="flat",
+)
+def flat_from_qname(
+    qname: QNameData,
+    xnp: ModuleType,  # noqa: ARG001
+) -> FlatData:
+    """The input data as a flat dictionary of arrays."""
+    # `pd.Series` leaves go through `_canonicalize_input_dtype` directly so
+    # nullable / pyarrow dtypes are normalised; plain Python lists /
+    # sequences first become numpy arrays so the canonicaliser sees the
+    # already-narrow input type its claw enforces. Backend arrays
+    # (`numpy.ndarray`, JAX `Array`) pass through `numpy.asarray` as well,
+    # which is a no-op for numpy arrays and pulls JAX arrays back to numpy
+    # so the canonicaliser sees one uniform input type.
+    return {
+        dt.tree_path_from_qname(q): _canonicalize_input_dtype(
+            value if isinstance(value, pd.Series) else numpy.asarray(value),
+            numpy,
+        )
+        for q, value in qname.items()
     }
 
 

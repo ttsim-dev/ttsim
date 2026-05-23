@@ -299,6 +299,7 @@ class RawResults(MainArg):
 class Results(MainArg):
     df_with_mapper: pd.DataFrame | None = None
     df_with_nested_columns: pd.DataFrame | None = None
+    df_with_qname_columns: pd.DataFrame | None = None
     tree: NestedData | None = None
 
     def __post_init__(self) -> None:
@@ -318,6 +319,15 @@ class Results(MainArg):
             cls=cls,
             field_name="df_with_nested_columns",
             field_value=df_with_nested_columns,
+        )
+
+    @classmethod
+    def df_with_qname_columns(cls, df_with_qname_columns: pd.DataFrame) -> Results:
+        """Results as a dataframe with qualified-name string columns."""
+        return _set_single_field(
+            cls=cls,
+            field_name="df_with_qname_columns",
+            field_value=df_with_qname_columns,
         )
 
     @classmethod
