@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib
 import importlib.util
 import inspect
 import sys
@@ -21,7 +22,6 @@ from ttsim.typing import FlatColumnObjectsParamFunctions
 
 if TYPE_CHECKING:
     from ttsim.typing import (
-        FlatColumnObjectsParamFunctions,
         FlatOrigParamSpecs,
         OrigParamSpec,
     )
@@ -111,9 +111,18 @@ def _tree_path_to_orig_column_objects_params_functions(
 
 
 def load_module(path: Path, root: Path) -> ModuleType:
+    canonical_name = _find_canonical_module_name(path)
+    if canonical_name is not None:
+        # Use the proper Python import path so objects defined in the module
+        # have an importable `__module__` — required for `cloudpickle.dumps`
+        # to round-trip the policy environment via pickle-by-reference.
+        return importlib.import_module(canonical_name)
+
+    # Policy environment is a bare directory tree (no `__init__.py` chain
+    # reaching `sys.path`). Objects defined in modules loaded this way carry
+    # a non-importable `__module__` and cannot be cloudpickled by reference.
     name = path.relative_to(root).with_suffix("").as_posix().replace("/", ".")
     spec = importlib.util.spec_from_file_location(name=name, location=path)
-    # Assert that spec is not None and spec.loader is not None, required for mypy
     _msg = f"Could not load module spec for {path},  {root}"
     if spec is None:
         raise ImportError(_msg)
@@ -124,6 +133,28 @@ def load_module(path: Path, root: Path) -> ModuleType:
     spec.loader.exec_module(module)
 
     return module
+
+
+def _find_canonical_module_name(path: Path) -> str | None:
+    """Return the canonical dotted import name for ``path``, if importable.
+
+    Walks up the ``__init__.py`` chain from ``path``'s parent. If the topmost
+    ``__init__.py``-having directory's parent is on ``sys.path``, the dotted
+    name formed by joining the directory names (top to bottom) plus the file
+    stem is the canonical import path. Returns ``None`` if ``path`` is not
+    part of a proper Python package.
+    """
+    parts = [path.stem]
+    current = path.parent
+    while (current / "__init__.py").is_file():
+        parts.append(current.name)
+        current = current.parent
+    if len(parts) == 1:
+        return None
+    sys_path_resolved = {Path(p).resolve() for p in sys.path if Path(p).exists()}
+    if current.resolve() in sys_path_resolved:
+        return ".".join(reversed(parts))
+    return None
 
 
 def _tree_path_to_orig_yaml_object(path: Path, root: Path) -> FlatOrigParamSpecs:
