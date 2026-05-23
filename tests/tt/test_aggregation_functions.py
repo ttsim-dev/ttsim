@@ -823,95 +823,300 @@ def test_grouped_sum_large_group_ids_with_gaps(backend, xnp):
     numpy.testing.assert_array_equal(result, expected)
 
 
-def test_count_by_p_id_raises_not_implemented(backend, xnp):
-    """Test count_by_p_id raises NotImplementedError (not yet implemented)."""
+def test_count_by_p_id(backend, xnp):
+    """Counts the number of source rows whose `p_id_to_aggregate_by` matches each
+    destination `p_id_to_store_by`. Negative `p_id_to_aggregate_by` entries do
+    not contribute; empty destinations get count 0.
+    """
     p_id_to_aggregate_by = xnp.array([-1, -1, 8, 8, 10])
     p_id_to_store_by = xnp.array([7, 8, 9, 10, 11])
 
-    with pytest.raises(NotImplementedError):
-        count_by_p_id(
-            p_id_to_aggregate_by=p_id_to_aggregate_by,
-            p_id_to_store_by=p_id_to_store_by,
-            num_segments=5,
-            backend=backend,
-        )
+    result = count_by_p_id(
+        p_id_to_aggregate_by=p_id_to_aggregate_by,
+        p_id_to_store_by=p_id_to_store_by,
+        num_segments=5,
+        backend=backend,
+    )
+
+    expected = xnp.array([0, 2, 0, 1, 0])
+    numpy.testing.assert_array_equal(result, expected)
 
 
-def test_mean_by_p_id_raises_not_implemented(backend, xnp):
-    """Test mean_by_p_id raises NotImplementedError (not yet implemented)."""
+def test_mean_by_p_id(backend, xnp):
+    """Mean of source values keyed by `p_id_to_aggregate_by`, scattered to
+    `p_id_to_store_by`. Empty destinations are 0.
+    """
     column = xnp.array([10.0, 20.0, 30.0, 40.0, 50.0])
     p_id_to_aggregate_by = xnp.array([-1, -1, 8, 8, 10])
     p_id_to_store_by = xnp.array([7, 8, 9, 10, 11])
 
-    with pytest.raises(NotImplementedError):
-        mean_by_p_id(
-            column=column,
-            p_id_to_aggregate_by=p_id_to_aggregate_by,
-            p_id_to_store_by=p_id_to_store_by,
-            num_segments=5,
-            backend=backend,
-        )
+    result = mean_by_p_id(
+        column=column,
+        p_id_to_aggregate_by=p_id_to_aggregate_by,
+        p_id_to_store_by=p_id_to_store_by,
+        num_segments=5,
+        backend=backend,
+    )
+
+    expected = xnp.array([0.0, 35.0, 0.0, 50.0, 0.0])
+    numpy.testing.assert_array_almost_equal(result, expected)
 
 
-def test_max_by_p_id_raises_not_implemented(backend, xnp):
-    """Test max_by_p_id raises NotImplementedError (not yet implemented)."""
+def test_max_by_p_id(backend, xnp):
+    """Maximum of source values keyed by `p_id_to_aggregate_by`. Empty
+    destinations are 0.
+    """
     column = xnp.array([10.0, 20.0, 30.0, 40.0, 50.0])
     p_id_to_aggregate_by = xnp.array([-1, -1, 8, 8, 10])
     p_id_to_store_by = xnp.array([7, 8, 9, 10, 11])
 
-    with pytest.raises(NotImplementedError):
-        max_by_p_id(
-            column=column,
-            p_id_to_aggregate_by=p_id_to_aggregate_by,
-            p_id_to_store_by=p_id_to_store_by,
-            num_segments=5,
-            backend=backend,
-        )
+    result = max_by_p_id(
+        column=column,
+        p_id_to_aggregate_by=p_id_to_aggregate_by,
+        p_id_to_store_by=p_id_to_store_by,
+        num_segments=5,
+        backend=backend,
+    )
+
+    expected = xnp.array([0.0, 40.0, 0.0, 50.0, 0.0])
+    numpy.testing.assert_array_equal(result, expected)
 
 
-def test_min_by_p_id_raises_not_implemented(backend, xnp):
-    """Test min_by_p_id raises NotImplementedError (not yet implemented)."""
+def test_min_by_p_id(backend, xnp):
+    """Minimum of source values keyed by `p_id_to_aggregate_by`. Empty
+    destinations are 0.
+    """
     column = xnp.array([10.0, 20.0, 30.0, 40.0, 50.0])
     p_id_to_aggregate_by = xnp.array([-1, -1, 8, 8, 10])
     p_id_to_store_by = xnp.array([7, 8, 9, 10, 11])
 
-    with pytest.raises(NotImplementedError):
-        min_by_p_id(
-            column=column,
-            p_id_to_aggregate_by=p_id_to_aggregate_by,
-            p_id_to_store_by=p_id_to_store_by,
-            num_segments=5,
-            backend=backend,
-        )
+    result = min_by_p_id(
+        column=column,
+        p_id_to_aggregate_by=p_id_to_aggregate_by,
+        p_id_to_store_by=p_id_to_store_by,
+        num_segments=5,
+        backend=backend,
+    )
+
+    expected = xnp.array([0.0, 30.0, 0.0, 50.0, 0.0])
+    numpy.testing.assert_array_equal(result, expected)
 
 
-def test_any_by_p_id_raises_not_implemented(backend, xnp):
-    """Test any_by_p_id raises NotImplementedError (not yet implemented)."""
+def test_any_by_p_id(backend, xnp):
+    """Logical OR of source bools keyed by `p_id_to_aggregate_by`. Empty
+    destinations are False (empty disjunction).
+    """
     column = xnp.array([True, False, True, False, True])
     p_id_to_aggregate_by = xnp.array([-1, -1, 8, 8, 10])
     p_id_to_store_by = xnp.array([7, 8, 9, 10, 11])
 
-    with pytest.raises(NotImplementedError):
-        any_by_p_id(
-            column=column,
-            p_id_to_aggregate_by=p_id_to_aggregate_by,
-            p_id_to_store_by=p_id_to_store_by,
-            num_segments=5,
-            backend=backend,
-        )
+    result = any_by_p_id(
+        column=column,
+        p_id_to_aggregate_by=p_id_to_aggregate_by,
+        p_id_to_store_by=p_id_to_store_by,
+        num_segments=5,
+        backend=backend,
+    )
+
+    expected = xnp.array([False, True, False, True, False])
+    numpy.testing.assert_array_equal(result, expected)
 
 
-def test_all_by_p_id_raises_not_implemented(backend, xnp):
-    """Test all_by_p_id raises NotImplementedError (not yet implemented)."""
+def test_all_by_p_id(backend, xnp):
+    """Logical AND of source bools keyed by `p_id_to_aggregate_by`. Empty
+    destinations are True (empty conjunction).
+    """
     column = xnp.array([True, False, True, False, True])
     p_id_to_aggregate_by = xnp.array([-1, -1, 8, 8, 10])
     p_id_to_store_by = xnp.array([7, 8, 9, 10, 11])
 
-    with pytest.raises(NotImplementedError):
-        all_by_p_id(
-            column=column,
-            p_id_to_aggregate_by=p_id_to_aggregate_by,
-            p_id_to_store_by=p_id_to_store_by,
-            num_segments=5,
-            backend=backend,
-        )
+    result = all_by_p_id(
+        column=column,
+        p_id_to_aggregate_by=p_id_to_aggregate_by,
+        p_id_to_store_by=p_id_to_store_by,
+        num_segments=5,
+        backend=backend,
+    )
+
+    expected = xnp.array([True, False, True, True, True])
+    numpy.testing.assert_array_equal(result, expected)
+
+
+def test_count_by_p_id_ignores_negative_sentinels(backend, xnp):
+    """`-1` entries in `p_id_to_aggregate_by` never contribute to the count."""
+    p_id_to_aggregate_by = xnp.array([-1, -1, -1])
+    p_id_to_store_by = xnp.array([1, 2, 3])
+
+    result = count_by_p_id(
+        p_id_to_aggregate_by=p_id_to_aggregate_by,
+        p_id_to_store_by=p_id_to_store_by,
+        num_segments=3,
+        backend=backend,
+    )
+
+    expected = xnp.array([0, 0, 0])
+    numpy.testing.assert_array_equal(result, expected)
+
+
+def test_mean_by_p_id_ignores_negative_sentinels(backend, xnp):
+    """`-1` entries in `p_id_to_aggregate_by` never enter the mean."""
+    column = xnp.array([100.0, 200.0, 10.0, 20.0])
+    p_id_to_aggregate_by = xnp.array([-1, -1, 1, 1])
+    p_id_to_store_by = xnp.array([0, 1, 2])
+
+    result = mean_by_p_id(
+        column=column,
+        p_id_to_aggregate_by=p_id_to_aggregate_by,
+        p_id_to_store_by=p_id_to_store_by,
+        num_segments=3,
+        backend=backend,
+    )
+
+    expected = xnp.array([0.0, 15.0, 0.0])
+    numpy.testing.assert_array_almost_equal(result, expected)
+
+
+def test_max_by_p_id_ignores_negative_sentinels(backend, xnp):
+    """`-1` entries never affect the max; an enormous value at a masked
+    position must not leak into the result.
+    """
+    column = xnp.array([1e10, -1e10, 5.0, 7.0])
+    p_id_to_aggregate_by = xnp.array([-1, -1, 1, 1])
+    p_id_to_store_by = xnp.array([0, 1, 2])
+
+    result = max_by_p_id(
+        column=column,
+        p_id_to_aggregate_by=p_id_to_aggregate_by,
+        p_id_to_store_by=p_id_to_store_by,
+        num_segments=3,
+        backend=backend,
+    )
+
+    expected = xnp.array([0.0, 7.0, 0.0])
+    numpy.testing.assert_array_equal(result, expected)
+
+
+def test_min_by_p_id_ignores_negative_sentinels(backend, xnp):
+    """`-1` entries never affect the min; a tiny value at a masked position
+    must not leak into the result.
+    """
+    column = xnp.array([1e10, -1e10, 5.0, 7.0])
+    p_id_to_aggregate_by = xnp.array([-1, -1, 1, 1])
+    p_id_to_store_by = xnp.array([0, 1, 2])
+
+    result = min_by_p_id(
+        column=column,
+        p_id_to_aggregate_by=p_id_to_aggregate_by,
+        p_id_to_store_by=p_id_to_store_by,
+        num_segments=3,
+        backend=backend,
+    )
+
+    expected = xnp.array([0.0, 5.0, 0.0])
+    numpy.testing.assert_array_equal(result, expected)
+
+
+def test_any_by_p_id_ignores_negative_sentinels(backend, xnp):
+    """`-1` entries never set the disjunction; a True at a masked position
+    must not flip the result.
+    """
+    column = xnp.array([True, True, False, False])
+    p_id_to_aggregate_by = xnp.array([-1, -1, 1, 1])
+    p_id_to_store_by = xnp.array([0, 1, 2])
+
+    result = any_by_p_id(
+        column=column,
+        p_id_to_aggregate_by=p_id_to_aggregate_by,
+        p_id_to_store_by=p_id_to_store_by,
+        num_segments=3,
+        backend=backend,
+    )
+
+    expected = xnp.array([False, False, False])
+    numpy.testing.assert_array_equal(result, expected)
+
+
+def test_all_by_p_id_ignores_negative_sentinels(backend, xnp):
+    """`-1` entries never enter the conjunction; a False at a masked position
+    must not collapse the result to False.
+    """
+    column = xnp.array([False, False, True, True])
+    p_id_to_aggregate_by = xnp.array([-1, -1, 1, 1])
+    p_id_to_store_by = xnp.array([0, 1, 2])
+
+    result = all_by_p_id(
+        column=column,
+        p_id_to_aggregate_by=p_id_to_aggregate_by,
+        p_id_to_store_by=p_id_to_store_by,
+        num_segments=3,
+        backend=backend,
+    )
+
+    expected = xnp.array([True, True, True])
+    numpy.testing.assert_array_equal(result, expected)
+
+
+def test_sum_by_p_id_ignores_non_negative_keys_absent_from_store(backend, xnp):
+    """A non-negative `p_id_to_aggregate_by` entry whose value is not present
+    in `p_id_to_store_by` does not silently scatter into the clipped bucket
+    `searchsorted` returns. On JAX, the absent-key contribution would
+    otherwise corrupt the destination at the clamped index.
+    """
+    column = xnp.array([100.0, 200.0, 300.0])
+    p_id_to_aggregate_by = xnp.array([1, 999, 2])
+    p_id_to_store_by = xnp.array([1, 2, 3])
+
+    result = sum_by_p_id(
+        column=column,
+        p_id_to_aggregate_by=p_id_to_aggregate_by,
+        p_id_to_store_by=p_id_to_store_by,
+        num_segments=3,
+        backend=backend,
+    )
+
+    expected = xnp.array([100.0, 300.0, 0.0])
+    numpy.testing.assert_array_equal(result, expected)
+
+
+def test_max_by_p_id_keeps_real_sentinel_valued_data(backend, xnp):
+    """A legitimate column value equal to the per-dtype `min` sentinel must
+    survive — the empty-bucket replacement must not rewrite real data via
+    sentinel equality. Uses int32 so the dtype's min is representable
+    identically on numpy and JAX (where float64 would silently downcast).
+    """
+    column = xnp.array([numpy.iinfo(numpy.int32).min, 5], dtype=numpy.int32)
+    p_id_to_aggregate_by = xnp.array([1, 2])
+    p_id_to_store_by = xnp.array([1, 2, 3])
+
+    result = max_by_p_id(
+        column=column,
+        p_id_to_aggregate_by=p_id_to_aggregate_by,
+        p_id_to_store_by=p_id_to_store_by,
+        num_segments=3,
+        backend=backend,
+    )
+
+    expected = xnp.array([numpy.iinfo(numpy.int32).min, 5, 0], dtype=numpy.int32)
+    numpy.testing.assert_array_equal(result, expected)
+
+
+def test_min_by_p_id_keeps_real_sentinel_valued_data(backend, xnp):
+    """A legitimate column value equal to the per-dtype `max` sentinel must
+    survive — the empty-bucket replacement must not rewrite real data via
+    sentinel equality. Uses int32 so the dtype's max is representable
+    identically on numpy and JAX (where float64 would silently downcast).
+    """
+    column = xnp.array([numpy.iinfo(numpy.int32).max, 5], dtype=numpy.int32)
+    p_id_to_aggregate_by = xnp.array([1, 2])
+    p_id_to_store_by = xnp.array([1, 2, 3])
+
+    result = min_by_p_id(
+        column=column,
+        p_id_to_aggregate_by=p_id_to_aggregate_by,
+        p_id_to_store_by=p_id_to_store_by,
+        num_segments=3,
+        backend=backend,
+    )
+
+    expected = xnp.array([numpy.iinfo(numpy.int32).max, 5, 0], dtype=numpy.int32)
+    numpy.testing.assert_array_equal(result, expected)
