@@ -49,6 +49,9 @@ class FailIf(MainTargetABC):
     )
     input_data_is_invalid: str = "fail_if__input_data_is_invalid"
     input_data_tree_is_invalid: str = "fail_if__input_data_tree_is_invalid"
+    input_data_uint64_values_overflow_int64: str = (
+        "fail_if__input_data_uint64_values_overflow_int64"
+    )
     input_df_has_bool_or_numeric_column_names: str = (
         "fail_if__input_df_has_bool_or_numeric_column_names"
     )

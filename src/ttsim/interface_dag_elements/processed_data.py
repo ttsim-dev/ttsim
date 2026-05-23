@@ -1,16 +1,33 @@
 from __future__ import annotations
 
+from types import ModuleType
 from typing import TYPE_CHECKING
 
 import dags.tree as dt
+import numpy as np
+import pandas as pd
+from jaxtyping import Shaped
 
 from ttsim.interface_dag_elements.interface_node_objects import interface_function
 from ttsim.tt.column_objects_param_function import reorder_ids
+from ttsim.typing import Array, BoolColumn, FloatColumn, IntColumn
 
 if TYPE_CHECKING:
-    from types import ModuleType
+    from ttsim.typing import FlatData, QNameData
 
-    from ttsim.typing import FlatData, IntColumn, QNameData
+
+def _coerce_uint_to_int64(
+    arr: Shaped[Array | np.ndarray, " n_obs"] | pd.Series,
+    xnp: ModuleType,
+) -> IntColumn | FloatColumn | BoolColumn:
+    """Coerce unsigned-integer arrays to ``int64``; pass others through unchanged.
+
+    Without this, signed arithmetic on uint columns (e.g. ``gross - deductions``)
+    silently underflows into a huge positive value.
+    """
+    if pd.api.types.is_unsigned_integer_dtype(arr):
+        return xnp.asarray(arr, dtype=xnp.int64)
+    return xnp.asarray(arr)
 
 
 @interface_function(in_top_level_namespace=True)
@@ -25,7 +42,7 @@ def processed_data(
     The transformations will be undone when going from raw results to results.
     """
 
-    orig_p_ids = xnp.asarray(input_data__flat[("p_id",)])
+    orig_p_ids = _coerce_uint_to_int64(input_data__flat[("p_id",)], xnp)
     sorted_orig_p_ids = orig_p_ids[input_data__sort_indices]
     internal_p_ids = xnp.arange(len(orig_p_ids))
 
@@ -39,7 +56,7 @@ def processed_data(
             processed_input_data[qname] = data
             continue
 
-        sorted_data = xnp.asarray(data[input_data__sort_indices])
+        sorted_data = _coerce_uint_to_int64(data[input_data__sort_indices], xnp)
 
         if path[-1].endswith("_id"):
             processed_input_data[qname] = reorder_ids(ids=sorted_data, xnp=xnp)

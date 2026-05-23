@@ -325,6 +325,37 @@ def input_data_is_invalid(input_data__flat: FlatData, xnp: ModuleType) -> None:
         raise ValueError(msg)
 
 
+@fail_function(include_if_any_element_present=["input_data__flat"])
+def input_data_uint64_values_overflow_int64(input_data__flat: FlatData) -> None:
+    """Fail when a uint64 input column has any value outside the int64 range.
+
+    Uint columns are coerced to int64 in ``processed_data`` so that signed
+    arithmetic on them stays signed. Values in ``(int64.max, uint64.max]`` cannot
+    be represented as int64 and would silently wrap; surface them as an error.
+    """
+    int64_max = numpy.iinfo(numpy.int64).max
+    offending: list[tuple[tuple[str, ...], Any]] = []
+    for path, data in input_data__flat.items():
+        dtype = getattr(data, "dtype", None)
+        if dtype is None or numpy.dtype(dtype) != numpy.uint64:
+            continue
+        arr = numpy.asarray(data)
+        over = arr[arr > int64_max]
+        if over.size:
+            offending.append((path, int(over[0])))
+    if offending:
+        formatted = "\n".join(
+            f"    - {dt.qname_from_tree_path(path)}: {value}"
+            for path, value in offending
+        )
+        msg = format_errors_and_warnings(
+            "The following uint64 input columns contain values that exceed "
+            f"int64 max ({int64_max}); they cannot be coerced to int64 safely:\n"
+            f"{formatted}"
+        )
+        raise ValueError(msg)
+
+
 @fail_function()
 def policy_environment_is_invalid(
     policy_environment: PolicyEnvironment,
