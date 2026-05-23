@@ -101,7 +101,7 @@ def _tree_path_to_orig_column_objects_params_functions(
         A flat tree of ColumnObjectParamFunctions.
 
     """
-    module = load_module(path=path, root=root)
+    module = load_module(path=path, root=root, prefer_canonical_name=True)
     tree_path = path.relative_to(root).parts
     return {
         (*tree_path, name): obj
@@ -110,18 +110,33 @@ def _tree_path_to_orig_column_objects_params_functions(
     }
 
 
-def load_module(path: Path, root: Path) -> ModuleType:
-    canonical_name = _find_canonical_module_name(path)
-    if canonical_name is not None:
-        # Use the proper Python import path so objects defined in the module
-        # have an importable `__module__` — required for `cloudpickle.dumps`
-        # to round-trip the policy environment via pickle-by-reference.
-        return importlib.import_module(canonical_name)
+def load_module(
+    path: Path, root: Path, *, prefer_canonical_name: bool = False
+) -> ModuleType:
+    """Load a Python file as a module via `spec_from_file_location`.
 
-    # Policy environment is a bare directory tree (no `__init__.py` chain
-    # reaching `sys.path`). Objects defined in modules loaded this way carry
-    # a non-importable `__module__` and cannot be cloudpickled by reference.
-    name = path.relative_to(root).with_suffix("").as_posix().replace("/", ".")
+    When ``prefer_canonical_name`` is true and the file lives under an
+    ``__init__.py`` chain reaching ``sys.path``, the module is registered under
+    the canonical dotted import name (e.g.
+    ``mettsim.middle_earth.payroll_tax.amount``). Objects defined in the module
+    then carry an importable ``__module__`` — required for
+    ``cloudpickle.dumps`` to round-trip via pickle-by-reference. Used for user
+    policy modules.
+
+    When ``prefer_canonical_name`` is false (default) or no canonical name
+    exists, the module is registered under the root-relative short name. Used
+    for ttsim's own interface DAG elements: the short name keeps the loader
+    decoupled from ttsim's import-time class identities, so re-loaded callable
+    instances stay ``isinstance``-compatible with the normally-imported types.
+    """
+    canonical_name = (
+        _find_canonical_module_name(path) if prefer_canonical_name else None
+    )
+    name = (
+        canonical_name
+        if canonical_name is not None
+        else path.relative_to(root).with_suffix("").as_posix().replace("/", ".")
+    )
     spec = importlib.util.spec_from_file_location(name=name, location=path)
     _msg = f"Could not load module spec for {path},  {root}"
     if spec is None:
@@ -151,7 +166,14 @@ def _find_canonical_module_name(path: Path) -> str | None:
         current = current.parent
     if len(parts) == 1:
         return None
-    sys_path_resolved = {Path(p).resolve() for p in sys.path if Path(p).exists()}
+    # Resolve `sys.path` entries; the empty string denotes the current
+    # working directory (Python's import system treats it that way), so we
+    # spell that out explicitly here.
+    sys_path_resolved = {
+        (Path.cwd() if p == "" else Path(p)).resolve()
+        for p in sys.path
+        if p == "" or Path(p).exists()
+    }
     if current.resolve() in sys_path_resolved:
         return ".".join(reversed(parts))
     return None

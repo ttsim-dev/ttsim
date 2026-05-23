@@ -218,13 +218,11 @@ def test_df_with_qname_columns_has_qname_string_columns(
     )
 
 
-def test_cloudpickle_round_trip_preserves_tt_function_output(tmp_path):
-    """A `tt_function` built against a policy environment that lives under a
-    proper Python package (here: mettsim) survives a cloudpickle round-trip
-    with results unchanged. Regression for #73.
+def _run_cloudpickle_subprocess(tmp_path, script_body: str) -> None:
+    """Run a cloudpickle round-trip in a fresh subprocess.
 
-    Runs in a fresh subprocess to avoid pytest's stdout-capture wrappers
-    leaking into module-level closures (which would taint cloudpickle later).
+    A subprocess avoids pytest's stdout-capture wrappers leaking into
+    module-level closures (which would otherwise taint cloudpickle).
     """
     pytest.importorskip("cloudpickle")
     import subprocess  # noqa: PLC0415
@@ -232,47 +230,7 @@ def test_cloudpickle_round_trip_preserves_tt_function_output(tmp_path):
     import textwrap  # noqa: PLC0415
 
     script = tmp_path / "repro.py"
-    script.write_text(
-        textwrap.dedent(
-            """
-            import cloudpickle
-            import numpy as np
-            from mettsim import middle_earth
-
-            from ttsim import InputData, OrigPolicyObjects, TTTargets, main
-
-            data = {
-                ("age",): np.array([30, 30]),
-                ("kin_id",): np.array([0, 0]),
-                ("p_id",): np.array([0, 1]),
-                ("p_id_parent_1",): np.array([-1, -1]),
-                ("p_id_parent_2",): np.array([-1, -1]),
-                ("p_id_spouse",): np.array([1, 0]),
-                ("parent_is_noble",): np.array([False, False]),
-                ("payroll_tax", "child_tax_credit", "p_id_recipient"):
-                    np.array([-1, -1]),
-                ("payroll_tax", "income", "gross_wage_y"):
-                    np.array([10000.0, 0.0]),
-                ("wealth",): np.array([0.0, 0.0]),
-            }
-            kwargs = dict(
-                policy_date_str="2025-01-01",
-                input_data=InputData.flat(data),
-                orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
-                tt_targets=TTTargets.tree({"payroll_tax": {"amount_y": None}}),
-                backend="numpy",
-            )
-            tt_func = main(main_target="tt_function", **kwargs)
-            processed = main(main_target="processed_data", **kwargs)
-            restored = cloudpickle.loads(cloudpickle.dumps(tt_func))
-            expected = tt_func(processed)
-            actual = restored(processed)
-            for qname in expected:
-                np.testing.assert_array_equal(expected[qname], actual[qname])
-            print("OK")
-            """
-        )
-    )
+    script.write_text(textwrap.dedent(script_body))
     result = subprocess.run(  # noqa: S603
         [sys.executable, str(script)],
         capture_output=True,
@@ -283,6 +241,109 @@ def test_cloudpickle_round_trip_preserves_tt_function_output(tmp_path):
         f"stdout:\n{result.stdout}\n\nstderr:\n{result.stderr}"
     )
     assert "OK" in result.stdout
+
+
+def test_cloudpickle_round_trip_preserves_tt_function_output(tmp_path):
+    """A `tt_function` built against a policy environment loaded from a
+    ROOT_PATH (here: mettsim) survives a cloudpickle round-trip with results
+    unchanged on every requested target.
+    """
+    _run_cloudpickle_subprocess(
+        tmp_path,
+        """
+        import cloudpickle
+        import numpy as np
+        from mettsim import middle_earth
+
+        from ttsim import InputData, OrigPolicyObjects, TTTargets, main
+
+        data = {
+            ("age",): np.array([30, 30]),
+            ("kin_id",): np.array([0, 0]),
+            ("p_id",): np.array([0, 1]),
+            ("p_id_parent_1",): np.array([-1, -1]),
+            ("p_id_parent_2",): np.array([-1, -1]),
+            ("p_id_spouse",): np.array([1, 0]),
+            ("parent_is_noble",): np.array([False, False]),
+            ("payroll_tax", "child_tax_credit", "p_id_recipient"):
+                np.array([-1, -1]),
+            ("payroll_tax", "income", "gross_wage_y"):
+                np.array([10000.0, 0.0]),
+            ("wealth",): np.array([0.0, 0.0]),
+        }
+        kwargs = dict(
+            policy_date_str="2025-01-01",
+            input_data=InputData.flat(data),
+            orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+            tt_targets=TTTargets.tree({"payroll_tax": {"amount_y": None}}),
+            backend="numpy",
+        )
+        tt_func = main(main_target="tt_function", **kwargs)
+        processed = main(main_target="processed_data", **kwargs)
+        restored = cloudpickle.loads(cloudpickle.dumps(tt_func))
+        expected = tt_func(processed)
+        actual = restored(processed)
+        for qname in expected:
+            np.testing.assert_array_equal(expected[qname], actual[qname])
+        print("OK")
+        """,
+    )
+
+
+def test_cloudpickle_round_trip_with_inline_policy_environment(tmp_path):
+    """A `tt_function` built from a user-defined inline `policy_environment`
+    (no `OrigPolicyObjects.root`, no on-disk policy package) also survives a
+    cloudpickle round-trip with results unchanged.
+    """
+    _run_cloudpickle_subprocess(
+        tmp_path,
+        """
+        import datetime
+        import cloudpickle
+        import numpy as np
+
+        from ttsim import InputData, TTTargets, main
+        from ttsim.tt import policy_function, policy_input
+
+
+        @policy_input()
+        def p_id() -> int: ...
+
+
+        @policy_input()
+        def income_m() -> float: ...
+
+
+        @policy_function(vectorization_strategy="vectorize")
+        def benefit_m(income_m: float) -> float:
+            return income_m * 0.5
+
+
+        env = {"p_id": p_id, "income_m": income_m, "benefit_m": benefit_m}
+        kwargs = dict(
+            policy_environment=env,
+            input_data=InputData.tree({
+                "p_id": np.array([0, 1, 2]),
+                "income_m": np.array([1000.0, 2000.0, 3000.0]),
+            }),
+            tt_targets=TTTargets.tree({"benefit_m": None}),
+            evaluation_date=datetime.date(2025, 1, 1),
+            rounding=False,
+            backend="numpy",
+        )
+        tt_func = main(main_target="tt_function", **kwargs)
+        processed = main(main_target="processed_data", **kwargs)
+        root_nodes = main(main_target="labels__root_nodes", **kwargs)
+        filtered = {k: v for k, v in processed.items() if k in root_nodes}
+
+        restored = cloudpickle.loads(cloudpickle.dumps(tt_func))
+        expected = tt_func(filtered)
+        actual = restored(filtered)
+        for qname in expected:
+            np.testing.assert_array_equal(expected[qname], actual[qname])
+        print("OK")
+        """,
+    )
 
 
 def test_can_create_input_template(backend: Literal["numpy", "jax"]):

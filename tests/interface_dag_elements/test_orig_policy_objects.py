@@ -24,17 +24,30 @@ def test_load_path():
     )
 
 
-def test_load_module_uses_canonical_name_when_part_of_python_package():
-    """When the policy module lives under an `__init__.py` chain reaching
-    `sys.path`, `load_module` returns the canonical-imported module so that
-    objects defined in it carry an importable `__module__` (required for
-    `cloudpickle.dumps` to round-trip).
+def test_load_module_uses_canonical_name_when_opted_in():
+    """With `prefer_canonical_name=True`, `load_module` registers the module
+    under its canonical Python import path so objects defined in it carry an
+    importable `__module__` — required for `cloudpickle.dumps` to round-trip.
+    """
+    module = load_module(
+        path=middle_earth.ROOT_PATH / "payroll_tax" / "amount.py",
+        root=middle_earth.ROOT_PATH,
+        prefer_canonical_name=True,
+    )
+    assert module.__name__ == "mettsim.middle_earth.payroll_tax.amount"
+
+
+def test_load_module_uses_short_name_by_default():
+    """Default behaviour keeps the root-relative short name. Used for ttsim's
+    own interface DAG element modules, whose loaders rely on stable
+    class-identity at import time (re-execution under the canonical name
+    would create duplicate class objects).
     """
     module = load_module(
         path=middle_earth.ROOT_PATH / "payroll_tax" / "amount.py",
         root=middle_earth.ROOT_PATH,
     )
-    assert module.__name__ == "mettsim.middle_earth.payroll_tax.amount"
+    assert module.__name__ == "payroll_tax.amount"
 
 
 def test_find_canonical_module_name_walks_init_chain():
