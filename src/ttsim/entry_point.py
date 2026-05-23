@@ -470,6 +470,10 @@ def _load_orig_functions() -> dict[tuple[str, ...], InterfaceFunction | Interfac
     ] = {}
     for path in paths:
         module = load_module(path=path, root=root)
+        # Use the file stem (e.g., `warn_if`) for the namespace prefix; the
+        # interface qname structure depends on the short name, independent of
+        # how the module is registered in `sys.modules`.
+        namespace = path.stem
         for qname, obj in inspect.getmembers(module):
             # If nesting happens (e.g., df+mapper), we need to be consistent.
             tree_path = dt.tree_path_from_qname(qname)
@@ -477,7 +481,7 @@ def _load_orig_functions() -> dict[tuple[str, ...], InterfaceFunction | Interfac
                 if obj.in_top_level_namespace:
                     flat_functions[tree_path] = obj
                 else:
-                    flat_functions[(str(module.__name__), *tree_path)] = obj
+                    flat_functions[(namespace, *tree_path)] = obj
 
     return flat_functions
 
