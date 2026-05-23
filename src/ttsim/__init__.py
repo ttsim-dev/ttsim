@@ -12,7 +12,9 @@ from ttsim import _jaxtyping_patch  # noqa: F401
 # @beartype(conf=...) decorator that maps violations to the relevant
 # project exception (see ttsim._beartype_conf).
 #
-# Env-var gated during rollout; flip to always-on at merge.
+# Env-var gated: users of a released package leave `TTSIM_BEARTYPE_CLAW`
+# unset and never see it. The gate stays in place until GEP-09's decision
+# on the rollout lands.
 if os.environ.get("TTSIM_BEARTYPE_CLAW", "0") != "0":
     import warnings
 
