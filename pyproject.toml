@@ -32,7 +32,7 @@ classifiers = [
 dynamic = [ "version" ]
 dependencies = [
   "beartype>=0.18",
-  "dags>=0.5.1",
+  "dags>=0.6",
   "ipywidgets",
   "jaxtyping>=0.2",
   "kaleido>=1.1",
@@ -143,7 +143,7 @@ type-checking-jax.pypi-dependencies.types-pytz = "*"
 type-checking-jax.tasks.ty-jax = "ty check"
 [tool.pixi.pypi-dependencies]
 # jax-datetime = { git = "https://github.com/google/jax-datetime.git" }
-dags = { git = "https://github.com/OpenSourceEconomics/dags.git", rev = "87ff051" }
+# dags = { git = "https://github.com/OpenSourceEconomics/dags.git", rev = "87ff051" }
 jaxtyping = "*"
 mettsim = { path = "src_mettsim", editable = true }
 pdbp = "*"
