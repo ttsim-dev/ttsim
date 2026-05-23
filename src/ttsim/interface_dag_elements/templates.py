@@ -10,7 +10,7 @@ from ttsim.interface_dag_elements.data_converters import (
 )
 from ttsim.interface_dag_elements.interface_node_objects import interface_function
 from ttsim.tt.column_objects_param_function import PolicyInput
-from ttsim.tt.vectorization import scalar_type_to_array_type
+from ttsim.tt.type_resolution import scalar_type_to_array_type
 
 if TYPE_CHECKING:
     from types import ModuleType

@@ -29,12 +29,12 @@ from ttsim.tt.column_objects_param_function import (
     AggByGroupFunction,
     AggByPIDFunction,
 )
+from ttsim.tt.type_resolution import scalar_type_to_array_type
 from ttsim.tt.vectorization import (
     TranslateToVectorizableError,
     _is_lambda_function,
     _make_vectorizable,
     make_vectorizable_source,
-    scalar_type_to_array_type,
     vectorize_function,
 )
 

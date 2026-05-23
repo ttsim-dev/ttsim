@@ -28,11 +28,28 @@ import typing
 from collections.abc import Callable
 from enum import Enum, auto
 from types import MappingProxyType
+from typing import Any
 
+import numpy
+from beartype import beartype
 from dags import get_annotations, with_signature
+from dags.signature import forwarder_annotations
+from jaxtyping import Bool, Float, Int
 
+from ttsim import typing as ttsim_typing
+from ttsim._beartype_conf import INTERNAL_CONF
 from ttsim.exceptions import TTSIMError
 from ttsim.tt.aggregation import AggType
+
+# Backend-agnostic array type: union the (optional) JAX `Array` with
+# `numpy.ndarray` so 0-d `Float[_BackendArray, ""]` annotations accept
+# scalars from either backend (see `ttsim.typing` column aliases).
+try:
+    from jax import Array as _JaxArray
+
+    _BackendArray = _JaxArray | numpy.ndarray
+except ImportError:
+    _BackendArray = numpy.ndarray
 
 
 class TypeResolutionError(TTSIMError):
@@ -452,3 +469,217 @@ def _jaxtyping_dtype_tag(text: str) -> str:
     returned unchanged (and will simply miss the lookup table).
     """
     return text.split("[", 1)[0]
+
+
+# The "any numeric column or scalar" union the vectorized-node forwarder's
+# numeric parameters and return are checked against. The runtime check
+# guards against structural misuse (a string / mapping / `None` reaching a
+# numeric node) without enforcing exact array dtype — ttsim data columns
+# are loosely dtyped and a vectorized node broadcasts scalar arguments.
+#
+# A "scalar" argument is a Python number / NumPy scalar under the NumPy
+# backend, but a 0-d array under JAX (policy parameters materialize as 0-d
+# `jax.Array`s). The union therefore also admits 0-d jaxtyping arrays.
+_WIDE_NUMERIC_ALIAS = "_TTSIMVectorizedNumeric"
+_WIDE_NUMERIC_UNION = (
+    ttsim_typing.FloatColumn
+    | ttsim_typing.IntColumn
+    | ttsim_typing.BoolColumn
+    | ttsim_typing.ScalarFloat
+    | ttsim_typing.ScalarInt
+    | ttsim_typing.ScalarBool
+    | Float[_BackendArray, ""]
+    | Int[_BackendArray, ""]
+    | Bool[_BackendArray, ""]
+)
+
+# The set of narrow column-type annotation strings the auto-vectorizer
+# stamps; together with the un-annotated fallback union they denote a
+# numeric node parameter / return that beartype checks against the wide
+# numeric union. Any other annotation string is a non-numeric `OTHER`
+# pass-through and is left untouched.
+_NUMERIC_ANNOTATION_STRINGS: frozenset[str] = frozenset(
+    {
+        "FloatColumn",
+        "IntColumn",
+        "BoolColumn",
+        "IntColumn | FloatColumn | BoolColumn",
+    },
+)
+
+
+def _is_numeric_annotation(annotation: object) -> bool:
+    """Return whether an annotation denotes a numeric node parameter / return.
+
+    Two forms reach the typed-wrapper builder:
+
+    - A column-type **string** (`"FloatColumn"`, `"IntColumn"`,
+      `"BoolColumn"`) or the un-annotated fallback union string
+      `"IntColumn | FloatColumn | BoolColumn"` — both produced by
+      `create_vectorized_annotations`.
+    - A live `jaxtyping` column type (or `Union` of per-backend
+      `jaxtyping` types) read directly off a wrapper's `__signature__`. A
+      user-authored `vectorization_strategy="not_required"` function
+      *without* `from __future__ import annotations` arrives in this form.
+
+    Anything else is a non-numeric `OTHER` annotation (a partialled
+    parameter object, a lookup table, …) and beartype should not enforce
+    the wide numeric union for it.
+    """
+    if isinstance(annotation, str):
+        return annotation in _NUMERIC_ANNOTATION_STRINGS
+    try:
+        kind = resolve_kind_of_annotation(annotation, node_name="<numeric-check>")
+    except TypeResolutionError:
+        return False
+    return kind in _COLUMN_KINDS
+
+
+def scalar_type_to_array_type(orig_type: str | type) -> str:
+    """Convert a scalar (or already-column) type annotation to a column type.
+
+    A scalar policy function declares scalar annotations; after
+    vectorization the node operates on the corresponding column.
+
+    Annotations the resolver classifies as `OTHER` — anything that is
+    neither a numeric scalar nor a numeric column, including the
+    `IntColumn | FloatColumn | BoolColumn` union used as the fallback for
+    an un-annotated node — are passed through unchanged.
+    """
+    if not isinstance(orig_type, str):
+        orig_type = getattr(orig_type, "__name__", str(orig_type))
+    if not orig_type or orig_type == "_empty":
+        return orig_type
+    kind = resolve_kind_of_annotation(orig_type, node_name="<vectorized node>")
+    if kind == ResolvedKind.OTHER:
+        return orig_type
+    return column_kind_to_type_string(
+        vectorized_column_kind(kind, node_name="<vectorized node>"),
+    )
+
+
+def create_vectorized_annotations(func: Callable[..., Any]) -> dict[str, Any]:
+    """Create column-typed annotations for a vectorized wrapper.
+
+    Walks the user function's scalar annotations and maps each to its
+    column-type counterpart via `scalar_type_to_array_type`.
+    """
+    parameters_and_return = ["return", *inspect.signature(func).parameters]
+    annotations = get_annotations(func, default="IntColumn | FloatColumn | BoolColumn")
+    return {
+        name: scalar_type_to_array_type(annotations[name])
+        for name in parameters_and_return
+    }
+
+
+def build_beartype_checkable_wrapper(
+    wrapped: Callable[..., Any],
+    *,
+    annotations: dict[str, Any],
+    node_name: str,
+) -> Callable[..., Any]:
+    """Wrap a callable in a directly `@beartype`-decorable forwarder.
+
+    The wrapped callable is typically a `numpy.vectorize` / AST-rewrite
+    output, or a rounding wrapper — an *isomorphic* `*args, **kwargs`
+    callable whose annotations beartype would resolve against the user
+    function's globals (where the column aliases are not importable),
+    raising `BeartypeCallHintForwardRefException`.
+
+    This builds a real-parameter forwarder around `wrapped`. Being non-
+    isomorphic (its code object declares the actual parameter names)
+    beartype stops unwrapping at it; being defined against `ttsim.typing`'s
+    namespace its string column annotations resolve.
+
+    `@beartype` resolves the string forward references on `__annotations__`
+    into live `jaxtyping` type objects and writes them back. `dags`'
+    annotation-consistency check is string-based and would reject those
+    live objects against the `"FloatColumn"`-style strings other nodes
+    advertise. So after decoration `__annotations__` is reset to the
+    `*args, **kwargs` forwarder shape: beartype's check is already compiled
+    and survives the reset, while `dags.get_annotations` falls back to the
+    `__signature__` — which keeps the concrete column-type *strings*.
+
+    Wide vs narrow split: beartype's runtime check and `dags`'
+    annotation-consistency check want different granularity.
+
+    - `dags` compares a producer node's return against a consumer node's
+      parameter and must distinguish `FloatColumn` from `IntColumn` from
+      `BoolColumn` (a producer feeding an incompatibly typed consumer is a
+      real DAG bug). It reads the *narrow* column-type strings off
+      `__signature__`.
+    - beartype's runtime check guards against *structural* misuse — a
+      string / list / mapping / `None` reaching a numeric node. It must
+      *not* enforce exact array dtype: ttsim data columns are loosely
+      dtyped (an `int`-valued column legitimately feeds a `float`-typed
+      policy function), and a vectorized node broadcasts scalar arguments.
+      So beartype checks every numeric parameter and the return against the
+      *wide* "any numeric column or scalar" union.
+
+    Args:
+        wrapped: The callable to forward to.
+        annotations: Column-type annotation strings keyed by parameter name
+            plus `"return"`, as produced by `create_vectorized_annotations`.
+        node_name: The wrapped callable's name, used for the forwarder's
+            `__name__` / `__qualname__` (kept dotless so beartype does not
+            misclassify the forwarder as a lexically nested callable).
+
+    Returns:
+        A typed forwarder, decorated with `@beartype` under `INTERNAL_CONF`.
+    """
+    sig = inspect.signature(wrapped)
+    param_names = list(sig.parameters)
+
+    # `node_name` is interpolated into source compiled by `exec`. Guarantee
+    # it is a bare Python identifier so a stray qualified name (`pkg.mod`)
+    # or other punctuation cannot turn into an executable expression.
+    if not node_name.isidentifier():
+        msg = (
+            f"node_name must be a Python identifier; got {node_name!r}. "
+            "Qualified names (`pkg.mod.func`) and other punctuation are not "
+            "allowed for the typed-forwarder symbol."
+        )
+        raise ValueError(msg)
+
+    params_src = ", ".join(param_names)
+    forwarder_name = f"_typed_{node_name}"
+    source = (
+        f"def {forwarder_name}({params_src}):\n"
+        f"    return _ttsim_wrapped_impl({params_src})\n"
+    )
+    namespace: dict[str, Any] = {
+        "_ttsim_wrapped_impl": wrapped,
+        _WIDE_NUMERIC_ALIAS: _WIDE_NUMERIC_UNION,
+    }
+    exec(compile(source, "<ttsim-typed-wrapper>", "exec"), namespace)  # noqa: S102
+    forwarder = namespace[forwarder_name]
+    # Expose the wrapped callable's name to outside callers — beartype's
+    # lexical-nesting heuristic only requires that `__qualname__` stay
+    # dotless, which a plain function name already is.
+    forwarder.__name__ = node_name
+    forwarder.__qualname__ = node_name
+
+    forwarder.__annotations__ = {
+        name: _WIDE_NUMERIC_ALIAS
+        for name in ("return", *param_names)
+        if _is_numeric_annotation(annotations.get(name))
+    }
+    forwarder.__signature__ = inspect.Signature(
+        parameters=[
+            inspect.Parameter(
+                name=name,
+                kind=sig.parameters[name].kind,
+                default=sig.parameters[name].default,
+                annotation=annotations.get(name, inspect.Parameter.empty),
+            )
+            for name in param_names
+        ],
+        return_annotation=annotations.get("return", inspect.Parameter.empty),
+    )
+    forwarder.__module__ = "ttsim.typing"
+
+    checked = beartype(conf=INTERNAL_CONF)(forwarder)
+    forwarder.__annotations__ = forwarder_annotations()
+    checked.__annotations__ = forwarder_annotations()
+    checked.__signature__ = forwarder.__signature__
+    return checked

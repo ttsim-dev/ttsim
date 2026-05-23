@@ -33,11 +33,13 @@ from ttsim.tt.type_resolution import (
     AGG_RULE_TABLE,
     ResolvedKind,
     TypeResolutionError,
+    build_beartype_checkable_wrapper,
     column_kind_to_type_string,
     resolve_agg_output_kind,
     resolve_kind_of_annotation,
     vectorized_column_kind,
 )
+from ttsim.typing import FloatColumn, IntColumn
 
 # Map an `AggType` to the primitive whose `@overload` stack encodes the
 # ground-truth input-kind -> output-kind rules.
@@ -279,3 +281,68 @@ def test_auto_agg_wrapper_rejects_misused_source_column() -> None:
             num_segments=2,
             backend="numpy",
         )
+
+
+def test_typed_wrapper_recognizes_live_column_type_objects() -> None:
+    """`build_beartype_checkable_wrapper` treats live `jaxtyping` column types
+    as numeric and installs the wide-numeric beartype check at the boundary.
+
+    A user function declared with `vectorization_strategy="not_required"` and
+    without `from __future__ import annotations` reaches the wrapper builder
+    with live `jaxtyping` objects on its `__signature__`. The earlier
+    string-only check silently classified those as non-numeric, so the
+    beartype claw skipped the wide-union check at the user boundary — a
+    string argument would then sail through.
+    """
+    from beartype.roar import BeartypeCallHintViolation  # noqa: PLC0415
+
+    def underlying(x: FloatColumn) -> FloatColumn:
+        return x
+
+    wrapper = build_beartype_checkable_wrapper(
+        underlying,
+        annotations={"x": FloatColumn, "return": FloatColumn},
+        node_name="underlying",
+    )
+
+    with pytest.raises(BeartypeCallHintViolation):
+        wrapper(x="not a column")
+
+
+def test_typed_wrapper_rejects_non_identifier_node_name() -> None:
+    """The forwarder name is interpolated into source compiled by `exec`, so
+    `node_name` must be a Python identifier — qualified names (`pkg.mod`) or
+    other punctuation are rejected.
+    """
+
+    def underlying(x: FloatColumn) -> FloatColumn:
+        return x
+
+    with pytest.raises(ValueError, match="Python identifier"):
+        build_beartype_checkable_wrapper(
+            underlying,
+            annotations={"x": "FloatColumn", "return": "FloatColumn"},
+            node_name="pkg.mod.underlying",
+        )
+
+
+def test_typed_wrapper_skips_non_numeric_param_annotation() -> None:
+    """An `OTHER`-classified parameter annotation (a partialled lookup table,
+    a string config, …) is not run through the wide-numeric beartype check —
+    only structural numeric parameters are.
+    """
+
+    def underlying(x: IntColumn, lookup: dict) -> IntColumn:  # noqa: ARG001
+        return x
+
+    wrapper = build_beartype_checkable_wrapper(
+        underlying,
+        annotations={"x": "IntColumn", "lookup": "dict", "return": "IntColumn"},
+        node_name="underlying",
+    )
+
+    # A non-dict `lookup` would raise if beartype were enforcing the `"dict"`
+    # annotation; it does not, because `_is_numeric_annotation("dict")` is
+    # `False` and the wrapper only installs checks for numeric parameters.
+    result = wrapper(x=np.array([1, 2, 3]), lookup="not a dict")
+    np.testing.assert_array_equal(result, np.array([1, 2, 3]))

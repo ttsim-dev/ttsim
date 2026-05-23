@@ -1,4 +1,5 @@
 import functools
+import inspect
 from collections.abc import Callable
 from dataclasses import dataclass
 from types import ModuleType
@@ -7,6 +8,7 @@ from typing import Literal, ParamSpec, get_args
 from beartype import beartype
 
 from ttsim._beartype_conf import ROUNDING_SPEC_CONF
+from ttsim.tt.type_resolution import build_beartype_checkable_wrapper
 from ttsim.typing import FloatColumn
 
 ROUNDING_DIRECTION = Literal["up", "down", "nearest"]
@@ -14,8 +16,10 @@ ROUNDING_DIRECTION = Literal["up", "down", "nearest"]
 P = ParamSpec("P")
 
 
-# See ttsim.tt.vectorization for the rationale: prevent the user's scalar
-# annotations from leaking onto the column-typed wrapper.
+# Drop annotations from the inner `*args, **kwargs` rounding wrapper. The
+# outer real-parameter forwarder built by `build_beartype_checkable_wrapper`
+# carries the synthesised column-typed signature that beartype actually
+# checks, so the inner layer stays untyped to avoid double-resolution.
 _WRAPPER_ASSIGNMENTS_NO_ANNOTATIONS: tuple[str, ...] = tuple(
     a
     for a in functools.WRAPPER_ASSIGNMENTS
@@ -77,4 +81,18 @@ class RoundingSpec:
 
             return rounded_out + self.to_add_after_rounding
 
-        return wrapper
+        # Synthesise the typed outer forwarder. Inputs mirror the wrapped
+        # function's signature; the return is always `FloatColumn` because
+        # rounding only applies to float-valued column functions.
+        func_sig = inspect.signature(func)
+        annotations: dict[str, object] = {
+            name: param.annotation
+            for name, param in func_sig.parameters.items()
+            if param.annotation is not inspect.Parameter.empty
+        }
+        annotations["return"] = "FloatColumn"
+        return build_beartype_checkable_wrapper(
+            wrapper,
+            annotations=annotations,
+            node_name=getattr(func, "__name__", "<rounded node>"),
+        )
