@@ -6,6 +6,8 @@ releases are available on [Anaconda.org](https://anaconda.org/conda-forge/ttsim)
 
 ## Unreleased
 
+- {gh}`103` Add `results.df_with_qname_columns` return format with flat qname string
+  columns. ({ghuser}`hmgaudecker`)
 - {gh}`101` Adopt the package-wide beartype claw with a typed exception hierarchy at
   user-facing boundaries (`InputDataError`, `EntryPointError`, `TTTargetsError`,
   `PolicyFunctionDefinitionError`, …) so malformed input is rejected with curated

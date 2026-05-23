@@ -9,6 +9,7 @@ import pandas as pd
 from ttsim.interface_dag_elements.data_converters import (
     nested_data_to_df_with_mapped_columns,
     nested_data_to_df_with_nested_columns,
+    nested_data_to_df_with_qname_columns,
 )
 from ttsim.interface_dag_elements.interface_node_objects import interface_function
 
@@ -70,6 +71,24 @@ def df_with_nested_columns(
 ) -> pd.DataFrame:
     """The results DataFrame with nested column names corresponding to tree paths."""
     return nested_data_to_df_with_nested_columns(
+        nested_data_to_convert=tree,
+        index=pd.Index(input_data__flat[("p_id",)], name="p_id"),
+    )
+
+
+@interface_function()
+def df_with_qname_columns(
+    tree: NestedResults,
+    input_data__flat: FlatData,
+) -> pd.DataFrame:
+    """Results DataFrame with qname-string columns (one flat string per column).
+
+    The column index stays flat regardless of nesting depth, so adding or
+    removing targets does not change the column-index shape — unlike
+    ``df_with_nested_columns``, where the MultiIndex depth tracks the deepest
+    target.
+    """
+    return nested_data_to_df_with_qname_columns(
         nested_data_to_convert=tree,
         index=pd.Index(input_data__flat[("p_id",)], name="p_id"),
     )

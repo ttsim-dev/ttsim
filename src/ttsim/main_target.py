@@ -89,6 +89,7 @@ class FailIf(MainTargetABC):
 class Results(MainTargetABC):
     df_with_mapper: str = "results__df_with_mapper"
     df_with_nested_columns: str = "results__df_with_nested_columns"
+    df_with_qname_columns: str = "results__df_with_qname_columns"
     tree: str = "results__tree"
 
 

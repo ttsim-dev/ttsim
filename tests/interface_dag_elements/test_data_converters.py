@@ -16,6 +16,7 @@ from ttsim.interface_dag_elements.data_converters import (
     df_with_mapped_columns_to_flat_data,
     df_with_nested_columns_to_flat_data,
     nested_data_to_df_with_mapped_columns,
+    nested_data_to_df_with_qname_columns,
 )
 from ttsim.tt import (
     ScalarParam,
@@ -243,6 +244,23 @@ def test_nested_data_to_dataframe(
         check_dtype=False,
         check_index_type=False,
     )
+
+
+def test_nested_data_to_df_with_qname_columns_flattens_paths_with_double_underscore():
+    nested = {
+        "a": numpy.array([10, 20, 30]),
+        "b": {
+            "c": numpy.array([1, 2, 3]),
+            "d": {"e": numpy.array([0.1, 0.2, 0.3])},
+        },
+    }
+    index = pd.Index([100, 200, 300], name="p_id")
+    result = nested_data_to_df_with_qname_columns(nested, index=index)
+    assert list(result.columns) == ["a", "b__c", "b__d__e"]
+    assert_array_equal(result["a"].to_numpy(), [10, 20, 30])
+    assert_array_equal(result["b__c"].to_numpy(), [1, 2, 3])
+    assert_array_equal(result["b__d__e"].to_numpy(), [0.1, 0.2, 0.3])
+    pd.testing.assert_index_equal(result.index, index)
 
 
 @pytest.mark.parametrize(
