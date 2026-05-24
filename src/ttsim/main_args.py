@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import Any, TypeVar
 
 import networkx as nx
 import pandas as pd
@@ -26,20 +26,6 @@ from ttsim.typing import (
     UserNestedData,
     UserQNameData,
 )
-
-if TYPE_CHECKING:
-    from pathlib import Path
-
-    from ttsim.typing import (
-        FlatColumnObjectsParamFunctions,
-        FlatOrigParamSpecs,
-        OrderedQNames,
-        SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
-        SpecEnvWithPartialledParamsAndScalars,
-        SpecEnvWithProcessedParamsAndScalars,
-        UnorderedQNames,
-    )
-
 
 T = TypeVar("T", bound="MainArg")
 

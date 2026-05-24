@@ -35,11 +35,11 @@ from ttsim.tt.param_objects import ParamObject, RawParam
 # runtime in sibling interface modules), so the import is moved up rather
 # than left under `TYPE_CHECKING`.
 from ttsim.typing import (
-    FlatTTTargets,
     OrderedQNames,
     PolicyEnvironment,
     QNameData,
     QNameStrings,
+    QNameTTTargets,
     SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
     SpecEnvWithPartialledParamsAndScalars,
     SpecEnvWithProcessedParamsAndScalars,
@@ -55,7 +55,7 @@ def rounding() -> bool:
 @interface_function()
 def without_tree_logic_and_with_derived_functions(
     policy_environment: PolicyEnvironment,
-    tt_targets__qname: FlatTTTargets,
+    tt_targets__qname: QNameTTTargets,
     labels__input_columns: UnorderedQNames,
     labels__top_level_namespace: UnorderedQNames,
     labels__grouping_levels: OrderedQNames,
