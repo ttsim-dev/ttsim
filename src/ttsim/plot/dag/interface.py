@@ -5,9 +5,6 @@ from typing import TYPE_CHECKING, Any, cast
 
 import dags
 import dags.tree as dt
-
-# Hoisted out of `TYPE_CHECKING` so the beartype claw can resolve the
-# `go.Figure` return annotation on the decorated functions below.
 import plotly.graph_objects as go
 
 from ttsim.entry_point import load_flat_interface_functions_and_inputs

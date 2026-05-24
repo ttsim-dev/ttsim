@@ -43,10 +43,10 @@ def project_conf(error_class: type[TTSIMError]) -> BeartypeConf:
     satisfies `float`-typed parameters (matches the implicit numeric
     conversion that Python and ruff's PYI041 both assume).
 
-    `violation_door_type` and `violation_param_type` both point at
-    `error_class` so the same exception surfaces regardless of whether the
-    violation originated in a function parameter, a return value, or a
-    manual `die_if_unbearable` call.
+    `violation_door_type`, `violation_param_type`, and
+    `violation_return_type` all point at `error_class` so the same exception
+    surfaces regardless of whether the violation originated in a manual
+    `die_if_unbearable` call, a function parameter, or a return value.
     """
     return BeartypeConf(
         is_color=False,

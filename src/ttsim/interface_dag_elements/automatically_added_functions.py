@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime
 import inspect
 from collections.abc import Callable
 from typing import TYPE_CHECKING, cast, overload
@@ -34,9 +35,9 @@ from ttsim.tt.type_resolution import (
     vectorized_column_kind,
 )
 from ttsim.typing import (
-    FlatColumnObjects,
     OrderedQNames,
     PolicyEnvironment,
+    QNameColumnObjects,
     QNameStrings,
     UnorderedQNames,
 )
@@ -70,11 +71,11 @@ if TYPE_CHECKING:
 
     from ttsim.typing import (
         BoolColumn,
-        FlatColumnObjects,
         FloatColumn,
         IntColumn,
         OrderedQNames,
         PolicyEnvironment,
+        QNameColumnObjects,
         UnorderedQNames,
     )
 
@@ -131,7 +132,7 @@ def create_time_conversion_functions(
     qname_policy_environment: PolicyEnvironment,
     input_columns: UnorderedQNames,
     grouping_levels: OrderedQNames,
-) -> FlatColumnObjects:
+) -> QNameColumnObjects:
     """
     Create functions converting elements of the policy environment to other time units.
 
@@ -230,13 +231,13 @@ def _create_one_set_of_time_conversion_functions(
         if isinstance(element, ColumnFunction)
         else set()
     )
-    # `ScalarParam.start_date`/`end_date` are typed `date | None`, but every
-    # convertible element in the policy environment carries concrete dates
-    # (column objects and param functions always do; scalar params are built
-    # with explicit `start_date`/`end_date`). Pin the dates here so the
-    # `TimeConversionFunction` constructor receives non-optional values.
-    start_date = element.start_date or DEFAULT_START_DATE
-    end_date = element.end_date or DEFAULT_END_DATE
+    # `ScalarParam.start_date` / `end_date` are typed `date | None`, but
+    # every convertible element here carries concrete dates (column objects
+    # and param functions always do; scalar params are built with explicit
+    # `start_date` / `end_date`). Cast to `date` for the
+    # `TimeConversionFunction` constructor which requires non-optional values.
+    start_date = cast("datetime.date", element.start_date)
+    end_date = cast("datetime.date", element.end_date)
 
     for target_time_unit in [tu for tu in time_units if tu != time_unit]:
         new_name = f"{base_name}_{target_time_unit}{grouping_suffix}"
@@ -302,7 +303,7 @@ def create_agg_by_group_functions(
     input_columns: UnorderedQNames,
     tt_targets: QNameStrings,
     grouping_levels: OrderedQNames,
-) -> FlatColumnObjects:
+) -> QNameColumnObjects:
     """Create auto-aggregation functions, each with a concrete return annotation.
 
     Auto-aggregations are sum aggregations of an individual-level source
@@ -379,7 +380,7 @@ def create_agg_by_group_functions(
             # wrapper. Its runtime implementation signature widens to
             # `FloatColumn | IntColumn`; left untouched, that union becomes
             # the node's producer type and the DAG's annotation-consistency
-            # check rejects it against a concretely typed consumer (Bug E).
+            # check rejects it against a concretely typed consumer.
             agg_func = synthesize_typed_aggregation_wrapper(
                 rename_arguments(func=grouped_sum, mapper=mapper),
                 agg_type=AggType.SUM,
