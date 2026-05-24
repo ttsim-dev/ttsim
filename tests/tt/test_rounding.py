@@ -441,7 +441,7 @@ def test_rounding_preserves_function_name(xnp):
     assert rounded_func.__name__ == "my_custom_function"  # ty: ignore[unresolved-attribute]
 
 
-def test_rounded_wrapper_signature_preserves_param_annotations(xnp):
+def test_rounded_wrapper_signature_preserves_param_annotations(xnp) -> None:
     """The rounding wrapper exposes the wrapped function's parameter annotations
     on its own `__signature__`.
     """
@@ -459,7 +459,7 @@ def test_rounded_wrapper_signature_preserves_param_annotations(xnp):
     assert param_annotations == {"a": "IntColumn", "b": "FloatColumn"}
 
 
-def test_rounded_wrapper_signature_forces_return_to_float_column(xnp):
+def test_rounded_wrapper_signature_forces_return_to_float_column(xnp) -> None:
     """The rounding wrapper forces its `__signature__` return annotation to
     `FloatColumn` because rounding always produces a float column, regardless
     of the wrapped function's declared return type.
@@ -474,7 +474,7 @@ def test_rounded_wrapper_signature_forces_return_to_float_column(xnp):
     assert inspect.signature(rounded).return_annotation == "FloatColumn"
 
 
-def test_beartype_catches_structural_misuse_at_rounded_boundary(xnp):
+def test_beartype_catches_structural_misuse_at_rounded_boundary(xnp) -> None:
     """Beartype rejects a structurally wrong argument (a string here) at the
     outer rounded-wrapper boundary, not just at the inner wrapped function.
     """

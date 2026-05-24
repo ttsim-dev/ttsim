@@ -490,7 +490,18 @@ def _fail_if_annotations_mismatch_vectorization_strategy(
     Raised at decoration time so the violation surfaces on import, not at
     DAG-build time.
     """
-    annotations = getattr(func, "__annotations__", {}) or {}
+    # `inspect.get_annotations(..., eval_str=True)` resolves stringified
+    # annotations (under `from __future__ import annotations`) to live type
+    # objects against `func`'s own module globals. Bare `func.__annotations__`
+    # would leave them as strings, breaking the `annot in (int, ...)` /
+    # `annot in column_types` identity checks below.
+    try:
+        annotations = inspect.get_annotations(func, eval_str=True)
+    except (NameError, SyntaxError):
+        # An unresolvable forward reference here cannot be classified
+        # against the dual-mode contract — skip the check, let the user
+        # see the resolution error at first call.
+        return
     # Avoid importing ttsim.typing at module scope to skirt import cycles.
     from ttsim.typing import BoolColumn, FloatColumn, IntColumn  # noqa: PLC0415
 

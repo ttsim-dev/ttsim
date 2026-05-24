@@ -24,6 +24,7 @@ from ttsim.tt.column_objects_param_function import (
     group_creation_function,
     param_function,
 )
+from ttsim.typing import FloatColumn
 
 # ======================================================================================
 # PolicyFunction and policy_function
@@ -319,13 +320,7 @@ def test_agg_by_p_id_sum_with_all_missing_p_ids(backend, xnp):
     )
 
 
-# ======================================================================================
-# Decoration-time annotation enforcement
-# ======================================================================================
-
-
-def test_policy_function_rejects_missing_return_annotation():
-
+def test_policy_function_rejects_missing_return_annotation() -> None:
     with pytest.raises(PolicyFunctionDefinitionError, match="missing: return"):
 
         @policy_function()
@@ -333,8 +328,7 @@ def test_policy_function_rejects_missing_return_annotation():
             return x
 
 
-def test_policy_function_rejects_missing_param_annotation():
-
+def test_policy_function_rejects_missing_param_annotation() -> None:
     with pytest.raises(PolicyFunctionDefinitionError, match="param 'x'"):
 
         @policy_function()
@@ -342,8 +336,7 @@ def test_policy_function_rejects_missing_param_annotation():
             return x
 
 
-def test_param_function_rejects_missing_annotation():
-
+def test_param_function_rejects_missing_annotation() -> None:
     with pytest.raises(ParamFunctionDefinitionError, match="missing: return"):
 
         @param_function()
@@ -351,8 +344,7 @@ def test_param_function_rejects_missing_annotation():
             return x
 
 
-def test_agg_by_group_function_rejects_missing_annotation():
-
+def test_agg_by_group_function_rejects_missing_annotation() -> None:
     with pytest.raises(AggregationDefinitionError, match="missing: return"):
 
         @agg_by_group_function(agg_type=AggType.SUM)
@@ -360,8 +352,7 @@ def test_agg_by_group_function_rejects_missing_annotation():
             pass
 
 
-def test_agg_by_p_id_function_rejects_missing_annotation():
-
+def test_agg_by_p_id_function_rejects_missing_annotation() -> None:
     with pytest.raises(AggregationDefinitionError, match="missing: return"):
 
         @agg_by_p_id_function(agg_type=AggType.SUM)
@@ -369,10 +360,30 @@ def test_agg_by_p_id_function_rejects_missing_annotation():
             pass
 
 
-def test_group_creation_function_rejects_missing_annotation():
-
+def test_group_creation_function_rejects_missing_annotation() -> None:
     with pytest.raises(GroupCreationDefinitionError, match="missing: return"):
 
         @group_creation_function()
         def unannotated_group_creation(p_id: int):
             return p_id
+
+
+def test_policy_function_dual_mode_check_resolves_stringified_annotations() -> None:
+    """The dual-mode contract check must see live types, not the strings that
+    `from __future__ import annotations` (active in this test module) parks on
+    `__annotations__`. A column annotation on a vectorized function must raise.
+    """
+    with pytest.raises(PolicyFunctionDefinitionError, match="scalar annotations"):
+
+        @policy_function(vectorization_strategy="vectorize")
+        def column_arg_on_vectorized(x: FloatColumn) -> FloatColumn:
+            return x
+
+
+def test_policy_function_dual_mode_check_resolves_strings_not_required() -> None:
+    """Mirror of the above for `not_required`: a scalar annotation must raise."""
+    with pytest.raises(PolicyFunctionDefinitionError, match="column annotations"):
+
+        @policy_function(vectorization_strategy="not_required")
+        def scalar_arg_on_not_required(x: int) -> int:
+            return x

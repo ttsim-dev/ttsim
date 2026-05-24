@@ -94,5 +94,5 @@ class RoundingSpec:
         return build_beartype_checkable_wrapper(
             wrapper,
             annotations=annotations,
-            node_name=getattr(func, "__name__", "<rounded node>"),
+            node_name=getattr(func, "__name__", "_rounded_node"),
         )

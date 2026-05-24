@@ -787,7 +787,7 @@ def test_vectorize_function_annotations(backend, xnp):
     assert dags_get_annotations(vectorized) == expected_annotations
 
 
-def test_vectorized_function_rejects_non_numeric_argument(backend, xnp):
+def test_vectorized_function_rejects_non_numeric_argument(backend, xnp) -> None:
     """A vectorized node raises a beartype violation on structurally wrong input.
 
     The auto-vectorized wrapper is `@beartype`-decorated: a numeric
@@ -809,7 +809,7 @@ def test_vectorized_function_rejects_non_numeric_argument(backend, xnp):
         vectorized("not a column")
 
 
-def test_vectorized_function_accepts_scalar_and_off_dtype_column(backend, xnp):
+def test_vectorized_function_accepts_scalar_and_off_dtype_column(backend, xnp) -> None:
     """A vectorized node broadcasts scalars and tolerates loose column dtypes.
 
     A `float`-typed policy parameter legitimately receives a Python scalar

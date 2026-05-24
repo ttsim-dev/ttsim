@@ -115,7 +115,7 @@ def sum_by_p_id(
     p_id_to_aggregate_by: IntColumn,
     p_id_to_store_by: IntColumn,
 ) -> FloatColumn | IntColumn:
-    if column.dtype == "bool":
+    if column.dtype == bool:
         column = column.astype(int)
 
     # Vectorized implementation using numpy_groupies
