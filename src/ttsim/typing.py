@@ -159,7 +159,9 @@ QNameData: TypeAlias = Mapping[str, FloatColumn | IntColumn | BoolColumn]
 # param values are genuinely heterogeneous (scalars, dicts, lookup arrays,
 # dates). Use an honest-wide `object` leaf rather than enumerating a union.
 # `QNameResults`: flat mapping of qualified names to heterogeneous values.
+# `FlatResults`: flat mapping of tree-path tuples to heterogeneous values.
 QNameResults: TypeAlias = Mapping[str, object]
+FlatResults: TypeAlias = Mapping[tuple[str, ...], object]
 if TYPE_CHECKING:
     # `NestedResults`: recursive results tree for ty (precise nested form).
     NestedResults: TypeAlias = Mapping[str, "object | NestedResults"]
