@@ -6,6 +6,12 @@ releases are available on [Anaconda.org](https://anaconda.org/conda-forge/ttsim)
 
 ## Unreleased
 
+- Replace the local jaxtyping sentinel-pickle monkey-patch with an upstream fix that
+  covers all three `_array_types` sentinels (`_any_dtype`, `_anonymous_dim`,
+  `_anonymous_variadic_dim`). Bumps the floor pin to `jaxtyping >= 0.3.10`; pulls the
+  fork branch `hmgaudecker/jaxtyping@fix/sentinel-cloudpickle` via pixi until the
+  release lands. The `Ellipsis` ↔ `"..."` shim stays because
+  `from __future__ import annotations` is still in use. ({ghuser}`hmgaudecker`)
 - {gh}`101` Adopt the package-wide beartype claw with a typed exception hierarchy at
   user-facing boundaries (`InputDataError`, `EntryPointError`, `TTTargetsError`,
   `PolicyFunctionDefinitionError`, …) so malformed input is rejected with curated

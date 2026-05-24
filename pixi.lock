@@ -263,6 +263,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/widgetsnbextension-4.0.15-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/zipp-3.23.0-pyhcf101f3_1.conda
       - pypi: .
+      - pypi: git+https://github.com/hmgaudecker/jaxtyping?branch=fix%2Fsentinel-cloudpickle#f1417c72f51e9901ac62daba620289b580ef8c3f
       - pypi: https://files.pythonhosted.org/packages/05/5b/83e1ff87eb60ca706972f7e02e15c0b33396e7bdbd080069a5d1b53cf0d8/simplejson-3.20.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/3b/ab/b3226f0bd7cdcf710fbede2b3548584366da3b19b5021e74f5bde2a8fa3f/pytest-9.0.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/43/f5/ee39c6e92acc742c052f137b47c210cd0a1b72dcd3f98495528bb4d27761/flatten_dict-0.4.2-py2.py3-none-any.whl
@@ -274,7 +275,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/65/44/bb509c3d2c0b5a87e7a5af1d5917a402a32ff026f777a6d7cb6990746cbb/tabcompleter-1.4.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/71/cc/18245721fa7747065ab478316c7fea7c74777d07f37ae60db2e84f8172e8/beartype-0.22.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/8d/96/04e7b441807b26b794da5b11e59ed7f83b2cf8af202bd7eba8ad2fa6046e/wadler_lindig-0.1.7-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/94/05/3e39d416fb92b2738a76e8265e6bfc5d10542f90a7c32ad1eb831eea3fa3/jaxtyping-0.3.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9e/c9/b2622292ea83fbb4ec318f5b9ab867d0a28ab43c5717bb85b0a5f6b3b0a4/networkx-3.6.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9e/dd/b04e4a733637d370831e328a356254cfc9c875195269b234cc8ca31ff674/dags-0.6.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b7/9f/d73dfb85d7a5b1a56a99adc50f2074029468168c970ff5daeade4ad819e4/choreographer-1.2.1-py3-none-any.whl
@@ -499,6 +499,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-64/zeromq-4.3.5-h27d9b8f_10.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/zstd-1.5.7-h3eecb57_6.conda
       - pypi: .
+      - pypi: git+https://github.com/hmgaudecker/jaxtyping?branch=fix%2Fsentinel-cloudpickle#f1417c72f51e9901ac62daba620289b580ef8c3f
       - pypi: https://files.pythonhosted.org/packages/04/3c/40774378ebf423d7f074dfd7169f0466eb9de734f0ea5fbb368eddcb1e49/optree-0.19.0-cp314-cp314-macosx_10_15_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/05/5b/83e1ff87eb60ca706972f7e02e15c0b33396e7bdbd080069a5d1b53cf0d8/simplejson-3.20.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/3b/ab/b3226f0bd7cdcf710fbede2b3548584366da3b19b5021e74f5bde2a8fa3f/pytest-9.0.2-py3-none-any.whl
@@ -511,7 +512,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/65/44/bb509c3d2c0b5a87e7a5af1d5917a402a32ff026f777a6d7cb6990746cbb/tabcompleter-1.4.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/71/cc/18245721fa7747065ab478316c7fea7c74777d07f37ae60db2e84f8172e8/beartype-0.22.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/8d/96/04e7b441807b26b794da5b11e59ed7f83b2cf8af202bd7eba8ad2fa6046e/wadler_lindig-0.1.7-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/94/05/3e39d416fb92b2738a76e8265e6bfc5d10542f90a7c32ad1eb831eea3fa3/jaxtyping-0.3.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9e/c9/b2622292ea83fbb4ec318f5b9ab867d0a28ab43c5717bb85b0a5f6b3b0a4/networkx-3.6.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9e/dd/b04e4a733637d370831e328a356254cfc9c875195269b234cc8ca31ff674/dags-0.6.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b7/9f/d73dfb85d7a5b1a56a99adc50f2074029468168c970ff5daeade4ad819e4/choreographer-1.2.1-py3-none-any.whl
@@ -735,6 +735,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/zeromq-4.3.5-h4818236_10.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/zstd-1.5.7-hbf9d68e_6.conda
       - pypi: .
+      - pypi: git+https://github.com/hmgaudecker/jaxtyping?branch=fix%2Fsentinel-cloudpickle#f1417c72f51e9901ac62daba620289b580ef8c3f
       - pypi: https://files.pythonhosted.org/packages/05/5b/83e1ff87eb60ca706972f7e02e15c0b33396e7bdbd080069a5d1b53cf0d8/simplejson-3.20.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/08/67/2e19866a03a6e75eb62194a5b55e1e3154ca1517478c300232b0229f8c2a/optree-0.19.0-cp314-cp314-macosx_11_0_arm64.whl
       - pypi: https://files.pythonhosted.org/packages/3b/ab/b3226f0bd7cdcf710fbede2b3548584366da3b19b5021e74f5bde2a8fa3f/pytest-9.0.2-py3-none-any.whl
@@ -747,7 +748,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/65/44/bb509c3d2c0b5a87e7a5af1d5917a402a32ff026f777a6d7cb6990746cbb/tabcompleter-1.4.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/71/cc/18245721fa7747065ab478316c7fea7c74777d07f37ae60db2e84f8172e8/beartype-0.22.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/8d/96/04e7b441807b26b794da5b11e59ed7f83b2cf8af202bd7eba8ad2fa6046e/wadler_lindig-0.1.7-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/94/05/3e39d416fb92b2738a76e8265e6bfc5d10542f90a7c32ad1eb831eea3fa3/jaxtyping-0.3.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9e/c9/b2622292ea83fbb4ec318f5b9ab867d0a28ab43c5717bb85b0a5f6b3b0a4/networkx-3.6.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9e/dd/b04e4a733637d370831e328a356254cfc9c875195269b234cc8ca31ff674/dags-0.6.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b7/9f/d73dfb85d7a5b1a56a99adc50f2074029468168c970ff5daeade4ad819e4/choreographer-1.2.1-py3-none-any.whl
@@ -976,6 +976,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/win-64/zeromq-4.3.5-h507cc87_10.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/zstd-1.5.7-h534d264_6.conda
       - pypi: .
+      - pypi: git+https://github.com/hmgaudecker/jaxtyping?branch=fix%2Fsentinel-cloudpickle#f1417c72f51e9901ac62daba620289b580ef8c3f
       - pypi: https://files.pythonhosted.org/packages/05/5b/83e1ff87eb60ca706972f7e02e15c0b33396e7bdbd080069a5d1b53cf0d8/simplejson-3.20.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/12/df/172771902943af54bf661a8d102bdf2e7f932127968080632bda6054b62c/orjson-3.11.7-cp314-cp314-win_amd64.whl
       - pypi: https://files.pythonhosted.org/packages/3b/ab/b3226f0bd7cdcf710fbede2b3548584366da3b19b5021e74f5bde2a8fa3f/pytest-9.0.2-py3-none-any.whl
@@ -990,7 +991,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/71/cc/18245721fa7747065ab478316c7fea7c74777d07f37ae60db2e84f8172e8/beartype-0.22.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/7e/c3/587cc9aa8d4742cd690da79460081e7d834499e07e8b2bd2ccc4c66928df/optree-0.19.0-cp314-cp314-win_amd64.whl
       - pypi: https://files.pythonhosted.org/packages/8d/96/04e7b441807b26b794da5b11e59ed7f83b2cf8af202bd7eba8ad2fa6046e/wadler_lindig-0.1.7-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/94/05/3e39d416fb92b2738a76e8265e6bfc5d10542f90a7c32ad1eb831eea3fa3/jaxtyping-0.3.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9e/c9/b2622292ea83fbb4ec318f5b9ab867d0a28ab43c5717bb85b0a5f6b3b0a4/networkx-3.6.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9e/dd/b04e4a733637d370831e328a356254cfc9c875195269b234cc8ca31ff674/dags-0.6.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b7/9f/d73dfb85d7a5b1a56a99adc50f2074029468168c970ff5daeade4ad819e4/choreographer-1.2.1-py3-none-any.whl
@@ -1254,6 +1254,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/widgetsnbextension-4.0.15-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/zipp-3.23.0-pyhcf101f3_1.conda
       - pypi: .
+      - pypi: git+https://github.com/hmgaudecker/jaxtyping?branch=fix%2Fsentinel-cloudpickle#f1417c72f51e9901ac62daba620289b580ef8c3f
       - pypi: https://files.pythonhosted.org/packages/28/e6/59f932bcabd1eac44e334fe8e3281a92eacfcb450586e1f4bde0423728d8/orjson-3.11.7-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/3b/ab/b3226f0bd7cdcf710fbede2b3548584366da3b19b5021e74f5bde2a8fa3f/pytest-9.0.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/43/f5/ee39c6e92acc742c052f137b47c210cd0a1b72dcd3f98495528bb4d27761/flatten_dict-0.4.2-py2.py3-none-any.whl
@@ -1266,7 +1267,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/71/cc/18245721fa7747065ab478316c7fea7c74777d07f37ae60db2e84f8172e8/beartype-0.22.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/76/53/c16972708cbb79f2942922571a687c52bd109a7bd51175aeb7558dff2236/coverage-7.13.4-cp311-cp311-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/8d/96/04e7b441807b26b794da5b11e59ed7f83b2cf8af202bd7eba8ad2fa6046e/wadler_lindig-0.1.7-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/94/05/3e39d416fb92b2738a76e8265e6bfc5d10542f90a7c32ad1eb831eea3fa3/jaxtyping-0.3.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/94/b8/e77c355f179dc89d44e7ca6dbf7a46e650806df1d356a5462e5829fccea5/types_pytz-2026.1.1.20260304-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9e/c9/b2622292ea83fbb4ec318f5b9ab867d0a28ab43c5717bb85b0a5f6b3b0a4/networkx-3.6.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9e/dd/b04e4a733637d370831e328a356254cfc9c875195269b234cc8ca31ff674/dags-0.6.0-py3-none-any.whl
@@ -1492,6 +1492,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-64/zeromq-4.3.5-h27d9b8f_10.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/zstd-1.5.7-h3eecb57_6.conda
       - pypi: .
+      - pypi: git+https://github.com/hmgaudecker/jaxtyping?branch=fix%2Fsentinel-cloudpickle#f1417c72f51e9901ac62daba620289b580ef8c3f
       - pypi: https://files.pythonhosted.org/packages/37/02/da6cb01fc6087048d7f61522c327edf4250f1683a58a839fdcc435746dd5/orjson-3.11.7-cp311-cp311-macosx_10_15_x86_64.macosx_11_0_arm64.macosx_10_15_universal2.whl
       - pypi: https://files.pythonhosted.org/packages/3b/ab/b3226f0bd7cdcf710fbede2b3548584366da3b19b5021e74f5bde2a8fa3f/pytest-9.0.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/43/f5/ee39c6e92acc742c052f137b47c210cd0a1b72dcd3f98495528bb4d27761/flatten_dict-0.4.2-py2.py3-none-any.whl
@@ -1504,7 +1505,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/6b/a2/cd2e10b880368305d89dd540685b8bdcc136df2b3c76b5ddd72596254539/simplejson-3.20.2-cp311-cp311-macosx_10_9_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/71/cc/18245721fa7747065ab478316c7fea7c74777d07f37ae60db2e84f8172e8/beartype-0.22.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/8d/96/04e7b441807b26b794da5b11e59ed7f83b2cf8af202bd7eba8ad2fa6046e/wadler_lindig-0.1.7-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/94/05/3e39d416fb92b2738a76e8265e6bfc5d10542f90a7c32ad1eb831eea3fa3/jaxtyping-0.3.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/94/b8/e77c355f179dc89d44e7ca6dbf7a46e650806df1d356a5462e5829fccea5/types_pytz-2026.1.1.20260304-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9e/c9/b2622292ea83fbb4ec318f5b9ab867d0a28ab43c5717bb85b0a5f6b3b0a4/networkx-3.6.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9e/dd/b04e4a733637d370831e328a356254cfc9c875195269b234cc8ca31ff674/dags-0.6.0-py3-none-any.whl
@@ -1730,6 +1730,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/zeromq-4.3.5-h4818236_10.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/zstd-1.5.7-hbf9d68e_6.conda
       - pypi: .
+      - pypi: git+https://github.com/hmgaudecker/jaxtyping?branch=fix%2Fsentinel-cloudpickle#f1417c72f51e9901ac62daba620289b580ef8c3f
       - pypi: https://files.pythonhosted.org/packages/37/02/da6cb01fc6087048d7f61522c327edf4250f1683a58a839fdcc435746dd5/orjson-3.11.7-cp311-cp311-macosx_10_15_x86_64.macosx_11_0_arm64.macosx_10_15_universal2.whl
       - pypi: https://files.pythonhosted.org/packages/3b/ab/b3226f0bd7cdcf710fbede2b3548584366da3b19b5021e74f5bde2a8fa3f/pytest-9.0.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/43/5b/4e062008bfd2f836079afec06dd9cba76a01010aaffa8eae0d1915fa0ef6/optree-0.19.0-cp311-cp311-macosx_11_0_arm64.whl
@@ -1743,7 +1744,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/65/44/bb509c3d2c0b5a87e7a5af1d5917a402a32ff026f777a6d7cb6990746cbb/tabcompleter-1.4.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/71/cc/18245721fa7747065ab478316c7fea7c74777d07f37ae60db2e84f8172e8/beartype-0.22.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/8d/96/04e7b441807b26b794da5b11e59ed7f83b2cf8af202bd7eba8ad2fa6046e/wadler_lindig-0.1.7-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/94/05/3e39d416fb92b2738a76e8265e6bfc5d10542f90a7c32ad1eb831eea3fa3/jaxtyping-0.3.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/94/b8/e77c355f179dc89d44e7ca6dbf7a46e650806df1d356a5462e5829fccea5/types_pytz-2026.1.1.20260304-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9e/c9/b2622292ea83fbb4ec318f5b9ab867d0a28ab43c5717bb85b0a5f6b3b0a4/networkx-3.6.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9e/dd/b04e4a733637d370831e328a356254cfc9c875195269b234cc8ca31ff674/dags-0.6.0-py3-none-any.whl
@@ -1973,6 +1973,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/win-64/zeromq-4.3.5-h507cc87_10.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/zstd-1.5.7-h534d264_6.conda
       - pypi: .
+      - pypi: git+https://github.com/hmgaudecker/jaxtyping?branch=fix%2Fsentinel-cloudpickle#f1417c72f51e9901ac62daba620289b580ef8c3f
       - pypi: https://files.pythonhosted.org/packages/35/fd/3d1158ecdc573fdad81bf3cc78df04522bf3959758bba6597ba4c956c74d/simplejson-3.20.2-cp311-cp311-win_amd64.whl
       - pypi: https://files.pythonhosted.org/packages/3b/ab/b3226f0bd7cdcf710fbede2b3548584366da3b19b5021e74f5bde2a8fa3f/pytest-9.0.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/43/f5/ee39c6e92acc742c052f137b47c210cd0a1b72dcd3f98495528bb4d27761/flatten_dict-0.4.2-py2.py3-none-any.whl
@@ -1986,7 +1987,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/65/44/bb509c3d2c0b5a87e7a5af1d5917a402a32ff026f777a6d7cb6990746cbb/tabcompleter-1.4.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/71/cc/18245721fa7747065ab478316c7fea7c74777d07f37ae60db2e84f8172e8/beartype-0.22.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/8d/96/04e7b441807b26b794da5b11e59ed7f83b2cf8af202bd7eba8ad2fa6046e/wadler_lindig-0.1.7-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/94/05/3e39d416fb92b2738a76e8265e6bfc5d10542f90a7c32ad1eb831eea3fa3/jaxtyping-0.3.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/94/b8/e77c355f179dc89d44e7ca6dbf7a46e650806df1d356a5462e5829fccea5/types_pytz-2026.1.1.20260304-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9e/c9/b2622292ea83fbb4ec318f5b9ab867d0a28ab43c5717bb85b0a5f6b3b0a4/networkx-3.6.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9e/dd/b04e4a733637d370831e328a356254cfc9c875195269b234cc8ca31ff674/dags-0.6.0-py3-none-any.whl
@@ -2260,6 +2260,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/widgetsnbextension-4.0.15-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/zipp-3.23.0-pyhcf101f3_1.conda
       - pypi: .
+      - pypi: git+https://github.com/hmgaudecker/jaxtyping?branch=fix%2Fsentinel-cloudpickle#f1417c72f51e9901ac62daba620289b580ef8c3f
       - pypi: https://files.pythonhosted.org/packages/0a/e5/a77df15a62b37bb14c81b5757e2a0573f57e7c06d125a410ad2cd7cefb72/optree-0.19.0-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/20/05/ed9b2571bbf38f1a2425391f18e3ac11cb1e91482c22d644a1640dea9da7/simplejson-3.20.2-cp312-cp312-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/3b/ab/b3226f0bd7cdcf710fbede2b3548584366da3b19b5021e74f5bde2a8fa3f/pytest-9.0.2-py3-none-any.whl
@@ -2273,7 +2274,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/65/44/bb509c3d2c0b5a87e7a5af1d5917a402a32ff026f777a6d7cb6990746cbb/tabcompleter-1.4.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/71/cc/18245721fa7747065ab478316c7fea7c74777d07f37ae60db2e84f8172e8/beartype-0.22.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/8d/96/04e7b441807b26b794da5b11e59ed7f83b2cf8af202bd7eba8ad2fa6046e/wadler_lindig-0.1.7-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/94/05/3e39d416fb92b2738a76e8265e6bfc5d10542f90a7c32ad1eb831eea3fa3/jaxtyping-0.3.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/94/b8/e77c355f179dc89d44e7ca6dbf7a46e650806df1d356a5462e5829fccea5/types_pytz-2026.1.1.20260304-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9e/c9/b2622292ea83fbb4ec318f5b9ab867d0a28ab43c5717bb85b0a5f6b3b0a4/networkx-3.6.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9e/dd/b04e4a733637d370831e328a356254cfc9c875195269b234cc8ca31ff674/dags-0.6.0-py3-none-any.whl
@@ -2501,6 +2501,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-64/zeromq-4.3.5-h27d9b8f_10.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/zstd-1.5.7-h3eecb57_6.conda
       - pypi: .
+      - pypi: git+https://github.com/hmgaudecker/jaxtyping?branch=fix%2Fsentinel-cloudpickle#f1417c72f51e9901ac62daba620289b580ef8c3f
       - pypi: https://files.pythonhosted.org/packages/2d/bf/5cbbf61a27f94797c3d9786f6230223023a943b60f5e893d52368f10b8b1/optree-0.19.0-cp312-cp312-macosx_10_13_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/3b/ab/b3226f0bd7cdcf710fbede2b3548584366da3b19b5021e74f5bde2a8fa3f/pytest-9.0.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/43/f5/ee39c6e92acc742c052f137b47c210cd0a1b72dcd3f98495528bb4d27761/flatten_dict-0.4.2-py2.py3-none-any.whl
@@ -2514,7 +2515,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/71/cc/18245721fa7747065ab478316c7fea7c74777d07f37ae60db2e84f8172e8/beartype-0.22.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/80/bf/76f4f1665f6983385938f0e2a5d7efa12a58171b8456c252f3bae8a4cf75/orjson-3.11.7-cp312-cp312-macosx_10_15_x86_64.macosx_11_0_arm64.macosx_10_15_universal2.whl
       - pypi: https://files.pythonhosted.org/packages/8d/96/04e7b441807b26b794da5b11e59ed7f83b2cf8af202bd7eba8ad2fa6046e/wadler_lindig-0.1.7-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/94/05/3e39d416fb92b2738a76e8265e6bfc5d10542f90a7c32ad1eb831eea3fa3/jaxtyping-0.3.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/94/b8/e77c355f179dc89d44e7ca6dbf7a46e650806df1d356a5462e5829fccea5/types_pytz-2026.1.1.20260304-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9e/c9/b2622292ea83fbb4ec318f5b9ab867d0a28ab43c5717bb85b0a5f6b3b0a4/networkx-3.6.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9e/dd/b04e4a733637d370831e328a356254cfc9c875195269b234cc8ca31ff674/dags-0.6.0-py3-none-any.whl
@@ -2742,6 +2742,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/zeromq-4.3.5-h4818236_10.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/zstd-1.5.7-hbf9d68e_6.conda
       - pypi: .
+      - pypi: git+https://github.com/hmgaudecker/jaxtyping?branch=fix%2Fsentinel-cloudpickle#f1417c72f51e9901ac62daba620289b580ef8c3f
       - pypi: https://files.pythonhosted.org/packages/00/9e/65899e6470f5df289ccdbe9e228fb0cd0ae45ccda8e32c92d6efae1530ef/optree-0.19.0-cp312-cp312-macosx_11_0_arm64.whl
       - pypi: https://files.pythonhosted.org/packages/3b/ab/b3226f0bd7cdcf710fbede2b3548584366da3b19b5021e74f5bde2a8fa3f/pytest-9.0.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/43/f5/ee39c6e92acc742c052f137b47c210cd0a1b72dcd3f98495528bb4d27761/flatten_dict-0.4.2-py2.py3-none-any.whl
@@ -2755,7 +2756,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/71/cc/18245721fa7747065ab478316c7fea7c74777d07f37ae60db2e84f8172e8/beartype-0.22.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/80/bf/76f4f1665f6983385938f0e2a5d7efa12a58171b8456c252f3bae8a4cf75/orjson-3.11.7-cp312-cp312-macosx_10_15_x86_64.macosx_11_0_arm64.macosx_10_15_universal2.whl
       - pypi: https://files.pythonhosted.org/packages/8d/96/04e7b441807b26b794da5b11e59ed7f83b2cf8af202bd7eba8ad2fa6046e/wadler_lindig-0.1.7-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/94/05/3e39d416fb92b2738a76e8265e6bfc5d10542f90a7c32ad1eb831eea3fa3/jaxtyping-0.3.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/94/b8/e77c355f179dc89d44e7ca6dbf7a46e650806df1d356a5462e5829fccea5/types_pytz-2026.1.1.20260304-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9e/c9/b2622292ea83fbb4ec318f5b9ab867d0a28ab43c5717bb85b0a5f6b3b0a4/networkx-3.6.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9e/dd/b04e4a733637d370831e328a356254cfc9c875195269b234cc8ca31ff674/dags-0.6.0-py3-none-any.whl
@@ -2988,6 +2988,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/win-64/zeromq-4.3.5-h507cc87_10.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/zstd-1.5.7-h534d264_6.conda
       - pypi: .
+      - pypi: git+https://github.com/hmgaudecker/jaxtyping?branch=fix%2Fsentinel-cloudpickle#f1417c72f51e9901ac62daba620289b580ef8c3f
       - pypi: https://files.pythonhosted.org/packages/34/70/2e0855361f76198a3965273048c8e50a9695d88cd75811a5b46444895845/orjson-3.11.7-cp312-cp312-win_amd64.whl
       - pypi: https://files.pythonhosted.org/packages/3b/ab/b3226f0bd7cdcf710fbede2b3548584366da3b19b5021e74f5bde2a8fa3f/pytest-9.0.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/43/f5/ee39c6e92acc742c052f137b47c210cd0a1b72dcd3f98495528bb4d27761/flatten_dict-0.4.2-py2.py3-none-any.whl
@@ -3001,7 +3002,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/71/cc/18245721fa7747065ab478316c7fea7c74777d07f37ae60db2e84f8172e8/beartype-0.22.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/77/4e/c0a25a425fcf5557d9abd18419c95b63922e897bc86c1f327f155ef234a9/coverage-7.13.4-cp312-cp312-win_amd64.whl
       - pypi: https://files.pythonhosted.org/packages/8d/96/04e7b441807b26b794da5b11e59ed7f83b2cf8af202bd7eba8ad2fa6046e/wadler_lindig-0.1.7-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/94/05/3e39d416fb92b2738a76e8265e6bfc5d10542f90a7c32ad1eb831eea3fa3/jaxtyping-0.3.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/94/b8/e77c355f179dc89d44e7ca6dbf7a46e650806df1d356a5462e5829fccea5/types_pytz-2026.1.1.20260304-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9e/7f/31fa1b2311038bfc355ad6e4e4e63d028719cb67fb3ebe6fb76ff2124105/optree-0.19.0-cp312-cp312-win_amd64.whl
       - pypi: https://files.pythonhosted.org/packages/9e/c9/b2622292ea83fbb4ec318f5b9ab867d0a28ab43c5717bb85b0a5f6b3b0a4/networkx-3.6.1-py3-none-any.whl
@@ -3274,6 +3274,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/widgetsnbextension-4.0.15-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/zipp-3.23.0-pyhcf101f3_1.conda
       - pypi: .
+      - pypi: git+https://github.com/hmgaudecker/jaxtyping?branch=fix%2Fsentinel-cloudpickle#f1417c72f51e9901ac62daba620289b580ef8c3f
       - pypi: https://files.pythonhosted.org/packages/3b/ab/b3226f0bd7cdcf710fbede2b3548584366da3b19b5021e74f5bde2a8fa3f/pytest-9.0.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/43/f1/b392952200f3393bb06fbc4dd975fc63a6843261705839355560b7264eb2/simplejson-3.20.2-cp313-cp313-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/43/f5/ee39c6e92acc742c052f137b47c210cd0a1b72dcd3f98495528bb4d27761/flatten_dict-0.4.2-py2.py3-none-any.whl
@@ -3286,7 +3287,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/71/cc/18245721fa7747065ab478316c7fea7c74777d07f37ae60db2e84f8172e8/beartype-0.22.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/78/fc/753bf69b907652d54b7c6012ccb320d8c1a3161454e415331058b6f04246/optree-0.19.0-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/8d/96/04e7b441807b26b794da5b11e59ed7f83b2cf8af202bd7eba8ad2fa6046e/wadler_lindig-0.1.7-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/94/05/3e39d416fb92b2738a76e8265e6bfc5d10542f90a7c32ad1eb831eea3fa3/jaxtyping-0.3.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/94/b8/e77c355f179dc89d44e7ca6dbf7a46e650806df1d356a5462e5829fccea5/types_pytz-2026.1.1.20260304-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9e/c9/b2622292ea83fbb4ec318f5b9ab867d0a28ab43c5717bb85b0a5f6b3b0a4/networkx-3.6.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9e/dd/b04e4a733637d370831e328a356254cfc9c875195269b234cc8ca31ff674/dags-0.6.0-py3-none-any.whl
@@ -3516,6 +3516,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-64/zeromq-4.3.5-h27d9b8f_10.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/zstd-1.5.7-h3eecb57_6.conda
       - pypi: .
+      - pypi: git+https://github.com/hmgaudecker/jaxtyping?branch=fix%2Fsentinel-cloudpickle#f1417c72f51e9901ac62daba620289b580ef8c3f
       - pypi: https://files.pythonhosted.org/packages/35/28/5a4b8f3483fbfb68f3f460bc002cef3a5735ef30950e7c4adce9c8da15c7/simplejson-3.20.2-cp313-cp313-macosx_10_13_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/3b/ab/b3226f0bd7cdcf710fbede2b3548584366da3b19b5021e74f5bde2a8fa3f/pytest-9.0.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/43/f5/ee39c6e92acc742c052f137b47c210cd0a1b72dcd3f98495528bb4d27761/flatten_dict-0.4.2-py2.py3-none-any.whl
@@ -3529,7 +3530,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/71/cc/18245721fa7747065ab478316c7fea7c74777d07f37ae60db2e84f8172e8/beartype-0.22.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/89/25/6e0e52cac5aab51d7b6dcd257e855e1dec1c2060f6b28566c509b4665f62/orjson-3.11.7-cp313-cp313-macosx_10_15_x86_64.macosx_11_0_arm64.macosx_10_15_universal2.whl
       - pypi: https://files.pythonhosted.org/packages/8d/96/04e7b441807b26b794da5b11e59ed7f83b2cf8af202bd7eba8ad2fa6046e/wadler_lindig-0.1.7-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/94/05/3e39d416fb92b2738a76e8265e6bfc5d10542f90a7c32ad1eb831eea3fa3/jaxtyping-0.3.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/94/b8/e77c355f179dc89d44e7ca6dbf7a46e650806df1d356a5462e5829fccea5/types_pytz-2026.1.1.20260304-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9e/c9/b2622292ea83fbb4ec318f5b9ab867d0a28ab43c5717bb85b0a5f6b3b0a4/networkx-3.6.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9e/dd/b04e4a733637d370831e328a356254cfc9c875195269b234cc8ca31ff674/dags-0.6.0-py3-none-any.whl
@@ -3758,6 +3758,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/zeromq-4.3.5-h4818236_10.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/zstd-1.5.7-hbf9d68e_6.conda
       - pypi: .
+      - pypi: git+https://github.com/hmgaudecker/jaxtyping?branch=fix%2Fsentinel-cloudpickle#f1417c72f51e9901ac62daba620289b580ef8c3f
       - pypi: https://files.pythonhosted.org/packages/3b/ab/b3226f0bd7cdcf710fbede2b3548584366da3b19b5021e74f5bde2a8fa3f/pytest-9.0.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/43/f5/ee39c6e92acc742c052f137b47c210cd0a1b72dcd3f98495528bb4d27761/flatten_dict-0.4.2-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/4b/97/f6de8d4af54d6401d6581a686cce3e3e2371a79ba459a449104e026c08bc/kaleido-1.2.0-py3-none-any.whl
@@ -3771,7 +3772,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/7a/4d/30dfef83b9ac48afae1cf1ab19c2867e27b8d22b5d9f8ca7ce5a0a157d8c/simplejson-3.20.2-cp313-cp313-macosx_11_0_arm64.whl
       - pypi: https://files.pythonhosted.org/packages/89/25/6e0e52cac5aab51d7b6dcd257e855e1dec1c2060f6b28566c509b4665f62/orjson-3.11.7-cp313-cp313-macosx_10_15_x86_64.macosx_11_0_arm64.macosx_10_15_universal2.whl
       - pypi: https://files.pythonhosted.org/packages/8d/96/04e7b441807b26b794da5b11e59ed7f83b2cf8af202bd7eba8ad2fa6046e/wadler_lindig-0.1.7-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/94/05/3e39d416fb92b2738a76e8265e6bfc5d10542f90a7c32ad1eb831eea3fa3/jaxtyping-0.3.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/94/b8/e77c355f179dc89d44e7ca6dbf7a46e650806df1d356a5462e5829fccea5/types_pytz-2026.1.1.20260304-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9e/c9/b2622292ea83fbb4ec318f5b9ab867d0a28ab43c5717bb85b0a5f6b3b0a4/networkx-3.6.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9e/dd/b04e4a733637d370831e328a356254cfc9c875195269b234cc8ca31ff674/dags-0.6.0-py3-none-any.whl
@@ -4005,6 +4005,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/win-64/zeromq-4.3.5-h507cc87_10.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/zstd-1.5.7-h534d264_6.conda
       - pypi: .
+      - pypi: git+https://github.com/hmgaudecker/jaxtyping?branch=fix%2Fsentinel-cloudpickle#f1417c72f51e9901ac62daba620289b580ef8c3f
       - pypi: https://files.pythonhosted.org/packages/00/04/c6f72daca5092e3117840a1b1e88dfc809cc1470cf0734890d0366b684a1/orjson-3.11.7-cp313-cp313-win_amd64.whl
       - pypi: https://files.pythonhosted.org/packages/3b/ab/b3226f0bd7cdcf710fbede2b3548584366da3b19b5021e74f5bde2a8fa3f/pytest-9.0.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/43/f5/ee39c6e92acc742c052f137b47c210cd0a1b72dcd3f98495528bb4d27761/flatten_dict-0.4.2-py2.py3-none-any.whl
@@ -4018,7 +4019,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/71/cc/18245721fa7747065ab478316c7fea7c74777d07f37ae60db2e84f8172e8/beartype-0.22.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/87/10/d42ad61230436735c68af1120622b28a782877146a83d714da7b6a2a1c4e/simplejson-3.20.2-cp313-cp313-win_amd64.whl
       - pypi: https://files.pythonhosted.org/packages/8d/96/04e7b441807b26b794da5b11e59ed7f83b2cf8af202bd7eba8ad2fa6046e/wadler_lindig-0.1.7-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/94/05/3e39d416fb92b2738a76e8265e6bfc5d10542f90a7c32ad1eb831eea3fa3/jaxtyping-0.3.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/94/b8/e77c355f179dc89d44e7ca6dbf7a46e650806df1d356a5462e5829fccea5/types_pytz-2026.1.1.20260304-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9e/c9/b2622292ea83fbb4ec318f5b9ab867d0a28ab43c5717bb85b0a5f6b3b0a4/networkx-3.6.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9e/dd/b04e4a733637d370831e328a356254cfc9c875195269b234cc8ca31ff674/dags-0.6.0-py3-none-any.whl
@@ -4291,6 +4291,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/widgetsnbextension-4.0.15-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/zipp-3.23.0-pyhcf101f3_1.conda
       - pypi: .
+      - pypi: git+https://github.com/hmgaudecker/jaxtyping?branch=fix%2Fsentinel-cloudpickle#f1417c72f51e9901ac62daba620289b580ef8c3f
       - pypi: https://files.pythonhosted.org/packages/05/5b/83e1ff87eb60ca706972f7e02e15c0b33396e7bdbd080069a5d1b53cf0d8/simplejson-3.20.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/06/90/2cdab0974b9b5bbc1623f7876b73603aecac11b8d95b85b5b86b32de5eab/coverage-7.13.4-cp314-cp314-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/3b/ab/b3226f0bd7cdcf710fbede2b3548584366da3b19b5021e74f5bde2a8fa3f/pytest-9.0.2-py3-none-any.whl
@@ -4303,7 +4304,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/65/44/bb509c3d2c0b5a87e7a5af1d5917a402a32ff026f777a6d7cb6990746cbb/tabcompleter-1.4.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/71/cc/18245721fa7747065ab478316c7fea7c74777d07f37ae60db2e84f8172e8/beartype-0.22.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/8d/96/04e7b441807b26b794da5b11e59ed7f83b2cf8af202bd7eba8ad2fa6046e/wadler_lindig-0.1.7-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/94/05/3e39d416fb92b2738a76e8265e6bfc5d10542f90a7c32ad1eb831eea3fa3/jaxtyping-0.3.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/94/b8/e77c355f179dc89d44e7ca6dbf7a46e650806df1d356a5462e5829fccea5/types_pytz-2026.1.1.20260304-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9e/c9/b2622292ea83fbb4ec318f5b9ab867d0a28ab43c5717bb85b0a5f6b3b0a4/networkx-3.6.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9e/dd/b04e4a733637d370831e328a356254cfc9c875195269b234cc8ca31ff674/dags-0.6.0-py3-none-any.whl
@@ -4533,6 +4533,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-64/zeromq-4.3.5-h27d9b8f_10.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/zstd-1.5.7-h3eecb57_6.conda
       - pypi: .
+      - pypi: git+https://github.com/hmgaudecker/jaxtyping?branch=fix%2Fsentinel-cloudpickle#f1417c72f51e9901ac62daba620289b580ef8c3f
       - pypi: https://files.pythonhosted.org/packages/04/3c/40774378ebf423d7f074dfd7169f0466eb9de734f0ea5fbb368eddcb1e49/optree-0.19.0-cp314-cp314-macosx_10_15_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/05/5b/83e1ff87eb60ca706972f7e02e15c0b33396e7bdbd080069a5d1b53cf0d8/simplejson-3.20.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/3b/ab/b3226f0bd7cdcf710fbede2b3548584366da3b19b5021e74f5bde2a8fa3f/pytest-9.0.2-py3-none-any.whl
@@ -4546,7 +4547,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/71/cc/18245721fa7747065ab478316c7fea7c74777d07f37ae60db2e84f8172e8/beartype-0.22.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/8d/96/04e7b441807b26b794da5b11e59ed7f83b2cf8af202bd7eba8ad2fa6046e/wadler_lindig-0.1.7-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/92/11/a9cf762bb83386467737d32187756a42094927150c3e107df4cb078e8590/coverage-7.13.4-cp314-cp314-macosx_10_15_x86_64.whl
-      - pypi: https://files.pythonhosted.org/packages/94/05/3e39d416fb92b2738a76e8265e6bfc5d10542f90a7c32ad1eb831eea3fa3/jaxtyping-0.3.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/94/b8/e77c355f179dc89d44e7ca6dbf7a46e650806df1d356a5462e5829fccea5/types_pytz-2026.1.1.20260304-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9e/c9/b2622292ea83fbb4ec318f5b9ab867d0a28ab43c5717bb85b0a5f6b3b0a4/networkx-3.6.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9e/dd/b04e4a733637d370831e328a356254cfc9c875195269b234cc8ca31ff674/dags-0.6.0-py3-none-any.whl
@@ -4775,6 +4775,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/zeromq-4.3.5-h4818236_10.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/zstd-1.5.7-hbf9d68e_6.conda
       - pypi: .
+      - pypi: git+https://github.com/hmgaudecker/jaxtyping?branch=fix%2Fsentinel-cloudpickle#f1417c72f51e9901ac62daba620289b580ef8c3f
       - pypi: https://files.pythonhosted.org/packages/05/5b/83e1ff87eb60ca706972f7e02e15c0b33396e7bdbd080069a5d1b53cf0d8/simplejson-3.20.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/08/67/2e19866a03a6e75eb62194a5b55e1e3154ca1517478c300232b0229f8c2a/optree-0.19.0-cp314-cp314-macosx_11_0_arm64.whl
       - pypi: https://files.pythonhosted.org/packages/3b/ab/b3226f0bd7cdcf710fbede2b3548584366da3b19b5021e74f5bde2a8fa3f/pytest-9.0.2-py3-none-any.whl
@@ -4787,7 +4788,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/65/44/bb509c3d2c0b5a87e7a5af1d5917a402a32ff026f777a6d7cb6990746cbb/tabcompleter-1.4.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/71/cc/18245721fa7747065ab478316c7fea7c74777d07f37ae60db2e84f8172e8/beartype-0.22.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/8d/96/04e7b441807b26b794da5b11e59ed7f83b2cf8af202bd7eba8ad2fa6046e/wadler_lindig-0.1.7-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/94/05/3e39d416fb92b2738a76e8265e6bfc5d10542f90a7c32ad1eb831eea3fa3/jaxtyping-0.3.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/94/b8/e77c355f179dc89d44e7ca6dbf7a46e650806df1d356a5462e5829fccea5/types_pytz-2026.1.1.20260304-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9e/c9/b2622292ea83fbb4ec318f5b9ab867d0a28ab43c5717bb85b0a5f6b3b0a4/networkx-3.6.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9e/dd/b04e4a733637d370831e328a356254cfc9c875195269b234cc8ca31ff674/dags-0.6.0-py3-none-any.whl
@@ -5022,6 +5022,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/win-64/zeromq-4.3.5-h507cc87_10.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/zstd-1.5.7-h534d264_6.conda
       - pypi: .
+      - pypi: git+https://github.com/hmgaudecker/jaxtyping?branch=fix%2Fsentinel-cloudpickle#f1417c72f51e9901ac62daba620289b580ef8c3f
       - pypi: https://files.pythonhosted.org/packages/05/5b/83e1ff87eb60ca706972f7e02e15c0b33396e7bdbd080069a5d1b53cf0d8/simplejson-3.20.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/12/df/172771902943af54bf661a8d102bdf2e7f932127968080632bda6054b62c/orjson-3.11.7-cp314-cp314-win_amd64.whl
       - pypi: https://files.pythonhosted.org/packages/3b/ab/b3226f0bd7cdcf710fbede2b3548584366da3b19b5021e74f5bde2a8fa3f/pytest-9.0.2-py3-none-any.whl
@@ -5036,7 +5037,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/71/cc/18245721fa7747065ab478316c7fea7c74777d07f37ae60db2e84f8172e8/beartype-0.22.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/7e/c3/587cc9aa8d4742cd690da79460081e7d834499e07e8b2bd2ccc4c66928df/optree-0.19.0-cp314-cp314-win_amd64.whl
       - pypi: https://files.pythonhosted.org/packages/8d/96/04e7b441807b26b794da5b11e59ed7f83b2cf8af202bd7eba8ad2fa6046e/wadler_lindig-0.1.7-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/94/05/3e39d416fb92b2738a76e8265e6bfc5d10542f90a7c32ad1eb831eea3fa3/jaxtyping-0.3.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/94/b8/e77c355f179dc89d44e7ca6dbf7a46e650806df1d356a5462e5829fccea5/types_pytz-2026.1.1.20260304-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9e/c9/b2622292ea83fbb4ec318f5b9ab867d0a28ab43c5717bb85b0a5f6b3b0a4/networkx-3.6.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9e/dd/b04e4a733637d370831e328a356254cfc9c875195269b234cc8ca31ff674/dags-0.6.0-py3-none-any.whl
@@ -5308,6 +5308,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/widgetsnbextension-4.0.15-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/zipp-3.23.0-pyhcf101f3_1.conda
       - pypi: .
+      - pypi: git+https://github.com/hmgaudecker/jaxtyping?branch=fix%2Fsentinel-cloudpickle#f1417c72f51e9901ac62daba620289b580ef8c3f
       - pypi: https://files.pythonhosted.org/packages/00/a8/d8c0a8c4c45a3904a52c9860b07fdf775ca0517df884e3d240205a42b7ff/nvidia_cufft-12.2.0.37-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/05/5b/83e1ff87eb60ca706972f7e02e15c0b33396e7bdbd080069a5d1b53cf0d8/simplejson-3.20.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/06/90/2cdab0974b9b5bbc1623f7876b73603aecac11b8d95b85b5b86b32de5eab/coverage-7.13.4-cp314-cp314-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl
@@ -5335,7 +5336,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/80/e4/88778c6a23b65224e5088e68fd0924e5bde2196a26e76edb3ea3543fed6a/jax-0.9.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/87/40/23990a83164aaec2bfeffcee87794299f3cfdbdd7ed024b2af078afb600a/nvidia_cusparse-12.7.9.17-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/8d/96/04e7b441807b26b794da5b11e59ed7f83b2cf8af202bd7eba8ad2fa6046e/wadler_lindig-0.1.7-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/94/05/3e39d416fb92b2738a76e8265e6bfc5d10542f90a7c32ad1eb831eea3fa3/jaxtyping-0.3.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/94/b8/e77c355f179dc89d44e7ca6dbf7a46e650806df1d356a5462e5829fccea5/types_pytz-2026.1.1.20260304-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9e/c9/b2622292ea83fbb4ec318f5b9ab867d0a28ab43c5717bb85b0a5f6b3b0a4/networkx-3.6.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9e/dd/b04e4a733637d370831e328a356254cfc9c875195269b234cc8ca31ff674/dags-0.6.0-py3-none-any.whl
@@ -5615,6 +5615,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/widgetsnbextension-4.0.15-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/zipp-3.23.0-pyhcf101f3_1.conda
       - pypi: .
+      - pypi: git+https://github.com/hmgaudecker/jaxtyping?branch=fix%2Fsentinel-cloudpickle#f1417c72f51e9901ac62daba620289b580ef8c3f
       - pypi: https://files.pythonhosted.org/packages/05/5b/83e1ff87eb60ca706972f7e02e15c0b33396e7bdbd080069a5d1b53cf0d8/simplejson-3.20.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/06/90/2cdab0974b9b5bbc1623f7876b73603aecac11b8d95b85b5b86b32de5eab/coverage-7.13.4-cp314-cp314-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/0b/2e/7eea398450457ecb54e18e9d10110993fa65561c4f3add5e8eccd2b9cd41/scipy-1.17.1-cp314-cp314-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
@@ -5631,7 +5632,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/76/fe/67d2c414b0860d42f4a20b1fadbe7aeffb1b3d885efebd7aedf22a4bc2a2/jaxlib-0.9.1-cp314-cp314-manylinux_2_27_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/80/e4/88778c6a23b65224e5088e68fd0924e5bde2196a26e76edb3ea3543fed6a/jax-0.9.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/8d/96/04e7b441807b26b794da5b11e59ed7f83b2cf8af202bd7eba8ad2fa6046e/wadler_lindig-0.1.7-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/94/05/3e39d416fb92b2738a76e8265e6bfc5d10542f90a7c32ad1eb831eea3fa3/jaxtyping-0.3.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/94/b8/e77c355f179dc89d44e7ca6dbf7a46e650806df1d356a5462e5829fccea5/types_pytz-2026.1.1.20260304-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9e/c9/b2622292ea83fbb4ec318f5b9ab867d0a28ab43c5717bb85b0a5f6b3b0a4/networkx-3.6.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9e/dd/b04e4a733637d370831e328a356254cfc9c875195269b234cc8ca31ff674/dags-0.6.0-py3-none-any.whl
@@ -5862,6 +5862,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/zeromq-4.3.5-h4818236_10.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/zstd-1.5.7-hbf9d68e_6.conda
       - pypi: .
+      - pypi: git+https://github.com/hmgaudecker/jaxtyping?branch=fix%2Fsentinel-cloudpickle#f1417c72f51e9901ac62daba620289b580ef8c3f
       - pypi: https://files.pythonhosted.org/packages/05/5b/83e1ff87eb60ca706972f7e02e15c0b33396e7bdbd080069a5d1b53cf0d8/simplejson-3.20.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/08/67/2e19866a03a6e75eb62194a5b55e1e3154ca1517478c300232b0229f8c2a/optree-0.19.0-cp314-cp314-macosx_11_0_arm64.whl
       - pypi: https://files.pythonhosted.org/packages/23/cd/066e86230ae37ed0be70aae89aabf03ca8d9f39c8aea0dec8029455b5540/opt_einsum-3.4.0-py3-none-any.whl
@@ -5877,7 +5878,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/72/4e/1339dc6e2557a344f5ba5590872e80346f76f6cb2ac3dd16e4666e88818c/ml_dtypes-0.5.4-cp314-cp314-macosx_10_13_universal2.whl
       - pypi: https://files.pythonhosted.org/packages/80/e4/88778c6a23b65224e5088e68fd0924e5bde2196a26e76edb3ea3543fed6a/jax-0.9.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/8d/96/04e7b441807b26b794da5b11e59ed7f83b2cf8af202bd7eba8ad2fa6046e/wadler_lindig-0.1.7-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/94/05/3e39d416fb92b2738a76e8265e6bfc5d10542f90a7c32ad1eb831eea3fa3/jaxtyping-0.3.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/94/b8/e77c355f179dc89d44e7ca6dbf7a46e650806df1d356a5462e5829fccea5/types_pytz-2026.1.1.20260304-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9e/c9/b2622292ea83fbb4ec318f5b9ab867d0a28ab43c5717bb85b0a5f6b3b0a4/networkx-3.6.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9e/dd/b04e4a733637d370831e328a356254cfc9c875195269b234cc8ca31ff674/dags-0.6.0-py3-none-any.whl
@@ -6114,6 +6114,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/win-64/zeromq-4.3.5-h507cc87_10.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/zstd-1.5.7-h534d264_6.conda
       - pypi: .
+      - pypi: git+https://github.com/hmgaudecker/jaxtyping?branch=fix%2Fsentinel-cloudpickle#f1417c72f51e9901ac62daba620289b580ef8c3f
       - pypi: https://files.pythonhosted.org/packages/05/5b/83e1ff87eb60ca706972f7e02e15c0b33396e7bdbd080069a5d1b53cf0d8/simplejson-3.20.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/12/df/172771902943af54bf661a8d102bdf2e7f932127968080632bda6054b62c/orjson-3.11.7-cp314-cp314-win_amd64.whl
       - pypi: https://files.pythonhosted.org/packages/23/cd/066e86230ae37ed0be70aae89aabf03ca8d9f39c8aea0dec8029455b5540/opt_einsum-3.4.0-py3-none-any.whl
@@ -6132,7 +6133,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/7e/c3/587cc9aa8d4742cd690da79460081e7d834499e07e8b2bd2ccc4c66928df/optree-0.19.0-cp314-cp314-win_amd64.whl
       - pypi: https://files.pythonhosted.org/packages/80/e4/88778c6a23b65224e5088e68fd0924e5bde2196a26e76edb3ea3543fed6a/jax-0.9.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/8d/96/04e7b441807b26b794da5b11e59ed7f83b2cf8af202bd7eba8ad2fa6046e/wadler_lindig-0.1.7-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/94/05/3e39d416fb92b2738a76e8265e6bfc5d10542f90a7c32ad1eb831eea3fa3/jaxtyping-0.3.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/94/b8/e77c355f179dc89d44e7ca6dbf7a46e650806df1d356a5462e5829fccea5/types_pytz-2026.1.1.20260304-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9e/c9/b2622292ea83fbb4ec318f5b9ab867d0a28ab43c5717bb85b0a5f6b3b0a4/networkx-3.6.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9e/dd/b04e4a733637d370831e328a356254cfc9c875195269b234cc8ca31ff674/dags-0.6.0-py3-none-any.whl
@@ -6368,6 +6368,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/zeromq-4.3.5-h4818236_10.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/zstd-1.5.7-hbf9d68e_6.conda
       - pypi: .
+      - pypi: git+https://github.com/hmgaudecker/jaxtyping?branch=fix%2Fsentinel-cloudpickle#f1417c72f51e9901ac62daba620289b580ef8c3f
       - pypi: https://files.pythonhosted.org/packages/05/5b/83e1ff87eb60ca706972f7e02e15c0b33396e7bdbd080069a5d1b53cf0d8/simplejson-3.20.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/08/67/2e19866a03a6e75eb62194a5b55e1e3154ca1517478c300232b0229f8c2a/optree-0.19.0-cp314-cp314-macosx_11_0_arm64.whl
       - pypi: https://files.pythonhosted.org/packages/09/dc/6d8fbfc29d902251cf333414cf7dcfaf4b252a9920c881354584ed36270d/jax_metal-0.1.1-py3-none-macosx_13_0_arm64.whl
@@ -6385,7 +6386,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/80/e4/88778c6a23b65224e5088e68fd0924e5bde2196a26e76edb3ea3543fed6a/jax-0.9.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/87/22/b76d483683216dde3d67cba61fb2444be8d5be289bf628c13fc0fd90e5f9/wheel-0.46.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/8d/96/04e7b441807b26b794da5b11e59ed7f83b2cf8af202bd7eba8ad2fa6046e/wadler_lindig-0.1.7-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/94/05/3e39d416fb92b2738a76e8265e6bfc5d10542f90a7c32ad1eb831eea3fa3/jaxtyping-0.3.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/94/b8/e77c355f179dc89d44e7ca6dbf7a46e650806df1d356a5462e5829fccea5/types_pytz-2026.1.1.20260304-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9e/c9/b2622292ea83fbb4ec318f5b9ab867d0a28ab43c5717bb85b0a5f6b3b0a4/networkx-3.6.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9e/dd/b04e4a733637d370831e328a356254cfc9c875195269b234cc8ca31ff674/dags-0.6.0-py3-none-any.whl
@@ -6660,6 +6660,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/widgetsnbextension-4.0.15-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/zipp-3.23.0-pyhcf101f3_1.conda
       - pypi: .
+      - pypi: git+https://github.com/hmgaudecker/jaxtyping?branch=fix%2Fsentinel-cloudpickle#f1417c72f51e9901ac62daba620289b580ef8c3f
       - pypi: https://files.pythonhosted.org/packages/05/5b/83e1ff87eb60ca706972f7e02e15c0b33396e7bdbd080069a5d1b53cf0d8/simplejson-3.20.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/18/14/69a25a0cad493fb6a947302471b579a03516a3b00e7bece77fdc6b4afb9b/ty-0.0.23-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/3b/ab/b3226f0bd7cdcf710fbede2b3548584366da3b19b5021e74f5bde2a8fa3f/pytest-9.0.2-py3-none-any.whl
@@ -6672,7 +6673,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/65/44/bb509c3d2c0b5a87e7a5af1d5917a402a32ff026f777a6d7cb6990746cbb/tabcompleter-1.4.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/71/cc/18245721fa7747065ab478316c7fea7c74777d07f37ae60db2e84f8172e8/beartype-0.22.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/8d/96/04e7b441807b26b794da5b11e59ed7f83b2cf8af202bd7eba8ad2fa6046e/wadler_lindig-0.1.7-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/94/05/3e39d416fb92b2738a76e8265e6bfc5d10542f90a7c32ad1eb831eea3fa3/jaxtyping-0.3.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/94/b8/e77c355f179dc89d44e7ca6dbf7a46e650806df1d356a5462e5829fccea5/types_pytz-2026.1.1.20260304-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9e/c9/b2622292ea83fbb4ec318f5b9ab867d0a28ab43c5717bb85b0a5f6b3b0a4/networkx-3.6.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9e/dd/b04e4a733637d370831e328a356254cfc9c875195269b234cc8ca31ff674/dags-0.6.0-py3-none-any.whl
@@ -6899,6 +6899,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-64/zeromq-4.3.5-h27d9b8f_10.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/zstd-1.5.7-h3eecb57_6.conda
       - pypi: .
+      - pypi: git+https://github.com/hmgaudecker/jaxtyping?branch=fix%2Fsentinel-cloudpickle#f1417c72f51e9901ac62daba620289b580ef8c3f
       - pypi: https://files.pythonhosted.org/packages/04/3c/40774378ebf423d7f074dfd7169f0466eb9de734f0ea5fbb368eddcb1e49/optree-0.19.0-cp314-cp314-macosx_10_15_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/05/5b/83e1ff87eb60ca706972f7e02e15c0b33396e7bdbd080069a5d1b53cf0d8/simplejson-3.20.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/3b/ab/b3226f0bd7cdcf710fbede2b3548584366da3b19b5021e74f5bde2a8fa3f/pytest-9.0.2-py3-none-any.whl
@@ -6911,7 +6912,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/65/44/bb509c3d2c0b5a87e7a5af1d5917a402a32ff026f777a6d7cb6990746cbb/tabcompleter-1.4.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/71/cc/18245721fa7747065ab478316c7fea7c74777d07f37ae60db2e84f8172e8/beartype-0.22.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/8d/96/04e7b441807b26b794da5b11e59ed7f83b2cf8af202bd7eba8ad2fa6046e/wadler_lindig-0.1.7-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/94/05/3e39d416fb92b2738a76e8265e6bfc5d10542f90a7c32ad1eb831eea3fa3/jaxtyping-0.3.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/94/b8/e77c355f179dc89d44e7ca6dbf7a46e650806df1d356a5462e5829fccea5/types_pytz-2026.1.1.20260304-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9e/c9/b2622292ea83fbb4ec318f5b9ab867d0a28ab43c5717bb85b0a5f6b3b0a4/networkx-3.6.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9e/dd/b04e4a733637d370831e328a356254cfc9c875195269b234cc8ca31ff674/dags-0.6.0-py3-none-any.whl
@@ -7138,6 +7138,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/zeromq-4.3.5-h4818236_10.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/zstd-1.5.7-hbf9d68e_6.conda
       - pypi: .
+      - pypi: git+https://github.com/hmgaudecker/jaxtyping?branch=fix%2Fsentinel-cloudpickle#f1417c72f51e9901ac62daba620289b580ef8c3f
       - pypi: https://files.pythonhosted.org/packages/05/5b/83e1ff87eb60ca706972f7e02e15c0b33396e7bdbd080069a5d1b53cf0d8/simplejson-3.20.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/08/67/2e19866a03a6e75eb62194a5b55e1e3154ca1517478c300232b0229f8c2a/optree-0.19.0-cp314-cp314-macosx_11_0_arm64.whl
       - pypi: https://files.pythonhosted.org/packages/0f/01/3f25909b02fac29bb0a62b2251f8d62e65d697781ffa4cf6b47a4c075c85/ty-0.0.23-py3-none-macosx_11_0_arm64.whl
@@ -7151,7 +7152,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/65/44/bb509c3d2c0b5a87e7a5af1d5917a402a32ff026f777a6d7cb6990746cbb/tabcompleter-1.4.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/71/cc/18245721fa7747065ab478316c7fea7c74777d07f37ae60db2e84f8172e8/beartype-0.22.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/8d/96/04e7b441807b26b794da5b11e59ed7f83b2cf8af202bd7eba8ad2fa6046e/wadler_lindig-0.1.7-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/94/05/3e39d416fb92b2738a76e8265e6bfc5d10542f90a7c32ad1eb831eea3fa3/jaxtyping-0.3.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/94/b8/e77c355f179dc89d44e7ca6dbf7a46e650806df1d356a5462e5829fccea5/types_pytz-2026.1.1.20260304-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9e/c9/b2622292ea83fbb4ec318f5b9ab867d0a28ab43c5717bb85b0a5f6b3b0a4/networkx-3.6.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9e/dd/b04e4a733637d370831e328a356254cfc9c875195269b234cc8ca31ff674/dags-0.6.0-py3-none-any.whl
@@ -7382,6 +7382,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/win-64/zeromq-4.3.5-h507cc87_10.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/zstd-1.5.7-h534d264_6.conda
       - pypi: .
+      - pypi: git+https://github.com/hmgaudecker/jaxtyping?branch=fix%2Fsentinel-cloudpickle#f1417c72f51e9901ac62daba620289b580ef8c3f
       - pypi: https://files.pythonhosted.org/packages/05/5b/83e1ff87eb60ca706972f7e02e15c0b33396e7bdbd080069a5d1b53cf0d8/simplejson-3.20.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/12/df/172771902943af54bf661a8d102bdf2e7f932127968080632bda6054b62c/orjson-3.11.7-cp314-cp314-win_amd64.whl
       - pypi: https://files.pythonhosted.org/packages/31/2e/eaed4ff5c85e857a02415084c394e02c30476b65e158eec1938fdaa9a205/ty-0.0.23-py3-none-win_amd64.whl
@@ -7397,7 +7398,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/71/cc/18245721fa7747065ab478316c7fea7c74777d07f37ae60db2e84f8172e8/beartype-0.22.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/7e/c3/587cc9aa8d4742cd690da79460081e7d834499e07e8b2bd2ccc4c66928df/optree-0.19.0-cp314-cp314-win_amd64.whl
       - pypi: https://files.pythonhosted.org/packages/8d/96/04e7b441807b26b794da5b11e59ed7f83b2cf8af202bd7eba8ad2fa6046e/wadler_lindig-0.1.7-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/94/05/3e39d416fb92b2738a76e8265e6bfc5d10542f90a7c32ad1eb831eea3fa3/jaxtyping-0.3.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/94/b8/e77c355f179dc89d44e7ca6dbf7a46e650806df1d356a5462e5829fccea5/types_pytz-2026.1.1.20260304-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9e/c9/b2622292ea83fbb4ec318f5b9ab867d0a28ab43c5717bb85b0a5f6b3b0a4/networkx-3.6.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9e/dd/b04e4a733637d370831e328a356254cfc9c875195269b234cc8ca31ff674/dags-0.6.0-py3-none-any.whl
@@ -7665,6 +7665,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/widgetsnbextension-4.0.15-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/zipp-3.23.0-pyhcf101f3_1.conda
       - pypi: .
+      - pypi: git+https://github.com/hmgaudecker/jaxtyping?branch=fix%2Fsentinel-cloudpickle#f1417c72f51e9901ac62daba620289b580ef8c3f
       - pypi: https://files.pythonhosted.org/packages/05/5b/83e1ff87eb60ca706972f7e02e15c0b33396e7bdbd080069a5d1b53cf0d8/simplejson-3.20.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/0b/2e/7eea398450457ecb54e18e9d10110993fa65561c4f3add5e8eccd2b9cd41/scipy-1.17.1-cp314-cp314-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/18/14/69a25a0cad493fb6a947302471b579a03516a3b00e7bece77fdc6b4afb9b/ty-0.0.23-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
@@ -7681,7 +7682,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/76/fe/67d2c414b0860d42f4a20b1fadbe7aeffb1b3d885efebd7aedf22a4bc2a2/jaxlib-0.9.1-cp314-cp314-manylinux_2_27_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/80/e4/88778c6a23b65224e5088e68fd0924e5bde2196a26e76edb3ea3543fed6a/jax-0.9.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/8d/96/04e7b441807b26b794da5b11e59ed7f83b2cf8af202bd7eba8ad2fa6046e/wadler_lindig-0.1.7-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/94/05/3e39d416fb92b2738a76e8265e6bfc5d10542f90a7c32ad1eb831eea3fa3/jaxtyping-0.3.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/94/b8/e77c355f179dc89d44e7ca6dbf7a46e650806df1d356a5462e5829fccea5/types_pytz-2026.1.1.20260304-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9e/c9/b2622292ea83fbb4ec318f5b9ab867d0a28ab43c5717bb85b0a5f6b3b0a4/networkx-3.6.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9e/dd/b04e4a733637d370831e328a356254cfc9c875195269b234cc8ca31ff674/dags-0.6.0-py3-none-any.whl
@@ -7909,6 +7909,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/zeromq-4.3.5-h4818236_10.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/zstd-1.5.7-hbf9d68e_6.conda
       - pypi: .
+      - pypi: git+https://github.com/hmgaudecker/jaxtyping?branch=fix%2Fsentinel-cloudpickle#f1417c72f51e9901ac62daba620289b580ef8c3f
       - pypi: https://files.pythonhosted.org/packages/05/5b/83e1ff87eb60ca706972f7e02e15c0b33396e7bdbd080069a5d1b53cf0d8/simplejson-3.20.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/08/67/2e19866a03a6e75eb62194a5b55e1e3154ca1517478c300232b0229f8c2a/optree-0.19.0-cp314-cp314-macosx_11_0_arm64.whl
       - pypi: https://files.pythonhosted.org/packages/0f/01/3f25909b02fac29bb0a62b2251f8d62e65d697781ffa4cf6b47a4c075c85/ty-0.0.23-py3-none-macosx_11_0_arm64.whl
@@ -7925,7 +7926,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/72/4e/1339dc6e2557a344f5ba5590872e80346f76f6cb2ac3dd16e4666e88818c/ml_dtypes-0.5.4-cp314-cp314-macosx_10_13_universal2.whl
       - pypi: https://files.pythonhosted.org/packages/80/e4/88778c6a23b65224e5088e68fd0924e5bde2196a26e76edb3ea3543fed6a/jax-0.9.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/8d/96/04e7b441807b26b794da5b11e59ed7f83b2cf8af202bd7eba8ad2fa6046e/wadler_lindig-0.1.7-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/94/05/3e39d416fb92b2738a76e8265e6bfc5d10542f90a7c32ad1eb831eea3fa3/jaxtyping-0.3.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/94/b8/e77c355f179dc89d44e7ca6dbf7a46e650806df1d356a5462e5829fccea5/types_pytz-2026.1.1.20260304-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9e/c9/b2622292ea83fbb4ec318f5b9ab867d0a28ab43c5717bb85b0a5f6b3b0a4/networkx-3.6.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9e/dd/b04e4a733637d370831e328a356254cfc9c875195269b234cc8ca31ff674/dags-0.6.0-py3-none-any.whl
@@ -8158,6 +8158,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/win-64/zeromq-4.3.5-h507cc87_10.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/zstd-1.5.7-h534d264_6.conda
       - pypi: .
+      - pypi: git+https://github.com/hmgaudecker/jaxtyping?branch=fix%2Fsentinel-cloudpickle#f1417c72f51e9901ac62daba620289b580ef8c3f
       - pypi: https://files.pythonhosted.org/packages/05/5b/83e1ff87eb60ca706972f7e02e15c0b33396e7bdbd080069a5d1b53cf0d8/simplejson-3.20.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/12/df/172771902943af54bf661a8d102bdf2e7f932127968080632bda6054b62c/orjson-3.11.7-cp314-cp314-win_amd64.whl
       - pypi: https://files.pythonhosted.org/packages/23/cd/066e86230ae37ed0be70aae89aabf03ca8d9f39c8aea0dec8029455b5540/opt_einsum-3.4.0-py3-none-any.whl
@@ -8177,7 +8178,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/7e/c3/587cc9aa8d4742cd690da79460081e7d834499e07e8b2bd2ccc4c66928df/optree-0.19.0-cp314-cp314-win_amd64.whl
       - pypi: https://files.pythonhosted.org/packages/80/e4/88778c6a23b65224e5088e68fd0924e5bde2196a26e76edb3ea3543fed6a/jax-0.9.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/8d/96/04e7b441807b26b794da5b11e59ed7f83b2cf8af202bd7eba8ad2fa6046e/wadler_lindig-0.1.7-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/94/05/3e39d416fb92b2738a76e8265e6bfc5d10542f90a7c32ad1eb831eea3fa3/jaxtyping-0.3.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/94/b8/e77c355f179dc89d44e7ca6dbf7a46e650806df1d356a5462e5829fccea5/types_pytz-2026.1.1.20260304-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9e/c9/b2622292ea83fbb4ec318f5b9ab867d0a28ab43c5717bb85b0a5f6b3b0a4/networkx-3.6.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9e/dd/b04e4a733637d370831e328a356254cfc9c875195269b234cc8ca31ff674/dags-0.6.0-py3-none-any.whl
@@ -19057,7 +19057,7 @@ packages:
   - beartype>=0.18
   - dags>=0.6
   - ipywidgets
-  - jaxtyping>=0.2
+  - jaxtyping>=0.3.10
   - kaleido>=1.1
   - networkx>=3.5
   - numpy
@@ -19071,6 +19071,12 @@ packages:
   - pygraphviz
   - pytest
   - pyyaml
+  requires_python: '>=3.11'
+- pypi: git+https://github.com/hmgaudecker/jaxtyping?branch=fix%2Fsentinel-cloudpickle#f1417c72f51e9901ac62daba620289b580ef8c3f
+  name: jaxtyping
+  version: 0.3.10
+  requires_dist:
+  - wadler-lindig>=0.1.3
   requires_python: '>=3.11'
 - pypi: https://files.pythonhosted.org/packages/00/04/c6f72daca5092e3117840a1b1e88dfc809cc1470cf0734890d0366b684a1/orjson-3.11.7-cp313-cp313-win_amd64.whl
   name: orjson
@@ -20104,34 +20110,6 @@ packages:
   requires_dist:
   - tomli ; python_full_version <= '3.11' and extra == 'toml'
   requires_python: '>=3.10'
-- pypi: https://files.pythonhosted.org/packages/94/05/3e39d416fb92b2738a76e8265e6bfc5d10542f90a7c32ad1eb831eea3fa3/jaxtyping-0.3.9-py3-none-any.whl
-  name: jaxtyping
-  version: 0.3.9
-  sha256: a00557a9d616eff157491f06ed2e21ed94886fad3832399273eb912b345da378
-  requires_dist:
-  - wadler-lindig>=0.1.3
-  - pre-commit>=4.3.0 ; extra == 'dev'
-  - griffe==1.7.3 ; extra == 'docs'
-  - hippogriffe==0.2.2 ; extra == 'docs'
-  - mkdocs-include-exclude-files==0.1.0 ; extra == 'docs'
-  - mkdocs-ipynb==0.1.1 ; extra == 'docs'
-  - mkdocs-material==9.6.7 ; extra == 'docs'
-  - mkdocs==1.6.1 ; extra == 'docs'
-  - mkdocstrings-python==1.16.8 ; extra == 'docs'
-  - mkdocstrings==0.28.3 ; extra == 'docs'
-  - pymdown-extensions==10.14.3 ; extra == 'docs'
-  - beartype>=0.21.0 ; extra == 'tests'
-  - cloudpickle>=3.1.1 ; extra == 'tests'
-  - equinox>=0.13.1 ; extra == 'tests'
-  - ipython>=8.37.0 ; extra == 'tests'
-  - jax>=0.9.0.1 ; extra == 'tests'
-  - mlx[cpu]>=0.29.1 ; extra == 'tests'
-  - numpy ; extra == 'tests'
-  - pytest-asyncio>=1.2.0 ; extra == 'tests'
-  - pytest>=8.4.2 ; extra == 'tests'
-  - tensorflow>=2.18.1 ; python_full_version < '3.13' and extra == 'tests'
-  - typeguard==2.13.3 ; extra == 'tests'
-  requires_python: '>=3.11'
 - pypi: https://files.pythonhosted.org/packages/94/b8/e77c355f179dc89d44e7ca6dbf7a46e650806df1d356a5462e5829fccea5/types_pytz-2026.1.1.20260304-py3-none-any.whl
   name: types-pytz
   version: 2026.1.1.20260304

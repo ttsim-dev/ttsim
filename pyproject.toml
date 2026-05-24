@@ -34,7 +34,7 @@ dependencies = [
   "beartype>=0.18",
   "dags>=0.6",
   "ipywidgets",
-  "jaxtyping>=0.2",
+  "jaxtyping>=0.3.10",
   "kaleido>=1.1",
   "networkx>=3.5",
   "numpy",
@@ -145,7 +145,12 @@ type-checking-jax.pypi-dependencies.types-pytz = "*"
 type-checking-jax.tasks.ty-jax = "ty check"
 [tool.pixi.pypi-dependencies]
 # jax-datetime = { git = "https://github.com/google/jax-datetime.git" }
-jaxtyping = "*"
+# Track the fork's `fix/sentinel-cloudpickle` branch until jaxtyping
+# 0.3.10 (patrick-kidger/jaxtyping#390) is released to PyPI. The fix
+# replaces the module-level `object()` sentinels (`_any_dtype`,
+# `_anonymous_dim`, `_anonymous_variadic_dim`) with `__reduce__`-backed
+# singletons so cloudpickled jaxtyping types keep their identity.
+jaxtyping = { git = "https://github.com/hmgaudecker/jaxtyping", branch = "fix/sentinel-cloudpickle" }
 mettsim = { path = "src_mettsim", editable = true }
 pdbp = "*"
 ttsim-backend = { path = ".", editable = true }
