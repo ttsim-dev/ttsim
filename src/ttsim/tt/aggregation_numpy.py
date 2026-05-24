@@ -1,14 +1,9 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 import numpy
 import numpy_groupies as npg
 
 from ttsim.typing import BoolColumn, DatetimeColumn, FloatColumn, IntColumn
-
-if TYPE_CHECKING:
-    from ttsim.typing import BoolColumn, DatetimeColumn, FloatColumn, IntColumn
 
 
 def grouped_count(group_id: IntColumn) -> IntColumn:

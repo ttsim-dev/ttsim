@@ -28,7 +28,13 @@ from ttsim._beartype_conf import (
     POLICY_FUNCTION_CONF,
     POLICY_INPUT_CONF,
 )
-from ttsim.exceptions import PolicyFunctionDefinitionError
+from ttsim.exceptions import (
+    AggregationDefinitionError,
+    GroupCreationDefinitionError,
+    ParamFunctionDefinitionError,
+    PolicyFunctionDefinitionError,
+    TTSIMError,
+)
 from ttsim.interface_dag_elements.shared import to_datetime
 from ttsim.tt.aggregation import (
     AggType,
@@ -403,6 +409,11 @@ def policy_function(
     start_date, end_date = _convert_and_validate_dates(start_date, end_date)
 
     def inner(func: Callable[..., Any]) -> PolicyFunction:
+        _fail_if_missing_annotations(
+            func,
+            exception_class=PolicyFunctionDefinitionError,
+            decorator_name="@policy_function",
+        )
         _fail_if_annotations_mismatch_vectorization_strategy(
             func=func, vectorization_strategy=vectorization_strategy
         )
@@ -423,6 +434,39 @@ def policy_function(
 
 
 _SCALAR_TYPES_FOR_POLICY_FUNCTION_CONTRACT: tuple[type, ...] = (int, float, bool)
+
+
+def _fail_if_missing_annotations(
+    func: Callable[..., Any],
+    *,
+    exception_class: type[TTSIMError],
+    decorator_name: str,
+) -> None:
+    """Require an annotation on every parameter and on the return value.
+
+    Decoration-time check; missing annotations raise `exception_class` so the
+    failure points at the user's function definition rather than surfacing
+    later at DAG-build time.
+    """
+    sig = inspect.signature(func)
+    missing: list[str] = []
+    for name, param in sig.parameters.items():
+        if name in ("self", "cls"):
+            continue
+        if param.annotation is inspect.Parameter.empty:
+            missing.append(f"param '{name}'")
+    if sig.return_annotation is inspect.Signature.empty:
+        missing.append("return")
+    if missing:
+        func_qualname = getattr(
+            func, "__qualname__", getattr(func, "__name__", "<func>")
+        )
+        msg = (
+            f"{decorator_name} requires every parameter and the return value to "
+            f"carry an annotation. Function {func_qualname!r} is missing: "
+            f"{', '.join(missing)}."
+        )
+        raise exception_class(msg)
 
 
 def _fail_if_annotations_mismatch_vectorization_strategy(
@@ -562,6 +606,11 @@ def group_creation_function(
     start_date, end_date = _convert_and_validate_dates(start_date, end_date)
 
     def decorator(func: Callable[..., Any]) -> GroupCreationFunction:
+        _fail_if_missing_annotations(
+            func,
+            exception_class=GroupCreationDefinitionError,
+            decorator_name="@group_creation_function",
+        )
         _leaf_name = func.__name__ if leaf_name is None else leaf_name  # ty: ignore[unresolved-attribute]
         func_with_reorder = lambda **kwargs: reorder_ids(  # noqa: E731
             ids=func(**kwargs),
@@ -649,6 +698,11 @@ def agg_by_group_function(
     }
 
     def inner(func: Callable[..., Any]) -> AggByGroupFunction:
+        _fail_if_missing_annotations(
+            func,
+            exception_class=AggregationDefinitionError,
+            decorator_name="@agg_by_group_function",
+        )
         orig_location = f"{func.__module__}.{func.__name__}"  # ty: ignore[unresolved-attribute]
         args = set(inspect.signature(func).parameters)
         group_ids = {p for p in args if p.endswith("_id")}
@@ -742,10 +796,10 @@ def _make_typed_aggregation_function(
     producer type to the DAG's annotation-consistency check.
 
     A `COUNT` aggregation always resolves (its output is an `IntColumn`
-    regardless of input). For the value aggregations, a decorated function
-    whose source-column parameter is unannotated keeps the primitive's
-    imprecise union — the user, not the build-time sweep, owns that node,
-    so it is left as-is rather than failing decoration.
+    regardless of input). For value aggregations, a source-column parameter
+    annotated with a non-numeric type leaves the primitive's imprecise union
+    in place — without a numeric kind to narrow against, the build-time
+    resolver ships the wider type rather than failing decoration.
 
     Args:
         primitive: The aggregation primitive.
@@ -854,6 +908,11 @@ def agg_by_p_id_function(
     }
 
     def inner(func: Callable[..., Any]) -> AggByPIDFunction:
+        _fail_if_missing_annotations(
+            func,
+            exception_class=AggregationDefinitionError,
+            decorator_name="@agg_by_p_id_function",
+        )
         orig_location = f"{func.__module__}.{func.__name__}"  # ty: ignore[unresolved-attribute]
         args = set(inspect.signature(func).parameters)
         other_p_ids = {
@@ -1103,6 +1162,11 @@ def param_function(
     start_date, end_date = _convert_and_validate_dates(start_date, end_date)
 
     def inner(func: Callable[..., Any]) -> ParamFunction:
+        _fail_if_missing_annotations(
+            func,
+            exception_class=ParamFunctionDefinitionError,
+            decorator_name="@param_function",
+        )
         return ParamFunction(
             leaf_name=leaf_name or func.__name__,  # ty: ignore[unresolved-attribute]
             function=func,

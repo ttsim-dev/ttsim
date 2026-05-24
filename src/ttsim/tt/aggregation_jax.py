@@ -1,9 +1,5 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
-# Hoisted out of `TYPE_CHECKING` so the beartype claw can resolve these
-# forward references when decorating this module's functions.
 from ttsim.typing import BoolColumn, FloatColumn, IntColumn
 
 try:
@@ -15,9 +11,6 @@ try:
     )
 except ImportError:
     pass
-
-if TYPE_CHECKING:
-    from ttsim.typing import BoolColumn, FloatColumn, IntColumn
 
 
 def grouped_count(group_id: IntColumn, num_segments: int) -> jnp.ndarray:

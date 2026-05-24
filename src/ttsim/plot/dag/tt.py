@@ -25,9 +25,6 @@ from ttsim.tt import (
     ParamObject,
     TimeConversionFunction,
 )
-
-# Hoisted out of `TYPE_CHECKING` so the beartype claw can resolve these
-# forward references when decorating this module's functions.
 from ttsim.typing import (
     DashedISOString,
     PolicyEnvironment,

@@ -173,8 +173,7 @@ class ConsecutiveIntLookupTableParamValue:
 
         Each argument is a scalar integer index or an integer array of
         indices (one per table dimension). Scalar arguments yield a scalar
-        result — a 0-d array under JAX, a numpy scalar under NumPy; array
-        arguments yield an array of the looked-up values.
+        result; array arguments yield an array of the looked-up values.
         """
         scalar_input = all(getattr(a, "ndim", 0) == 0 for a in args)
         index = self.xnp.asarray(args)
@@ -221,22 +220,14 @@ class PiecewisePolynomialInterval:
 
     @property
     def slope(self) -> float | Float[Array, ""] | Int[Array, ""]:
-        """The first coefficient (linear term).
-
-        Indexing `coefficients` yields a 0-d array under the JAX backend and a
-        `numpy.float64` (a `float` subclass) under NumPy.
-        """
+        """The first coefficient (linear term)."""
         if self.coefficients.shape[0] < self._MIN_COEFFICIENTS_LINEAR:
             raise AttributeError("No slope coefficient for piecewise_constant.")
         return self.coefficients[0]
 
     @property
     def quadratic(self) -> float | Float[Array, ""] | Int[Array, ""]:
-        """The second coefficient (quadratic term).
-
-        Indexing `coefficients` yields a 0-d array under the JAX backend and a
-        `numpy.float64` (a `float` subclass) under NumPy.
-        """
+        """The second coefficient (quadratic term)."""
         if self.coefficients.shape[0] < self._MIN_COEFFICIENTS_QUADRATIC:
             raise AttributeError(
                 "No quadratic coefficient; requires piecewise_quadratic or higher."
@@ -245,11 +236,7 @@ class PiecewisePolynomialInterval:
 
     @property
     def cubic(self) -> float | Float[Array, ""] | Int[Array, ""]:
-        """The third coefficient (cubic term).
-
-        Indexing `coefficients` yields a 0-d array under the JAX backend and a
-        `numpy.float64` (a `float` subclass) under NumPy.
-        """
+        """The third coefficient (cubic term)."""
         if self.coefficients.shape[0] < self._MIN_COEFFICIENTS_CUBIC:
             raise AttributeError("No cubic coefficient; requires piecewise_cubic.")
         return self.coefficients[2]

@@ -3,7 +3,7 @@
 ttsim auto-generates two kinds of DAG nodes: aggregation functions (`x_hh`
 from `x`) and auto-vectorized wrappers of scalar policy functions. Both are
 built by wrapping a primitive whose runtime signature carries an imprecise
-*union* return type (`grouped_sum` is statically `@overload`-ed per input
+*union* return type (e.g. `grouped_sum` is statically `@overload`-ed per input
 dtype but its runtime implementation signature widens to
 `FloatColumn | IntColumn`).
 
@@ -14,11 +14,11 @@ DAG-consistency check (`set_annotations=True`) then rejects a producer typed
 
 The honest return type of an auto-generated node *is* knowable when the DAG
 is built: it follows from the dtype of the source column and the kind of
-aggregation. This module performs that resolution sweep so the synthesis
-sites in `automatically_added_functions` and `specialized_environment` can
-stamp a concrete return annotation onto every wrapper.
+aggregation. This module performs that resolution so the synthesis sites in
+`automatically_added_functions` and `specialized_environment` can stamp a
+concrete return annotation onto every wrapper.
 
-The sweep is strict: a node it must resolve but cannot raises
+The resolver is strict: a node it must resolve but cannot raises
 `TypeResolutionError` rather than silently falling back to a union.
 """
 
@@ -53,12 +53,12 @@ except ImportError:
 
 
 class TypeResolutionError(TTSIMError):
-    """Raised when the build-time type-resolution sweep cannot resolve a node.
+    """Raised when the build-time type resolver cannot resolve a node.
 
     The honest output type of an auto-generated DAG node must be derivable
     from the source column's dtype and the aggregation kind. When it is not
     — an unknown annotation string, an aggregation applied to an
-    incompatible input kind — the sweep fails loudly here rather than
+    incompatible input kind — the resolver fails loudly here rather than
     emitting an imprecise union annotation that would defeat the DAG's
     type-consistency check.
     """
@@ -71,7 +71,7 @@ class ResolvedKind(Enum):
     `ttsim.typing` (`FloatColumn`, `IntColumn`, `BoolColumn`); the scalar
     kinds to the scalar Python types. `OTHER` covers nodes whose output is
     neither a numeric column nor a numeric scalar (parameter objects,
-    lookup tables, …) — the sweep never needs to stamp an annotation on
+    lookup tables, …) — the resolver never needs to stamp an annotation on
     those, so it does not try to narrow them.
     """
 

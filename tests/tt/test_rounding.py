@@ -83,7 +83,7 @@ def test_decorator():
     rs = RoundingSpec(base=1, direction="up")
 
     @policy_function(rounding_spec=rs)
-    def test_func():
+    def test_func() -> int:
         return 0
 
     assert test_func.rounding_spec == rs
@@ -93,7 +93,7 @@ def test_malformed_rounding_specs():
     with pytest.raises(PolicyFunctionDefinitionError):
 
         @policy_function(rounding_spec={"base": 1, "direction": "updsf"})  # ty: ignore[invalid-argument-type]
-        def test_func():
+        def test_func() -> int:
             return 0
 
 
@@ -106,7 +106,7 @@ def test_rounding(rounding_spec, input_values, exp_output, backend):
 
     # Define function that should be rounded
     @policy_function(rounding_spec=rounding_spec)
-    def test_func(x):
+    def test_func(x: float) -> float:
         return x
 
     input_data__tree = {
@@ -184,7 +184,7 @@ def test_no_rounding(
 ):
     # Define function that should be rounded
     @policy_function(rounding_spec=rounding_spec)
-    def test_func(x):
+    def test_func(x: float) -> float:
         return x
 
     data = {"p_id": numpy.array([1, 2])}

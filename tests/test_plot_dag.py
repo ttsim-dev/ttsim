@@ -84,7 +84,7 @@ SOME_PARAM_OBJECT = ScalarParam(
     start_date="2025-01-01",
     end_date="2025-12-31",
 )
-def some_param_function():
+def some_param_function() -> int:
     return 1
 
 
@@ -92,7 +92,7 @@ def some_param_function():
     start_date="2025-01-01",
     end_date="2025-12-31",
 )
-def some_policy_function():
+def some_policy_function() -> int:
     return 1
 
 
