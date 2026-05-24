@@ -1070,10 +1070,10 @@ def test_fail_if_input_data_has_different_lengths(backend):
 
 
 def test_fail_if_tt_root_nodes_are_missing_via_main(minimal_input_data, backend):
-    def b(a):
+    def b(a: int) -> int:
         return a
 
-    def c(b):
+    def c(b: int) -> int:
         return b
 
     policy_environment = {
@@ -1100,7 +1100,7 @@ def test_fail_if_tt_root_nodes_are_missing_asks_for_individual_level_columns(
     minimal_input_data, backend
 ):
     @policy_function()
-    def b(a_fam):
+    def b(a_fam: int) -> int:
         return a_fam
 
     @policy_input()

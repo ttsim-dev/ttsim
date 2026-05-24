@@ -141,7 +141,7 @@ if TYPE_CHECKING:
     """Tree mapping TTSIM paths to df column names, type hints, or `None`.
 
     A `None` leaf marks a target to compute (vs. a string that renames it);
-    see `FlatTTTargets`.
+    see `QNameTTTargets`.
     """
 else:
     # Runtime aliases for beartype: the recursive form's stringified inner
@@ -177,7 +177,7 @@ else:
 # strictly at the `@beartype`-decorated user boundary; internal call sites use
 # the narrow `NestedData` / `FlatData` / `QNameData` forms.
 UserColumn: TypeAlias = (
-    FloatColumn | IntColumn | BoolColumn | pd.Series | list[float | int | bool]
+    UserFloatColumn | UserIntColumn | UserBoolColumn | list[float | int | bool]
 )
 # `UserNestedData` is a recursive tree like `NestedData`; use the
 # two-definition pattern (precise for ty, widened for the beartype claw).
@@ -204,10 +204,10 @@ UserQNameData: TypeAlias = Mapping[
     str, UserColumn | UserScalarFloat | UserScalarInt | UserScalarBool
 ]
 
-# `FlatTTTargets`: a flattened target tree, mapping each qualified name to its
+# `QNameTTTargets`: a flattened target tree, mapping each qualified name to its
 # leaf value (`None` to compute the target, a string to rename it). Produced by
 # `dags.tree.flatten_to_qnames` on a `NestedTargetDict` / `NestedStrings`.
-FlatTTTargets: TypeAlias = Mapping[str, str | None]
+QNameTTTargets: TypeAlias = Mapping[str, str | None]
 
 if TYPE_CHECKING:
     # Names below are TYPE_CHECKING-only because they either reference
@@ -297,7 +297,7 @@ if TYPE_CHECKING:
 
     NestedPolicyInputs = Mapping[str, "PolicyInput | NestedPolicyInputs"]
     """Tree of policy inputs."""
-    FlatColumnObjects = Mapping[str, ColumnObject]
+    QNameColumnObjects = Mapping[str, ColumnObject]
     """Flat mapping of paths to column objects."""
     FlatColumnObjectsParamFunctions = Mapping[
         tuple[str, ...],
@@ -361,7 +361,7 @@ if not TYPE_CHECKING:
     PolicyEnvironment: TypeAlias = Mapping[str, object]
     FlatPolicyEnvironment: TypeAlias = Mapping[tuple[str, ...], object]
     FlatColumnObjectsParamFunctions: TypeAlias = Mapping[tuple[str, ...], object]
-    FlatColumnObjects: TypeAlias = Mapping[str, object]
+    QNameColumnObjects: TypeAlias = Mapping[str, object]
     NestedPolicyInputs: TypeAlias = Mapping[str, object]
     NestedColumnObjectsParamFunctions: TypeAlias = dict
     NestedParamObjects: TypeAlias = dict

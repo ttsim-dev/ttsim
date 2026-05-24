@@ -289,10 +289,9 @@ def test_typed_wrapper_recognizes_live_column_type_objects() -> None:
 
     A user function declared with `vectorization_strategy="not_required"` and
     without `from __future__ import annotations` reaches the wrapper builder
-    with live `jaxtyping` objects on its `__signature__`. The earlier
-    string-only check silently classified those as non-numeric, so the
-    beartype claw skipped the wide-union check at the user boundary — a
-    string argument would then sail through.
+    with live `jaxtyping` objects on its `__signature__`. The classifier must
+    recognise those as numeric so the wide-union beartype check fires on
+    structural misuse (a string argument) at the user boundary.
     """
     from beartype.roar import BeartypeCallHintViolation  # noqa: PLC0415
 

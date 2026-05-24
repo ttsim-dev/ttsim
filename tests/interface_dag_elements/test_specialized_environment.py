@@ -218,7 +218,7 @@ def foo_fam(foo: int, fam_id: int) -> int:
 
 # Create a function which is used by some tests below
 @policy_function(vectorization_strategy="vectorize")
-def func_before_partial(arg_1, some_param):
+def func_before_partial(arg_1: int, some_param: int) -> int:
     return arg_1 + some_param
 
 
