@@ -212,6 +212,12 @@ def test_main_target_class_is_complete() -> None:
             ),
             "df_with_nested_columns",
         ),
+        (
+            lambda _xnp: InputData.df_with_qname_columns(
+                pd.DataFrame({"qname__test": [1, 2, 3]})
+            ),
+            "df_with_qname_columns",
+        ),
         (lambda _xnp: InputData.tree({"tree_data": {"key": [1, 2, 3]}}), "tree"),
         (
             lambda _xnp: InputData.flat({("flat", "key"): [1, 2, 3]}),

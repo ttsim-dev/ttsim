@@ -9,6 +9,7 @@ import pandas as pd
 from ttsim.interface_dag_elements.data_converters import (
     df_with_mapped_columns_to_flat_data,
     df_with_nested_columns_to_flat_data,
+    df_with_qname_columns_to_flat_data,
 )
 from ttsim.interface_dag_elements.interface_node_objects import (
     input_dependent_interface_function,
@@ -46,6 +47,11 @@ def df_and_mapper__mapper() -> NestedInputsMapper:
 @interface_input()
 def df_with_nested_columns() -> pd.DataFrame:
     """A DataFrame with nested column names corresponding to the expected tree paths."""
+
+
+@interface_input()
+def df_with_qname_columns() -> pd.DataFrame:
+    """A DataFrame whose flat column index holds qualified-name strings."""
 
 
 @interface_input()
@@ -92,6 +98,23 @@ def flat_from_df_with_nested_columns(
     """The input data as a flat dictionary of arrays."""
     return df_with_nested_columns_to_flat_data(
         df=df_with_nested_columns,
+        backend=backend,
+        xnp=xnp,
+    )
+
+
+@input_dependent_interface_function(
+    include_if_all_inputs_present=["input_data__df_with_qname_columns"],
+    leaf_name="flat",
+)
+def flat_from_df_with_qname_columns(
+    df_with_qname_columns: pd.DataFrame,
+    backend: Literal["numpy", "jax"],
+    xnp: ModuleType,
+) -> FlatData:
+    """The input data as a flat dictionary of arrays."""
+    return df_with_qname_columns_to_flat_data(
+        df=df_with_qname_columns,
         backend=backend,
         xnp=xnp,
     )

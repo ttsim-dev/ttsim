@@ -107,6 +107,7 @@ class DfAndMapper:
 class InputData(MainArg):
     df_and_mapper: DfAndMapper | None
     df_with_nested_columns: pd.DataFrame | None
+    df_with_qname_columns: pd.DataFrame | None
     # The data factories are user-input boundaries (Decision 8 / GEP-09), so
     # they take the wide `User*` aliases: users legitimately pass `pd.Series`
     # and plain sequences alongside backend arrays. Canonicalization to the
@@ -138,6 +139,17 @@ class InputData(MainArg):
             cls=cls,
             field_name="df_with_nested_columns",
             field_value=df_with_nested_columns,
+        )
+
+    @classmethod
+    @beartype(conf=INPUT_DATA_CONF)
+    def df_with_qname_columns(cls, df_with_qname_columns: pd.DataFrame) -> InputData:
+        """A df whose flat column index holds qualified-name strings, each
+        joined with `__` to denote the tree path it corresponds to."""
+        return _set_single_field(
+            cls=cls,
+            field_name="df_with_qname_columns",
+            field_value=df_with_qname_columns,
         )
 
     @classmethod
