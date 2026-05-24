@@ -16,9 +16,9 @@ if TYPE_CHECKING:
     from types import ModuleType
 
     from ttsim.typing import (
-        FlatTTTargets,
         NestedInputStructureDict,
         PolicyEnvironment,
+        QNameTTTargets,
         SpecEnvWithPartialledParamsAndScalars,
         UnorderedQNames,
     )
@@ -28,7 +28,7 @@ if TYPE_CHECKING:
 def input_data_dtypes__tree(
     specialized_environment_for_plotting_and_templates__with_partialled_params_and_scalars: SpecEnvWithPartialledParamsAndScalars,  # noqa: E501
     policy_environment: PolicyEnvironment,
-    tt_targets__qname: FlatTTTargets,
+    tt_targets__qname: QNameTTTargets,
     labels__top_level_namespace: UnorderedQNames,
 ) -> NestedInputStructureDict:
     """A template of the required input data and their expected types."""

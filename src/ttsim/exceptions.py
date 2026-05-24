@@ -10,15 +10,14 @@ with `@beartype(conf=<COMPONENT_CONF>)`: entry points, factory methods on
 helper dataclasses, and the policy / input / param / aggregation /
 group-creation decorator factories.
 
-Two pre-existing exception types are hoisted into the hierarchy. They keep
-their definition site (so existing imports keep working) but their base
-class now points back into `TTSIMError`:
+Two further exceptions subclass `TTSIMError` from their original definition
+sites rather than this module, to avoid an import cycle:
 
-- `ConflictingActivePeriodsError` (defined in
-  `ttsim.interface_dag_elements.fail_if`)
-- `TranslateToVectorizableError` (defined in `ttsim.tt.vectorization`)
+- `ConflictingActivePeriodsError` — `ttsim.interface_dag_elements.fail_if`
+- `TranslateToVectorizableError` — `ttsim.tt.vectorization`
 
-Both are re-exported from this module for discoverability.
+Both are caught by `except TTSIMError`; import them from their defining
+modules.
 """
 
 
@@ -70,15 +69,10 @@ class RoundingSpecError(TTSIMError):
     """Raised when a `RoundingSpec` is constructed with invalid arguments."""
 
 
-# Two legacy exceptions pre-date this hierarchy and keep their definition
-# sites (`ttsim.interface_dag_elements.fail_if` and `ttsim.tt.vectorization`)
-# to avoid breaking existing imports. Their base classes have been changed
-# to `TTSIMError`, so they are caught by `except TTSIMError`. Import them
-# directly from their defining modules — importing here would create an
-# import cycle:
-#
-# - `from ttsim.interface_dag_elements.fail_if import ConflictingActivePeriodsError`
-# - `from ttsim.tt.vectorization import TranslateToVectorizableError`
+# `ConflictingActivePeriodsError` and `TranslateToVectorizableError` subclass
+# `TTSIMError` from their definition sites (`ttsim.interface_dag_elements.fail_if`
+# and `ttsim.tt.vectorization`) — re-importing them here would create an
+# import cycle, so import them directly from their defining modules.
 
 
 __all__ = [

@@ -4,6 +4,12 @@ import inspect
 
 import pytest
 
+from ttsim.exceptions import (
+    AggregationDefinitionError,
+    GroupCreationDefinitionError,
+    ParamFunctionDefinitionError,
+    PolicyFunctionDefinitionError,
+)
 from ttsim.tt import (
     AggType,
     PolicyFunction,
@@ -15,8 +21,10 @@ from ttsim.tt import (
 )
 from ttsim.tt.column_objects_param_function import (
     ParamFunction,
+    group_creation_function,
     param_function,
 )
+from ttsim.typing import FloatColumn
 
 # ======================================================================================
 # PolicyFunction and policy_function
@@ -24,17 +32,17 @@ from ttsim.tt.column_objects_param_function import (
 
 
 @policy_function()
-def simple_policy_function(x):
+def simple_policy_function(x: int) -> int:
     return x
 
 
 @policy_function(leaf_name="simple_policy_function")
-def policy_function_with_different_leaf_name(x):
+def policy_function_with_different_leaf_name(x: int) -> int:
     return x
 
 
 @policy_function(start_date="2007-01-01", end_date="2011-12-31")
-def policy_function_with_dates(x):
+def policy_function_with_dates(x: int) -> int:
     return x
 
 
@@ -71,17 +79,17 @@ def test_policy_function_with_dates():
 
 
 @param_function()
-def simple_param_function(x):
+def simple_param_function(x: int) -> int:
     return x
 
 
 @param_function(leaf_name="simple_param_function")
-def param_function_with_different_leaf_name(x):
+def param_function_with_different_leaf_name(x: int) -> int:
     return x
 
 
 @param_function(start_date="2007-01-01", end_date="2011-12-31")
-def param_function_with_dates(x):
+def param_function_with_dates(x: int) -> int:
     return x
 
 
@@ -149,12 +157,12 @@ def test_policy_input_with_dates():
 
 
 @agg_by_group_function(agg_type=AggType.COUNT)
-def aggregate_by_group_count(group_id):
+def aggregate_by_group_count(group_id: int) -> int:
     pass
 
 
 @agg_by_group_function(agg_type=AggType.SUM)
-def aggregate_by_group_sum(group_id, source):
+def aggregate_by_group_sum(group_id: int, source: int) -> int:
     pass
 
 
@@ -181,7 +189,9 @@ def test_agg_by_group_count_other_arg_present():
     with pytest.raises(ValueError, match=match):
 
         @agg_by_group_function(agg_type=AggType.COUNT)
-        def aggregate_by_group_count_other_arg_present(group_id, wrong_arg):
+        def aggregate_by_group_count_other_arg_present(
+            group_id: int, wrong_arg: int
+        ) -> int:
             pass
 
 
@@ -190,13 +200,15 @@ def test_agg_by_group_sum_wrong_amount_of_args():
     with pytest.raises(ValueError, match=match):
 
         @agg_by_group_function(agg_type=AggType.SUM)
-        def aggregate_by_group_sum_no_arg_present(group_id):
+        def aggregate_by_group_sum_no_arg_present(group_id: int) -> int:
             pass
 
     with pytest.raises(ValueError, match=match):
 
         @agg_by_group_function(agg_type=AggType.SUM)
-        def aggregate_by_group_sum_multiple_args_present(group_id, arg, another_arg):
+        def aggregate_by_group_sum_multiple_args_present(
+            group_id: int, arg: int, another_arg: int
+        ) -> int:
             pass
 
 
@@ -206,15 +218,15 @@ def test_wrong_number_of_group_ids_present():
 
         @agg_by_group_function(agg_type=AggType.COUNT)
         def aggregate_by_group_count_multiple_group_ids_present(
-            group_id,
-            another_group_id,
-        ):
+            group_id: int,
+            another_group_id: int,
+        ) -> int:
             pass
 
     with pytest.raises(ValueError, match=match):
 
         @agg_by_group_function(agg_type=AggType.COUNT)
-        def aggregate_by_group_count_no_group_id_present():
+        def aggregate_by_group_count_no_group_id_present() -> int:
             pass
 
 
@@ -224,12 +236,12 @@ def test_wrong_number_of_group_ids_present():
 
 
 @agg_by_p_id_function(agg_type=AggType.COUNT)
-def aggregate_by_p_id_count(p_id, p_id_specifier):
+def aggregate_by_p_id_count(p_id: int, p_id_specifier: int) -> int:
     pass
 
 
 @agg_by_p_id_function(agg_type=AggType.SUM)
-def aggregate_by_p_id_sum(p_id, p_id_specifier, column):
+def aggregate_by_p_id_sum(p_id: int, p_id_specifier: int, column: int) -> int:
     pass
 
 
@@ -256,7 +268,9 @@ def test_agg_by_p_id_count_other_arg_present():
     with pytest.raises(ValueError, match=match):
 
         @agg_by_p_id_function(agg_type=AggType.COUNT)
-        def aggregate_by_p_id_count_other_arg_present(p_id, p_id_specifier, wrong_arg):
+        def aggregate_by_p_id_count_other_arg_present(
+            p_id: int, p_id_specifier: int, wrong_arg: int
+        ) -> int:
             pass
 
 
@@ -265,7 +279,7 @@ def test_agg_by_p_id_sum_no_arg_present():
     with pytest.raises(ValueError, match=match):
 
         @agg_by_p_id_function(agg_type=AggType.SUM)
-        def aggregate_by_p_id_sum_no_arg_present(p_id, p_id_specifier):
+        def aggregate_by_p_id_sum_no_arg_present(p_id: int, p_id_specifier: int) -> int:
             pass
 
 
@@ -275,11 +289,11 @@ def test_agg_by_p_id_sum_multiple_args_present():
 
         @agg_by_p_id_function(agg_type=AggType.SUM)
         def aggregate_by_p_id_sum_multiple_args_present(
-            p_id,
-            p_id_specifier,
-            arg,
-            another_arg,
-        ):
+            p_id: int,
+            p_id_specifier: int,
+            arg: int,
+            another_arg: int,
+        ) -> int:
             pass
 
 
@@ -289,10 +303,10 @@ def test_agg_by_p_id_multiple_other_p_ids_present():
 
         @agg_by_p_id_function(agg_type=AggType.SUM)
         def aggregate_by_p_id_multiple_other_p_ids_present(
-            p_id,
-            p_id_specifier_one,
-            p_id_specifier_two,
-        ):
+            p_id: int,
+            p_id_specifier_one: int,
+            p_id_specifier_two: int,
+        ) -> int:
             pass
 
 
@@ -304,3 +318,72 @@ def test_agg_by_p_id_sum_with_all_missing_p_ids(backend, xnp):
         num_segments=1,
         backend=backend,
     )
+
+
+def test_policy_function_rejects_missing_return_annotation() -> None:
+    with pytest.raises(PolicyFunctionDefinitionError, match="missing: return"):
+
+        @policy_function()
+        def unannotated_return(x: int):
+            return x
+
+
+def test_policy_function_rejects_missing_param_annotation() -> None:
+    with pytest.raises(PolicyFunctionDefinitionError, match="param 'x'"):
+
+        @policy_function()
+        def unannotated_param(x) -> int:
+            return x
+
+
+def test_param_function_rejects_missing_annotation() -> None:
+    with pytest.raises(ParamFunctionDefinitionError, match="missing: return"):
+
+        @param_function()
+        def unannotated_param_function(x: int):
+            return x
+
+
+def test_agg_by_group_function_rejects_missing_annotation() -> None:
+    with pytest.raises(AggregationDefinitionError, match="missing: return"):
+
+        @agg_by_group_function(agg_type=AggType.SUM)
+        def unannotated_agg_group(group_id: int, source: int):
+            pass
+
+
+def test_agg_by_p_id_function_rejects_missing_annotation() -> None:
+    with pytest.raises(AggregationDefinitionError, match="missing: return"):
+
+        @agg_by_p_id_function(agg_type=AggType.SUM)
+        def unannotated_agg_p_id(p_id: int, p_id_specifier: int, column: int):
+            pass
+
+
+def test_group_creation_function_rejects_missing_annotation() -> None:
+    with pytest.raises(GroupCreationDefinitionError, match="missing: return"):
+
+        @group_creation_function()
+        def unannotated_group_creation(p_id: int):
+            return p_id
+
+
+def test_policy_function_dual_mode_check_resolves_stringified_annotations() -> None:
+    """The dual-mode contract check must see live types, not the strings that
+    `from __future__ import annotations` (active in this test module) parks on
+    `__annotations__`. A column annotation on a vectorized function must raise.
+    """
+    with pytest.raises(PolicyFunctionDefinitionError, match="scalar annotations"):
+
+        @policy_function(vectorization_strategy="vectorize")
+        def column_arg_on_vectorized(x: FloatColumn) -> FloatColumn:
+            return x
+
+
+def test_policy_function_dual_mode_check_resolves_strings_not_required() -> None:
+    """Mirror of the above for `not_required`: a scalar annotation must raise."""
+    with pytest.raises(PolicyFunctionDefinitionError, match="column annotations"):
+
+        @policy_function(vectorization_strategy="not_required")
+        def scalar_arg_on_not_required(x: int) -> int:
+            return x

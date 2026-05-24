@@ -49,9 +49,9 @@ if TYPE_CHECKING:
 # so names hidden in `TYPE_CHECKING` are invisible to beartype at decoration
 # time. All names below are runtime-resolvable in `ttsim.typing`.
 from ttsim.typing import (
-    FlatTTTargets,
     OrderedQNames,
     PolicyEnvironment,
+    QNameTTTargets,
     SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
     SpecEnvWithPartialledParamsAndScalars,
     SpecEnvWithProcessedParamsAndScalars,
@@ -94,7 +94,7 @@ def qnames_to_derive_functions_from(
 def without_tree_logic_and_with_derived_functions(
     policy_environment: PolicyEnvironment,
     qnames_to_derive_functions_from: UnorderedQNames,
-    tt_targets__qname: FlatTTTargets,
+    tt_targets__qname: QNameTTTargets,
     labels__input_columns: UnorderedQNames,
     labels__all_qnames_in_policy_environment: UnorderedQNames,
     labels__top_level_namespace: UnorderedQNames,
@@ -140,7 +140,7 @@ def without_input_data_nodes_with_dummy_callables(
 @interface_function()
 def complete_tt_dag(
     without_input_data_nodes_with_dummy_callables: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,  # noqa: E501
-    tt_targets__qname: FlatTTTargets,
+    tt_targets__qname: QNameTTTargets,
     labels__all_qnames_in_policy_environment: UnorderedQNames,
     labels__input_columns: UnorderedQNames,
 ) -> nx.DiGraph:
@@ -253,8 +253,8 @@ def dummy_callable(
 ) -> Callable[[], Any]:
     """Dummy callable, for plotting and checking DAG completeness."""
 
-    def dummy():  # noqa: ANN202
-        pass
+    def dummy() -> object:
+        return None
 
     # Extract docstring from the appropriate attribute based on object type
     if isinstance(obj, PolicyInput):

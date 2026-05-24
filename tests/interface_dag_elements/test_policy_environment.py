@@ -103,7 +103,7 @@ def test_p_id_not_recognized_as_potential_group_id(backend):
 )
 def test_start_date_valid(date_string: str, expected: datetime.date):
     @policy_function(start_date=date_string)
-    def test_func():
+    def test_func() -> int:
         pass
 
     assert test_func.start_date == expected
@@ -124,13 +124,13 @@ def test_start_date_invalid(date_string: str):
     ):
 
         @policy_function(start_date=date_string)
-        def test_func():
+        def test_func() -> int:
             pass
 
 
 def test_start_date_missing():
     @policy_function()
-    def test_func():
+    def test_func() -> int:
         pass
 
     assert test_func.start_date == datetime.date(1900, 1, 1)
@@ -144,7 +144,7 @@ def test_start_date_missing():
 )
 def test_end_date_valid(date_string: str, expected: datetime.date):
     @policy_function(end_date=date_string)
-    def test_func():
+    def test_func() -> int:
         pass
 
     assert test_func.end_date == expected
@@ -165,13 +165,13 @@ def test_end_date_invalid(date_string: str):
     ):
 
         @policy_function(end_date=date_string)
-        def test_func():
+        def test_func() -> int:
             pass
 
 
 def test_end_date_missing():
     @policy_function()
-    def test_func():
+    def test_func() -> int:
         pass
 
     assert test_func.end_date == datetime.date(2099, 12, 31)
@@ -181,7 +181,7 @@ def test_active_period_is_empty():
     with pytest.raises(ValueError, match="must be before the end date"):
 
         @policy_function(start_date="2023-01-20", end_date="2023-01-19")
-        def test_func():
+        def test_func() -> int:
             pass
 
 
