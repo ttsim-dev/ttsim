@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import os
 
-# Patch jaxtyping's "..." sentinel to survive pickling before any
+# Make jaxtyping accept bare `Ellipsis` axis specs (produced by
+# `from __future__ import annotations` evaluation) before any
 # jaxtyping-subscripted type is created. See the module docstring.
 from ttsim import _jaxtyping_patch  # noqa: F401
 
