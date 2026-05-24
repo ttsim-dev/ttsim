@@ -63,9 +63,7 @@ def nested_data_to_df_with_qname_columns(
     """Convert a nested data structure to a DataFrame with qname-string columns.
 
     Each output column is named with the qualified-name string for its tree path
-    (parts joined by `__`). The column index is a flat `str` index regardless
-    of how deeply nested the input is, so adding or removing targets does not
-    change the column-index depth.
+    (parts joined by `__`).
 
     Args:
         nested_data_to_convert:
