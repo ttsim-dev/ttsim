@@ -219,6 +219,46 @@ def df_with_nested_columns_to_flat_data(
     return result
 
 
+def df_with_qname_columns_to_flat_data(
+    df: pd.DataFrame,
+    backend: Literal["numpy", "jax"],
+    xnp: ModuleType,
+) -> FlatData:
+    """Convert a DataFrame whose flat column index holds qname strings.
+
+    Each column name is split on ``__`` to recover the tree path; everything
+    else mirrors `df_with_nested_columns_to_flat_data`.
+
+    Args:
+        df:
+            The pandas DataFrame with qname-string columns.
+        backend:
+            Backend to use for array creation.
+        xnp:
+            The numpy-compatible module.
+
+    Returns:
+        A flattened data structure keyed by tree paths.
+
+    Examples:
+        >>> df = pd.DataFrame({"a__b": [1, 2, 3], "c": [4, 5, 6]})
+        >>> result = df_with_qname_columns_to_flat_data(df, "numpy", np)
+        >>> result
+        {("a", "b"): np.array([1, 2, 3]), ("c",): np.array([4, 5, 6])}
+    """
+    result = {}
+    for raw_key in df.columns:
+        clean_key = dt.tree_path_from_qname(raw_key)
+        numpy_array = _canonicalize_input_dtype(df[raw_key], numpy)
+        # See comment in `df_with_mapped_columns_to_flat_data` re: object dtype.
+        if backend == "jax" and numpy_array.dtype != numpy.dtype(object):
+            result[clean_key] = xnp.asarray(numpy_array)
+        else:
+            result[clean_key] = numpy_array
+
+    return result
+
+
 def _remove_nan_from_keys(path: tuple[str | Any, ...]) -> tuple[str, ...]:
     """Remove nan string from string tuples."""
     return tuple(el for el in path if not pd.isna(el))
