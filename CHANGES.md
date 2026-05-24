@@ -6,6 +6,8 @@ releases are available on [Anaconda.org](https://anaconda.org/conda-forge/ttsim)
 
 ## Unreleased
 
+- {gh}`99` Require `dags >= 0.6`; adapt to its new wrapper annotations.
+  ({ghuser}`hmgaudecker`)
 - {gh}`92` Let piecewise polynomials return scalars if the input is a scalar.
   ({ghuser}`MImmesberger`)
 

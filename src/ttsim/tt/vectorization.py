@@ -10,6 +10,7 @@ from types import ModuleType
 from typing import TYPE_CHECKING, Any, Literal, cast
 
 import numpy
+from dags import get_annotations
 from dags.signature import rename_arguments
 
 if TYPE_CHECKING:
@@ -522,13 +523,9 @@ def _create_vectorized_signature(func: FunctionType[..., Any]) -> inspect.Signat
 def _create_vectorized_annotations(func: FunctionType[..., Any]) -> dict[str, Any]:
     """Create annotations for the vectorized function."""
     parameters_and_return = ["return", *inspect.signature(func).parameters]
-    annotations = inspect.get_annotations(func)
+    annotations = get_annotations(func, default="IntColumn | FloatColumn | BoolColumn")
     return {
-        name: scalar_type_to_array_type(
-            # If no annotation is available, we assume it is a numerical scalar type,
-            # which is converted to an array type.
-            annotations.get(name, "IntColumn | FloatColumn | BoolColumn"),
-        )
+        name: scalar_type_to_array_type(annotations[name])
         for name in parameters_and_return
     }
 
