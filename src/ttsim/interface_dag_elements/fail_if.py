@@ -47,7 +47,6 @@ from ttsim.typing import (
     FlatColumnObjectsParamFunctions,
     FlatData,
     FlatOrigParamSpecs,
-    FlatTTTargets,
     NestedData,
     NestedInputsMapper,
     NestedResults,
@@ -57,6 +56,7 @@ from ttsim.typing import (
     OrigParamSpec,
     PolicyEnvironment,
     QNameData,
+    QNameTTTargets,
     SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
     SpecEnvWithPartialledParamsAndScalars,
     SpecEnvWithProcessedParamsAndScalars,
@@ -839,7 +839,7 @@ def tt_root_nodes_are_missing(
 def targets_are_not_in_specialized_environment_or_data(
     specialized_environment__without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
     labels__input_columns: UnorderedQNames,
-    tt_targets__qname: FlatTTTargets,
+    tt_targets__qname: QNameTTTargets,
 ) -> None:
     """Fail if some target is not among functions."""
     missing_targets = [

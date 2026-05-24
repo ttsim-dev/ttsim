@@ -11,7 +11,7 @@ from ttsim.tt.column_objects_param_function import ColumnFunction
 
 # Hoisted out of TYPE_CHECKING so beartype can resolve the return annotation
 # of `qname` at runtime.
-from ttsim.typing import FlatTTTargets
+from ttsim.typing import QNameTTTargets
 
 if TYPE_CHECKING:
     from ttsim.typing import (
@@ -41,6 +41,6 @@ def tree(policy_environment: PolicyEnvironment) -> NestedTargetDict | NestedStri
 
 
 @interface_function()
-def qname(tree: NestedTargetDict | NestedStrings) -> FlatTTTargets:
+def qname(tree: NestedTargetDict | NestedStrings) -> QNameTTTargets:
     """Targets in their qualified name-representation."""
     return dt.flatten_to_qnames(tree)

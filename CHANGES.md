@@ -19,7 +19,11 @@ releases are available on [Anaconda.org](https://anaconda.org/conda-forge/ttsim)
 - {gh}`101` Adopt the package-wide beartype claw with a typed exception hierarchy at
   user-facing boundaries (`InputDataError`, `EntryPointError`, `TTTargetsError`,
   `PolicyFunctionDefinitionError`, …) so malformed input is rejected with curated
-  errors. ({ghuser}`hmgaudecker`)
+  errors. Every `@*_function` decorator (`@policy_function`, `@param_function`,
+  `@agg_by_p_id_function`, `@agg_by_group_function`, `@group_creation_function`) now
+  also requires the wrapped function to carry an annotation on every parameter and on
+  the return value; missing annotations raise the decorator's `*DefinitionError` at
+  decoration time. ({ghuser}`hmgaudecker`)
 - {gh}`99` Require `dags >= 0.6`; adapt to its new wrapper annotations.
   ({ghuser}`hmgaudecker`)
 - {gh}`92` Let piecewise polynomials return scalars if the input is a scalar.
