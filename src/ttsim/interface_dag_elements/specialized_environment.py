@@ -26,14 +26,6 @@ from ttsim.tt.column_objects_param_function import (
     PolicyInput,
 )
 from ttsim.tt.param_objects import ParamObject, RawParam
-
-# Hoisted to runtime scope so the beartype claw can resolve these aliases on
-# decorated signatures. The module uses `from __future__ import annotations`,
-# so beartype sees stringified annotations and resolves them via module
-# globals; names hidden in `TYPE_CHECKING` are invisible at decoration time.
-# `networkx` is already a hard runtime dependency of ttsim (imported at
-# runtime in sibling interface modules), so the import is moved up rather
-# than left under `TYPE_CHECKING`.
 from ttsim.typing import (
     OrderedQNames,
     PolicyEnvironment,

@@ -7,11 +7,6 @@ import dags.tree as dt
 import numpy
 import pandas as pd
 
-# Hoisted to runtime scope so the beartype claw can resolve these aliases on
-# decorated signatures. The module uses `from __future__ import annotations`,
-# so beartype sees stringified annotations and resolves them via module
-# globals; names hidden in `TYPE_CHECKING` are invisible at decoration time.
-# All names below are runtime-resolvable in `ttsim.typing`.
 from ttsim.typing import (
     FlatData,
     NestedData,
