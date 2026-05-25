@@ -312,6 +312,22 @@ def test_input_data_classmethods(instance_factory, expected_field_name, xnp):
             lambda _xnp: Results.tree({"result_tree": {"data": [1, 2, 3]}}),
             lambda _xnp: Results(tree={"result_tree": {"data": [1, 2, 3]}}),  # ty: ignore[unknown-argument]
         ),
+        (
+            lambda _xnp: Results.df_with_qname_columns(
+                pd.DataFrame({"qname__col": [1, 2]})
+            ),
+            lambda _xnp: Results(
+                df_with_qname_columns=pd.DataFrame({"qname__col": [1, 2]})  # ty: ignore[unknown-argument]
+            ),
+        ),
+        (
+            lambda _xnp: Results.flat({("a", "b"): [1, 2, 3]}),
+            lambda _xnp: Results(flat={("a", "b"): [1, 2, 3]}),  # ty: ignore[unknown-argument]
+        ),
+        (
+            lambda _xnp: Results.qname({"a__b": [1, 2, 3]}),
+            lambda _xnp: Results(qname={"a__b": [1, 2, 3]}),  # ty: ignore[unknown-argument]
+        ),
         # RawResults
         (
             lambda xnp: RawResults.columns({"test": xnp.array([1, 2, 3])}),
