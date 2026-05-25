@@ -12,9 +12,6 @@ from ttsim.interface_dag_elements.data_converters import (
     nested_data_to_df_with_qname_columns,
 )
 from ttsim.interface_dag_elements.interface_node_objects import interface_function
-
-# Hoisted out of `TYPE_CHECKING` so the beartype claw can resolve these
-# aliases on the `@interface_function`-decorated signatures below.
 from ttsim.typing import (
     FlatData,
     FlatResults,
