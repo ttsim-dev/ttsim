@@ -326,11 +326,9 @@ def input_data_is_invalid(input_data__flat: FlatData, xnp: ModuleType) -> None:
 def input_data_has_int_or_bool_missing_values(input_data__flat: FlatData) -> None:
     """Fail when an integer or boolean input column has missing values.
 
-    Float columns map ``pd.NA`` to ``NaN`` silently, but neither numpy
-    integer nor numpy boolean dtypes have a missing-value sentinel. Surface
-    the columns and their first offending row position so the user can
-    either fill the missing values or convert the column to a float type
-    that supports NaN.
+    Neither numpy integer nor numpy boolean dtypes have a missing-value
+    sentinel. Surface the columns and their first offending row position so
+    the user can fill the missing values.
     """
     offending: list[tuple[tuple[str, ...], int]] = []
     for path, data in input_data__flat.items():
@@ -357,8 +355,7 @@ def input_data_has_int_or_bool_missing_values(input_data__flat: FlatData) -> Non
             "values, which cannot be represented in numpy integer / bool "
             "dtypes:\n"
             f"{formatted}\n\n"
-            "Fill the missing values, or convert the column to a float type "
-            "that supports NaN."
+            "Fill the missing values before passing the data."
         )
         raise ValueError(msg)
 
@@ -368,14 +365,15 @@ def input_data_uint64_values_overflow_int64(input_data__flat: FlatData) -> None:
     """Fail when a uint64 input column has any value outside the int64 range.
 
     Uint columns are coerced to int64 in ``processed_data`` so that signed
-    arithmetic on them stays signed. Values in ``(int64.max, uint64.max]`` cannot
-    be represented as int64 and would silently wrap; surface them as an error.
+    arithmetic on them stays signed. Values in ``(int64.max, uint64.max]``
+    cannot be represented as int64 and would silently wrap; surface them as
+    an error.
 
-    Scope: only applies to raw ``numpy.uint64`` arrays supplied via
-    ``InputData.flat`` / ``InputData.tree`` / ``InputData.qname``. DataFrame
-    inputs go through ``_canonicalize_series`` first, which casts ``UInt64``
-    Series to int64 before they reach ``input_data__flat``; the overflow
-    check there would never see a uint64 dtype.
+    Catches raw ``numpy.uint64`` arrays supplied via ``InputData.flat`` /
+    ``InputData.tree`` / ``InputData.qname`` that survive into
+    ``input_data__flat`` with their dtype intact. DataFrame and ``pd.Series``
+    inputs go through ``_canonicalize_input_dtype`` earlier and raise the
+    same kind of error there before the cast.
     """
     int64_max = numpy.iinfo(numpy.int64).max
     offending: list[tuple[tuple[str, ...], Any]] = []

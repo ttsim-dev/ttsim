@@ -161,7 +161,11 @@ def df_with_mapped_columns_to_flat_data(
         if numpy.isscalar(mapper_value) and not isinstance(mapper_value, str):
             numpy_array = numpy.full(len(df), mapper_value)
         else:
-            numpy_array = _canonicalize_input_dtype(df[mapper_value], numpy)
+            numpy_array = _canonicalize_input_dtype(
+                df[mapper_value],
+                numpy,
+                column_label=dt.qname_from_tree_path(path),
+            )
 
         # Keep NA-containing int/bool columns as numpy object arrays so the
         # `input_data_has_int_or_bool_missing_values` fail-if can report them;
@@ -197,14 +201,18 @@ def df_with_nested_columns_to_flat_data(
         {("a", "b"): np.array([1, 2, 3]), ("c",): np.array([4, 5, 6])}
     """
     result = {}
-    # `to_dict(orient='list')` strips nullable / pyarrow dtypes — read each
-    # column off the DataFrame as a `pd.Series` so the canonicalizer can see
-    # the dtype and apply the correct NA-aware conversion.
+    # Read each column as a `pd.Series` so the canonicalizer sees the
+    # original (possibly nullable / pyarrow) dtype and applies the correct
+    # NA-aware conversion.
     for raw_key in df.columns:
         clean_key = _remove_nan_from_keys(
             raw_key if isinstance(raw_key, tuple) else (raw_key,)
         )
-        numpy_array = _canonicalize_input_dtype(df[raw_key], numpy)
+        numpy_array = _canonicalize_input_dtype(
+            df[raw_key],
+            numpy,
+            column_label=dt.qname_from_tree_path(clean_key),
+        )
         # See comment in `df_with_mapped_columns_to_flat_data` re: object dtype.
         if backend == "jax" and numpy_array.dtype != numpy.dtype(object):
             result[clean_key] = xnp.asarray(numpy_array)
