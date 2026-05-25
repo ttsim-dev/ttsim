@@ -145,7 +145,9 @@ def flat_from_tree(
     if p_id is None or not hasattr(p_id, "__len__"):
         return {
             path: (
-                _canonicalize_input_dtype(value, numpy)
+                _canonicalize_input_dtype(
+                    value, numpy, column_label=dt.qname_from_tree_path(path)
+                )
                 if isinstance(value, pd.Series)
                 else value
             )
@@ -157,7 +159,9 @@ def flat_from_tree(
         if not hasattr(value, "__len__"):
             out[path] = numpy.full(n_obs, value)
         elif isinstance(value, pd.Series):
-            out[path] = _canonicalize_input_dtype(value, numpy)
+            out[path] = _canonicalize_input_dtype(
+                value, numpy, column_label=dt.qname_from_tree_path(path)
+            )
         else:
             out[path] = value
     return out
@@ -186,12 +190,15 @@ def flat_from_qname(
     n_obs = len(p_id) if p_id is not None and hasattr(p_id, "__len__") else None
     out: FlatData = {}
     for path, value in flat.items():
+        label = dt.qname_from_tree_path(path)
         if isinstance(value, pd.Series):
-            out[path] = _canonicalize_input_dtype(value, numpy)
+            out[path] = _canonicalize_input_dtype(value, numpy, column_label=label)
         elif not hasattr(value, "__len__"):
             out[path] = numpy.full(n_obs, value) if n_obs is not None else value
         else:
-            out[path] = _canonicalize_input_dtype(numpy.asarray(value), numpy)
+            out[path] = _canonicalize_input_dtype(
+                numpy.asarray(value), numpy, column_label=label
+            )
     return out
 
 
