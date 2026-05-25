@@ -39,15 +39,6 @@ from ttsim.tt.column_objects_param_function import (
     policy_function,
 )
 from ttsim.tt.param_objects import ParamObject
-from ttsim.unit_converters import TIME_UNIT_IDS_TO_LABELS
-
-if TYPE_CHECKING:
-    import re
-
-# Hoisted to runtime scope so the beartype claw can resolve these aliases on
-# decorated signatures. The module uses `from __future__ import annotations`,
-# so names hidden in `TYPE_CHECKING` are invisible to beartype at decoration
-# time. All names below are runtime-resolvable in `ttsim.typing`.
 from ttsim.typing import (
     OrderedQNames,
     PolicyEnvironment,
@@ -57,6 +48,10 @@ from ttsim.typing import (
     SpecEnvWithProcessedParamsAndScalars,
     UnorderedQNames,
 )
+from ttsim.unit_converters import TIME_UNIT_IDS_TO_LABELS
+
+if TYPE_CHECKING:
+    import re
 
 
 @interface_function()

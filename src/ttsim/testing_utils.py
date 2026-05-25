@@ -23,14 +23,6 @@ from ttsim.interface_dag_elements.specialized_environment_for_plotting_and_templ
     dummy_callable,
 )
 from ttsim.main_args import InputData, OrigPolicyObjects, TTTargets
-
-# Hoisted out of TYPE_CHECKING: the beartype claw evaluates PEP 526 local-variable
-# annotations at runtime, so every annotation name used inside a function body must
-# be a real runtime name. `FlatColumnObjectsParamFunctions` / `FlatOrigParamSpecs`
-# appear on a beartype-checked signature (`check_env_completeness`), so they too need
-# to resolve at runtime; both have runtime-resolvable stubs in `ttsim.typing`.
-# `PolicyEnvironment` is the return annotation of the claw-decorated
-# `cached_policy_environment`, so it must resolve at runtime too.
 from ttsim.typing import (
     FlatColumnObjectsParamFunctions,
     FlatOrigParamSpecs,

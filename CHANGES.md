@@ -30,6 +30,9 @@ releases are available on [Anaconda.org](https://anaconda.org/conda-forge/ttsim)
   decoration time. Floor pin `jaxtyping >= 0.3.10` so the cloudpickle round-trip of
   jaxtyping types works out of the box (the three `_array_types` `object()` sentinels
   are now `__reduce__`-backed singleton classes upstream). ({ghuser}`hmgaudecker`)
+
+## v1.2.1 — 2026-05-24
+
 - {gh}`99` Require `dags >= 0.6`; adapt to its new wrapper annotations.
   ({ghuser}`hmgaudecker`)
 - {gh}`92` Let piecewise polynomials return scalars if the input is a scalar.
