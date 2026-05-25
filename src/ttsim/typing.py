@@ -192,11 +192,17 @@ if TYPE_CHECKING:
 else:
     UserNestedData = Mapping[str, object]
 # `UserNestedData`: user-boundary tree mapping TTSIM paths to columns, Series,
-# or sequences.
+# sequences, or scalars (the latter broadcast lazily at call time for
+# non-vectorized consumers; partialled in for auto-vectorized ones).
 # `UserFlatData`: user-boundary flat mapping of tree paths to the same.
 # `UserQNameData`: user-boundary mapping of qualified names to the same.
-UserFlatData: TypeAlias = Mapping[tuple[str, ...], UserColumn]
-UserQNameData: TypeAlias = Mapping[str, UserColumn]
+UserFlatData: TypeAlias = Mapping[
+    tuple[str, ...],
+    UserColumn | UserScalarFloat | UserScalarInt | UserScalarBool,
+]
+UserQNameData: TypeAlias = Mapping[
+    str, UserColumn | UserScalarFloat | UserScalarInt | UserScalarBool
+]
 
 # `QNameTTTargets`: a flattened target tree, mapping each qualified name to its
 # leaf value (`None` to compute the target, a string to rename it). Produced by
