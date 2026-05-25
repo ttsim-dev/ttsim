@@ -12,11 +12,11 @@ releases are available on [Anaconda.org](https://anaconda.org/conda-forge/ttsim)
   `cloudpickle.dumps(tt_function)` works. ({ghuser}`hmgaudecker`)
 - {gh}`104` Fix partialling of scalar inputs that drive derived time-conversion
   functions. ({ghuser}`hmgaudecker`)
-- {gh}`103` Make `InputData` and `Results` shapes symmetric. Adds `InputData.qname` /
-  `InputData.df_with_qname_columns` factories, `MainTarget.results.flat` /
-  `MainTarget.results.qname` output targets, and
-  `MainTarget.results.df_with_qname_columns` output target with flat qname-string
-  columns. ({ghuser}`hmgaudecker`)
+- {gh}`103` Make `InputData` and `Results` shapes symmetric. Adds
+  `InputData.df_with_qname_columns` factory, `Results.df_with_qname_columns` /
+  `Results.flat` / `Results.qname` factories, and `MainTarget.results.flat` /
+  `MainTarget.results.qname` / `MainTarget.results.df_with_qname_columns` output
+  targets. ({ghuser}`hmgaudecker`)
 - {gh}`102` Canonicalize input dtypes: coerce uint columns to signed int, normalize
   pandas-nullable / Float64 / pyarrow columns to numpy (NA→NaN for floats, fail for
   int/bool with NA). Closes #97, #94. ({ghuser}`hmgaudecker`)
