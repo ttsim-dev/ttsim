@@ -12,11 +12,13 @@ from ttsim._beartype_conf import INPUT_DATA_CONF, TT_TARGETS_CONF
 from ttsim.typing import (
     FlatColumnObjectsParamFunctions,
     FlatOrigParamSpecs,
+    FlatResults,
     NestedData,
     NestedStrings,
     NestedTargetDict,
     OrderedQNames,
     QNameData,
+    QNameResults,
     QNameStrings,
     SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
     SpecEnvWithPartialledParamsAndScalars,
@@ -299,6 +301,8 @@ class Results(MainArg):
     df_with_nested_columns: pd.DataFrame | None = None
     df_with_qname_columns: pd.DataFrame | None = None
     tree: NestedData | None = None
+    flat: FlatResults | None = None
+    qname: QNameResults | None = None
 
     def __post_init__(self) -> None:
         _fix_classmethod_namespace_conflicts(self)
@@ -332,6 +336,16 @@ class Results(MainArg):
     def tree(cls, tree: NestedData) -> Results:
         """Results as a nested data tree."""
         return _set_single_field(cls=cls, field_name="tree", field_value=tree)
+
+    @classmethod
+    def flat(cls, flat: FlatResults) -> Results:
+        """Results as a flat mapping of tree-path tuples to leaves."""
+        return _set_single_field(cls=cls, field_name="flat", field_value=flat)
+
+    @classmethod
+    def qname(cls, qname: QNameResults) -> Results:
+        """Results as a flat mapping of qualified-name strings to leaves."""
+        return _set_single_field(cls=cls, field_name="qname", field_value=qname)
 
 
 @dataclass(frozen=True)
