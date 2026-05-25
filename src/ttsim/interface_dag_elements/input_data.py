@@ -104,7 +104,9 @@ def flat_from_tree(
     # nullable / pyarrow dtypes are normalised to numpy.
     return {
         path: (
-            _canonicalize_input_dtype(value, numpy)
+            _canonicalize_input_dtype(
+                value, numpy, column_label=dt.qname_from_tree_path(path)
+            )
             if isinstance(value, pd.Series)
             else value
         )
