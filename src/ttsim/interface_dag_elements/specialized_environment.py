@@ -4,11 +4,17 @@ import datetime
 import functools
 from collections.abc import Callable
 from types import ModuleType
-from typing import Literal
+from typing import Literal, cast
 
 import dags.tree as dt
 import networkx as nx
-from dags import concatenate_functions, create_dag, get_free_arguments
+from dags import (
+    concatenate_functions,
+    create_dag,
+    get_annotations,
+    get_free_arguments,
+    with_signature,
+)
 
 from ttsim.interface_dag_elements.automatically_added_functions import (
     create_agg_by_group_functions,
@@ -20,12 +26,17 @@ from ttsim.interface_dag_elements.interface_node_objects import (
 )
 from ttsim.interface_dag_elements.shared import merge_trees
 from ttsim.tt.column_objects_param_function import (
+    AggByGroupFunction,
+    AggByPIDFunction,
     ColumnFunction,
     ColumnObject,
+    GroupCreationFunction,
     ParamFunction,
+    PolicyFunction,
     PolicyInput,
 )
 from ttsim.tt.param_objects import ParamObject, RawParam
+from ttsim.tt.type_resolution import is_column_annotation
 from ttsim.typing import (
     OrderedQNames,
     PolicyEnvironment,
@@ -244,7 +255,7 @@ def with_processed_params_and_scalars(
 def with_partialled_params_and_scalars(
     with_processed_params_and_scalars: SpecEnvWithProcessedParamsAndScalars,
     rounding: bool,
-    num_segments: int,
+    len_p_id: int,
     backend: Literal["numpy", "jax"],
     xnp: ModuleType,
     dnp: ModuleType,
@@ -265,7 +276,10 @@ def with_partialled_params_and_scalars(
             for k, v in with_processed_params_and_scalars.items()
             if not isinstance(v, ColumnObject)
         },
-        "num_segments": num_segments,
+        "len_p_id": len_p_id,
+        # Aggregation functions take a jax `num_segments` argument; the number of
+        # distinct groups is at most `len_p_id`, so feed it that safe upper bound.
+        "num_segments": len_p_id,
         "backend": backend,
         "xnp": xnp,
         "dnp": dnp,
@@ -281,17 +295,26 @@ def with_partialled_params_and_scalars(
         rounded_col_func = (
             _apply_rounding(vect_col_func, xnp) if rounding else vect_col_func
         )
+        # Functions that are natively vectorized (aggregations, group creation, and
+        # `PolicyFunction`s marked ``vectorization_strategy="not_required"``) expect
+        # their `Column`-typed arguments to be full arrays. Wrap them so such scalars
+        # are broadcast to the population length at call time.
+        final_col_func = (
+            _broadcast_scalar_columns_at_call_time(rounded_col_func, xnp=xnp)
+            if _vectorization_not_required(col_func)
+            else rounded_col_func
+        )
         partial_params_of_this_column_function = {
             arg: all_partial_params[arg]
-            for arg in get_free_arguments(rounded_col_func)
+            for arg in get_free_arguments(final_col_func)
             if arg in all_partial_params
         }
         if partial_params_of_this_column_function:
             processed_functions[name] = functools.partial(
-                rounded_col_func, **partial_params_of_this_column_function
+                final_col_func, **partial_params_of_this_column_function
             )
         else:
-            processed_functions[name] = rounded_col_func
+            processed_functions[name] = final_col_func
 
     return processed_functions
 
@@ -309,6 +332,69 @@ def _apply_rounding(
         element.rounding_spec.apply_rounding(element, xnp=xnp)  # ty: ignore[unresolved-attribute]
         if getattr(element, "rounding_spec", False)
         else element
+    )
+
+
+def _vectorization_not_required(col_func: ColumnObject) -> bool:
+    """Whether `col_func` is not auto-vectorized and hence expects array-valued columns.
+
+    Such functions (aggregations, person-pointer aggregations, endogenous group
+    creation, and `PolicyFunction`s declared ``vectorization_strategy="not_required"``)
+    run array operations that are meaningless on a scalar, so any scalar bound to one
+    of their `Column`-typed arguments must be materialised as an array before the body
+    runs.
+    """
+    if isinstance(
+        col_func,
+        AggByGroupFunction | AggByPIDFunction | GroupCreationFunction,
+    ):
+        return True
+    return (
+        isinstance(col_func, PolicyFunction)
+        and col_func.vectorization_strategy == "not_required"
+    )
+
+
+def _broadcast_scalar_columns_at_call_time(
+    func: Callable[..., object],
+    xnp: ModuleType,
+) -> Callable[..., object]:
+    """Wrap a non-vectorized column function to broadcast scalar columns at call time.
+
+    The wrapper carries the same signature and annotations as `func` (so dependency
+    resolution and the DAG annotation-consistency check see no change) plus `len_p_id`
+    when `func` does not already require it. `len_p_id` is the population length
+    ``n_obs`` (see `len_p_id.len_p_id`) and is partialled in as a scalar, so the wrapper
+    introduces no DAG dependency. This is a lazy partial: the scalar value is fixed at
+    build time (partialled in), but its shape is resolved at call time.
+
+    At call time, every argument bound to a `Column`-typed parameter that arrives as a
+    scalar is broadcast to ``(n_obs,)`` before `func` runs. The extra `len_p_id` value
+    is used only to size the broadcast and is not forwarded unless `func` declares it.
+    """
+    annotations = get_annotations(func)
+    func_args = get_free_arguments(func)
+    column_args = [
+        arg for arg in func_args if is_column_annotation(annotations.get(arg))
+    ]
+    wrapper_arg_annotations: dict[str, str] = {
+        arg: annotations[arg] for arg in func_args
+    }
+    wrapper_arg_annotations.setdefault("len_p_id", "int")
+
+    def broadcast_scalar_columns(**kwargs: object) -> object:
+        n_obs = cast("int", kwargs["len_p_id"])
+        call_kwargs = {arg: kwargs[arg] for arg in func_args}
+        for arg in column_args:
+            if isinstance(call_kwargs[arg], int | float | bool):
+                call_kwargs[arg] = xnp.broadcast_to(call_kwargs[arg], (n_obs,))
+        return func(**call_kwargs)
+
+    return with_signature(
+        broadcast_scalar_columns,
+        args=wrapper_arg_annotations,
+        return_annotation=annotations["return"],
+        enforce=False,
     )
 
 

@@ -508,28 +508,32 @@ _NUMERIC_ANNOTATION_STRINGS: frozenset[str] = frozenset(
 )
 
 
-def _is_numeric_annotation(annotation: object) -> bool:
-    """Return whether an annotation denotes a numeric node parameter / return.
+def is_column_annotation(annotation: object) -> bool:
+    """Return whether an annotation denotes a column type.
 
-    Two forms reach the typed-wrapper builder:
+    Routes the decision through the same `ResolvedKind` machinery that *produces*
+    these annotations, so the recognised set of column types stays in lockstep with
+    how they are stamped — there is no separate spelling (e.g. a substring probe) to
+    drift out of sync when a column alias is renamed.
+
+    Two forms occur:
 
     - A column-type **string** (`"FloatColumn"`, `"IntColumn"`,
-      `"BoolColumn"`) or the un-annotated fallback union string
-      `"IntColumn | FloatColumn | BoolColumn"` — both produced by
-      `create_vectorized_annotations`.
+      `"BoolColumn"`) or the imprecise fallback union string
+      `"IntColumn | FloatColumn | BoolColumn"` that an unresolved aggregation
+      source carries — both produced by `create_vectorized_annotations`.
     - A live `jaxtyping` column type (or `Union` of per-backend
       `jaxtyping` types) read directly off a wrapper's `__signature__`. A
       user-authored `vectorization_strategy="not_required"` function
       *without* `from __future__ import annotations` arrives in this form.
 
-    Anything else is a non-numeric `OTHER` annotation (a partialled
-    parameter object, a lookup table, …) and beartype should not enforce
-    the wide numeric union for it.
+    Scalars, parameter objects, lookup tables, and anything unresolvable yield
+    `False`.
     """
     if isinstance(annotation, str):
         return annotation in _NUMERIC_ANNOTATION_STRINGS
     try:
-        kind = resolve_kind_of_annotation(annotation, node_name="<numeric-check>")
+        kind = resolve_kind_of_annotation(annotation, node_name="<column-check>")
     except TypeResolutionError:
         return False
     return kind in _COLUMN_KINDS
@@ -662,7 +666,7 @@ def build_beartype_checkable_wrapper(
     forwarder.__annotations__ = {
         name: _WIDE_NUMERIC_ALIAS
         for name in ("return", *param_names)
-        if _is_numeric_annotation(annotations.get(name))
+        if is_column_annotation(annotations.get(name))
     }
     forwarder.__signature__ = inspect.Signature(
         parameters=[
