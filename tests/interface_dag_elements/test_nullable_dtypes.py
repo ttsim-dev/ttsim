@@ -244,3 +244,29 @@ def test_uint64_overflow_fails_with_actionable_message(
             evaluation_date=_DATE,
             backend=backend,
         )
+
+
+def test_uint64_overflow_from_dataframe_fails_with_actionable_message(
+    backend: Literal["numpy", "jax"],
+):
+    """A pandas-nullable ``UInt64`` column with a value above ``int64.max``
+    raises the same ``ValueError`` as the raw-numpy path; without the
+    canonicalize-time check, the value would silently wrap when cast to
+    int64 inside ``_canonicalize_series``.
+    """
+    int64_max = np.iinfo(np.int64).max
+    df = pd.DataFrame(
+        {
+            ("p_id",): [1, 2, 3],
+            ("balance",): pd.array([1, 2, int64_max + 1], dtype="UInt64"),
+        },
+    )
+    with pytest.raises(ValueError, match=r"(?s)balance.*int64\s+max"):
+        main(
+            main_target=MainTarget.results.df_with_nested_columns,
+            input_data=InputData.df_with_nested_columns(df),
+            tt_targets=TTTargets.tree({"balance": None}),
+            policy_environment={},
+            evaluation_date=_DATE,
+            backend=backend,
+        )
