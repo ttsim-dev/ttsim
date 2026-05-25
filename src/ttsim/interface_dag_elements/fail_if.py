@@ -40,9 +40,6 @@ from ttsim.tt.param_objects import (
     PLACEHOLDER_VALUE,
     ParamObject,
 )
-
-# Hoisted out of `TYPE_CHECKING` so the beartype claw can resolve these
-# forward references when decorating this module's functions.
 from ttsim.typing import (
     FlatColumnObjectsParamFunctions,
     FlatData,
