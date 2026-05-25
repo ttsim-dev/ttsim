@@ -8,9 +8,6 @@ from ttsim.interface_dag_elements.interface_node_objects import (
     interface_function,
 )
 from ttsim.tt.column_objects_param_function import ColumnFunction
-
-# Hoisted out of TYPE_CHECKING so beartype can resolve the return annotation
-# of `qname` at runtime.
 from ttsim.typing import QNameTTTargets
 
 if TYPE_CHECKING:
