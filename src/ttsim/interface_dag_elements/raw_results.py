@@ -5,7 +5,6 @@ from collections.abc import Callable
 import dags.tree as dt
 
 from ttsim.interface_dag_elements.interface_node_objects import interface_function
-
 from ttsim.typing import (
     FlatData,
     OrderedQNames,

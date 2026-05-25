@@ -39,8 +39,6 @@ from ttsim.tt.column_objects_param_function import (
     policy_function,
 )
 from ttsim.tt.param_objects import ParamObject
-from ttsim.unit_converters import TIME_UNIT_IDS_TO_LABELS
-
 from ttsim.typing import (
     OrderedQNames,
     PolicyEnvironment,
@@ -50,6 +48,7 @@ from ttsim.typing import (
     SpecEnvWithProcessedParamsAndScalars,
     UnorderedQNames,
 )
+from ttsim.unit_converters import TIME_UNIT_IDS_TO_LABELS
 
 if TYPE_CHECKING:
     import re

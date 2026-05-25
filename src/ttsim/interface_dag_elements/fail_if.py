@@ -40,7 +40,6 @@ from ttsim.tt.param_objects import (
     PLACEHOLDER_VALUE,
     ParamObject,
 )
-
 from ttsim.typing import (
     FlatColumnObjectsParamFunctions,
     FlatData,
