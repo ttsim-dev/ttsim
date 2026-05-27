@@ -9,7 +9,7 @@ helpers and the call-time broadcast handle the rest.
 
 from __future__ import annotations
 
-from typing import Any, cast
+from typing import Any
 
 import pytest
 
@@ -64,11 +64,11 @@ def test_input_data_flat_rejects_unsupported_leaf_type() -> None:
     """Strings (and other non-numeric, non-column types) are still rejected."""
     bad: Any = {("a",): "not a column"}
     with pytest.raises(InputDataError):
-        InputData.flat(cast("Any", bad))
+        InputData.flat(bad)
 
 
 def test_input_data_qname_rejects_unsupported_leaf_type() -> None:
     """Strings (and other non-numeric, non-column types) are still rejected."""
     bad: Any = {"a": "not a column"}
     with pytest.raises(InputDataError):
-        InputData.qname(cast("Any", bad))
+        InputData.qname(bad)
