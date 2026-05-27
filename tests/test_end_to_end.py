@@ -177,7 +177,7 @@ def benefit(income_m: float) -> float:
         InputData.df_with_nested_columns(DF_WITH_NESTED_COLUMNS),
         InputData.df_with_qname_columns(DF_WITH_QNAME_COLUMNS),
         InputData.tree(INPUT_TREE_DATA),
-        InputData.flat(INPUT_FLAT_DATA),  # ty: ignore[invalid-argument-type]
+        InputData.flat(INPUT_FLAT_DATA),
         InputData.qname(INPUT_QNAME_DATA),
     ],
     ids=[
