@@ -18,6 +18,15 @@ fixed upstream in `jaxtyping >= 0.3.10` (the floor pin), which replaces
 the three module-level `object()` sentinels (`_any_dtype`,
 `_anonymous_dim`, `_anonymous_variadic_dim`) with `__reduce__`-backed
 singleton classes.
+
+Delete this module — and its import from `src/ttsim/__init__.py` —
+when `requires-python` rises to `>=3.14` and `from __future__ import
+annotations` is dropped repo-wide. Under PEP 649 deferred evaluation,
+annotations are real objects, not strings, so `Int[Array, ...]` never
+gets `eval`'d into `Int[Array, Ellipsis]` and the shim becomes a no-op.
+See `src/ttsim/typing.py`'s module docstring for the full 3.14-migration
+checklist. If jaxtyping accepts a bare `Ellipsis` upstream before then,
+the shim becomes removable independently.
 """
 
 from jaxtyping import _array_types
