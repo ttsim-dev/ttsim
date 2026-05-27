@@ -113,8 +113,8 @@ def test_count_primitive_returns_int_column() -> None:
 def test_resolve_agg_output_kind_count_ignores_input() -> None:
     """`COUNT` resolves to `INT_COLUMN` regardless of the source column kind."""
     resolved = resolve_agg_output_kind(
-        AggType.COUNT,
-        ResolvedKind.BOOL_COLUMN,
+        agg_type=AggType.COUNT,
+        input_kind=ResolvedKind.BOOL_COLUMN,
         node_name="x_hh",
     )
     assert resolved == ResolvedKind.INT_COLUMN
@@ -123,8 +123,8 @@ def test_resolve_agg_output_kind_count_ignores_input() -> None:
 def test_resolve_agg_output_kind_sum_of_bool_is_int_column() -> None:
     """Summing a `BoolColumn` yields an `IntColumn` (a bool sum counts trues)."""
     resolved = resolve_agg_output_kind(
-        AggType.SUM,
-        ResolvedKind.BOOL_COLUMN,
+        agg_type=AggType.SUM,
+        input_kind=ResolvedKind.BOOL_COLUMN,
         node_name="anzahl_kinder_hh",
     )
     assert resolved == ResolvedKind.INT_COLUMN
@@ -133,8 +133,8 @@ def test_resolve_agg_output_kind_sum_of_bool_is_int_column() -> None:
 def test_resolve_agg_output_kind_mean_of_int_is_float_column() -> None:
     """Averaging an `IntColumn` yields a `FloatColumn`."""
     resolved = resolve_agg_output_kind(
-        AggType.MEAN,
-        ResolvedKind.INT_COLUMN,
+        agg_type=AggType.MEAN,
+        input_kind=ResolvedKind.INT_COLUMN,
         node_name="durchschnittsalter_hh",
     )
     assert resolved == ResolvedKind.FLOAT_COLUMN
@@ -144,8 +144,8 @@ def test_resolve_agg_output_kind_max_of_bool_raises() -> None:
     """`MAX` of a `BoolColumn` has no rule and raises `TypeResolutionError`."""
     with pytest.raises(TypeResolutionError, match="cannot be"):
         resolve_agg_output_kind(
-            AggType.MAX,
-            ResolvedKind.BOOL_COLUMN,
+            agg_type=AggType.MAX,
+            input_kind=ResolvedKind.BOOL_COLUMN,
             node_name="x_hh",
         )
 

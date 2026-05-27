@@ -199,7 +199,7 @@ def _make_vectorizable_ast(
     func_loc = f"{func.__module__}/{func.__name__}"  # ty: ignore[unresolved-attribute]
 
     # transform tree nodes
-    new_tree = Transformer(module, func_loc, xnp).visit(tree)
+    new_tree = Transformer(module=module, func_loc=func_loc, xnp=xnp).visit(tree)
     return ast.fix_missing_locations(new_tree)
 
 

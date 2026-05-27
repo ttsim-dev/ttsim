@@ -129,7 +129,7 @@ def intervals_to_thresholds(
             portion.from_string(item["interval"], conv=float) for item in intervals
         ]
         if leaf_name:
-            validate_intervals(parsed, leaf_name)
+            validate_intervals(intervals=parsed, leaf_name=leaf_name)
     else:
         parsed = cast("list[portion.Interval]", intervals)
     lower = numpy.array([_bound_to_float(iv.lower) for iv in parsed])

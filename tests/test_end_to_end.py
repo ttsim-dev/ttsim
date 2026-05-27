@@ -367,8 +367,8 @@ def test_cloudpickle_round_trip_preserves_tt_function_output(tmp_path):
     unchanged on every requested target.
     """
     _run_cloudpickle_subprocess(
-        tmp_path,
-        """
+        tmp_path=tmp_path,
+        script_body="""
         import cloudpickle
         import numpy as np
         from mettsim import middle_earth
@@ -414,8 +414,8 @@ def test_cloudpickle_round_trip_with_inline_policy_environment(tmp_path):
     cloudpickle round-trip with results unchanged.
     """
     _run_cloudpickle_subprocess(
-        tmp_path,
-        """
+        tmp_path=tmp_path,
+        script_body="""
         import datetime
         import cloudpickle
         import numpy as np

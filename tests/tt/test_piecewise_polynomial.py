@@ -324,7 +324,7 @@ def test_merge_single_interval():
     """Replace one of three intervals."""
     base = _base_intervals()
     update = [{"interval": "[0, 100)", "slope": 0.5, "intercept": 0}]
-    result = merge_piecewise_intervals(base, update)
+    result = merge_piecewise_intervals(base=base, update=update)
     assert result[0] == base[0]
     assert result[1] == update[0]
     assert result[2] == base[2]
@@ -337,7 +337,7 @@ def test_merge_multiple_intervals():
         {"interval": "(-inf, 0)", "slope": 0.3, "intercept": 5},
         {"interval": "[100, inf)", "slope": 0.9, "intercept": 20},
     ]
-    result = merge_piecewise_intervals(base, update)
+    result = merge_piecewise_intervals(base=base, update=update)
     assert result[0] == update[0]
     assert result[1] == base[1]
     assert result[2] == update[1]
@@ -348,7 +348,7 @@ def test_merge_no_match_raises():
     base = _base_intervals()
     update = [{"interval": "[50, 150)", "slope": 0.5, "intercept": 0}]
     with pytest.raises(ValueError, match="does not match any base interval"):
-        merge_piecewise_intervals(base, update)
+        merge_piecewise_intervals(base=base, update=update)
 
 
 def test_merge_preserves_order():
@@ -358,7 +358,7 @@ def test_merge_preserves_order():
         {"interval": "[100, inf)", "slope": 0.9, "intercept": 20},
         {"interval": "(-inf, 0)", "slope": 0.3, "intercept": 5},
     ]
-    result = merge_piecewise_intervals(base, update)
+    result = merge_piecewise_intervals(base=base, update=update)
     assert result[0] == update[1]  # (-inf, 0) at position 0
     assert result[1] == base[1]  # [0, 100) unchanged
     assert result[2] == update[0]  # [100, inf) at position 2
@@ -372,7 +372,7 @@ def test_merge_full_replacement():
         {"interval": "[0, 100)", "slope": 2, "intercept": 2},
         {"interval": "[100, inf)", "slope": 3, "intercept": 3},
     ]
-    result = merge_piecewise_intervals(base, update)
+    result = merge_piecewise_intervals(base=base, update=update)
     assert result == update
 
 

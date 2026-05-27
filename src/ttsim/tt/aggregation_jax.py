@@ -126,7 +126,9 @@ def count_by_p_id(
     p_id_to_store_by: IntColumn,
     num_segments: int,  # noqa: ARG001
 ) -> IntColumn:
-    mapped_index, valid = _by_p_id_index(p_id_to_aggregate_by, p_id_to_store_by)
+    mapped_index, valid = _by_p_id_index(
+        p_id_to_aggregate_by=p_id_to_aggregate_by, p_id_to_store_by=p_id_to_store_by
+    )
     contributions = jnp.where(valid, jnp.int32(1), jnp.int32(0))
     out = jnp.zeros_like(p_id_to_store_by, dtype=jnp.int32)
     return out.at[mapped_index].add(contributions)
@@ -141,7 +143,9 @@ def sum_by_p_id(
     if column.dtype == bool:
         column = column.astype(int)
 
-    mapped_index, valid = _by_p_id_index(p_id_to_aggregate_by, p_id_to_store_by)
+    mapped_index, valid = _by_p_id_index(
+        p_id_to_aggregate_by=p_id_to_aggregate_by, p_id_to_store_by=p_id_to_store_by
+    )
     contributions = jnp.where(valid, column, jnp.asarray(0, dtype=column.dtype))
     out = jnp.zeros_like(p_id_to_store_by, dtype=column.dtype)
     return out.at[mapped_index].add(contributions)
@@ -158,7 +162,9 @@ def mean_by_p_id(
     # silently downcasts when JAX is running with `jax_enable_x64=True`.
     out_dtype = jnp.result_type(column, jnp.float32)
     column = column.astype(out_dtype)
-    mapped_index, valid = _by_p_id_index(p_id_to_aggregate_by, p_id_to_store_by)
+    mapped_index, valid = _by_p_id_index(
+        p_id_to_aggregate_by=p_id_to_aggregate_by, p_id_to_store_by=p_id_to_store_by
+    )
     contributions = jnp.where(valid, column, jnp.asarray(0, dtype=out_dtype))
     counts = jnp.where(valid, jnp.int32(1), jnp.int32(0))
     sum_out = jnp.zeros_like(p_id_to_store_by, dtype=out_dtype)
@@ -210,7 +216,9 @@ def any_by_p_id(
     num_segments: int,  # noqa: ARG001
 ) -> BoolColumn:
     column = column.astype(bool)
-    mapped_index, valid = _by_p_id_index(p_id_to_aggregate_by, p_id_to_store_by)
+    mapped_index, valid = _by_p_id_index(
+        p_id_to_aggregate_by=p_id_to_aggregate_by, p_id_to_store_by=p_id_to_store_by
+    )
     false_ = jnp.asarray(False)  # noqa: FBT003
     contributions = jnp.where(valid, column, false_)
     out = jnp.zeros_like(p_id_to_store_by, dtype=jnp.bool_)
@@ -224,7 +232,9 @@ def all_by_p_id(
     num_segments: int,  # noqa: ARG001
 ) -> BoolColumn:
     column = column.astype(bool)
-    mapped_index, valid = _by_p_id_index(p_id_to_aggregate_by, p_id_to_store_by)
+    mapped_index, valid = _by_p_id_index(
+        p_id_to_aggregate_by=p_id_to_aggregate_by, p_id_to_store_by=p_id_to_store_by
+    )
     true_ = jnp.asarray(True)  # noqa: FBT003
     contributions = jnp.where(valid, column, true_)
     out = jnp.ones_like(p_id_to_store_by, dtype=jnp.bool_)
@@ -281,7 +291,9 @@ def _scatter_reduce_by_p_id(
     column carrying `iinfo.min`, or a float column carrying `finfo.min`);
     sentinel-equality would silently rewrite that real result to zero.
     """
-    mapped_index, valid = _by_p_id_index(p_id_to_aggregate_by, p_id_to_store_by)
+    mapped_index, valid = _by_p_id_index(
+        p_id_to_aggregate_by=p_id_to_aggregate_by, p_id_to_store_by=p_id_to_store_by
+    )
     contributions = jnp.where(valid, column, sentinel)
     out = jnp.full_like(p_id_to_store_by, sentinel, dtype=column.dtype)
     reduced = getattr(out.at[mapped_index], reducer)(contributions)

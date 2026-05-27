@@ -162,8 +162,8 @@ def df_with_mapped_columns_to_flat_data(
             numpy_array = numpy.full(len(df), mapper_value)
         else:
             numpy_array = _canonicalize_input_dtype(
-                df[mapper_value],
-                numpy,
+                arr=df[mapper_value],
+                xnp=numpy,
                 column_label=dt.qname_from_tree_path(path),
             )
 
@@ -209,8 +209,8 @@ def df_with_nested_columns_to_flat_data(
             raw_key if isinstance(raw_key, tuple) else (raw_key,)
         )
         numpy_array = _canonicalize_input_dtype(
-            df[raw_key],
-            numpy,
+            arr=df[raw_key],
+            xnp=numpy,
             column_label=dt.qname_from_tree_path(clean_key),
         )
         # See comment in `df_with_mapped_columns_to_flat_data` re: object dtype.
@@ -252,7 +252,7 @@ def df_with_qname_columns_to_flat_data(
     result = {}
     for raw_key in df.columns:
         clean_key = dt.tree_path_from_qname(raw_key)
-        numpy_array = _canonicalize_input_dtype(df[raw_key], numpy)
+        numpy_array = _canonicalize_input_dtype(arr=df[raw_key], xnp=numpy)
         # See comment in `df_with_mapped_columns_to_flat_data` re: object dtype.
         if backend == "jax" and numpy_array.dtype != numpy.dtype(object):
             result[clean_key] = xnp.asarray(numpy_array)

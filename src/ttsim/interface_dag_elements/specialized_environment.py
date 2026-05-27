@@ -293,7 +293,9 @@ def with_partialled_params_and_scalars(
             else col_func
         )
         rounded_col_func = (
-            _apply_rounding(vect_col_func, xnp) if rounding else vect_col_func
+            _apply_rounding(element=vect_col_func, xnp=xnp)
+            if rounding
+            else vect_col_func
         )
         # Functions that are natively vectorized (aggregations, group creation, and
         # `PolicyFunction`s marked ``vectorization_strategy="not_required"``) expect

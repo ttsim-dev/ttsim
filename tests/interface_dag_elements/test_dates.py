@@ -18,7 +18,7 @@ from ttsim.interface_dag_elements.orig_policy_objects import load_module
 # the module via `load_module` — claw-free, exactly how the interface DAG obtains
 # these objects — to assert on the pristine instances.
 _IFACE_DIR = Path(ttsim.interface_dag_elements.__file__).parent
-_dates = load_module(_IFACE_DIR / "dates.py", _IFACE_DIR)
+_dates = load_module(path=_IFACE_DIR / "dates.py", root=_IFACE_DIR)
 evaluation_date_from_evaluation_date_str = (
     _dates.evaluation_date_from_evaluation_date_str
 )

@@ -39,7 +39,7 @@ from ttsim.tt.param_objects import (
     ],
 )
 def test_convert_sparse_to_consecutive_int_lookup_table(raw, expected_result, xnp):
-    result = convert_sparse_to_consecutive_int_lookup_table(raw, xnp)
+    result = convert_sparse_to_consecutive_int_lookup_table(raw=raw, xnp=xnp)
     for k, v in expected_result.items():
         assert result.look_up(k) == v
 
@@ -47,17 +47,17 @@ def test_convert_sparse_to_consecutive_int_lookup_table(raw, expected_result, xn
 def test_convert_sparse_not_dict_raises(xnp):
     """Test that non-dict input is rejected by the beartype claw."""
     with pytest.raises(BeartypeCallHintViolation, match="parameter raw"):
-        convert_sparse_to_consecutive_int_lookup_table([1, 2, 3], xnp)  # ty: ignore[invalid-argument-type]
+        convert_sparse_to_consecutive_int_lookup_table(raw=[1, 2, 3], xnp=xnp)  # ty: ignore[invalid-argument-type]
 
 
 def test_convert_sparse_missing_min_max_raises(xnp):
     """Test that missing min_int_in_table or max_int_in_table raises TypeError."""
     with pytest.raises(TypeError, match=r"min_int_in_table.*max_int_in_table"):
-        convert_sparse_to_consecutive_int_lookup_table({1: 1, 2: 2}, xnp)
+        convert_sparse_to_consecutive_int_lookup_table(raw={1: 1, 2: 2}, xnp=xnp)
 
     with pytest.raises(TypeError, match=r"min_int_in_table.*max_int_in_table"):
         convert_sparse_to_consecutive_int_lookup_table(
-            {1: 1, "min_int_in_table": 0}, xnp
+            raw={1: 1, "min_int_in_table": 0}, xnp=xnp
         )
 
 
@@ -65,12 +65,12 @@ def test_convert_sparse_non_int_min_max_raises(xnp):
     """Test that non-integer min_int_in_table or max_int_in_table raises TypeError."""
     with pytest.raises(TypeError, match="must be integers"):
         convert_sparse_to_consecutive_int_lookup_table(
-            {1: 1, "min_int_in_table": 0.5, "max_int_in_table": 5}, xnp
+            raw={1: 1, "min_int_in_table": 0.5, "max_int_in_table": 5}, xnp=xnp
         )
 
     with pytest.raises(TypeError, match="must be integers"):
         convert_sparse_to_consecutive_int_lookup_table(
-            {1: 1, "min_int_in_table": 0, "max_int_in_table": "5"}, xnp
+            raw={1: 1, "min_int_in_table": 0, "max_int_in_table": "5"}, xnp=xnp
         )
 
 
@@ -78,8 +78,8 @@ def test_convert_sparse_non_int_keys_raises(xnp):
     """Test that non-integer keys in raw dict are rejected by the beartype claw."""
     with pytest.raises(BeartypeCallHintViolation, match="parameter raw"):
         convert_sparse_to_consecutive_int_lookup_table(
-            {"a": 1, "min_int_in_table": 0, "max_int_in_table": 5},  # ty: ignore[invalid-argument-type]
-            xnp,
+            raw={"a": 1, "min_int_in_table": 0, "max_int_in_table": 5},  # ty: ignore[invalid-argument-type]
+            xnp=xnp,
         )
 
 
@@ -87,7 +87,7 @@ def test_convert_sparse_min_larger_than_smallest_key_raises(xnp):
     """Test that min_int_in_table > smallest key raises ValueError."""
     with pytest.raises(ValueError, match=r"smallest integer.*must not be larger"):
         convert_sparse_to_consecutive_int_lookup_table(
-            {0: 1, 3: 3, "min_int_in_table": 2, "max_int_in_table": 5}, xnp
+            raw={0: 1, 3: 3, "min_int_in_table": 2, "max_int_in_table": 5}, xnp=xnp
         )
 
 
@@ -95,7 +95,7 @@ def test_convert_sparse_max_smaller_than_largest_key_raises(xnp):
     """Test that max_int_in_table < largest key raises ValueError."""
     with pytest.raises(ValueError, match=r"largest integer.*must not be smaller"):
         convert_sparse_to_consecutive_int_lookup_table(
-            {1: 1, 4: 4, "min_int_in_table": 0, "max_int_in_table": 4}, xnp
+            raw={1: 1, 4: 4, "min_int_in_table": 0, "max_int_in_table": 4}, xnp=xnp
         )
 
 
@@ -201,7 +201,7 @@ def test_lookup_table_look_up_with_nonzero_base(xnp):
 def test_get_consecutive_int_lookup_table_1d(xnp):
     """Test 1D lookup table creation."""
     raw = {0: 10.0, 1: 20.0, 2: 30.0}
-    result = get_consecutive_int_lookup_table_param_value(raw, xnp)
+    result = get_consecutive_int_lookup_table_param_value(raw=raw, xnp=xnp)
 
     assert result.look_up(0) == 10.0
     assert result.look_up(1) == 20.0
@@ -211,7 +211,7 @@ def test_get_consecutive_int_lookup_table_1d(xnp):
 def test_get_consecutive_int_lookup_table_with_nonzero_min(xnp):
     """Test lookup table with non-zero minimum key."""
     raw = {5: 100.0, 6: 200.0, 7: 300.0}
-    result = get_consecutive_int_lookup_table_param_value(raw, xnp)
+    result = get_consecutive_int_lookup_table_param_value(raw=raw, xnp=xnp)
 
     assert result.look_up(5) == 100.0
     assert result.look_up(6) == 200.0
@@ -232,7 +232,9 @@ def test_month_based_phase_inout_basic(xnp):
         2021: {1: {"years": 65, "months": 6}},
         2022: {1: {"years": 66, "months": 0}},
     }
-    result = get_month_based_phase_inout_of_age_thresholds_param_value(raw.copy(), xnp)
+    result = get_month_based_phase_inout_of_age_thresholds_param_value(
+        raw=raw.copy(), xnp=xnp
+    )
 
     # Month since AD for 2020-01 = 2020 * 12 + 0 = 24240
     m_2020_01 = 2020 * 12 + 0
@@ -257,7 +259,9 @@ def test_month_based_phase_inout_fill_gaps(xnp):
             6: {"years": 65, "months": 6},
         },
     }
-    result = get_month_based_phase_inout_of_age_thresholds_param_value(raw.copy(), xnp)
+    result = get_month_based_phase_inout_of_age_thresholds_param_value(
+        raw=raw.copy(), xnp=xnp
+    )
 
     m_2020_01 = 2020 * 12 + 0
     m_2020_02 = 2020 * 12 + 1
@@ -280,7 +284,9 @@ def test_month_based_phase_inout_first_year_error(xnp):
         2022: {1: {"years": 66, "months": 0}},
     }
     with pytest.raises(ValueError, match="first_m_since_ad_to_consider"):
-        get_month_based_phase_inout_of_age_thresholds_param_value(raw.copy(), xnp)
+        get_month_based_phase_inout_of_age_thresholds_param_value(
+            raw=raw.copy(), xnp=xnp
+        )
 
 
 def test_month_based_phase_inout_last_year_error(xnp):
@@ -292,7 +298,9 @@ def test_month_based_phase_inout_last_year_error(xnp):
         2022: {1: {"years": 66, "months": 0}},
     }
     with pytest.raises(ValueError, match="last_m_since_ad_to_consider"):
-        get_month_based_phase_inout_of_age_thresholds_param_value(raw.copy(), xnp)
+        get_month_based_phase_inout_of_age_thresholds_param_value(
+            raw=raw.copy(), xnp=xnp
+        )
 
 
 def test_month_based_phase_inout_non_int_keys_error(xnp):
@@ -303,7 +311,9 @@ def test_month_based_phase_inout_non_int_keys_error(xnp):
         "2020": {1: {"years": 65, "months": 0}},  # String key instead of int
     }
     with pytest.raises(ValueError, match="All keys must be integers"):
-        get_month_based_phase_inout_of_age_thresholds_param_value(raw.copy(), xnp)
+        get_month_based_phase_inout_of_age_thresholds_param_value(
+            raw=raw.copy(), xnp=xnp
+        )
 
 
 # =============================================================================
@@ -320,7 +330,9 @@ def test_year_based_phase_inout_basic(xnp):
         2021: {"years": 65, "months": 6},
         2022: {"years": 66, "months": 0},
     }
-    result = get_year_based_phase_inout_of_age_thresholds_param_value(raw.copy(), xnp)
+    result = get_year_based_phase_inout_of_age_thresholds_param_value(
+        raw=raw.copy(), xnp=xnp
+    )
 
     numpy.testing.assert_almost_equal(result.look_up(2020), 65.0)
     numpy.testing.assert_almost_equal(result.look_up(2021), 65.5)
@@ -336,7 +348,9 @@ def test_year_based_phase_inout_first_year_error(xnp):
         2022: {"years": 66, "months": 0},
     }
     with pytest.raises(ValueError, match="first_year_to_consider"):
-        get_year_based_phase_inout_of_age_thresholds_param_value(raw.copy(), xnp)
+        get_year_based_phase_inout_of_age_thresholds_param_value(
+            raw=raw.copy(), xnp=xnp
+        )
 
 
 def test_year_based_phase_inout_last_year_error(xnp):
@@ -348,7 +362,9 @@ def test_year_based_phase_inout_last_year_error(xnp):
         2022: {"years": 66, "months": 0},
     }
     with pytest.raises(ValueError, match="last_year_to_consider"):
-        get_year_based_phase_inout_of_age_thresholds_param_value(raw.copy(), xnp)
+        get_year_based_phase_inout_of_age_thresholds_param_value(
+            raw=raw.copy(), xnp=xnp
+        )
 
 
 def test_year_based_phase_inout_non_int_keys_error(xnp):
@@ -359,7 +375,9 @@ def test_year_based_phase_inout_non_int_keys_error(xnp):
         "2020": {"years": 65, "months": 0},  # String key instead of int
     }
     with pytest.raises(ValueError, match="All keys must be integers"):
-        get_year_based_phase_inout_of_age_thresholds_param_value(raw.copy(), xnp)
+        get_year_based_phase_inout_of_age_thresholds_param_value(
+            raw=raw.copy(), xnp=xnp
+        )
 
 
 def test_year_based_phase_inout_fills_before_and_after(xnp):
@@ -371,7 +389,9 @@ def test_year_based_phase_inout_fills_before_and_after(xnp):
         2021: {"years": 65, "months": 6},
         2022: {"years": 66, "months": 0},
     }
-    result = get_year_based_phase_inout_of_age_thresholds_param_value(raw.copy(), xnp)
+    result = get_year_based_phase_inout_of_age_thresholds_param_value(
+        raw=raw.copy(), xnp=xnp
+    )
 
     # Years before phase-inout should have first value
     numpy.testing.assert_almost_equal(result.look_up(2018), 65.0)

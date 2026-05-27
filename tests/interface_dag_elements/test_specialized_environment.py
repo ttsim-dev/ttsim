@@ -521,7 +521,7 @@ def test_partial_params_to_functions_removes_argument(xnp, dnp, backend):
         func_after_partial(2, 1)
 
     # No error for original function
-    func_before_partial(2, 1)
+    func_before_partial(arg_1=2, some_param=1)
 
 
 def test_user_provided_aggregate_by_group_specs(backend):
