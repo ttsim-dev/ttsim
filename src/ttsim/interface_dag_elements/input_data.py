@@ -105,7 +105,7 @@ def flat_from_tree(
     return {
         path: (
             _canonicalize_input_dtype(
-                value, numpy, column_label=dt.qname_from_tree_path(path)
+                arr=value, xnp=numpy, column_label=dt.qname_from_tree_path(path)
             )
             if isinstance(value, pd.Series)
             else value
