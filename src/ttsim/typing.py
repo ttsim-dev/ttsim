@@ -43,6 +43,22 @@ Do's and don'ts for files that reference the aliases below:
 - DO leave the column registry (`ttsim.tt.column_objects_param_function`)
   returning string-form annotations. Eagerly resolving them would
   re-introduce the JAX import.
+
+When `requires-python` rises to `>=3.14`, several PEP 563 workarounds
+become removable:
+
+- Drop `from __future__ import annotations` from every module. PEP 649
+  evaluates annotations lazily as real objects, so beartype and jaxtyping
+  no longer go through string `eval`. The do's and don'ts above stop
+  applying at the same time.
+- Delete `src/ttsim/_jaxtyping_patch.py` and its import in
+  `src/ttsim/__init__.py`. The shim only matters when `Int[Array, ...]`
+  is stored as the source string `"Int[Array, ...]"` and `eval`'d back
+  to `Int[Array, Ellipsis]`; under PEP 649 the `eval` never happens.
+- The hoisting rule for `Callable`, `Any`, `ModuleType`, `datetime`,
+  and the recursive `NestedData` two-definition pattern (see
+  `.ai-instructions/modules/beartype.md`) all go away with the
+  future-import.
 """
 
 from __future__ import annotations
