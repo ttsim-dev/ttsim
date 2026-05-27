@@ -45,7 +45,7 @@ def _canonicalize_input_dtype(
             used in error messages when a uint overflow is detected.
     """
     if isinstance(arr, pd.Series):
-        return _canonicalize_series(arr, xnp, column_label=column_label)
+        return _canonicalize_series(arr=arr, xnp=xnp, column_label=column_label)
     if pd.api.types.is_unsigned_integer_dtype(arr):
         _fail_if_uint_overflows_int64(arr, column_label=column_label)
         return xnp.asarray(arr, dtype=xnp.int64)
@@ -117,7 +117,7 @@ def processed_data(
     """
 
     orig_p_ids = _canonicalize_input_dtype(
-        input_data__flat[("p_id",)], xnp, column_label="p_id"
+        arr=input_data__flat[("p_id",)], xnp=xnp, column_label="p_id"
     )
     sorted_orig_p_ids = orig_p_ids[input_data__sort_indices]
     internal_p_ids = xnp.arange(len(orig_p_ids))
@@ -133,7 +133,7 @@ def processed_data(
             continue
 
         sorted_data = _canonicalize_input_dtype(
-            data[input_data__sort_indices], xnp, column_label=qname
+            arr=data[input_data__sort_indices], xnp=xnp, column_label=qname
         )
 
         if path[-1].endswith("_id"):
