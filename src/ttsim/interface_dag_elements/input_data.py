@@ -134,7 +134,7 @@ def flat_from_tree(
     return {
         path: (
             _canonicalize_input_dtype(
-                value, numpy, column_label=dt.qname_from_tree_path(path)
+                arr=value, xnp=numpy, column_label=dt.qname_from_tree_path(path)
             )
             if isinstance(value, pd.Series)
             else value
@@ -161,8 +161,8 @@ def flat_from_qname(
     # so the canonicaliser sees one uniform input type.
     return {
         dt.tree_path_from_qname(q): _canonicalize_input_dtype(
-            value if isinstance(value, pd.Series) else numpy.asarray(value),
-            numpy,
+            arr=value if isinstance(value, pd.Series) else numpy.asarray(value),
+            xnp=numpy,
         )
         for q, value in qname.items()
     }
