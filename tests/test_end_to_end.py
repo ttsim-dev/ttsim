@@ -340,3 +340,60 @@ def test_derived_time_converted_scalar_can_partialled(xnp, backend):
         include_fail_nodes=False,
     )
     assert root_nodes == set()
+
+
+@policy_input()
+def fam_id() -> int:
+    pass
+
+
+@policy_input()
+def bonus_m() -> float:
+    pass
+
+
+@policy_function(vectorization_strategy="vectorize")
+def doubled_y_fam(bonus_y_fam: float) -> float:
+    return 2.0 * bonus_y_fam
+
+
+def test_auto_aggregation_resolves_dtype_from_sibling_time_unit(
+    backend: Literal["numpy", "jax"], xnp: ModuleType
+):
+    """Auto-aggregating an input supplied at a different time unit than its
+    `PolicyInput` declaration succeeds by resolving the source dtype from
+    the declared sibling.
+
+    `bonus_m` is declared as a `PolicyInput`; the caller supplies `bonus_y`
+    in input data; `doubled_y_fam` consumes the `bonus_y_fam` auto-aggregation.
+    The resolver walks to `bonus_m` for the dtype, the SUM-by-`fam` wrapper is
+    synthesised, and `doubled_y_fam` returns twice the per-`fam` yearly sum.
+    """
+    result = main(
+        main_target=MainTarget.results.df_with_nested_columns,
+        policy_environment={
+            "fam_id": fam_id,
+            "bonus_m": bonus_m,
+            "doubled_y_fam": doubled_y_fam,
+        },
+        input_data=InputData.tree(
+            tree={
+                "p_id": xnp.array([0, 1, 2]),
+                "fam_id": xnp.array([0, 0, 1]),
+                "bonus_y": xnp.array([1200.0, 600.0, 2400.0]),
+            },
+        ),
+        tt_targets=TTTargets.tree({"doubled_y_fam": None}),
+        policy_date_str="2025-01-01",
+        evaluation_date_str="2025-01-01",
+        rounding=False,
+        backend=backend,
+        include_warn_nodes=False,
+    )
+    expected = pd.DataFrame(
+        {("doubled_y_fam",): [3600.0, 3600.0, 4800.0]},
+        index=pd.Index([0, 1, 2], name="p_id"),
+    )
+    pd.testing.assert_frame_equal(
+        expected, result, check_dtype=False, check_index_type=False
+    )
