@@ -20,8 +20,10 @@ try:
 except ImportError:
     Array = np.ndarray
 
-PLACEHOLDER_VALUE = object()
-PLACEHOLDER_FIELD = field(default_factory=lambda: PLACEHOLDER_VALUE)
+PLACEHOLDER_VALUE: Any = object()
+# `Any` so dataclass fields of any narrow type accept the sentinel default.
+# The runtime check (`is PLACEHOLDER_VALUE`) enforces the real constraint.
+PLACEHOLDER_FIELD: Any = field(default_factory=lambda: PLACEHOLDER_VALUE)
 
 if TYPE_CHECKING:
     import datetime

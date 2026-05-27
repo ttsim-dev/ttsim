@@ -211,7 +211,16 @@ def create_time_conversion_functions(
                 inputs["time_unit"] = pattern_specific.group("time_unit")
                 break
 
-        variations = _create_one_set_of_time_conversion_functions(**inputs)
+        variations = _create_one_set_of_time_conversion_functions(
+            base_name=cast("str", inputs["base_name"]),
+            qname_source=cast("str", inputs["qname_source"]),
+            element=cast(
+                "ColumnObject | ParamFunction | ScalarParam", inputs["element"]
+            ),
+            time_unit=cast("str", inputs["time_unit"]),
+            grouping_suffix=cast("str", inputs["grouping_suffix"]),
+            time_units=cast("OrderedQNames", inputs["time_units"]),
+        )
         converted_elements = {**converted_elements, **variations}
 
     return converted_elements
