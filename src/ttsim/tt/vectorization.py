@@ -410,12 +410,10 @@ def _call_to_call_from_module(
     """Transform built-in Calls to Calls from module."""
     to_transform = ("sum", "any", "all", "max", "min")
 
-    transform_node = hasattr(node.func, "id") and node.func.id in to_transform
-
-    if not transform_node:
+    if not isinstance(node.func, ast.Name) or node.func.id not in to_transform:
         return node
 
-    func_id = node.func.id  # ty: ignore[unresolved-attribute]
+    func_id = node.func.id
     call = node
     args = node.args
 
