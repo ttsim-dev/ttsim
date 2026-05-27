@@ -40,7 +40,11 @@ def columns(
         input_data__sort_indices
     ]
     return {
-        qname: _translate_internal_to_orig_p_ids(value, sorted_orig_p_ids, xnp)
+        qname: _translate_internal_to_orig_p_ids(
+            col=value,
+            sorted_orig_p_ids=sorted_orig_p_ids,
+            xnp=xnp,
+        )
         if _is_endogenous_p_id_pointer(qname)
         else value
         for qname, value in raw.items()
