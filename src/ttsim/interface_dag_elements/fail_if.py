@@ -205,8 +205,13 @@ def active_periods_overlap(
             overlap_checker[path] = p_w_a_p  # ty: ignore[invalid-assignment]
 
     # Check for overlapping start and end dates for time-dependent functions.
+    # `start_date`/`end_date` are typed as `datetime.date | None` on the
+    # `ParamObject` base, but every object reaching this loop has both set.
     for path, objects in overlap_checker.items():
-        active_period = [(f.start_date, f.end_date) for f in objects]
+        active_period: list[tuple[datetime.date, datetime.date]] = [
+            (cast("datetime.date", f.start_date), cast("datetime.date", f.end_date))
+            for f in objects
+        ]
         for (start1, end1), (start2, end2) in itertools.combinations(active_period, 2):
             if start1 <= end2 and start2 <= end1:
                 raise ConflictingActivePeriodsError(
