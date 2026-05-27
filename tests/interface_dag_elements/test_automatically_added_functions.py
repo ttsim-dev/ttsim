@@ -20,6 +20,10 @@ def return_one() -> int:
     return 1
 
 
+def return_one_float() -> float:
+    return 1.0
+
+
 def return_x_kin(x_kin: int) -> int:
     return x_kin
 
@@ -198,3 +202,23 @@ def test_derived_aggregation_functions_are_in_correct_namespace(
         grouping_levels=("kin",),
     )
     assert expected in result
+
+
+def test_agg_by_group_resolves_source_dtype_from_sibling_time_unit() -> None:
+    """Auto-aggregating a user-supplied input at a different time unit than
+    its `PolicyInput` declaration synthesizes the aggregation wrapper by
+    resolving the source dtype from the declared sibling.
+
+    `bonus_m` is declared as a `PolicyInput`; the caller supplies `bonus_y`
+    via input data; `bonus_y_kin` is requested as a target. The resolver
+    walks to the `bonus_m` sibling, reads its declared `data_type`, and
+    `create_agg_by_group_functions` produces a typed `bonus_y_kin` wrapper.
+    """
+    result = create_agg_by_group_functions(
+        column_functions={},
+        qname_policy_environment={"bonus_m": policy_input()(return_one_float)},
+        input_columns={"bonus_y"},
+        tt_targets={"bonus_y_kin": None},
+        grouping_levels=("kin",),
+    )
+    assert "bonus_y_kin" in result
