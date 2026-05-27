@@ -418,13 +418,20 @@ def _resolve_source_column_kind(
 ) -> ResolvedKind:
     """Resolve the column kind of an auto-aggregation source column.
 
-    The source of an auto-aggregation is an individual-level column. It is
-    either a column function in the DAG (resolve from its return
-    annotation) or a pure input column declared by a `PolicyInput` (resolve
-    from the input's `data_type`). Either annotation may be scalar-typed
-    (a not-yet-vectorized scalar policy function, a `PolicyInput` declared
-    `-> int`); `vectorized_column_kind` promotes a scalar kind to the
-    column kind the node carries once it operates on data.
+    The source of an auto-aggregation is an individual-level column. It is one of:
+
+    - a column function in the DAG (resolve from its return annotation);
+    - a `PolicyInput` declared at `source_name` (resolve from its `data_type`);
+    - a user-supplied input at a different time unit than the declared
+      `PolicyInput` (e.g. caller passes `bonus_y` against a `bonus_m`
+      declaration). The synthesised time-conversion function widens its
+      return to `FloatColumn`, so resolve from the declared sibling
+      `PolicyInput` to recover the precise dtype.
+
+    Either annotation may be scalar-typed (a not-yet-vectorized scalar
+    policy function, a `PolicyInput` declared `-> int`);
+    `vectorized_column_kind` promotes a scalar kind to the column kind the
+    node carries once it operates on data.
 
     Args:
         source_name: The qualified name of the source column.
@@ -435,8 +442,9 @@ def _resolve_source_column_kind(
         The source column's `ResolvedKind` (always a column kind).
 
     Raises:
-        TypeResolutionError: If neither a column function nor a typed
-            `PolicyInput` declares the source's kind.
+        TypeResolutionError: If no column function, declared `PolicyInput`
+            at `source_name`, or declared `PolicyInput` at a sibling time
+            unit carries a kind.
     """
     source_function = column_functions.get(source_name)
     if source_function is not None:
@@ -454,13 +462,49 @@ def _resolve_source_column_kind(
         )
         return vectorized_column_kind(kind, node_name=source_name)
 
+    sibling = _find_sibling_policy_input_at_other_time_unit(
+        source_name=source_name,
+        qname_policy_environment=qname_policy_environment,
+    )
+    if sibling is not None:
+        kind = resolve_kind_of_annotation(
+            sibling.data_type,
+            node_name=source_name,
+        )
+        return vectorized_column_kind(kind, node_name=source_name)
+
     msg = (
         f"Cannot resolve the dtype of auto-aggregation source column "
-        f"{source_name!r}: it is neither a column function in the DAG nor a "
-        f"`PolicyInput` with a declared `data_type`. A concrete source dtype "
-        f"is required to synthesize a typed aggregation wrapper."
+        f"{source_name!r}: it is neither a column function in the DAG, a "
+        f"`PolicyInput` with a declared `data_type`, nor a sibling of any "
+        f"declared `PolicyInput` at another time unit. A concrete source "
+        f"dtype is required to synthesize a typed aggregation wrapper."
     )
     raise TypeResolutionError(msg)
+
+
+def _find_sibling_policy_input_at_other_time_unit(
+    source_name: str,
+    qname_policy_environment: PolicyEnvironment,
+) -> PolicyInput | None:
+    """Find a `PolicyInput` declared at a sibling time unit of `source_name`.
+
+    Strips the trailing time-unit suffix from `source_name` (if any) and
+    looks up each other time unit at the same base name in
+    `qname_policy_environment`. Returns the first `PolicyInput` found, or
+    `None` if `source_name` has no time-unit suffix or no sibling is
+    declared.
+    """
+    base, sep, time_unit = source_name.rpartition("_")
+    if not sep or time_unit not in TIME_UNIT_IDS_TO_LABELS:
+        return None
+    for other_time_unit in TIME_UNIT_IDS_TO_LABELS:
+        if other_time_unit == time_unit:
+            continue
+        candidate = qname_policy_environment.get(f"{base}_{other_time_unit}")
+        if isinstance(candidate, PolicyInput):
+            return candidate
+    return None
 
 
 def _get_potential_agg_by_group_function_names_from_function_arguments(
