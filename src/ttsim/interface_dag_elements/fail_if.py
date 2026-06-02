@@ -4,9 +4,13 @@ import datetime
 import functools
 import itertools
 import textwrap
+from collections.abc import (
+    Callable,
+    Iterable,
+)
 from dataclasses import dataclass
 from types import ModuleType
-from typing import TYPE_CHECKING, Any, Literal, cast
+from typing import Any, Literal, cast
 
 import dags.tree as dt
 import networkx as nx
@@ -16,6 +20,7 @@ import pandas as pd
 from dags import create_dag, get_annotations, get_free_arguments
 from dags.tree.validation import fail_if_paths_are_invalid
 
+from ttsim.exceptions import TTSIMError
 from ttsim.interface_dag_elements.backend import jax
 from ttsim.interface_dag_elements.interface_node_objects import fail_function
 from ttsim.interface_dag_elements.shared import (
@@ -35,28 +40,25 @@ from ttsim.tt.param_objects import (
     PLACEHOLDER_VALUE,
     ParamObject,
 )
-
-if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable
-    from types import FunctionType
-
-    from ttsim.interface_dag_elements.input_data import FlatData
-    from ttsim.typing import (
-        FlatColumnObjectsParamFunctions,
-        FlatOrigParamSpecs,
-        NestedData,
-        NestedInputsMapper,
-        NestedStrings,
-        NestedTargetDict,
-        OrderedQNames,
-        OrigParamSpec,
-        PolicyEnvironment,
-        QNameData,
-        SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
-        SpecEnvWithPartialledParamsAndScalars,
-        SpecEnvWithProcessedParamsAndScalars,
-        UnorderedQNames,
-    )
+from ttsim.typing import (
+    FlatColumnObjectsParamFunctions,
+    FlatData,
+    FlatOrigParamSpecs,
+    NestedData,
+    NestedInputsMapper,
+    NestedResults,
+    NestedStrings,
+    NestedTargetDict,
+    OrderedQNames,
+    OrigParamSpec,
+    PolicyEnvironment,
+    QNameData,
+    QNameTTTargets,
+    SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
+    SpecEnvWithPartialledParamsAndScalars,
+    SpecEnvWithProcessedParamsAndScalars,
+    UnorderedQNames,
+)
 
 
 class KeyErrorMessage(str):
@@ -68,10 +70,12 @@ class KeyErrorMessage(str):
         return str(self)
 
 
-class ConflictingActivePeriodsError(Exception):
+class ConflictingActivePeriodsError(TTSIMError):
     def __init__(
         self,
-        affected_column_objects: list[ColumnObject],
+        affected_column_objects: list[
+            ColumnObject | ParamFunction | _ParamWithActivePeriod
+        ],
         path: OrderedQNames,
         overlap_start: datetime.date,
         overlap_end: datetime.date,
@@ -120,7 +124,7 @@ class _ParamWithActivePeriod(ParamObject):
 
 def assert_valid_ttsim_pytree(
     tree: Any,  # noqa: ANN401
-    leaf_checker: FunctionType[..., Any],
+    leaf_checker: Callable[..., Any],
     tree_name: str,
 ) -> None:
     """
@@ -201,12 +205,17 @@ def active_periods_overlap(
             overlap_checker[path] = p_w_a_p  # ty: ignore[invalid-assignment]
 
     # Check for overlapping start and end dates for time-dependent functions.
+    # `start_date`/`end_date` are typed as `datetime.date | None` on the
+    # `ParamObject` base, but every object reaching this loop has both set.
     for path, objects in overlap_checker.items():
-        active_period = [(f.start_date, f.end_date) for f in objects]
+        active_period: list[tuple[datetime.date, datetime.date]] = [
+            (cast("datetime.date", f.start_date), cast("datetime.date", f.end_date))
+            for f in objects
+        ]
         for (start1, end1), (start2, end2) in itertools.combinations(active_period, 2):
             if start1 <= end2 and start2 <= end1:
                 raise ConflictingActivePeriodsError(
-                    affected_column_objects=cast("list[ColumnObject]", objects),
+                    affected_column_objects=objects,
                     path=path,
                     overlap_start=max(start1, start2),
                     overlap_end=min(end1, end2),
@@ -231,7 +240,7 @@ def any_paths_are_invalid(
 
 @fail_function(include_if_all_elements_present=["results__df_with_mapper"])
 def paths_are_missing_in_targets_tree_mapper(
-    results__tree: NestedData,
+    results__tree: NestedResults,
     tt_targets__tree: NestedStrings,
 ) -> None:
     """Fail if the data paths are missing in the mapping of paths to column names."""
@@ -461,7 +470,7 @@ def group_variables_are_not_constant_within_groups(
 )
 def non_convertible_objects_in_results_tree(
     processed_data: QNameData,
-    results__tree: NestedData,
+    results__tree: NestedResults,
     backend: Literal["numpy", "jax"],
     xnp: ModuleType,
 ) -> None:
@@ -754,7 +763,7 @@ def tt_root_nodes_are_missing(
 def targets_are_not_in_specialized_environment_or_data(
     specialized_environment__without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
     labels__input_columns: UnorderedQNames,
-    tt_targets__qname: OrderedQNames,
+    tt_targets__qname: QNameTTTargets,
 ) -> None:
     """Fail if some target is not among functions."""
     missing_targets = [

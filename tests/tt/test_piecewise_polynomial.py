@@ -107,6 +107,19 @@ def test_piecewise_polynomial_scalar_input_value(
     numpy.testing.assert_allclose(result, 5275.825, atol=0.01)
 
 
+def test_piecewise_polynomial_accepts_numpy_int_scalar(
+    parameters: PiecewisePolynomialParamValue,
+    xnp: ModuleType,
+):
+    """piecewise_polynomial accepts a NumPy integer scalar `x`.
+
+    NumPy-backend auto-vectorization feeds the scalar function one
+    `numpy.int64` element at a time when the source column is integer-typed.
+    """
+    result = piecewise_polynomial(x=numpy.int64(30_000), parameters=parameters, xnp=xnp)
+    numpy.testing.assert_allclose(result, 5275.825, atol=0.01)
+
+
 def test_partial_domain_returns_nan(xnp: ModuleType):
     """Values outside partial domain should return NaN."""
     parameter_list = [

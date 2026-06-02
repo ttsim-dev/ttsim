@@ -1,21 +1,18 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from collections.abc import Callable
 
 import dags.tree as dt
 
 from ttsim.interface_dag_elements.interface_node_objects import interface_function
-
-if TYPE_CHECKING:
-    from collections.abc import Callable
-
-    from ttsim.typing import (
-        FlatData,
-        OrderedQNames,
-        QNameData,
-        SpecEnvWithProcessedParamsAndScalars,
-        UnorderedQNames,
-    )
+from ttsim.typing import (
+    FlatData,
+    OrderedQNames,
+    QNameData,
+    QNameResults,
+    SpecEnvWithProcessedParamsAndScalars,
+    UnorderedQNames,
+)
 
 
 @interface_function()
@@ -54,7 +51,7 @@ def from_input_data(
 def params(
     labels__param_targets: OrderedQNames,
     specialized_environment__with_processed_params_and_scalars: SpecEnvWithProcessedParamsAndScalars,  # noqa: E501
-) -> QNameData:
+) -> QNameResults:
     """The parameters that have been requested as targets.
 
     Possibly includes outputs of param_functions.

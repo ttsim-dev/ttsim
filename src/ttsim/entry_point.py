@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import datetime
 import inspect
 import re
+from collections.abc import Callable, Iterable
 from contextlib import suppress
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
@@ -10,7 +12,9 @@ import dags
 import dags.tree as dt
 import networkx as nx
 import optree
+from beartype import beartype
 
+from ttsim._beartype_conf import ENTRY_POINT_CONF
 from ttsim.interface_dag_elements.fail_if import (
     format_errors_and_warnings,
     format_list_linewise,
@@ -23,25 +27,29 @@ from ttsim.interface_dag_elements.interface_node_objects import (
     WarnFunction,
 )
 from ttsim.interface_dag_elements.orig_policy_objects import load_module
-from ttsim.main_args import MainArg
+from ttsim.main_args import (
+    InputData,
+    Labels,
+    MainArg,
+    OrigPolicyObjects,
+    RawResults,
+    Results,
+    SpecializedEnvironment,
+    SpecializedEnvironmentForPlottingAndTemplates,
+    TTTargets,
+)
 from ttsim.main_target import MainTarget, MainTargetABC
+from ttsim.typing import (
+    DashedISOString,
+    FlatInterfaceObjects,
+    NestedTargetDict,
+    PolicyEnvironment,
+    QNameData,
+    UnorderedQNames,
+)
 
 if TYPE_CHECKING:
-    import datetime
-    from collections.abc import Callable, Iterable
-
-    from ttsim.main_args import (
-        InputData,
-        Labels,
-        OrigPolicyObjects,
-        RawResults,
-        Results,
-        SpecializedEnvironment,
-        SpecializedEnvironmentForPlottingAndTemplates,
-        TTTargets,
-    )
     from ttsim.typing import (
-        DashedISOString,
         FlatInterfaceObjects,
         NestedTargetDict,
         PolicyEnvironment,
@@ -50,6 +58,7 @@ if TYPE_CHECKING:
     )
 
 
+@beartype(conf=ENTRY_POINT_CONF)
 def main(
     *,
     main_target: str | tuple[str, ...] | NestedTargetDict | None = None,

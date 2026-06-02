@@ -1,20 +1,33 @@
-from __future__ import annotations
-
 import functools
+import inspect
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Literal, ParamSpec, get_args
+from types import ModuleType
+from typing import Literal, ParamSpec, get_args
 
-if TYPE_CHECKING:
-    from types import FunctionType, ModuleType
+from beartype import beartype
 
-    from ttsim.typing import FloatColumn
-
+from ttsim._beartype_conf import ROUNDING_SPEC_CONF
+from ttsim.tt.type_resolution import build_beartype_checkable_wrapper
+from ttsim.typing import FloatColumn
 
 ROUNDING_DIRECTION = Literal["up", "down", "nearest"]
 
 P = ParamSpec("P")
 
 
+# Drop annotations from the inner `*args, **kwargs` rounding wrapper. The
+# outer real-parameter forwarder built by `build_beartype_checkable_wrapper`
+# carries the synthesised column-typed signature that beartype actually
+# checks, so the inner layer stays untyped to avoid double-resolution.
+_WRAPPER_ASSIGNMENTS_NO_ANNOTATIONS: tuple[str, ...] = tuple(
+    a
+    for a in functools.WRAPPER_ASSIGNMENTS
+    if a not in ("__annotations__", "__annotate__")
+)
+
+
+@beartype(conf=ROUNDING_SPEC_CONF)
 @dataclass(frozen=True)
 class RoundingSpec:
     base: int | float
@@ -42,9 +55,9 @@ class RoundingSpec:
 
     def apply_rounding(
         self,
-        func: FunctionType[P, FloatColumn],
+        func: Callable[P, FloatColumn],
         xnp: ModuleType,
-    ) -> FunctionType[P, FloatColumn]:
+    ) -> Callable[P, FloatColumn]:
         """Decorator to round the output of a function.
 
         Args:
@@ -55,7 +68,7 @@ class RoundingSpec:
             Function with rounding applied.
         """
 
-        @functools.wraps(func)
+        @functools.wraps(func, assigned=_WRAPPER_ASSIGNMENTS_NO_ANNOTATIONS)
         def wrapper(*args: P.args, **kwargs: P.kwargs) -> FloatColumn:
             out = func(*args, **kwargs)
 
@@ -68,4 +81,18 @@ class RoundingSpec:
 
             return rounded_out + self.to_add_after_rounding
 
-        return wrapper
+        # Synthesise the typed outer forwarder. Inputs mirror the wrapped
+        # function's signature; the return is always `FloatColumn` because
+        # rounding only applies to float-valued column functions.
+        func_sig = inspect.signature(func)
+        annotations: dict[str, object] = {
+            name: param.annotation
+            for name, param in func_sig.parameters.items()
+            if param.annotation is not inspect.Parameter.empty
+        }
+        annotations["return"] = "FloatColumn"
+        return build_beartype_checkable_wrapper(
+            wrapper,
+            annotations=annotations,
+            node_name=getattr(func, "__name__", "_rounded_node"),
+        )

@@ -10,15 +10,15 @@ from ttsim.interface_dag_elements.data_converters import (
 )
 from ttsim.interface_dag_elements.interface_node_objects import interface_function
 from ttsim.tt.column_objects_param_function import PolicyInput
-from ttsim.tt.vectorization import scalar_type_to_array_type
+from ttsim.tt.type_resolution import scalar_type_to_array_type
 
 if TYPE_CHECKING:
     from types import ModuleType
 
     from ttsim.typing import (
         NestedInputStructureDict,
-        OrderedQNames,
         PolicyEnvironment,
+        QNameTTTargets,
         SpecEnvWithPartialledParamsAndScalars,
         UnorderedQNames,
     )
@@ -28,7 +28,7 @@ if TYPE_CHECKING:
 def input_data_dtypes__tree(
     specialized_environment_for_plotting_and_templates__with_partialled_params_and_scalars: SpecEnvWithPartialledParamsAndScalars,  # noqa: E501
     policy_environment: PolicyEnvironment,
-    tt_targets__qname: OrderedQNames,
+    tt_targets__qname: QNameTTTargets,
     labels__top_level_namespace: UnorderedQNames,
 ) -> NestedInputStructureDict:
     """A template of the required input data and their expected types."""

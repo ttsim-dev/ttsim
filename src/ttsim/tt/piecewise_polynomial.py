@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from types import ModuleType
 from typing import TYPE_CHECKING, Literal, get_args
 
 import numpy
 import portion
+from jaxtyping import Float, Int
 
 from ttsim.tt.interval_utils import (
     intervals_to_thresholds,
@@ -12,10 +14,21 @@ from ttsim.tt.interval_utils import (
 )
 from ttsim.tt.param_objects import PiecewisePolynomialParamValue
 
+# Backend-agnostic array type: union the (optional) JAX `Array` with
+# `numpy.ndarray` so `Float[Array, ...]` annotations accept NumPy arrays
+# under the JAX env. Bare `jax.Array` would make the package claw reject
+# every NumPy-backed value (see `ttsim.typing` column aliases).
+try:
+    from jax import Array as _JaxArray
+
+    Array = _JaxArray | numpy.ndarray
+except ImportError:
+    Array = numpy.ndarray
+
 if TYPE_CHECKING:
     from types import ModuleType
 
-    from jaxtyping import Array, Float
+    from jaxtyping import Array, Float, Int
 
 FUNC_TYPES = Literal[
     "piecewise_constant",
@@ -57,16 +70,29 @@ if set(OPTIONS_REGISTRY.keys()) != set(get_args(FUNC_TYPES)):
 
 
 def piecewise_polynomial(
-    x: Float[Array, " n_pp_values"] | float,
+    x: (
+        Float[Array, " n_pp_values"]
+        | Int[Array, " n_pp_values"]
+        | Float[Array, ""]
+        | Int[Array, ""]
+        | float
+        | numpy.integer
+        | numpy.floating
+    ),
     parameters: PiecewisePolynomialParamValue,
     xnp: ModuleType,
-) -> Float[Array, " n_pp_values"] | float:
+) -> Float[Array, " n_pp_values"] | Float[Array, ""] | float:
     """Calculate value of the piecewise function at `x`.
 
     Values outside the defined domain return NaN.
 
+    For a 1-d array `x` the result is a 1-d array of the same length; for a
+    scalar `x` (a Python number or a 0-d array) the result is a scalar — a
+    0-d array under the JAX backend, a `numpy.float64` (a `float` subclass)
+    under NumPy.
+
     Args:
-        x: Array with values at which the piecewise polynomial is to be calculated.
+        x: Value(s) at which the piecewise polynomial is to be calculated.
         parameters: Thresholds defining the pieces and coefficients on each piece.
         xnp: The backend module to use for calculations.
 
@@ -181,9 +207,12 @@ def _check_and_get_coefficients(
 def _check_and_get_intercepts(
     leaf_name: str,
     parameter_list: list[dict[str, int | float | str]],
-    lower_thresholds: Float[Array, " n_segments"],
-    upper_thresholds: Float[Array, " n_segments"],
-    coefficients: Float[Array, "n_intervals n_coefficients"],
+    lower_thresholds: Float[Array, " n_segments"] | Int[Array, " n_segments"],
+    upper_thresholds: Float[Array, " n_segments"] | Int[Array, " n_segments"],
+    coefficients: (
+        Float[Array, "n_intervals n_coefficients"]
+        | Int[Array, "n_intervals n_coefficients"]
+    ),
     xnp: ModuleType,
 ) -> Float[Array, " n_segments"]:
     """Check and extract intercept data. If necessary create intercepts."""
@@ -217,14 +246,19 @@ def _check_and_get_intercepts(
 
 
 def _create_intercepts(
-    lower_thresholds: Float[Array, " n_segments"],
-    upper_thresholds: Float[Array, " n_segments"],
-    coefficients: Float[Array, "n_intervals n_coefficients"],
+    lower_thresholds: Float[Array, " n_segments"] | Int[Array, " n_segments"],
+    upper_thresholds: Float[Array, " n_segments"] | Int[Array, " n_segments"],
+    coefficients: (
+        Float[Array, "n_intervals n_coefficients"]
+        | Int[Array, "n_intervals n_coefficients"]
+    ),
     intercept_at_lowest_threshold: float,
     xnp: ModuleType,
 ) -> Float[Array, " n_segments"]:
     """Create intercepts from raw data."""
-    intercepts = [intercept_at_lowest_threshold]
+    intercepts: list[float | Float[Array, ""] | Int[Array, ""]] = [
+        intercept_at_lowest_threshold
+    ]
     for up_thr in upper_thresholds[:-1]:
         intercepts.append(
             _calculate_one_intercept(
@@ -240,14 +274,26 @@ def _create_intercepts(
 
 
 def _calculate_one_intercept(
-    x: float,
-    lower_thresholds: Float[Array, " n_segments"],
-    upper_thresholds: Float[Array, " n_segments"],
-    coefficients: Float[Array, "n_intervals n_coefficients"],
-    intercepts: Float[Array, " n_segments"],
+    x: float | Float[Array, ""] | Int[Array, ""],
+    lower_thresholds: Float[Array, " n_segments"] | Int[Array, " n_segments"],
+    upper_thresholds: Float[Array, " n_segments"] | Int[Array, " n_segments"],
+    coefficients: (
+        Float[Array, "n_intervals n_coefficients"]
+        | Int[Array, "n_intervals n_coefficients"]
+    ),
+    intercepts: Float[Array, " n_segments"] | Int[Array, " n_segments"],
     xnp: ModuleType,
-) -> float:
-    """Calculate the intercept for the segment `x` lies in."""
+) -> float | Float[Array, ""]:
+    """Calculate the intercept for the segment `x` lies in.
+
+    `x` is one upper threshold drawn from `upper_thresholds`; iterating an
+    array yields a 0-d array under the JAX backend and a `numpy.float64`
+    (a `float` subclass) under NumPy.
+
+    Returns a Python `float` for the out-of-range / NaN case, otherwise the
+    scalar selected (and incremented) out of `intercepts` — likewise a 0-d
+    array under JAX, a `numpy.float64` under NumPy.
+    """
     # Check if value lies within the defined range.
     if (x < lower_thresholds[0]) or (x > upper_thresholds[-1]) or xnp.isnan(x):
         return float("nan")

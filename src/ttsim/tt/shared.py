@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+from types import ModuleType
 from typing import TYPE_CHECKING, overload
+
+from ttsim.typing import BoolColumn, FloatColumn, IntColumn
 
 if TYPE_CHECKING:
     from types import ModuleType

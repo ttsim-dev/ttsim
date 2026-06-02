@@ -1,29 +1,31 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, TypeVar
+from pathlib import Path
+from typing import Any, TypeVar
 
-if TYPE_CHECKING:
-    from pathlib import Path
+import networkx as nx
+import pandas as pd
+from beartype import beartype
 
-    import networkx as nx
-    import pandas as pd
-
-    from ttsim.typing import (
-        FlatColumnObjectsParamFunctions,
-        FlatData,
-        FlatOrigParamSpecs,
-        NestedData,
-        NestedStrings,
-        OrderedQNames,
-        QNameData,
-        QNameStrings,
-        SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
-        SpecEnvWithPartialledParamsAndScalars,
-        SpecEnvWithProcessedParamsAndScalars,
-        UnorderedQNames,
-    )
-
+from ttsim._beartype_conf import INPUT_DATA_CONF, TT_TARGETS_CONF
+from ttsim.typing import (
+    FlatColumnObjectsParamFunctions,
+    FlatOrigParamSpecs,
+    NestedData,
+    NestedStrings,
+    NestedTargetDict,
+    OrderedQNames,
+    QNameData,
+    QNameStrings,
+    SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
+    SpecEnvWithPartialledParamsAndScalars,
+    SpecEnvWithProcessedParamsAndScalars,
+    UnorderedQNames,
+    UserFlatData,
+    UserNestedData,
+    UserQNameData,
+)
 
 T = TypeVar("T", bound="MainArg")
 
@@ -91,14 +93,19 @@ class DfAndMapper:
 class InputData(MainArg):
     df_and_mapper: DfAndMapper | None
     df_with_nested_columns: pd.DataFrame | None
-    tree: NestedData | None
-    flat: FlatData | None
-    qname: QNameData | None
+    # The data factories are user-input boundaries (Decision 8 / GEP-09), so
+    # they take the wide `User*` aliases: users legitimately pass `pd.Series`
+    # and plain sequences alongside backend arrays. Canonicalization to the
+    # narrow `NestedData` / `FlatData` / `QNameData` forms happens downstream.
+    tree: UserNestedData | None
+    flat: UserFlatData | None
+    qname: UserQNameData | None
 
     def __init__(self, *args: Any, **kwargs: Any):  # noqa: ANN401, ARG002, ANN204
         raise RuntimeError("Use any of the class methods to instantiate this class.")
 
     @classmethod
+    @beartype(conf=INPUT_DATA_CONF)
     def df_and_mapper(cls, df: pd.DataFrame, mapper: NestedStrings) -> InputData:
         """A df with arbitrary columns and a nested dictionary mapping expected inputs
         to column names in this df."""
@@ -109,6 +116,7 @@ class InputData(MainArg):
         )
 
     @classmethod
+    @beartype(conf=INPUT_DATA_CONF)
     def df_with_nested_columns(cls, df_with_nested_columns: pd.DataFrame) -> InputData:
         """A df with a MultiIndex in the column dimension, elements correspond to
         expected tree paths."""
@@ -119,17 +127,20 @@ class InputData(MainArg):
         )
 
     @classmethod
-    def tree(cls, tree: NestedData) -> InputData:
+    @beartype(conf=INPUT_DATA_CONF)
+    def tree(cls, tree: UserNestedData) -> InputData:
         """A nested dictionary mapping expected input names to vectors of data."""
         return _set_single_field(cls=cls, field_name="tree", field_value=tree)
 
     @classmethod
-    def flat(cls, flat: FlatData) -> InputData:
+    @beartype(conf=INPUT_DATA_CONF)
+    def flat(cls, flat: UserFlatData) -> InputData:
         """A dictionary mapping tree paths to vectors of data."""
         return _set_single_field(cls=cls, field_name="flat", field_value=flat)
 
     @classmethod
-    def qname(cls, qname: QNameData) -> InputData:
+    @beartype(conf=INPUT_DATA_CONF)
+    def qname(cls, qname: UserQNameData) -> InputData:
         """A dictionary mapping qualified names to vectors of data."""
         return _set_single_field(cls=cls, field_name="qname", field_value=qname)
 
@@ -304,18 +315,20 @@ class Results(MainArg):
 @dataclass(frozen=True)
 class TTTargets(MainArg):
     qname: QNameStrings | None = None
-    tree: NestedStrings | None = None
+    tree: NestedTargetDict | None = None
 
     def __post_init__(self) -> None:
         _fix_classmethod_namespace_conflicts(self)
 
     @classmethod
+    @beartype(conf=TT_TARGETS_CONF)
     def qname(cls, qname: QNameStrings) -> TTTargets:
         """TT targets using qualified names."""
         return _set_single_field(cls=cls, field_name="qname", field_value=qname)
 
     @classmethod
-    def tree(cls, tree: NestedStrings) -> TTTargets:
+    @beartype(conf=TT_TARGETS_CONF)
+    def tree(cls, tree: NestedTargetDict) -> TTTargets:
         """TT targets using nested tree structure."""
         return _set_single_field(cls=cls, field_name="tree", field_value=tree)
 

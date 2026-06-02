@@ -3,6 +3,7 @@ from typing import Any
 
 import numpy
 import pytest
+from beartype.roar import BeartypeCallHintViolation
 
 from ttsim.tt.param_objects import (
     ConsecutiveIntLookupTableParamValue,
@@ -44,8 +45,8 @@ def test_convert_sparse_to_consecutive_int_lookup_table(raw, expected_result, xn
 
 
 def test_convert_sparse_not_dict_raises(xnp):
-    """Test that non-dict input raises TypeError."""
-    with pytest.raises(TypeError, match="must be a dictionary"):
+    """Test that non-dict input is rejected by the beartype claw."""
+    with pytest.raises(BeartypeCallHintViolation, match="parameter raw"):
         convert_sparse_to_consecutive_int_lookup_table([1, 2, 3], xnp)  # ty: ignore[invalid-argument-type]
 
 
@@ -74,8 +75,8 @@ def test_convert_sparse_non_int_min_max_raises(xnp):
 
 
 def test_convert_sparse_non_int_keys_raises(xnp):
-    """Test that non-integer keys in raw dict raises TypeError."""
-    with pytest.raises(TypeError, match="int keys"):
+    """Test that non-integer keys in raw dict are rejected by the beartype claw."""
+    with pytest.raises(BeartypeCallHintViolation, match="parameter raw"):
         convert_sparse_to_consecutive_int_lookup_table(
             {"a": 1, "min_int_in_table": 0, "max_int_in_table": 5},  # ty: ignore[invalid-argument-type]
             xnp,
@@ -441,7 +442,7 @@ def test_dict_param_rejects_note_key():
 def test_dict_param_rejects_reference_key():
     """Test DictParam raises ValueError when 'reference' is a key in value."""
     with pytest.raises(ValueError, match="'note' and 'reference' cannot be keys"):
-        DictParam(value={"reference": "some_ref", "other": 2})  # ty: ignore[invalid-argument-type]
+        DictParam(value={"reference": "some_ref", "other": 2})
 
 
 # =============================================================================

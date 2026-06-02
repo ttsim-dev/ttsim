@@ -9,7 +9,10 @@ execution).
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Literal, cast, overload
+import datetime
+from collections.abc import Callable
+from types import ModuleType
+from typing import TYPE_CHECKING, Any, Literal, cast, overload
 
 import dags.tree as dt
 import networkx as nx
@@ -36,23 +39,19 @@ from ttsim.tt.column_objects_param_function import (
     policy_function,
 )
 from ttsim.tt.param_objects import ParamObject
+from ttsim.typing import (
+    OrderedQNames,
+    PolicyEnvironment,
+    QNameTTTargets,
+    SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
+    SpecEnvWithPartialledParamsAndScalars,
+    SpecEnvWithProcessedParamsAndScalars,
+    UnorderedQNames,
+)
 from ttsim.unit_converters import TIME_UNIT_IDS_TO_LABELS
 
 if TYPE_CHECKING:
-    import datetime
     import re
-    from collections.abc import Callable
-    from types import ModuleType
-    from typing import Any
-
-    from ttsim.typing import (
-        OrderedQNames,
-        PolicyEnvironment,
-        SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
-        SpecEnvWithPartialledParamsAndScalars,
-        SpecEnvWithProcessedParamsAndScalars,
-        UnorderedQNames,
-    )
 
 
 @interface_function()
@@ -90,7 +89,7 @@ def qnames_to_derive_functions_from(
 def without_tree_logic_and_with_derived_functions(
     policy_environment: PolicyEnvironment,
     qnames_to_derive_functions_from: UnorderedQNames,
-    tt_targets__qname: OrderedQNames,
+    tt_targets__qname: QNameTTTargets,
     labels__input_columns: UnorderedQNames,
     labels__all_qnames_in_policy_environment: UnorderedQNames,
     labels__top_level_namespace: UnorderedQNames,
@@ -136,7 +135,7 @@ def without_input_data_nodes_with_dummy_callables(
 @interface_function()
 def complete_tt_dag(
     without_input_data_nodes_with_dummy_callables: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,  # noqa: E501
-    tt_targets__qname: OrderedQNames,
+    tt_targets__qname: QNameTTTargets,
     labels__all_qnames_in_policy_environment: UnorderedQNames,
     labels__input_columns: UnorderedQNames,
 ) -> nx.DiGraph:
@@ -249,8 +248,8 @@ def dummy_callable(
 ) -> Callable[[], Any]:
     """Dummy callable, for plotting and checking DAG completeness."""
 
-    def dummy():  # noqa: ANN202
-        pass
+    def dummy() -> object:
+        return None
 
     # Extract docstring from the appropriate attribute based on object type
     if isinstance(obj, PolicyInput):

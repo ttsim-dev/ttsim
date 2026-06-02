@@ -31,7 +31,7 @@ from ttsim.tt import (
 )
 
 if TYPE_CHECKING:
-    from ttsim.typing import FloatColumn, IntColumn, RawParamValue
+    from ttsim.typing import IntColumn, RawParamValue
 
 
 @policy_input()
@@ -172,7 +172,7 @@ def some_piecewise_polynomial_param(xnp):
         value=PiecewisePolynomialParamValue(
             thresholds=xnp.array([1, 2, 3]),
             intercepts=xnp.array([1, 2, 3]),
-            coefficients=xnp.array([1, 2, 3]),
+            coefficients=xnp.array([[1], [2], [3]]),
         ),
         start_date=datetime.date(2025, 1, 1),
         end_date=datetime.date(2025, 12, 31),
@@ -217,7 +217,7 @@ def foo_fam(foo: int, fam_id: int) -> int:
 
 # Create a function which is used by some tests below
 @policy_function(vectorization_strategy="vectorize")
-def func_before_partial(arg_1, some_param):
+def func_before_partial(arg_1: int, some_param: int) -> int:
     return arg_1 + some_param
 
 
@@ -708,7 +708,7 @@ def test_user_provided_aggregate_by_p_id_specs(
     xnp,
 ):
     @policy_function(leaf_name=leaf_name, vectorization_strategy="not_required")
-    def source() -> FloatColumn:
+    def source() -> IntColumn:
         return xnp.array([100, 200, 300])
 
     policy_environment = merge_trees(

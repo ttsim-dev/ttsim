@@ -9,6 +9,8 @@ from typing import TYPE_CHECKING
 import dags.tree as dt
 import numpy
 import pytest
+from beartype.roar import BeartypeCallHintViolation
+from dags import get_annotations as dags_get_annotations
 from mettsim import middle_earth
 from numpy.testing import assert_array_equal
 
@@ -27,12 +29,12 @@ from ttsim.tt.column_objects_param_function import (
     AggByGroupFunction,
     AggByPIDFunction,
 )
+from ttsim.tt.type_resolution import scalar_type_to_array_type
 from ttsim.tt.vectorization import (
     TranslateToVectorizableError,
     _is_lambda_function,
     _make_vectorizable,
     make_vectorizable_source,
-    scalar_type_to_array_type,
     vectorize_function,
 )
 
@@ -756,6 +758,13 @@ def test_already_vectorized_func(xnp):
 
 
 def test_vectorize_function_annotations(backend, xnp):
+    """The vectorized node advertises concrete column-type strings to `dags`.
+
+    The node is a `@beartype`-decorated forwarder whose own
+    `__annotations__` is the `*args, **kwargs` shape; `dags.get_annotations`
+    recovers the column-type view from its `__signature__`.
+    """
+
     def f(a, x: int, y: float, z: bool, p1: str, p2: dict[str, float]) -> float:  # noqa: ARG001
         return 1.0
 
@@ -775,7 +784,54 @@ def test_vectorize_function_annotations(backend, xnp):
         "p2": "dict[str, float]",
         "return": "FloatColumn",
     }
-    assert inspect.get_annotations(vectorized) == expected_annotations
+    assert dags_get_annotations(vectorized) == expected_annotations
+
+
+def test_vectorized_function_rejects_non_numeric_argument(backend, xnp) -> None:
+    """A vectorized node raises a beartype violation on structurally wrong input.
+
+    The auto-vectorized wrapper is `@beartype`-decorated: a numeric
+    parameter fed a string (or other non-numeric value) raises
+    `BeartypeCallHintViolation`.
+    """
+
+    def add_one(x: float) -> float:
+        return x + 1.0
+
+    vectorized = vectorize_function(
+        add_one,
+        vectorization_strategy="vectorize",
+        backend=backend,
+        xnp=xnp,
+    )
+
+    with pytest.raises(BeartypeCallHintViolation):
+        vectorized("not a column")
+
+
+def test_vectorized_function_accepts_scalar_and_off_dtype_column(backend, xnp) -> None:
+    """A vectorized node broadcasts scalars and tolerates loose column dtypes.
+
+    A `float`-typed policy parameter legitimately receives a Python scalar
+    (an un-broadcast DAG input) or an integer-dtyped data column; the
+    `@beartype` guard checks structural numeric-ness, not exact array
+    dtype, so both pass.
+    """
+
+    def add(x: float, y: float) -> float:
+        return x + y
+
+    vectorized = vectorize_function(
+        add,
+        vectorization_strategy="vectorize",
+        backend=backend,
+        xnp=xnp,
+    )
+
+    assert_array_equal(
+        vectorized(xnp.array([1, 2, 3]), 10.0),
+        xnp.array([11.0, 12.0, 13.0]),
+    )
 
 
 # ======================================================================================

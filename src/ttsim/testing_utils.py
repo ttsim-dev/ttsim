@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import datetime
 import inspect
 from functools import lru_cache
-from typing import TYPE_CHECKING, Literal
+from pathlib import Path
+from types import ModuleType
+from typing import Any, Literal
 
 import dags
 import dags.tree as dt
@@ -20,23 +23,17 @@ from ttsim.interface_dag_elements.specialized_environment_for_plotting_and_templ
     dummy_callable,
 )
 from ttsim.main_args import InputData, OrigPolicyObjects, TTTargets
+from ttsim.typing import (
+    FlatColumnObjectsParamFunctions,
+    FlatOrigParamSpecs,
+    NestedData,
+    NestedInputStructureDict,
+    PolicyEnvironment,
+)
 
 # Set display options to show all columns without truncation
 pd.set_option("display.max_columns", None)
 pd.set_option("display.width", None)
-
-if TYPE_CHECKING:
-    import datetime
-    from pathlib import Path
-    from types import ModuleType
-
-    from ttsim.typing import (
-        FlatColumnObjectsParamFunctions,
-        FlatOrigParamSpecs,
-        NestedData,
-        NestedInputStructureDict,
-        PolicyEnvironment,
-    )
 
 
 @lru_cache(maxsize=100)
@@ -70,7 +67,7 @@ class PolicyTest:
 
     def __init__(
         self,
-        info: NestedData,
+        info: dict[str, Any],
         input_tree: NestedData,
         expected_output_tree: NestedData,
         path: Path,
@@ -177,7 +174,7 @@ def load_policy_cases(
             continue
 
         with path_to_yaml.open("r", encoding="utf-8") as file:
-            raw_test_data: NestedData = yaml.safe_load(file)
+            raw_test_data: dict[str, Any] = yaml.safe_load(file)
 
             this_test = _get_policy_test_from_raw_test_data(
                 policy_cases_root=policy_cases_root,
@@ -197,7 +194,7 @@ def _is_skipped(test_file: Path) -> bool:
 def _get_policy_test_from_raw_test_data(
     policy_cases_root: Path,
     path_to_yaml: Path,
-    raw_test_data: NestedData,
+    raw_test_data: dict[str, Any],
     xnp: ModuleType,
 ) -> PolicyTest:
     """Get a list of PolicyTest objects from raw test data.
@@ -209,7 +206,7 @@ def _get_policy_test_from_raw_test_data(
     Returns:
         A list of PolicyTest objects.
     """
-    test_info: NestedData = raw_test_data.get("info", {})
+    test_info: dict[str, Any] = raw_test_data.get("info", {})
     input_tree: NestedData = dt.unflatten_from_tree_paths(
         {
             k: xnp.array(v)

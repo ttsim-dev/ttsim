@@ -4,6 +4,7 @@ import copy
 
 import numpy
 import pytest
+from beartype.roar import BeartypeCallHintViolation
 
 try:
     import jax_datetime  # ty: ignore[unresolved-import]
@@ -183,38 +184,43 @@ test_grouped_specs = {
     },
 }
 
+# With the package-wide beartype claw on, the aggregation dispatcher's column
+# aliases are the runtime contract: a wrong-dtype argument is rejected by the
+# claw with `BeartypeCallHintViolation` before any function body runs. Each
+# `exception_match` pins the offending parameter name so the case still proves
+# the correct argument is rejected.
 test_grouped_raises_specs = {
     "dtype_boolean": {
         "column_to_aggregate": numpy.array([True, True, True, False, False]),
         "group_id": numpy.array([0, 0, 1, 1, 1]),
-        "error_max": TypeError,
-        "error_min": TypeError,
-        "exception_match": "grouped_",
+        "error_max": BeartypeCallHintViolation,
+        "error_min": BeartypeCallHintViolation,
+        "exception_match": "parameter column",
     },
     "float_group_id": {
         "column_to_aggregate": numpy.array([0, 1, 2, 3, 4]),
         "group_id": numpy.array([0, 0, 3.5, 3.5, 3.5]),
         "p_id_to_store_by": numpy.array([0, 1, 2, 3, 4]),
-        "error_sum": TypeError,
-        "error_mean": TypeError,
-        "error_max": TypeError,
-        "error_min": TypeError,
-        "error_sum_by_p_id": TypeError,
-        "exception_match": "The dtype of id columns must be integer.",
+        "error_sum": BeartypeCallHintViolation,
+        "error_mean": BeartypeCallHintViolation,
+        "error_max": BeartypeCallHintViolation,
+        "error_min": BeartypeCallHintViolation,
+        "error_sum_by_p_id": BeartypeCallHintViolation,
+        "exception_match": "parameter (group_id|p_id_to_aggregate_by)",
     },
     "dtype_float": {
         "column_to_aggregate": numpy.array([1.5, 2, 3.5, 4, 5]),
         "group_id": numpy.array([0, 0, 1, 1, 1]),
-        "error_any": TypeError,
-        "error_all": TypeError,
-        "exception_match": "grouped_",
+        "error_any": BeartypeCallHintViolation,
+        "error_all": BeartypeCallHintViolation,
+        "exception_match": "parameter column",
     },
     "float_group_id_bool": {
         "column_to_aggregate": numpy.array([True, True, True, False, False]),
         "group_id": numpy.array([0, 0, 3.5, 3.5, 3.5]),
-        "error_any": TypeError,
-        "error_all": TypeError,
-        "exception_match": "The dtype of id columns must be integer.",
+        "error_any": BeartypeCallHintViolation,
+        "error_all": BeartypeCallHintViolation,
+        "exception_match": "parameter group_id",
     },
 }
 test_grouped_specs["datetime"] = {
@@ -251,13 +257,13 @@ test_grouped_specs["datetime"] = {
 test_grouped_raises_specs["dtype_string"] = {
     "column_to_aggregate": numpy.array(["0", "1", "2", "3", "4"]),
     "group_id": numpy.array([0, 0, 1, 1, 1]),
-    "error_sum": TypeError,
-    "error_mean": TypeError,
-    "error_max": TypeError,
-    "error_min": TypeError,
-    "error_any": TypeError,
-    "error_all": TypeError,
-    "exception_match": "grouped_",
+    "error_sum": BeartypeCallHintViolation,
+    "error_mean": BeartypeCallHintViolation,
+    "error_max": BeartypeCallHintViolation,
+    "error_min": BeartypeCallHintViolation,
+    "error_any": BeartypeCallHintViolation,
+    "error_all": BeartypeCallHintViolation,
+    "exception_match": "parameter column",
 }
 test_grouped_raises_specs["datetime"] = {
     "column_to_aggregate": numpy.array(
@@ -270,11 +276,11 @@ test_grouped_raises_specs["datetime"] = {
         ],
     ),
     "group_id": numpy.array([0, 0, 1, 1, 1]),
-    "error_sum": TypeError,
-    "error_mean": TypeError,
-    "error_any": TypeError,
-    "error_all": TypeError,
-    "exception_match": "grouped_",
+    "error_sum": BeartypeCallHintViolation,
+    "error_mean": BeartypeCallHintViolation,
+    "error_any": BeartypeCallHintViolation,
+    "error_all": BeartypeCallHintViolation,
+    "exception_match": "parameter column",
 }
 
 

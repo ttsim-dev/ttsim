@@ -4,6 +4,19 @@ This is a record of all past `ttsim` releases and what went into them in reverse
 chronological order. We follow [semantic versioning](https://semver.org/) and all
 releases are available on [Anaconda.org](https://anaconda.org/conda-forge/ttsim).
 
+## Unreleased
+
+- {gh}`101` Adopt the package-wide beartype claw with a typed exception hierarchy at
+  user-facing boundaries (`InputDataError`, `EntryPointError`, `TTTargetsError`,
+  `PolicyFunctionDefinitionError`, …) so malformed input is rejected with curated
+  errors. Every `@*_function` decorator (`@policy_function`, `@param_function`,
+  `@agg_by_p_id_function`, `@agg_by_group_function`, `@group_creation_function`) now
+  also requires the wrapped function to carry an annotation on every parameter and on
+  the return value; missing annotations raise the decorator's `*DefinitionError` at
+  decoration time. Floor pin `jaxtyping >= 0.3.10` so the cloudpickle round-trip of
+  jaxtyping types works out of the box (the three `_array_types` `object()` sentinels
+  are now `__reduce__`-backed singleton classes upstream). ({ghuser}`hmgaudecker`)
+
 ## v1.2.1 — 2026-05-24
 
 - {gh}`99` Require `dags >= 0.6`; adapt to its new wrapper annotations.

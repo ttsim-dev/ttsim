@@ -1,18 +1,32 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from types import ModuleType
 from typing import TYPE_CHECKING, Any, Literal, cast
 
-PLACEHOLDER_VALUE = object()
-PLACEHOLDER_FIELD = field(default_factory=lambda: PLACEHOLDER_VALUE)
+import numpy as np
+from jaxtyping import Bool, Float, Int
+
+from ttsim.typing import DictParamValue, NestedLookupDict
+
+# Backend-agnostic array type: union the (optional) JAX `Array` with
+# `np.ndarray` so `Float[Array, ...]`/`Int[Array, ...]` annotations accept
+# NumPy arrays under the JAX env. Bare `jax.Array` would make the package
+# claw reject every NumPy-backed value (see `ttsim.typing` column aliases).
+try:
+    from jax import Array as _JaxArray
+
+    Array = _JaxArray | np.ndarray
+except ImportError:
+    Array = np.ndarray
+
+PLACEHOLDER_VALUE: Any = object()
+# `Any` so dataclass fields of any narrow type accept the sentinel default.
+# The runtime check (`is PLACEHOLDER_VALUE`) enforces the real constraint.
+PLACEHOLDER_FIELD: Any = field(default_factory=lambda: PLACEHOLDER_VALUE)
 
 if TYPE_CHECKING:
     import datetime
-    from types import ModuleType
-
-    from jaxtyping import Array, Bool, Float, Int
-
-    from ttsim.typing import NestedLookupDict
 
 
 @dataclass(frozen=True)
@@ -37,7 +51,9 @@ class ParamObject:
             "Euros / Square Meter",
         ]
     ) = None
-    reference_period: None | Literal["Year", "Quarter", "Month", "Week", "Day"] = None
+    reference_period: (
+        None | Literal["Year", "Quarter", "Month", "Week", "Day", "Hour"]
+    ) = None
     name: dict[Literal["de", "en"], str] | None = None
     description: dict[Literal["de", "en"], str] | None = None
 
@@ -62,17 +78,11 @@ class ScalarParam(ParamObject):
 @dataclass(frozen=True)
 class DictParam(ParamObject):
     """
-    A parameter directly read from a YAML file that is a flat dictionary.
+    A parameter directly read from a YAML file that is a (possibly nested)
+    dictionary.
     """
 
-    value: (
-        dict[str, int]
-        | dict[str, float]
-        | dict[str, bool]
-        | dict[int, int]
-        | dict[int, float]
-        | dict[int, bool]
-    ) = PLACEHOLDER_FIELD
+    value: DictParamValue = PLACEHOLDER_FIELD
     note: str | None = None
     reference: str | None = None
 
@@ -123,19 +133,19 @@ class ConsecutiveIntLookupTableParamValue:
     bases_to_subtract: Int[Array, "n_rows n_cols"]
     lookup_multipliers: Int[Array, "n_rows n_cols"]
     values_to_look_up: (
-        Float[Array, "n_rows n_cols"]
-        | Int[Array, "n_rows n_cols"]
-        | Bool[Array, "n_rows n_cols"]
+        Float[Array | np.ndarray, ...]
+        | Int[Array | np.ndarray, ...]
+        | Bool[Array | np.ndarray, ...]
     )
     xnp: ModuleType
 
     def __init__(
         self,
         xnp: ModuleType,
-        values_to_look_up: Float[Array, "n_rows n_cols"]
-        | Int[Array, "n_rows n_cols"]
-        | Bool[Array, "n_rows n_cols"],
-        bases_to_subtract: Int[Array, "n_rows n_cols"],
+        values_to_look_up: Float[Array | np.ndarray, ...]
+        | Int[Array | np.ndarray, ...]
+        | Bool[Array | np.ndarray, ...],
+        bases_to_subtract: Int[Array | np.ndarray, ...],
     ) -> None:
         self.xnp = xnp
         self.values_to_look_up = values_to_look_up.flatten()
@@ -148,8 +158,25 @@ class ConsecutiveIntLookupTableParamValue:
         )
 
     def look_up(
-        self: ConsecutiveIntLookupTableParamValue, *args: int
-    ) -> float | int | bool:
+        self: ConsecutiveIntLookupTableParamValue,
+        *args: int | np.integer | Int[Array | np.ndarray, ...],
+    ) -> (
+        float
+        | int
+        | bool
+        | np.floating
+        | np.integer
+        | np.bool_
+        | Float[Array | np.ndarray, ...]
+        | Int[Array | np.ndarray, ...]
+        | Bool[Array | np.ndarray, ...]
+    ):
+        """Look up value(s) for the given index argument(s).
+
+        Each argument is a scalar integer index or an integer array of
+        indices (one per table dimension). Scalar arguments yield a scalar
+        result; array arguments yield an array of the looked-up values.
+        """
         scalar_input = all(getattr(a, "ndim", 0) == 0 for a in args)
         index = self.xnp.asarray(args)
         if scalar_input:
@@ -186,22 +213,22 @@ class RawParam(ParamObject):
 class PiecewisePolynomialInterval:
     """A single interval of a piecewise polynomial."""
 
-    intercept: float | Float[Array, ""]
-    coefficients: Float[Array, " n_coefficients"]
+    intercept: float | Float[Array, ""] | Int[Array, ""]
+    coefficients: Float[Array, " n_coefficients"] | Int[Array, " n_coefficients"]
 
     _MIN_COEFFICIENTS_LINEAR = 1
     _MIN_COEFFICIENTS_QUADRATIC = 2
     _MIN_COEFFICIENTS_CUBIC = 3
 
     @property
-    def slope(self) -> float:
+    def slope(self) -> float | Float[Array, ""] | Int[Array, ""]:
         """The first coefficient (linear term)."""
         if self.coefficients.shape[0] < self._MIN_COEFFICIENTS_LINEAR:
             raise AttributeError("No slope coefficient for piecewise_constant.")
         return self.coefficients[0]
 
     @property
-    def quadratic(self) -> float:
+    def quadratic(self) -> float | Float[Array, ""] | Int[Array, ""]:
         """The second coefficient (quadratic term)."""
         if self.coefficients.shape[0] < self._MIN_COEFFICIENTS_QUADRATIC:
             raise AttributeError(
@@ -210,7 +237,7 @@ class PiecewisePolynomialInterval:
         return self.coefficients[1]
 
     @property
-    def cubic(self) -> float:
+    def cubic(self) -> float | Float[Array, ""] | Int[Array, ""]:
         """The third coefficient (cubic term)."""
         if self.coefficients.shape[0] < self._MIN_COEFFICIENTS_CUBIC:
             raise AttributeError("No cubic coefficient; requires piecewise_cubic.")
@@ -231,9 +258,14 @@ class PiecewisePolynomialParamValue:
         (n_intervals, 1) with all zeros.
     """
 
-    thresholds: Float[Array, " n_thresholds"]
-    intercepts: Float[Array, " n_intervals"]
-    coefficients: Float[Array, "n_intervals n_coefficients"]
+    # Thresholds, intercepts, and coefficients are parsed from YAML and may be
+    # integer- or float-dtyped, so each accepts both jaxtyping array kinds.
+    thresholds: Float[Array, " n_thresholds"] | Int[Array, " n_thresholds"]
+    intercepts: Float[Array, " n_intervals"] | Int[Array, " n_intervals"]
+    coefficients: (
+        Float[Array, "n_intervals n_coefficients"]
+        | Int[Array, "n_intervals n_coefficients"]
+    )
 
     def __getitem__(self, index: int) -> PiecewisePolynomialInterval:
         return PiecewisePolynomialInterval(
@@ -249,10 +281,16 @@ def get_consecutive_int_lookup_table_param_value(
     """Get the parameters for a N-dimensional lookup table."""
     bases_to_substract = {}
 
-    # Function is recursive to step through all levels of dict
+    # Function is recursive to step through all levels of dict. The leaves of
+    # `NestedLookupDict` may be int, float, or bool, so the produced array can
+    # be of any of those dtypes -- match `values_to_look_up`'s union.
     def process_level(
         i: int, level_i_dict: NestedLookupDict
-    ) -> Float[Array, "n_rows n_cols"]:
+    ) -> (
+        Float[Array | np.ndarray, ...]
+        | Int[Array | np.ndarray, ...]
+        | Bool[Array | np.ndarray, ...]
+    ):
         sorted_keys = sorted(level_i_dict.keys())
         bases_to_substract[i] = min(xnp.asarray(sorted_keys))
         if isinstance(level_i_dict[sorted_keys[0]], dict):

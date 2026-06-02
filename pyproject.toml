@@ -31,8 +31,10 @@ classifiers = [
 ]
 dynamic = [ "version" ]
 dependencies = [
+  "beartype>=0.18",
   "dags>=0.6",
   "ipywidgets",
+  "jaxtyping>=0.3.10",
   "kaleido>=1.1",
   "networkx>=3.5",
   "numpy",
@@ -120,6 +122,11 @@ tests.pypi-dependencies.types-PyYAML = "*"
 tests.pypi-dependencies.types-pytz = "*"
 tests.pypi-dependencies.pytest-cov = "*"
 tests.pypi-dependencies.pytest-xdist = "*"
+# Run internal tests with the package-wide beartype claw on. The claw is
+# on by default (GEP 9, Option A; see `ttsim/__init__.py`); set
+# `TTSIM_BEARTYPE_CLAW=0` to opt out. Set explicitly here so the test
+# environment exercises the claw even if the default ever changes.
+tests.activation.env.TTSIM_BEARTYPE_CLAW = "1"
 tests.target.linux-64.tasks.tests = "pytest"
 tests.target.linux-64.tasks.tests-with-cov = "pytest --cov-report=xml --cov=./"
 tests.target.osx-64.tasks.tests = "dot -c && pytest"  # needed for pygraphviz on macOS
@@ -128,11 +135,11 @@ tests.target.osx-arm64.tasks.tests = "dot -c && pytest"  # needed for pygraphviz
 tests.target.osx-arm64.tasks.tests-with-cov = "dot -c && pytest --cov-report=xml --cov=./"  # needed for pygraphviz on macOS
 tests.target.win-64.tasks.tests = "pytest"
 tests.target.win-64.tasks.tests-with-cov = "pytest --cov-report=xml --cov=./"
-type-checking.pypi-dependencies.ty = "==0.0.23"
+type-checking.pypi-dependencies.ty = "*"
 type-checking.pypi-dependencies.types-PyYAML = "*"
 type-checking.pypi-dependencies.types-pytz = "*"
 type-checking.tasks.ty = "ty check"
-type-checking-jax.pypi-dependencies.ty = "==0.0.23"
+type-checking-jax.pypi-dependencies.ty = "*"
 type-checking-jax.pypi-dependencies.types-PyYAML = "*"
 type-checking-jax.pypi-dependencies.types-pytz = "*"
 type-checking-jax.tasks.ty-jax = "ty check"
@@ -162,6 +169,7 @@ extend-ignore = [
   "TC003",   # Move standard library import into a type-checking block
   "TRY003",  # Long messages outside exception class
   "D",       # Pydocstyle
+  # https://docs.kidger.site/jaxtyping/faq/#flake8-or-ruff-are-throwing-an-error
   "F722",    # Forward annotation syntax error (jaxtyping)
   "FBT001",  # Boolean-typed positional argument in function definition
   "FBT002",  # Boolean default value positional argument

@@ -1,12 +1,22 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, overload
+from typing import Any, overload
 
 import numpy as np
 import pandas as pd
+from jaxtyping import Float, Int
 
-if TYPE_CHECKING:
-    from jaxtyping import Array, Float, Int
+# `jax` is an optional runtime dependency; the NumPy-only test envs do not
+# install it. Resolve `Array` to a backend-agnostic union of the (optional)
+# JAX `Array` and `np.ndarray` so the jaxtyping-tagged annotations below
+# accept NumPy arrays under the JAX env -- bare `jax.Array` would make the
+# package claw reject every NumPy-backed value.
+try:
+    from jax import Array as _JaxArray
+
+    Array = _JaxArray | np.ndarray
+except ImportError:  # pragma: no cover - exercised in numpy-only envs
+    Array = np.ndarray
 
 TIME_UNIT_IDS_TO_LABELS = {
     "y": "Year",

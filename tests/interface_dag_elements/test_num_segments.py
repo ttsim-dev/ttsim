@@ -1,7 +1,17 @@
 from __future__ import annotations
 
+from pathlib import Path
+
+import ttsim.interface_dag_elements
 from ttsim.interface_dag_elements.interface_node_objects import InterfaceFunction
-from ttsim.interface_dag_elements.num_segments import num_segments
+from ttsim.interface_dag_elements.orig_policy_objects import load_module
+
+# The package claw rewrites normally-imported `interface_dag_elements` modules,
+# binding each callable `InterfaceFunction` instance into a bound method. Re-load
+# the module via `load_module` — claw-free, exactly how the interface DAG obtains
+# these objects — to assert on the pristine instance.
+_IFACE_DIR = Path(ttsim.interface_dag_elements.__file__).parent
+num_segments = load_module(_IFACE_DIR / "num_segments.py", _IFACE_DIR).num_segments
 
 
 def test_num_segments_is_interface_function():

@@ -2,10 +2,24 @@
 
 from __future__ import annotations
 
+from types import ModuleType
 from typing import TYPE_CHECKING, Any, cast
 
 import numpy
 import portion
+from jaxtyping import Float
+
+# `intervals_to_thresholds` builds its outputs with NumPy regardless of the
+# active backend, so the array type in its return annotation must accept
+# `np.ndarray`. Union the (optional) JAX `Array` with `np.ndarray` so the
+# beartype claw resolves the annotation in both numpy-only and JAX envs --
+# bare `jax.Array` would reject the NumPy outputs under the JAX env.
+try:
+    from jax import Array as _JaxArray
+
+    Array = _JaxArray | numpy.ndarray
+except ImportError:
+    Array = numpy.ndarray
 
 if TYPE_CHECKING:
     from types import ModuleType
@@ -75,11 +89,18 @@ def merge_piecewise_intervals(
     return result
 
 
-def _bound_to_float(v: float) -> float:
-    """Convert a portion bound (including portion.inf) to a Python float."""
-    if v == -portion.inf:
+def _bound_to_float(v: float | portion.const._PInf | portion.const._NInf) -> float:
+    """Convert a portion bound (including `portion.inf`) to a Python float.
+
+    `portion` exposes its positive/negative infinity sentinels only as the
+    private classes `portion.const._PInf` / `_NInf` (the singletons are
+    `portion.inf` / `-portion.inf`). They are the actual runtime types of a
+    parsed interval's bounds, so the annotation and the `isinstance` narrowing
+    must reference them directly.
+    """
+    if isinstance(v, portion.const._NInf):  # noqa: SLF001
         return float("-inf")
-    if v == portion.inf:
+    if isinstance(v, portion.const._PInf):  # noqa: SLF001
         return float("inf")
     return float(v)
 

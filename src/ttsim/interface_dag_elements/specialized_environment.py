@@ -1,9 +1,13 @@
 from __future__ import annotations
 
+import datetime
 import functools
-from typing import TYPE_CHECKING, Literal
+from collections.abc import Callable
+from types import ModuleType
+from typing import Literal
 
 import dags.tree as dt
+import networkx as nx
 from dags import concatenate_functions, create_dag, get_free_arguments
 
 from ttsim.interface_dag_elements.automatically_added_functions import (
@@ -22,22 +26,17 @@ from ttsim.tt.column_objects_param_function import (
     PolicyInput,
 )
 from ttsim.tt.param_objects import ParamObject, RawParam
-
-if TYPE_CHECKING:
-    import datetime
-    from types import ModuleType
-
-    import networkx as nx
-
-    from ttsim.typing import (
-        OrderedQNames,
-        PolicyEnvironment,
-        QNameData,
-        SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
-        SpecEnvWithPartialledParamsAndScalars,
-        SpecEnvWithProcessedParamsAndScalars,
-        UnorderedQNames,
-    )
+from ttsim.typing import (
+    OrderedQNames,
+    PolicyEnvironment,
+    QNameData,
+    QNameStrings,
+    QNameTTTargets,
+    SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
+    SpecEnvWithPartialledParamsAndScalars,
+    SpecEnvWithProcessedParamsAndScalars,
+    UnorderedQNames,
+)
 
 
 @interface_input(in_top_level_namespace=True)
@@ -48,7 +47,7 @@ def rounding() -> bool:
 @interface_function()
 def without_tree_logic_and_with_derived_functions(
     policy_environment: PolicyEnvironment,
-    tt_targets__qname: OrderedQNames,
+    tt_targets__qname: QNameTTTargets,
     labels__input_columns: UnorderedQNames,
     labels__top_level_namespace: UnorderedQNames,
     labels__grouping_levels: OrderedQNames,
@@ -91,7 +90,7 @@ def _remove_tree_logic_from_policy_environment(
 
 def _add_derived_functions(
     qname_env_without_tree_logic: dict[str, ColumnObject | ParamFunction | ParamObject],
-    tt_targets: OrderedQNames,
+    tt_targets: QNameStrings,
     input_columns: UnorderedQNames,
     grouping_levels: OrderedQNames,
 ) -> SpecEnvWithoutTreeLogicAndWithDerivedFunctions:
@@ -137,6 +136,7 @@ def _add_derived_functions(
     # Create aggregation functions by group.
     aggregate_by_group_functions = create_agg_by_group_functions(
         column_functions=column_functions,
+        qname_policy_environment=qname_env_without_tree_logic,
         input_columns=input_columns,
         tt_targets=tt_targets,
         grouping_levels=grouping_levels,
@@ -283,7 +283,15 @@ def with_partialled_params_and_scalars(
     return processed_functions
 
 
-def _apply_rounding(element: ColumnFunction, xnp: ModuleType) -> ColumnFunction:
+def _apply_rounding(
+    element: ColumnFunction, xnp: ModuleType
+) -> ColumnFunction | Callable[..., object]:
+    """Apply the element's rounding spec, if any.
+
+    `RoundingSpec.apply_rounding` returns a plain wrapper function, not a
+    `ColumnFunction`, so the return type is the union of the unrounded
+    `ColumnFunction` and the rounded plain callable.
+    """
     return (
         element.rounding_spec.apply_rounding(element, xnp=xnp)  # ty: ignore[unresolved-attribute]
         if getattr(element, "rounding_spec", False)

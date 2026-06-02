@@ -15,10 +15,11 @@ if TYPE_CHECKING:
     import networkx as nx
 
     from ttsim.typing import (
-        OrderedQNames,
         QNameData,
         SpecEnvWithPartialledParamsAndScalars,
     )
+
+from ttsim.typing import OrderedQNames
 
 
 @interface_input(in_top_level_namespace=True)

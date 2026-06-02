@@ -1,18 +1,23 @@
 from __future__ import annotations
 
 import datetime
+import inspect
+from typing import Any, cast
 
 import numpy
 import pandas as pd
 import pytest
+from beartype.roar import BeartypeCallHintViolation
 from pandas._testing import assert_series_equal
 
 from ttsim import InputData, TTTargets, main
+from ttsim.exceptions import PolicyFunctionDefinitionError, RoundingSpecError
 from ttsim.tt import (
     RoundingSpec,
     policy_function,
     policy_input,
 )
+from ttsim.typing import FloatColumn, IntColumn
 
 
 @policy_input()
@@ -78,17 +83,17 @@ def test_decorator():
     rs = RoundingSpec(base=1, direction="up")
 
     @policy_function(rounding_spec=rs)
-    def test_func():
+    def test_func() -> int:
         return 0
 
     assert test_func.rounding_spec == rs
 
 
 def test_malformed_rounding_specs():
-    with pytest.raises(TypeError):
+    with pytest.raises(PolicyFunctionDefinitionError):
 
         @policy_function(rounding_spec={"base": 1, "direction": "updsf"})  # ty: ignore[invalid-argument-type]
-        def test_func():
+        def test_func() -> int:
             return 0
 
 
@@ -101,7 +106,7 @@ def test_rounding(rounding_spec, input_values, exp_output, backend):
 
     # Define function that should be rounded
     @policy_function(rounding_spec=rounding_spec)
-    def test_func(x):
+    def test_func(x: float) -> float:
         return x
 
     input_data__tree = {
@@ -179,7 +184,7 @@ def test_no_rounding(
 ):
     # Define function that should be rounded
     @policy_function(rounding_spec=rounding_spec)
-    def test_func(x):
+    def test_func(x: float) -> float:
         return x
 
     data = {"p_id": numpy.array([1, 2])}
@@ -253,16 +258,19 @@ def test_rounding_spec(rounding_spec, input_values, exp_output, xnp):
 @pytest.mark.parametrize(
     ("base", "direction", "to_add_after_rounding", "match"),
     [
-        (1, "upper", 0, "`direction` must be one of"),
-        (5, "closest", 0, "`direction` must be one of"),
-        ("0.1", "down", 0, "base needs to be a number"),
-        (5, "up", "0", "Additive part must be a number"),
+        (1, "upper", 0, "parameter direction='upper' violates type hint"),
+        (5, "closest", 0, "parameter direction='closest' violates type hint"),
+        ("0.1", "down", 0, "parameter base='0.1' violates type hint"),
+        (5, "up", "0", "parameter to_add_after_rounding='0' violates type hint"),
     ],
 )
 def test_rounding_spec_validation(base, direction, to_add_after_rounding, match):
-    """Test validation of RoundingSpec parameters."""
-    expected_exception = TypeError if "be a number" in match else ValueError
-    with pytest.raises(expected_exception, match=match):
+    """Reject `RoundingSpec` arguments whose type violates the field annotations.
+
+    The `@beartype`-checked constructor raises `RoundingSpecError` for a bad
+    `direction` literal or non-numeric `base` / `to_add_after_rounding`.
+    """
+    with pytest.raises(RoundingSpecError, match=match):
         RoundingSpec(
             base=base,
             direction=direction,
@@ -430,4 +438,57 @@ def test_rounding_preserves_function_name(xnp):
 
     rounded_func = rs.apply_rounding(my_custom_function, xnp=xnp)
 
-    assert rounded_func.__name__ == "my_custom_function"
+    assert rounded_func.__name__ == "my_custom_function"  # ty: ignore[unresolved-attribute]
+
+
+def test_rounded_wrapper_signature_preserves_param_annotations(xnp) -> None:
+    """The rounding wrapper exposes the wrapped function's parameter annotations
+    on its own `__signature__`.
+    """
+
+    def underlying(a: IntColumn, b: FloatColumn) -> IntColumn:  # noqa: ARG001
+        return b
+
+    rs = RoundingSpec(base=1, direction="up")
+    rounded = rs.apply_rounding(underlying, xnp=xnp)
+
+    sig = inspect.signature(rounded)
+    param_annotations = {
+        name: param.annotation for name, param in sig.parameters.items()
+    }
+    assert param_annotations == {"a": "IntColumn", "b": "FloatColumn"}
+
+
+def test_rounded_wrapper_signature_forces_return_to_float_column(xnp) -> None:
+    """The rounding wrapper forces its `__signature__` return annotation to
+    `FloatColumn` because rounding always produces a float column, regardless
+    of the wrapped function's declared return type.
+    """
+
+    def underlying(a: IntColumn, b: FloatColumn) -> IntColumn:  # noqa: ARG001
+        return b
+
+    rs = RoundingSpec(base=1, direction="up")
+    rounded = rs.apply_rounding(underlying, xnp=xnp)
+
+    assert inspect.signature(rounded).return_annotation == "FloatColumn"
+
+
+def test_beartype_catches_structural_misuse_at_rounded_boundary(xnp) -> None:
+    """Beartype rejects a structurally wrong argument (a string here) at the
+    outer rounded-wrapper boundary, not just at the inner wrapped function.
+    """
+
+    def underlying(x: FloatColumn) -> FloatColumn:
+        return x
+
+    rs = RoundingSpec(base=1, direction="up")
+    rounded = rs.apply_rounding(underlying, xnp=xnp)
+
+    # Route the bogus value through `typing.cast` so ty's literal-narrowing
+    # does not surface it as `Literal["not a column"]` (which ty-jax would
+    # otherwise flag against the tighter JAX `Array` parameter type).
+    # beartype rejects the structural mismatch at runtime regardless.
+    bogus = cast("Any", "not a column")
+    with pytest.raises(BeartypeCallHintViolation):
+        rounded(bogus)

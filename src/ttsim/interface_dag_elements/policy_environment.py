@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import copy
 import datetime
+from collections.abc import Callable
+from types import ModuleType
 from typing import TYPE_CHECKING, Any
 
 import dags.tree as dt
@@ -31,9 +33,16 @@ from ttsim.tt.column_objects_param_function import (
 )
 from ttsim.tt.interval_utils import merge_piecewise_intervals
 from ttsim.tt.piecewise_polynomial import PIECEWISE_TYPES, get_piecewise_parameters
+from ttsim.typing import (
+    FlatColumnObjectsParamFunctions,
+    FlatOrigParamSpecs,
+    NestedColumnObjectsParamFunctions,
+    NestedParamObjects,
+    OrigParamSpec,
+)
 
 if TYPE_CHECKING:
-    from types import FunctionType, ModuleType
+    from types import ModuleType
 
     from ttsim.tt import ConsecutiveIntLookupTableParamValue
     from ttsim.typing import (
@@ -187,7 +196,7 @@ def _get_one_param(
         )
         return PiecewisePolynomialParam(**cleaned_spec)
     lookup_table_converters: dict[
-        str, FunctionType[..., ConsecutiveIntLookupTableParamValue]
+        str, Callable[..., ConsecutiveIntLookupTableParamValue]
     ] = {
         "consecutive_int_lookup_table": get_consecutive_int_lookup_table_param_value,
         "month_based_phase_inout_of_age_thresholds": (

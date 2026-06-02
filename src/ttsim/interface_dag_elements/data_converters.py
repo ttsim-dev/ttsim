@@ -1,21 +1,20 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal
+from types import ModuleType
+from typing import Any, Literal
 
 import dags.tree as dt
 import numpy
 import pandas as pd
 
-if TYPE_CHECKING:
-    from types import ModuleType
-
-    from ttsim.typing import (
-        FlatData,
-        NestedData,
-        NestedInputsMapper,
-        NestedStrings,
-        QNameData,
-    )
+from ttsim.typing import (
+    FlatData,
+    NestedData,
+    NestedInputsMapper,
+    NestedResults,
+    NestedStrings,
+    QNameData,
+)
 
 
 def _get_p_id_index(data_with_p_id: NestedData | QNameData | FlatData) -> pd.Index:
@@ -27,7 +26,7 @@ def _get_p_id_index(data_with_p_id: NestedData | QNameData | FlatData) -> pd.Ind
 
 
 def nested_data_to_df_with_nested_columns(
-    nested_data_to_convert: NestedData,
+    nested_data_to_convert: NestedResults,
     index: pd.Index,
 ) -> pd.DataFrame:
     """Convert a nested data structure to a DataFrame with a MultiIndex for the columns.
@@ -50,7 +49,7 @@ def nested_data_to_df_with_nested_columns(
 
 
 def nested_data_to_df_with_mapped_columns(
-    nested_data_to_convert: NestedData,
+    nested_data_to_convert: NestedResults,
     nested_outputs_df_column_names: NestedStrings,
     data_with_p_id: NestedData | QNameData | FlatData,
 ) -> pd.DataFrame:

@@ -1,17 +1,183 @@
+"""Type aliases used across ttsim.
+
+The aliases split into two groups:
+
+1. Runtime-resolvable aliases at module scope. These can be referenced from
+   `@beartype`-decorated signatures (column-type, scalar-type, simple-name
+   aliases, and the "user-boundary" `User*` aliases that accept the wider
+   set of inputs users may pass).
+2. Aliases that reference forward types (`ColumnObject`, `ParamFunction`,
+   `ParamObject`, …) and would create import cycles at runtime. These stay
+   inside the `TYPE_CHECKING` block and must be referenced from runtime
+   annotations only via the `__future__.annotations` string form (which
+   ttsim's defining modules opt into).
+"""
+
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal, Protocol, TypeAlias, overload
+from collections.abc import Iterable, Mapping
+from typing import TYPE_CHECKING, Annotated, Any, Literal, Protocol, TypeAlias, overload
+
+import numpy as np
+import pandas as pd
+from beartype.vale import Is
+from jaxtyping import Bool, Float, Int, Shaped
+
+# `jax` is an optional runtime dependency; the NumPy-only test envs do not
+# install it. Resolve `Array` to the JAX type when available, else fall
+# back to `np.ndarray` so the column-type aliases below stay
+# runtime-resolvable for beartype either way. `Array` is only ever an
+# assignment target (never a direct `import` binding), so ty infers its
+# type from both branches instead of flagging a conflicting declaration.
+try:
+    from jax import Array as _JaxArray
+
+    Array = _JaxArray
+except ImportError:  # pragma: no cover - exercised in numpy-only envs
+    Array = np.ndarray
+
+# Canonical column types: jaxtyping-tagged 1-d arrays from either backend
+# (NumPy or JAX). Union with `np.ndarray` so the NumPy backend's untagged
+# arrays satisfy the same alias — without this beartype rejects every
+# NumPy-backed column under the package-wide claw.
+BoolColumn: TypeAlias = Bool[Array | np.ndarray, " n_obs"]
+IntColumn: TypeAlias = Int[Array | np.ndarray, " n_obs"]
+FloatColumn: TypeAlias = Float[Array | np.ndarray, " n_obs"]
+# jaxtyping has no datetime dtype tag, so a beartype `Is` validator enforces
+# the `datetime64` dtype. Hoisted to module scope (like the other column
+# aliases) so the claw can resolve it at decoration time.
+DatetimeColumn: TypeAlias = Annotated[
+    Shaped[np.ndarray, " n_obs"],
+    Is[lambda a: np.issubdtype(a.dtype, np.datetime64)],
+]
+
+# Canonical scalar types (used inside ttsim once user input has been
+# converted to a single concrete numeric kind).
+ScalarFloat: TypeAlias = float | np.floating
+ScalarInt: TypeAlias = int | np.integer
+ScalarBool: TypeAlias = bool | np.bool_
+
+# User-boundary aliases (Decision 8): the wider set ttsim accepts from
+# users on the way in. Internal code should narrow to the canonical alias
+# above via explicit `_canonicalize_*` helpers.
+UserScalarFloat: TypeAlias = float | int | np.floating | np.integer
+UserScalarInt: TypeAlias = int | np.integer
+UserScalarBool: TypeAlias = bool | np.bool_
+UserFloatColumn: TypeAlias = FloatColumn | pd.Series
+UserIntColumn: TypeAlias = IntColumn | pd.Series
+UserBoolColumn: TypeAlias = BoolColumn | pd.Series
+
+# `DashedISOString`: a string representing a date in the format 'YYYY-MM-DD'.
+DashedISOString: TypeAlias = str
+
+# Simple runtime aliases. They sit at module scope (not under
+# `TYPE_CHECKING`) so beartype-decorated entry points can resolve them.
+#
+# - `RawParamValue`: the value field of a `RawParam`.
+# - `UnorderedQNames`: a set of qualified names.
+# - `OrderedQNames`: a tuple or a list of qualified names.
+# - `QNameStrings`: any iterable of qualified names.
+RawParamValue: TypeAlias = dict[str | int, Any]
+UnorderedQNames: TypeAlias = set[str]
+OrderedQNames: TypeAlias = tuple[str, ...] | list[str]
+QNameStrings: TypeAlias = Iterable[str]
+
 
 if TYPE_CHECKING:
-    from jaxtyping import Array, Bool, Float, Int
+    # Real definitions live in `dags.tree.typing` and are recursive
+    # `Mapping[str, str | None | <self>]` aliases. ty consumes the narrow
+    # form.
+    from dags.tree.typing import NestedInputStructureDict, NestedTargetDict
+else:
+    # beartype cannot resolve the stringified recursive form; widen the
+    # runtime alias to a one-level Mapping (Mapping itself is enough to
+    # satisfy beartype's isinstance check).
+    NestedTargetDict: TypeAlias = Mapping[str, object]
+    NestedInputStructureDict: TypeAlias = Mapping[str, object]
 
-    BoolColumn: TypeAlias = Bool[Array, " n_obs"]
-    IntColumn: TypeAlias = Int[Array, " n_obs"]
-    FloatColumn: TypeAlias = Float[Array, " n_obs"]
+# Data-tree aliases. Hoisted out of TYPE_CHECKING so @beartype-decorated
+# user-boundary entry points (InputData.tree/.flat/.qname, TTTargets.tree)
+# can resolve them at decoration time.
+if TYPE_CHECKING:
+    # Recursive aliases for ty: precise nested types with the narrow recursive
+    # form ttsim's call sites expect.
+    NestedData: TypeAlias = Mapping[
+        str, "FloatColumn | IntColumn | BoolColumn | NestedData"
+    ]
+    """Tree mapping TTSIM paths to 1d arrays."""
+    NestedStrings: TypeAlias = Mapping[str, "str | None | NestedStrings"]
+    """Tree mapping TTSIM paths to df column names, type hints, or `None`.
 
-    # Make these available for import from other modules.
+    A `None` leaf marks a target to compute (vs. a string that renames it);
+    see `QNameTTTargets`.
+    """
+else:
+    # Runtime aliases for beartype: the recursive form's stringified inner
+    # type is not a valid Python attribute name, so beartype cannot resolve
+    # it. Widen to a one-level Mapping; the per-element type still narrows.
+    NestedData = Mapping[str, FloatColumn | IntColumn | BoolColumn | Mapping]
+    NestedStrings = Mapping[str, str | None | Mapping]
+
+# `FlatData`: flattened tree mapping TTSIM tree paths (tuple) to 1-d arrays.
+# `QNameData`: mapping of qualified-name strings to 1-d arrays.
+FlatData: TypeAlias = Mapping[tuple[str, ...], FloatColumn | IntColumn | BoolColumn]
+QNameData: TypeAlias = Mapping[str, FloatColumn | IntColumn | BoolColumn]
+
+# Results aliases. A results tree's leaves are not only columns: processed
+# param values are genuinely heterogeneous (scalars, dicts, lookup arrays,
+# dates). Use an honest-wide `object` leaf rather than enumerating a union.
+# `QNameResults`: flat mapping of qualified names to heterogeneous values.
+QNameResults: TypeAlias = Mapping[str, object]
+if TYPE_CHECKING:
+    # `NestedResults`: recursive results tree for ty (precise nested form).
+    NestedResults: TypeAlias = Mapping[str, "object | NestedResults"]
+else:
+    # beartype cannot resolve the stringified recursive inner name; widen the
+    # runtime alias to a one-level Mapping.
+    NestedResults = Mapping[str, object]
+
+# User-boundary data aliases (Decision 8 / GEP-09). User-facing `InputData.*`
+# factories accept a wider leaf type than the canonical column aliases above:
+# users legitimately pass `pd.Series` and plain Python lists/sequences of
+# numbers, which internal code canonicalizes to backend arrays. Keep these
+# strictly at the `@beartype`-decorated user boundary; internal call sites use
+# the narrow `NestedData` / `FlatData` / `QNameData` forms.
+UserColumn: TypeAlias = (
+    UserFloatColumn | UserIntColumn | UserBoolColumn | list[float | int | bool]
+)
+# `UserNestedData` is a recursive tree like `NestedData`; use the
+# two-definition pattern (precise for ty, widened for the beartype claw).
+# The runtime form uses an honest-wide `object` leaf — like `NestedResults`
+# — so the `InputData.tree` beartype boundary admits scalars and other
+# malformed-but-plausible leaves, letting ttsim's `fail_if` validators
+# raise their curated, path-listing diagnostics instead of a generic
+# beartype message. beartype still enforces the `Mapping[str, ...]`
+# structure (string keys, dict shape).
+if TYPE_CHECKING:
+    UserNestedData: TypeAlias = Mapping[str, "UserColumn | UserNestedData"]
+else:
+    UserNestedData = Mapping[str, object]
+# `UserNestedData`: user-boundary tree mapping TTSIM paths to columns, Series,
+# or sequences.
+# `UserFlatData`: user-boundary flat mapping of tree paths to the same.
+# `UserQNameData`: user-boundary mapping of qualified names to the same.
+UserFlatData: TypeAlias = Mapping[tuple[str, ...], UserColumn]
+UserQNameData: TypeAlias = Mapping[str, UserColumn]
+
+# `QNameTTTargets`: a flattened target tree, mapping each qualified name to its
+# leaf value (`None` to compute the target, a string to rename it). Produced by
+# `dags.tree.flatten_to_qnames` on a `NestedTargetDict` / `NestedStrings`.
+QNameTTTargets: TypeAlias = Mapping[str, str | None]
+
+if TYPE_CHECKING:
+    # Names below are TYPE_CHECKING-only because they either reference
+    # types that would cause an import cycle at runtime (ColumnObject,
+    # ParamFunction, ParamObject, PolicyInput, ColumnFunction,
+    # InterfaceFunction, InterfaceInput) or use `Iterable` / `Iterator`
+    # in ways that beartype need not see (no `@beartype` decorator
+    # consumes them in a checked signature).
     import datetime
-    from collections.abc import Iterable, Iterator, Mapping
+    from collections.abc import Iterator
 
     class OrigParamSpec(Protocol):
         """A dictionary with patterns for header and parameters at one point in time."""
@@ -68,14 +234,6 @@ if TYPE_CHECKING:
 
         def keys(self) -> Iterable[str | datetime.date]: ...
 
-    DashedISOString = str
-    """A string representing a date in the format 'YYYY-MM-DD'."""
-
-    from dags.tree.typing import (  # noqa: F401
-        NestedInputStructureDict,
-        NestedTargetDict,
-    )
-
     from ttsim.interface_dag_elements.interface_node_objects import (
         InterfaceFunction,
         InterfaceInput,
@@ -86,9 +244,6 @@ if TYPE_CHECKING:
     ]
     """Flattened tree of interface objects."""
 
-    # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-    # Possible leaves of the various trees.
-    # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     from ttsim.tt import (
         ColumnFunction,
         ColumnObject,
@@ -97,38 +252,12 @@ if TYPE_CHECKING:
         PolicyInput,
     )
 
-    # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-    # Tree-like data structures for input, processing, and output; including metadata.
-    # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-    NestedData = Mapping[str, FloatColumn | IntColumn | BoolColumn | "NestedData"]
-    """Tree mapping TTSIM paths to 1d arrays."""
-    FlatData = Mapping[tuple[str, ...], FloatColumn | IntColumn | BoolColumn]
-    """Flattened tree mapping TTSIM paths to 1d arrays."""
     NestedInputsMapper = Mapping[str, str | bool | int | float | "NestedInputsMapper"]
     """Tree mapping TTSIM paths to df columns or constants."""
-    QNameData = Mapping[str, FloatColumn | IntColumn | BoolColumn]
-    """Mapping of qualified name paths to 1d arrays."""
-    QNameStrings = Iterable[str]
-    """A list, tuple, or set of qualified names."""
-    RawParamValue: TypeAlias = dict[str | int, Any]
-    """The value field of a RawParam."""
 
-    # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-    # Collections of names etc.
-    # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-    NestedStrings = Mapping[str, "str | NestedStrings"]
-    """Tree mapping TTSIM paths to df columns or type hints."""
-    UnorderedQNames = set[str]
-    """A set of qualified names."""
-    OrderedQNames: TypeAlias = tuple[str, ...] | list[str]
-    """A tuple or a list of qualified names."""
-
-    # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-    # Tree-like data structures for policy objects
-    # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     NestedPolicyInputs = Mapping[str, "PolicyInput | NestedPolicyInputs"]
     """Tree of policy inputs."""
-    FlatColumnObjects = Mapping[str, ColumnObject]
+    QNameColumnObjects = Mapping[str, ColumnObject]
     """Flat mapping of paths to column objects."""
     FlatColumnObjectsParamFunctions = Mapping[
         tuple[str, ...],
@@ -163,4 +292,43 @@ if TYPE_CHECKING:
     SpecEnvWithPartialledParamsAndScalars = Mapping[str, ColumnFunction]
     """Map qualified names to column functions that depend on columns only."""
 
+if TYPE_CHECKING:
     NestedLookupDict: TypeAlias = dict[int, float | int | bool | "NestedLookupDict"]
+else:
+    # Recursive aliases stringified as inner attribute names are unresolvable
+    # by beartype; widen the runtime form to `dict[int, object]`.
+    NestedLookupDict = dict[int, object]
+
+
+# `DictParamValue`: the value of a `DictParam` read from YAML. Keys are
+# strings or integers; leaves are YAML scalars or further nested dicts
+# (dict params may be merged recursively across policy dates).
+if TYPE_CHECKING:
+    DictParamValue: TypeAlias = dict[
+        str | int, "int | float | bool | str | DictParamValue"
+    ]
+else:
+    # beartype cannot resolve the stringified recursive inner name; widen the
+    # runtime form to a one-level dict with a bare `dict` for nested levels.
+    DictParamValue = dict[str | int, int | float | bool | str | dict]
+
+
+if not TYPE_CHECKING:
+    # Loose runtime stubs for the aliases that reference ColumnObject etc.;
+    # importing the precise definitions at runtime would create a cycle
+    # through ttsim.tt. beartype only needs the alias to exist as a Mapping
+    # subtype.
+    PolicyEnvironment: TypeAlias = Mapping[str, object]
+    FlatPolicyEnvironment: TypeAlias = Mapping[tuple[str, ...], object]
+    FlatColumnObjectsParamFunctions: TypeAlias = Mapping[tuple[str, ...], object]
+    QNameColumnObjects: TypeAlias = Mapping[str, object]
+    NestedPolicyInputs: TypeAlias = Mapping[str, object]
+    NestedColumnObjectsParamFunctions: TypeAlias = dict
+    NestedParamObjects: TypeAlias = dict
+    FlatOrigParamSpecs: TypeAlias = dict
+    SpecEnvWithoutTreeLogicAndWithDerivedFunctions: TypeAlias = Mapping[str, object]
+    SpecEnvWithProcessedParamsAndScalars: TypeAlias = Mapping[str, object]
+    SpecEnvWithPartialledParamsAndScalars: TypeAlias = Mapping[str, object]
+    FlatInterfaceObjects: TypeAlias = Mapping[tuple[str, ...], object]
+    NestedInputsMapper: TypeAlias = Mapping[str, object]
+    OrigParamSpec: TypeAlias = Mapping[object, object]

@@ -8,12 +8,12 @@ from ttsim.interface_dag_elements.interface_node_objects import (
     interface_function,
 )
 from ttsim.tt.column_objects_param_function import ColumnFunction
+from ttsim.typing import QNameTTTargets
 
 if TYPE_CHECKING:
     from ttsim.typing import (
         NestedStrings,
         NestedTargetDict,
-        OrderedQNames,
         PolicyEnvironment,
     )
 
@@ -38,6 +38,6 @@ def tree(policy_environment: PolicyEnvironment) -> NestedTargetDict | NestedStri
 
 
 @interface_function()
-def qname(tree: NestedTargetDict | NestedStrings) -> OrderedQNames:
+def qname(tree: NestedTargetDict | NestedStrings) -> QNameTTTargets:
     """Targets in their qualified name-representation."""
     return dt.flatten_to_qnames(tree)

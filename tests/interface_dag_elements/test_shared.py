@@ -31,10 +31,10 @@ class SampleDataClass:
 @pytest.mark.parametrize(
     ("base", "path_to_upsert", "value_to_upsert", "expected"),
     [
-        ({}, ["a"], 1, {"a": 1}),
-        ({"a": 1}, ["a"], 2, {"a": 2}),
-        ({}, ["a", "b"], 2, {"a": {"b": 2}}),
-        ({"a": {"b": 1}}, ["a", "c"], 2, {"a": {"b": 1, "c": 2}}),
+        ({}, ("a",), 1, {"a": 1}),
+        ({"a": 1}, ("a",), 2, {"a": 2}),
+        ({}, ("a", "b"), 2, {"a": {"b": 2}}),
+        ({"a": {"b": 1}}, ("a", "c"), 2, {"a": {"b": 1, "c": 2}}),
     ],
 )
 def test_upsert_path_and_value(base, path_to_upsert, value_to_upsert, expected):
@@ -80,7 +80,7 @@ def test_insert_path_and_value_invalid(base, path_to_insert, value_to_insert):
 @pytest.mark.parametrize(
     ("paths", "expected"),
     [
-        ("a", {"a": None}),
+        (("a",), {"a": None}),
         (("a", "b"), {"a": {"b": None}}),
         (("a", "b", "c"), {"a": {"b": {"c": None}}}),
     ],

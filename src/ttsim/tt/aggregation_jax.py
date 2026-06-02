@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from ttsim.typing import BoolColumn, FloatColumn, IntColumn
 
 try:
     import jax.numpy as jnp
@@ -11,9 +11,6 @@ try:
     )
 except ImportError:
     pass
-
-if TYPE_CHECKING:
-    from ttsim.typing import BoolColumn, FloatColumn, IntColumn
 
 
 def grouped_count(group_id: IntColumn, num_segments: int) -> jnp.ndarray:

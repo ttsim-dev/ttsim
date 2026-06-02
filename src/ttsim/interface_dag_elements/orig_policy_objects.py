@@ -3,6 +3,8 @@ from __future__ import annotations
 import importlib.util
 import inspect
 import sys
+from pathlib import Path
+from types import ModuleType
 from typing import TYPE_CHECKING, Literal
 
 import yaml
@@ -15,11 +17,9 @@ from ttsim.tt.column_objects_param_function import (
     ColumnObject,
     ParamFunction,
 )
+from ttsim.typing import FlatColumnObjectsParamFunctions
 
 if TYPE_CHECKING:
-    from pathlib import Path
-    from types import ModuleType
-
     from ttsim.typing import (
         FlatColumnObjectsParamFunctions,
         FlatOrigParamSpecs,

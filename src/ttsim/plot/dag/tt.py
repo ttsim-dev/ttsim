@@ -3,14 +3,21 @@ from __future__ import annotations
 import copy
 import itertools
 import textwrap
-from typing import TYPE_CHECKING, Any, Literal
+from pathlib import Path
+from typing import Any, Literal
 
 import dags.tree as dt
 import networkx as nx
+import plotly.graph_objects as go
 
 from ttsim.entry_point import main
 from ttsim.interface_dag_elements.fail_if import format_errors_and_warnings
-from ttsim.main_args import OrigPolicyObjects, TTTargets
+from ttsim.main_args import (
+    InputData,
+    Labels,
+    OrigPolicyObjects,
+    TTTargets,
+)
 from ttsim.main_target import MainTarget
 from ttsim.plot.dag.shared import NodeMetaData, get_figure
 from ttsim.tt import (
@@ -18,19 +25,12 @@ from ttsim.tt import (
     ParamObject,
     TimeConversionFunction,
 )
-
-if TYPE_CHECKING:
-    from pathlib import Path
-
-    import plotly.graph_objects as go
-
-    from ttsim.main_args import InputData, Labels
-    from ttsim.typing import (
-        DashedISOString,
-        PolicyEnvironment,
-        QNameData,
-        SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
-    )
+from ttsim.typing import (
+    DashedISOString,
+    PolicyEnvironment,
+    QNameData,
+    SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
+)
 
 
 def tt(

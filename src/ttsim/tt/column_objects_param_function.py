@@ -3,13 +3,38 @@ from __future__ import annotations
 import datetime
 import functools
 import inspect
+from collections.abc import Callable
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import TYPE_CHECKING, Any, Generic, Literal, ParamSpec, TypeVar
+from types import ModuleType
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Generic,
+    Literal,
+    ParamSpec,
+    TypeVar,
+    no_type_check,
+)
 
 import dags.tree as dt
+from beartype import beartype
 from dags import rename_arguments
 
+from ttsim._beartype_conf import (
+    AGGREGATION_CONF,
+    GROUP_CREATION_CONF,
+    PARAM_FUNCTION_CONF,
+    POLICY_FUNCTION_CONF,
+    POLICY_INPUT_CONF,
+)
+from ttsim.exceptions import (
+    AggregationDefinitionError,
+    GroupCreationDefinitionError,
+    ParamFunctionDefinitionError,
+    PolicyFunctionDefinitionError,
+    TTSIMError,
+)
 from ttsim.interface_dag_elements.shared import to_datetime
 from ttsim.tt.aggregation import (
     AggType,
@@ -29,11 +54,17 @@ from ttsim.tt.aggregation import (
     sum_by_p_id,
 )
 from ttsim.tt.rounding import RoundingSpec
+from ttsim.tt.type_resolution import (
+    TypeResolutionError,
+    resolve_kind_of_annotation,
+    synthesize_typed_aggregation_wrapper,
+    vectorized_column_kind,
+)
 from ttsim.tt.vectorization import vectorize_function
+from ttsim.typing import DashedISOString, IntColumn, UnorderedQNames
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-    from types import FunctionType, ModuleType
+    from types import ModuleType
 
     from ttsim.typing import (
         DashedISOString,
@@ -104,11 +135,14 @@ class PolicyInput(ColumnObject):
 
     """
 
-    data_type: type[float | int | bool]
+    data_type: Any
+    """Annotated as `Any` because callers pass the literal annotation from
+    `func.__annotations__["return"]`, which is a string form under
+    `from __future__ import annotations`, not the live type object."""
     foreign_key_type: FKType = FKType.IRRELEVANT
     warn_msg_if_included: str | None = None
     fail_msg_if_included: str | None = None
-    docstring: str = ""
+    docstring: str | None = ""
 
     def remove_tree_logic(
         self,
@@ -118,6 +152,7 @@ class PolicyInput(ColumnObject):
         return self
 
 
+@beartype(conf=POLICY_INPUT_CONF)
 def policy_input(
     *,
     start_date: str | datetime.date = DEFAULT_START_DATE,
@@ -125,7 +160,7 @@ def policy_input(
     foreign_key_type: FKType = FKType.IRRELEVANT,
     warn_msg_if_included: str | None = None,
     fail_msg_if_included: str | None = None,
-) -> Callable[[FunctionType[..., Any]], PolicyInput]:
+) -> Callable[[Callable[..., Any]], PolicyInput]:
     """Decorate a (dummy) function to make it a `PolicyInput`.
 
     **Dates active (start_date, end_date):**
@@ -148,15 +183,15 @@ def policy_input(
     """
     start_date, end_date = _convert_and_validate_dates(start_date, end_date)
 
-    def inner(func: FunctionType[..., Any]) -> PolicyInput:
+    def inner(func: Callable[..., Any]) -> PolicyInput:
         return PolicyInput(
-            leaf_name=func.__name__,
+            leaf_name=func.__name__,  # ty: ignore[unresolved-attribute]
             data_type=func.__annotations__["return"],
             start_date=start_date,
             end_date=end_date,
             foreign_key_type=foreign_key_type,
             description=str(inspect.getdoc(func)),
-            docstring=inspect.getdoc(func),  # ty: ignore [invalid-argument-type]
+            docstring=inspect.getdoc(func),
             warn_msg_if_included=warn_msg_if_included,
             fail_msg_if_included=fail_msg_if_included,
         )
@@ -164,9 +199,7 @@ def policy_input(
     return inner
 
 
-def _frozen_safe_update_wrapper(
-    wrapper: object, wrapped: FunctionType[..., Any]
-) -> None:
+def _frozen_safe_update_wrapper(wrapper: object, wrapped: Callable[..., Any]) -> None:
     """Update a frozen wrapper dataclass to look like the wrapped function.
 
     This is necessary because the wrapper is a frozen dataclass, so we cannot
@@ -209,7 +242,7 @@ class ColumnFunction(ColumnObject, Generic[FunArgTypes, ReturnType]):
     Base class for all functions operating on columns of data.
     """
 
-    function: FunctionType[FunArgTypes, ReturnType]
+    function: Callable[FunArgTypes, ReturnType]
     rounding_spec: RoundingSpec | None = None
     foreign_key_type: FKType = FKType.IRRELEVANT
     warn_msg_if_included: str | None = None
@@ -220,6 +253,8 @@ class ColumnFunction(ColumnObject, Generic[FunArgTypes, ReturnType]):
         # Expose the signature of the wrapped function for dependency resolution
         _frozen_safe_update_wrapper(self, self.function)
 
+    @no_type_check  # beartype claw + 'from __future__ import annotations' confuses
+    # PEP 612 ParamSpec resolution; this method is a thin pass-through anyway.
     def __call__(
         self,
         *args: FunArgTypes.args,
@@ -235,7 +270,7 @@ class ColumnFunction(ColumnObject, Generic[FunArgTypes, ReturnType]):
     @property
     def original_function_name(self) -> str:
         """The name of the wrapped function."""
-        return self.function.__name__
+        return self.function.__name__  # ty: ignore[unresolved-attribute]
 
     def is_active(self, policy_date: datetime.date) -> bool:
         """Check if the function is active at a given date."""
@@ -331,6 +366,7 @@ class PolicyFunction(ColumnFunction):
         )
 
 
+@beartype(conf=POLICY_FUNCTION_CONF)
 def policy_function(
     *,
     leaf_name: str | None = None,
@@ -341,7 +377,7 @@ def policy_function(
     foreign_key_type: FKType = FKType.IRRELEVANT,
     warn_msg_if_included: str | None = None,
     fail_msg_if_included: str | None = None,
-) -> Callable[[FunctionType[..., Any]], PolicyFunction]:
+) -> Callable[[Callable[..., Any]], PolicyFunction]:
     """Decorate a function to make it a `PolicyFunction`.
 
     PolicyFunctions are typically defined on scalars, but work on data columns (i.e.,
@@ -372,9 +408,17 @@ def policy_function(
     """
     start_date, end_date = _convert_and_validate_dates(start_date, end_date)
 
-    def inner(func: FunctionType[..., Any]) -> PolicyFunction:
+    def inner(func: Callable[..., Any]) -> PolicyFunction:
+        _fail_if_missing_annotations(
+            func,
+            exception_class=PolicyFunctionDefinitionError,
+            decorator_name="@policy_function",
+        )
+        _fail_if_annotations_mismatch_vectorization_strategy(
+            func=func, vectorization_strategy=vectorization_strategy
+        )
         return PolicyFunction(
-            leaf_name=leaf_name or func.__name__,
+            leaf_name=leaf_name or func.__name__,  # ty: ignore[unresolved-attribute]
             function=func,
             start_date=start_date,
             end_date=end_date,
@@ -387,6 +431,110 @@ def policy_function(
         )
 
     return inner
+
+
+_SCALAR_TYPES_FOR_POLICY_FUNCTION_CONTRACT: tuple[type, ...] = (int, float, bool)
+
+
+def _fail_if_missing_annotations(
+    func: Callable[..., Any],
+    *,
+    exception_class: type[TTSIMError],
+    decorator_name: str,
+) -> None:
+    """Require an annotation on every parameter and on the return value.
+
+    Decoration-time check; missing annotations raise `exception_class` so the
+    failure points at the user's function definition rather than surfacing
+    later at DAG-build time.
+    """
+    sig = inspect.signature(func)
+    missing: list[str] = []
+    for name, param in sig.parameters.items():
+        if name in ("self", "cls"):
+            continue
+        if param.annotation is inspect.Parameter.empty:
+            missing.append(f"param '{name}'")
+    if sig.return_annotation is inspect.Signature.empty:
+        missing.append("return")
+    if missing:
+        func_qualname = getattr(
+            func, "__qualname__", getattr(func, "__name__", "<func>")
+        )
+        msg = (
+            f"{decorator_name} requires every parameter and the return value to "
+            f"carry an annotation. Function {func_qualname!r} is missing: "
+            f"{', '.join(missing)}."
+        )
+        raise exception_class(msg)
+
+
+def _fail_if_annotations_mismatch_vectorization_strategy(
+    func: Callable[..., Any],
+    vectorization_strategy: Literal["loop", "vectorize", "not_required"],
+) -> None:
+    """Validate the @policy_function dual-mode annotation contract.
+
+    The contract:
+
+    - `vectorization_strategy != "not_required"` (default; ttsim will
+      auto-vectorize the function): parameters must be annotated with
+      scalar types (int, float, bool). Column annotations on such a
+      function indicate a category error — ttsim plans to vectorize, but
+      the user already wrote array-direct code.
+    - `vectorization_strategy == "not_required"`: ttsim leaves the
+      function alone, so parameters must be annotated with column types
+      (FloatColumn, IntColumn, BoolColumn). Scalar annotations on such a
+      function are misleading at the type-checker boundary.
+
+    Raised at decoration time so the violation surfaces on import, not at
+    DAG-build time.
+    """
+    # `inspect.get_annotations(..., eval_str=True)` resolves stringified
+    # annotations (under `from __future__ import annotations`) to live type
+    # objects against `func`'s own module globals. Bare `func.__annotations__`
+    # would leave them as strings, breaking the `annot in (int, ...)` /
+    # `annot in column_types` identity checks below.
+    try:
+        annotations = inspect.get_annotations(func, eval_str=True)
+    except (NameError, SyntaxError):
+        # An unresolvable forward reference here cannot be classified
+        # against the dual-mode contract — skip the check, let the user
+        # see the resolution error at first call.
+        return
+    # Avoid importing ttsim.typing at module scope to skirt import cycles.
+    from ttsim.typing import BoolColumn, FloatColumn, IntColumn  # noqa: PLC0415
+
+    column_types: tuple[Any, ...] = (FloatColumn, IntColumn, BoolColumn)
+    func_qualname = getattr(func, "__qualname__", getattr(func, "__name__", "<func>"))
+
+    if vectorization_strategy == "not_required":
+        for name, annot in annotations.items():
+            if name == "return":
+                continue
+            if annot in _SCALAR_TYPES_FOR_POLICY_FUNCTION_CONTRACT:
+                msg = (
+                    f"@policy_function with vectorization_strategy='not_required' "
+                    f"requires column annotations (FloatColumn / IntColumn / "
+                    f"BoolColumn) on its parameters. Function {func_qualname!r} "
+                    f"has `{name}: {annot.__name__}` — change to the column alias."
+                )
+                raise PolicyFunctionDefinitionError(msg)
+    else:
+        for name, annot in annotations.items():
+            if name == "return":
+                continue
+            if annot in column_types:
+                annot_name = getattr(annot, "__name__", str(annot))
+                msg = (
+                    f"@policy_function with "
+                    f"vectorization_strategy={vectorization_strategy!r} requires "
+                    f"scalar annotations (int / float / bool) on its parameters. "
+                    f"Function {func_qualname!r} has `{name}: {annot_name}` — "
+                    f"change to the scalar type (or set "
+                    f"vectorization_strategy='not_required')."
+                )
+                raise PolicyFunctionDefinitionError(msg)
 
 
 def reorder_ids(ids: IntColumn, xnp: ModuleType) -> IntColumn:
@@ -446,6 +594,7 @@ class GroupCreationFunction(ColumnFunction):
         )
 
 
+@beartype(conf=GROUP_CREATION_CONF)
 def group_creation_function(
     *,
     leaf_name: str | None = None,
@@ -454,7 +603,7 @@ def group_creation_function(
     reorder: bool = True,
     warn_msg_if_included: str | None = None,
     fail_msg_if_included: str | None = None,
-) -> Callable[[FunctionType[..., Any]], GroupCreationFunction]:
+) -> Callable[[Callable[..., Any]], GroupCreationFunction]:
     """Decorate a function to create a group_by function.
 
     Args:
@@ -467,8 +616,13 @@ def group_creation_function(
     """
     start_date, end_date = _convert_and_validate_dates(start_date, end_date)
 
-    def decorator(func: FunctionType[..., Any]) -> GroupCreationFunction:
-        _leaf_name = func.__name__ if leaf_name is None else leaf_name
+    def decorator(func: Callable[..., Any]) -> GroupCreationFunction:
+        _fail_if_missing_annotations(
+            func,
+            exception_class=GroupCreationDefinitionError,
+            decorator_name="@group_creation_function",
+        )
+        _leaf_name = func.__name__ if leaf_name is None else leaf_name  # ty: ignore[unresolved-attribute]
         func_with_reorder = lambda **kwargs: reorder_ids(  # noqa: E731
             ids=func(**kwargs),
             xnp=kwargs["xnp"],
@@ -532,6 +686,7 @@ class AggByGroupFunction(ColumnFunction):
         )
 
 
+@beartype(conf=AGGREGATION_CONF)
 def agg_by_group_function(
     *,
     leaf_name: str | None = None,
@@ -540,10 +695,10 @@ def agg_by_group_function(
     agg_type: AggType,
     warn_msg_if_included: str | None = None,
     fail_msg_if_included: str | None = None,
-) -> Callable[[FunctionType[..., Any]], AggByGroupFunction]:
+) -> Callable[[Callable[..., Any]], AggByGroupFunction]:
     start_date, end_date = _convert_and_validate_dates(start_date, end_date)
 
-    agg_registry: dict[AggType, FunctionType[..., Any]] = {
+    agg_registry: dict[AggType, Callable[..., Any]] = {
         AggType.SUM: grouped_sum,
         AggType.MEAN: grouped_mean,
         AggType.MAX: grouped_max,
@@ -553,31 +708,43 @@ def agg_by_group_function(
         AggType.COUNT: grouped_count,
     }
 
-    def inner(func: FunctionType[..., Any]) -> AggByGroupFunction:
-        orig_location = f"{func.__module__}.{func.__name__}"
+    def inner(func: Callable[..., Any]) -> AggByGroupFunction:
+        _fail_if_missing_annotations(
+            func,
+            exception_class=AggregationDefinitionError,
+            decorator_name="@agg_by_group_function",
+        )
+        orig_location = f"{func.__module__}.{func.__name__}"  # ty: ignore[unresolved-attribute]
         args = set(inspect.signature(func).parameters)
         group_ids = {p for p in args if p.endswith("_id")}
         _fail_if_group_id_is_invalid(group_ids, orig_location)
         group_id = group_ids.pop()
         other_args = args - {group_id, "num_segments", "backend"}
+        column_name: str | None
         if agg_type == AggType.COUNT:
             _fail_if_other_arg_is_present(other_args, orig_location)
             mapper = {"group_id": group_id}
+            column_name = None
         else:
             _fail_if_other_arg_is_invalid(other_args, orig_location)
-            mapper = {"group_id": group_id, "column": other_args.pop()}
-        agg_func = rename_arguments(
-            func=agg_registry[agg_type],
+            column_name = other_args.pop()
+            mapper = {"group_id": group_id, "column": column_name}
+        agg_func = _make_typed_aggregation_function(
+            primitive=agg_registry[agg_type],
             mapper=mapper,
+            agg_type=agg_type,
+            func=func,
+            column_name=column_name,
+            node_name=orig_location,
         )
         return AggByGroupFunction(
-            leaf_name=leaf_name or func.__name__,
+            leaf_name=leaf_name or func.__name__,  # ty: ignore[unresolved-attribute]
             function=agg_func,
             start_date=start_date,
             end_date=end_date,
             description=str(inspect.getdoc(func)),
             foreign_key_type=FKType.IRRELEVANT,
-            orig_location=f"{func.__module__}.{func.__name__}",
+            orig_location=f"{func.__module__}.{func.__name__}",  # ty: ignore[unresolved-attribute]
             warn_msg_if_included=warn_msg_if_included,
             fail_msg_if_included=fail_msg_if_included,
         )
@@ -618,6 +785,71 @@ def _fail_if_other_arg_is_invalid(
             "backend for aggregations. Got: "
             f"{', '.join(other_args) if other_args else 'nothing'} in {orig_location}.",
         )
+
+
+def _make_typed_aggregation_function(
+    primitive: Callable[..., Any],
+    mapper: dict[str, str],
+    agg_type: AggType,
+    func: Callable[..., Any],
+    column_name: str | None,
+    node_name: str,
+) -> Callable[..., Any]:
+    """Adapt an aggregation primitive to the DAG and stamp concrete types.
+
+    The primitive (`grouped_sum`, `sum_by_p_id`, …) is first renamed to the
+    DAG's argument names, then — when the source column's kind can be
+    resolved from the decorated function's annotation — given a concretely
+    typed `__signature__`. The primitive's runtime implementation signature
+    carries an imprecise `FloatColumn | IntColumn`-style union; resolving
+    the concrete output type from the source column's declared kind and the
+    aggregation rule table lets the aggregation node advertise an honest
+    producer type to the DAG's annotation-consistency check.
+
+    A `COUNT` aggregation always resolves (its output is an `IntColumn`
+    regardless of input). For value aggregations, a source-column parameter
+    annotated with a non-numeric type leaves the primitive's imprecise union
+    in place — without a numeric kind to narrow against, the build-time
+    resolver ships the wider type rather than failing decoration.
+
+    Args:
+        primitive: The aggregation primitive.
+        mapper: The `rename_arguments` mapper from primitive parameter names
+            to DAG argument names.
+        agg_type: The kind of aggregation.
+        func: The user's decorated function; its annotation of `column_name`
+            declares the source column's kind.
+        column_name: The DAG argument name of the source column, or `None`
+            for `COUNT`.
+        node_name: The function's original location, for error messages.
+
+    Returns:
+        The renamed aggregation wrapper, concretely typed where resolvable.
+    """
+    renamed = rename_arguments(func=primitive, mapper=mapper)
+    source_column_kind = None
+    if column_name is not None:
+        annotations = getattr(func, "__annotations__", {}) or {}
+        try:
+            source_column_kind = vectorized_column_kind(
+                resolve_kind_of_annotation(
+                    annotations.get(column_name, ""),
+                    node_name=f"{node_name} (column {column_name!r})",
+                ),
+                node_name=f"{node_name} (column {column_name!r})",
+            )
+        except TypeResolutionError:
+            # The decorated function's source-column parameter is
+            # unannotated or carries a non-numeric annotation. Leave the
+            # primitive's imprecise union in place.
+            return renamed
+    return synthesize_typed_aggregation_wrapper(
+        renamed,
+        agg_type=agg_type,
+        source_column_kind=source_column_kind,
+        column_param_name=column_name,
+        node_name=node_name,
+    )
 
 
 @dataclass(frozen=True)
@@ -664,6 +896,7 @@ class AggByPIDFunction(ColumnFunction):
         )
 
 
+@beartype(conf=AGGREGATION_CONF)
 def agg_by_p_id_function(
     *,
     leaf_name: str | None = None,
@@ -672,10 +905,10 @@ def agg_by_p_id_function(
     agg_type: AggType,
     warn_msg_if_included: str | None = None,
     fail_msg_if_included: str | None = None,
-) -> Callable[[FunctionType[..., Any]], AggByPIDFunction]:
+) -> Callable[[Callable[..., Any]], AggByPIDFunction]:
     start_date, end_date = _convert_and_validate_dates(start_date, end_date)
 
-    agg_registry: dict[AggType, FunctionType[..., Any]] = {
+    agg_registry: dict[AggType, Callable[..., Any]] = {
         AggType.SUM: sum_by_p_id,
         AggType.MEAN: mean_by_p_id,
         AggType.MAX: max_by_p_id,
@@ -685,8 +918,13 @@ def agg_by_p_id_function(
         AggType.COUNT: count_by_p_id,
     }
 
-    def inner(func: FunctionType[..., Any]) -> AggByPIDFunction:
-        orig_location = f"{func.__module__}.{func.__name__}"
+    def inner(func: Callable[..., Any]) -> AggByPIDFunction:
+        _fail_if_missing_annotations(
+            func,
+            exception_class=AggregationDefinitionError,
+            decorator_name="@agg_by_p_id_function",
+        )
+        orig_location = f"{func.__module__}.{func.__name__}"  # ty: ignore[unresolved-attribute]
         args = set(inspect.signature(func).parameters)
         other_p_ids = {
             p
@@ -696,6 +934,7 @@ def agg_by_p_id_function(
         other_args = args - {*other_p_ids, "p_id", "num_segments", "backend"}
         _fail_if_p_id_is_not_present(args, orig_location)
         _fail_if_other_p_id_is_invalid(other_p_ids, orig_location)
+        column_name: str | None
         if agg_type == AggType.COUNT:
             _fail_if_other_arg_is_present(other_args, orig_location)
             mapper = {
@@ -704,27 +943,33 @@ def agg_by_p_id_function(
                 "num_segments": "num_segments",
                 "backend": "backend",
             }
+            column_name = None
         else:
             _fail_if_other_arg_is_invalid(other_args, orig_location)
+            column_name = other_args.pop()
             mapper = {
-                "column": other_args.pop(),
+                "column": column_name,
                 "p_id_to_aggregate_by": other_p_ids.pop(),
                 "p_id_to_store_by": "p_id",
                 "num_segments": "num_segments",
                 "backend": "backend",
             }
-        agg_func = rename_arguments(
-            func=agg_registry[agg_type],
+        agg_func = _make_typed_aggregation_function(
+            primitive=agg_registry[agg_type],
             mapper=mapper,
+            agg_type=agg_type,
+            func=func,
+            column_name=column_name,
+            node_name=orig_location,
         )
         return AggByPIDFunction(
-            leaf_name=leaf_name or func.__name__,
+            leaf_name=leaf_name or func.__name__,  # ty: ignore[unresolved-attribute]
             function=agg_func,
             start_date=start_date,
             end_date=end_date,
             description=str(inspect.getdoc(func)),
             foreign_key_type=FKType.IRRELEVANT,
-            orig_location=f"{func.__module__}.{func.__name__}",
+            orig_location=f"{func.__module__}.{func.__name__}",  # ty: ignore[unresolved-attribute]
             warn_msg_if_included=warn_msg_if_included,
             fail_msg_if_included=fail_msg_if_included,
         )
@@ -840,7 +1085,7 @@ class ParamFunction(Generic[FunArgTypes, ReturnType]):
     leaf_name: str
     start_date: datetime.date
     end_date: datetime.date
-    function: FunctionType[FunArgTypes, ReturnType]
+    function: Callable[FunArgTypes, ReturnType]
     description: str
     warn_msg_if_included: str | None = None
     fail_msg_if_included: str | None = None
@@ -849,6 +1094,7 @@ class ParamFunction(Generic[FunArgTypes, ReturnType]):
         # Expose the signature of the wrapped function for dependency resolution
         _frozen_safe_update_wrapper(self, self.function)
 
+    @no_type_check  # see ColumnFunction.__call__ for rationale.
     def __call__(
         self,
         *args: FunArgTypes.args,
@@ -864,7 +1110,7 @@ class ParamFunction(Generic[FunArgTypes, ReturnType]):
     @property
     def original_function_name(self) -> str:
         """The name of the wrapped function."""
-        return self.function.__name__
+        return self.function.__name__  # ty: ignore[unresolved-attribute]
 
     def is_active(self, policy_date: datetime.date) -> bool:
         """Check if the function is active at a given date."""
@@ -891,6 +1137,7 @@ class ParamFunction(Generic[FunArgTypes, ReturnType]):
         )
 
 
+@beartype(conf=PARAM_FUNCTION_CONF)
 def param_function(
     *,
     leaf_name: str | None = None,
@@ -898,7 +1145,7 @@ def param_function(
     end_date: str | datetime.date = DEFAULT_END_DATE,
     warn_msg_if_included: str | None = None,
     fail_msg_if_included: str | None = None,
-) -> Callable[[FunctionType[..., Any]], ParamFunction[..., Any]]:
+) -> Callable[[Callable[..., Any]], ParamFunction[..., Any]]:
     """Decorate a function to make it a `ParamFunction`.
 
     ParamFunctions convert complex parameters (i.e., anything that is not a scalar, a
@@ -925,9 +1172,14 @@ def param_function(
     """
     start_date, end_date = _convert_and_validate_dates(start_date, end_date)
 
-    def inner(func: FunctionType[..., Any]) -> ParamFunction:
+    def inner(func: Callable[..., Any]) -> ParamFunction:
+        _fail_if_missing_annotations(
+            func,
+            exception_class=ParamFunctionDefinitionError,
+            decorator_name="@param_function",
+        )
         return ParamFunction(
-            leaf_name=leaf_name or func.__name__,
+            leaf_name=leaf_name or func.__name__,  # ty: ignore[unresolved-attribute]
             function=func,
             start_date=start_date,
             end_date=end_date,

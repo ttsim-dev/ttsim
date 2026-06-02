@@ -9,7 +9,7 @@ from ttsim.interface_dag_elements.automatically_added_functions import (
     create_agg_by_group_functions,
     create_time_conversion_functions,
 )
-from ttsim.tt import policy_function
+from ttsim.tt import policy_function, policy_input
 from ttsim.unit_converters import (
     per_d_to_per_m,
     per_d_to_per_w,
@@ -18,6 +18,10 @@ from ttsim.unit_converters import (
 
 def return_one() -> int:
     return 1
+
+
+def return_one_float() -> float:
+    return 1.0
 
 
 def return_x_kin(x_kin: int) -> int:
@@ -137,6 +141,7 @@ def test_grouping_functions_should_not_create_cycle():
             "x": x,
             "some_other_function_requiring_x_hh": some_other_function_requiring_x_hh,
         },
+        qname_policy_environment={},
         input_columns=set(),
         tt_targets=("some_other_function_requiring_x_hh",),
         grouping_levels=("hh",),
@@ -148,6 +153,7 @@ def test_grouping_functions_should_not_create_cycle():
 @pytest.mark.parametrize(
     (
         "column_functions",
+        "qname_policy_environment",
         "tt_targets",
         "input_columns",
         "expected",
@@ -155,18 +161,21 @@ def test_grouping_functions_should_not_create_cycle():
     [
         (
             {"foo": policy_function(leaf_name="foo")(return_x_kin)},
+            {"x": policy_input()(return_one)},
             {},
             {"x"},
             ("x_kin"),
         ),
         (
             {"n2__foo": policy_function(leaf_name="foo")(return_n1__x_kin)},
+            {"n1__x": policy_input()(return_one)},
             {},
             {"n1__x"},
             ("n1__x_kin"),
         ),
         (
             {},
+            {"x": policy_input()(return_one)},
             {"x_kin": None},
             {"x"},
             ("x_kin"),
@@ -175,6 +184,7 @@ def test_grouping_functions_should_not_create_cycle():
 )
 def test_derived_aggregation_functions_are_in_correct_namespace(
     column_functions,
+    qname_policy_environment,
     tt_targets,
     input_columns,
     expected,
@@ -186,8 +196,29 @@ def test_derived_aggregation_functions_are_in_correct_namespace(
     """
     result = create_agg_by_group_functions(
         column_functions=column_functions,
+        qname_policy_environment=qname_policy_environment,
         input_columns=input_columns,
         tt_targets=tt_targets,
         grouping_levels=("kin",),
     )
     assert expected in result
+
+
+def test_agg_by_group_resolves_source_dtype_from_sibling_time_unit() -> None:
+    """Auto-aggregating a user-supplied input at a different time unit than
+    its `PolicyInput` declaration synthesizes the aggregation wrapper by
+    resolving the source dtype from the declared sibling.
+
+    `bonus_m` is declared as a `PolicyInput`; the caller supplies `bonus_y`
+    via input data; `bonus_y_kin` is requested as a target. The resolver
+    walks to the `bonus_m` sibling, reads its declared `data_type`, and
+    `create_agg_by_group_functions` produces a typed `bonus_y_kin` wrapper.
+    """
+    result = create_agg_by_group_functions(
+        column_functions={},
+        qname_policy_environment={"bonus_m": policy_input()(return_one_float)},
+        input_columns={"bonus_y"},
+        tt_targets={"bonus_y_kin": None},
+        grouping_levels=("kin",),
+    )
+    assert "bonus_y_kin" in result
