@@ -16,10 +16,10 @@ jobs:
     name: Run tests for ${{ matrix.os }} on ${{ matrix.environment }}
     runs-on: ${{ matrix.os }}
     # Run CI with the package-wide beartype claw on so we catch type
-    # violations on every PR. The claw is env-var-gated (see
-    # `ttsim/__init__.py`); users of a released package leave
-    # `TTSIM_BEARTYPE_CLAW` unset and never see it. The gate stays in place
-    # until GEP-09's decision on the rollout lands.
+    # violations on every PR. The claw is on by default (GEP 9, Option A;
+    # see `ttsim/__init__.py`); set `TTSIM_BEARTYPE_CLAW=0` to opt out. We
+    # set it explicitly here so CI exercises the claw even if the default
+    # ever changes.
     env:
       TTSIM_BEARTYPE_CLAW: '1'
     strategy:
