@@ -486,10 +486,6 @@ def test_input_data_reordering_with_distinct_values(
     )
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="https://github.com/ttsim-dev/ttsim/issues/79",
-)
 def test_derived_time_converted_scalar_can_partialled(xnp, backend):
     """Scalar inputs are partialled correctly.
 
