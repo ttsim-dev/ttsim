@@ -1,16 +1,64 @@
 """Type aliases used across ttsim.
 
+Keep JAX an *optional* runtime dependency of ttsim. That constraint
+dictates how the column-type aliases below are defined and how every
+module that references them must import them.
+
+The load-bearing mechanism is in `jaxtyping`. `Bool`, `Float`, `Int`, and
+`Shaped` can be imported at runtime without pulling JAX in. `jaxtyping.Array`
+cannot — its top-level `__getattr__` hook resolves `Array` by importing
+`jax`, so any module that touches `Array` at runtime implicitly imports
+JAX. Column aliases like `IntColumn = Int[Array | np.ndarray, " n_obs"]`
+contain `Array` and would trigger that import if evaluated at runtime.
+(The `try / except ImportError` block below softens this: in JAX-free
+envs `Array` falls back to `np.ndarray`, so the aliases stay defined.
+But the alias *evaluations* still happen at module import time only
+because the wider codebase opts into PEP 563 string annotations — see
+the rules below.)
+
 The aliases split into two groups:
 
-1. Runtime-resolvable aliases at module scope. These can be referenced from
-   `@beartype`-decorated signatures (column-type, scalar-type, simple-name
-   aliases, and the "user-boundary" `User*` aliases that accept the wider
-   set of inputs users may pass).
-2. Aliases that reference forward types (`ColumnObject`, `ParamFunction`,
-   `ParamObject`, …) and would create import cycles at runtime. These stay
-   inside the `TYPE_CHECKING` block and must be referenced from runtime
-   annotations only via the `__future__.annotations` string form (which
-   ttsim's defining modules opt into).
+1. **Runtime-resolvable aliases at module scope.** Column-type, scalar-type,
+   simple-name aliases, and the "user-boundary" `User*` aliases. These are
+   evaluated when this module is imported, so they must not pull JAX in.
+   Safe because `Array | np.ndarray` reaches the `np.ndarray` branch in
+   JAX-free envs.
+2. **Forward-reference aliases inside `TYPE_CHECKING`.** Anything mentioning
+   `ColumnObject`, `ParamFunction`, `ParamObject`, etc. — defined here
+   would create import cycles. Referenced from runtime annotations only
+   via PEP 563 string evaluation.
+
+Do's and don'ts for files that reference the aliases below:
+
+- DO keep `from __future__ import annotations` at the top of any file
+  that uses column-type or `User*` aliases. PEP 563 makes annotations
+  string-only at runtime, so beartype resolves them lazily without
+  forcing a JAX import.
+- DO NOT hoist `jaxtyping.Array` out of `TYPE_CHECKING` in any other
+  module. The fallback in this file is the only place that's allowed to
+  touch `Array` at module scope.
+- DO NOT evaluate column-alias expressions at runtime (e.g., do not
+  `isinstance(x, IntColumn)`). The string form via PEP 563 is fine for
+  signatures; beartype handles it.
+- DO leave the column registry (`ttsim.tt.column_objects_param_function`)
+  returning string-form annotations. Eagerly resolving them would
+  re-introduce the JAX import.
+
+When `requires-python` rises to `>=3.14`, several PEP 563 workarounds
+become removable:
+
+- Drop `from __future__ import annotations` from every module. PEP 649
+  evaluates annotations lazily as real objects, so beartype and jaxtyping
+  no longer go through string `eval`. The do's and don'ts above stop
+  applying at the same time.
+- Delete `src/ttsim/_jaxtyping_patch.py` and its import in
+  `src/ttsim/__init__.py`. The shim only matters when `Int[Array, ...]`
+  is stored as the source string `"Int[Array, ...]"` and `eval`'d back
+  to `Int[Array, Ellipsis]`; under PEP 649 the `eval` never happens.
+- The hoisting rule for `Callable`, `Any`, `ModuleType`, `datetime`,
+  and the recursive `NestedData` two-definition pattern (see
+  `.ai-instructions/modules/beartype.md`) all go away with the
+  future-import.
 """
 
 from __future__ import annotations
