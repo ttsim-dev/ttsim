@@ -261,7 +261,7 @@ def test_auto_agg_wrapper_carries_concrete_return_annotation() -> None:
 
 
 @pytest.mark.skipif(
-    os.environ.get("TTSIM_BEARTYPE_CLAW", "0") == "0",
+    os.environ.get("TTSIM_BEARTYPE_CLAW", "1") == "0",
     reason="Requires the beartype claw to be active.",
 )
 def test_auto_agg_wrapper_rejects_misused_source_column() -> None:
