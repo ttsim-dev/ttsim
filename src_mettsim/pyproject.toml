@@ -54,8 +54,8 @@ urls.Repository = "https://github.com/ttsim-dev/ttsim"
 urls.Tracker = "https://github.com/ttsim-dev/ttsim/issues"
 
 [tool.hatch]
+metadata.allow-direct-references = true
 build.targets.sdist.exclude = [ "tests_middle_earth" ]
 build.targets.sdist.only-packages = true
 build.targets.wheel.only-include = [ "." ]
 build.targets.wheel.sources = [ "." ]
-metadata.allow-direct-references = true
