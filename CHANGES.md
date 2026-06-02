@@ -6,6 +6,8 @@ releases are available on [Anaconda.org](https://anaconda.org/conda-forge/ttsim)
 
 ## Unreleased
 
+- {gh}`105` Load policy modules under their canonical Python import name so
+  `cloudpickle.dumps(tt_function)` works. ({ghuser}`hmgaudecker`)
 - {gh}`104` Fix partialling of scalar inputs that drive derived time-conversion
   functions. ({ghuser}`hmgaudecker`)
 - {gh}`103` Make `InputData` and `Results` shapes symmetric. Adds

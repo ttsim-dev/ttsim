@@ -122,6 +122,7 @@ tests.pypi-dependencies.types-PyYAML = "*"
 tests.pypi-dependencies.types-pytz = "*"
 tests.pypi-dependencies.pytest-cov = "*"
 tests.pypi-dependencies.pytest-xdist = "*"
+tests.pypi-dependencies.cloudpickle = ">=3"
 # Run internal tests with the package-wide beartype claw on. The claw is
 # on by default (GEP 9, Option A; see `ttsim/__init__.py`); set
 # `TTSIM_BEARTYPE_CLAW=0` to opt out. Set explicitly here so the test
