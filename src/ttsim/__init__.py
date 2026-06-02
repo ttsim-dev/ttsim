@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import os
-
 # Make jaxtyping accept bare `Ellipsis` axis specs (produced by
 # `from __future__ import annotations` evaluation) before any
 # jaxtyping-subscripted type is created. See the module docstring.
@@ -13,10 +11,14 @@ from ttsim import _jaxtyping_patch  # noqa: F401
 # @beartype(conf=...) decorator that maps violations to the relevant
 # project exception (see ttsim._beartype_conf).
 #
-# Env-var gated: users of a released package leave `TTSIM_BEARTYPE_CLAW`
-# unset and never see it. The gate stays in place until GEP-09's decision
-# on the rollout lands.
-if os.environ.get("TTSIM_BEARTYPE_CLAW", "0") != "0":
+# On by default (GEP 9, Option A): set `TTSIM_BEARTYPE_CLAW=0` to opt out.
+# `RUNTIME_TYPE_CHECKING_ENABLED` reads that env var once and is the single switch —
+# the same flag sets every conf's strategy in `ttsim._beartype_conf`, so
+# opting out also disables the perimeter `@beartype` decorators and the
+# synthesized forwarder, not just this package claw.
+from ttsim._beartype_conf import RUNTIME_TYPE_CHECKING_ENABLED
+
+if RUNTIME_TYPE_CHECKING_ENABLED:
     import warnings
 
     from beartype.claw import beartype_package
