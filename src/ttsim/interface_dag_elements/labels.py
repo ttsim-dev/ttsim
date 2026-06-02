@@ -102,8 +102,10 @@ def top_level_namespace(
 @input_dependent_interface_function(
     include_if_any_input_present=[
         "input_data__flat",
+        "input_data__qname",
         "input_data__tree",
         "input_data__df_with_nested_columns",
+        "input_data__df_with_qname_columns",
         "input_data__df_and_mapper__df",
         "processed_data",
     ],
@@ -117,8 +119,10 @@ def input_columns_from_input_data(processed_data: QNameData) -> UnorderedQNames:
 @input_dependent_interface_function(
     include_if_no_input_present=[
         "input_data__flat",
+        "input_data__qname",
         "input_data__tree",
         "input_data__df_with_nested_columns",
+        "input_data__df_with_qname_columns",
         "input_data__df_and_mapper__df",
         "processed_data",
     ],

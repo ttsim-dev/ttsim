@@ -212,6 +212,12 @@ def test_main_target_class_is_complete() -> None:
             ),
             "df_with_nested_columns",
         ),
+        (
+            lambda _xnp: InputData.df_with_qname_columns(
+                pd.DataFrame({"qname__test": [1, 2, 3]})
+            ),
+            "df_with_qname_columns",
+        ),
         (lambda _xnp: InputData.tree({"tree_data": {"key": [1, 2, 3]}}), "tree"),
         (
             lambda _xnp: InputData.flat({("flat", "key"): [1, 2, 3]}),
@@ -305,6 +311,22 @@ def test_input_data_classmethods(instance_factory, expected_field_name, xnp):
         (
             lambda _xnp: Results.tree({"result_tree": {"data": [1, 2, 3]}}),
             lambda _xnp: Results(tree={"result_tree": {"data": [1, 2, 3]}}),  # ty: ignore[unknown-argument]
+        ),
+        (
+            lambda _xnp: Results.df_with_qname_columns(
+                pd.DataFrame({"qname__col": [1, 2]})
+            ),
+            lambda _xnp: Results(
+                df_with_qname_columns=pd.DataFrame({"qname__col": [1, 2]})  # ty: ignore[unknown-argument]
+            ),
+        ),
+        (
+            lambda _xnp: Results.flat({("a", "b"): [1, 2, 3]}),
+            lambda _xnp: Results(flat={("a", "b"): [1, 2, 3]}),  # ty: ignore[unknown-argument]
+        ),
+        (
+            lambda _xnp: Results.qname({"a__b": [1, 2, 3]}),
+            lambda _xnp: Results(qname={"a__b": [1, 2, 3]}),  # ty: ignore[unknown-argument]
         ),
         # RawResults
         (

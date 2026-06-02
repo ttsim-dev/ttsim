@@ -9,10 +9,12 @@ import pandas as pd
 from ttsim.interface_dag_elements.data_converters import (
     nested_data_to_df_with_mapped_columns,
     nested_data_to_df_with_nested_columns,
+    nested_data_to_df_with_qname_columns,
 )
 from ttsim.interface_dag_elements.interface_node_objects import interface_function
 from ttsim.typing import (
     FlatData,
+    FlatResults,
     IntColumn,
     NestedResults,
     NestedStrings,
@@ -70,3 +72,27 @@ def df_with_nested_columns(
         nested_data_to_convert=tree,
         index=pd.Index(input_data__flat[("p_id",)], name="p_id"),
     )
+
+
+@interface_function()
+def df_with_qname_columns(
+    tree: NestedResults,
+    input_data__flat: FlatData,
+) -> pd.DataFrame:
+    """Results DataFrame with qname-string columns (one flat string per column)."""
+    return nested_data_to_df_with_qname_columns(
+        nested_data_to_convert=tree,
+        index=pd.Index(input_data__flat[("p_id",)], name="p_id"),
+    )
+
+
+@interface_function()
+def flat(tree: NestedResults) -> FlatResults:
+    """Results as a flat mapping of tree-path tuples to result leaves."""
+    return dt.flatten_to_tree_paths(tree)
+
+
+@interface_function()
+def qname(tree: NestedResults) -> QNameResults:
+    """Results as a flat mapping of qualified-name strings to result leaves."""
+    return dt.flatten_to_qnames(tree)

@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import dags.tree as dt
+import numpy
 import pandas as pd
 import pytest
 from mettsim import middle_earth
@@ -31,6 +32,22 @@ DF_WITH_NESTED_COLUMNS = pd.DataFrame(
 )
 
 
+DF_WITH_QNAME_COLUMNS = pd.DataFrame(
+    {
+        "age": [10, 30, 30],
+        "kin_id": [0, 0, 0],
+        "p_id": [2, 0, 1],
+        "p_id_parent_1": [0, -1, -1],
+        "p_id_parent_2": [1, -1, -1],
+        "p_id_spouse": [-1, 1, 0],
+        "parent_is_noble": [False, False, False],
+        "wealth": [0.0, 0.0, 0.0],
+        "payroll_tax__child_tax_credit__p_id_recipient": [0, -1, -1],
+        "payroll_tax__income__gross_wage_y": [0, 10000, 0],
+    },
+)
+
+
 DF_FOR_MAPPER = pd.DataFrame(
     {
         "age": [10, 30, 30],
@@ -45,6 +62,20 @@ DF_FOR_MAPPER = pd.DataFrame(
         "wealth": [0.0, 0.0, 0.0],
     },
 )
+
+
+INPUT_QNAME_DATA = {
+    "age": numpy.array([10, 30, 30]),
+    "kin_id": numpy.array([0, 0, 0]),
+    "p_id": numpy.array([2, 0, 1]),
+    "p_id_parent_1": numpy.array([0, -1, -1]),
+    "p_id_parent_2": numpy.array([1, -1, -1]),
+    "p_id_spouse": numpy.array([-1, 1, 0]),
+    "parent_is_noble": numpy.array([False, False, False]),
+    "wealth": numpy.array([0.0, 0.0, 0.0]),
+    "payroll_tax__child_tax_credit__p_id_recipient": numpy.array([0, -1, -1]),
+    "payroll_tax__income__gross_wage_y": numpy.array([0, 10000, 0]),
+}
 
 
 INPUT_DF_MAPPER = {
@@ -67,12 +98,50 @@ INPUT_DF_MAPPER = {
 }
 
 
+INPUT_TREE_DATA = {
+    "age": numpy.array([10, 30, 30]),
+    "kin_id": numpy.array([0, 0, 0]),
+    "p_id": numpy.array([2, 0, 1]),
+    "p_id_parent_1": numpy.array([0, -1, -1]),
+    "p_id_parent_2": numpy.array([1, -1, -1]),
+    "p_id_spouse": numpy.array([-1, 1, 0]),
+    "parent_is_noble": numpy.array([False, False, False]),
+    "wealth": numpy.array([0.0, 0.0, 0.0]),
+    "payroll_tax": {
+        "child_tax_credit": {"p_id_recipient": numpy.array([0, -1, -1])},
+        "income": {"gross_wage_y": numpy.array([0, 10000, 0])},
+    },
+}
+
+
+INPUT_FLAT_DATA = {
+    ("age",): numpy.array([10, 30, 30]),
+    ("kin_id",): numpy.array([0, 0, 0]),
+    ("p_id",): numpy.array([2, 0, 1]),
+    ("p_id_parent_1",): numpy.array([0, -1, -1]),
+    ("p_id_parent_2",): numpy.array([1, -1, -1]),
+    ("p_id_spouse",): numpy.array([-1, 1, 0]),
+    ("parent_is_noble",): numpy.array([False, False, False]),
+    ("wealth",): numpy.array([0.0, 0.0, 0.0]),
+    ("payroll_tax", "child_tax_credit", "p_id_recipient"): numpy.array([0, -1, -1]),
+    ("payroll_tax", "income", "gross_wage_y"): numpy.array([0, 10000, 0]),
+}
+
+
 TARGETS_TREE = {
     "payroll_tax": {
         "amount_y": "payroll_tax_amount_y",
         "child_tax_credit": {
             "amount_m": "payroll_tax_child_tax_credit_amount_m",
         },
+    },
+}
+
+
+TARGETS_TREE_NO_RENAME = {
+    "payroll_tax": {
+        "amount_y": None,
+        "child_tax_credit": {"amount_m": None},
     },
 }
 
@@ -106,9 +175,22 @@ def benefit(income_m: float) -> float:
     [
         InputData.df_and_mapper(df=DF_FOR_MAPPER, mapper=INPUT_DF_MAPPER),
         InputData.df_with_nested_columns(DF_WITH_NESTED_COLUMNS),
+        InputData.df_with_qname_columns(DF_WITH_QNAME_COLUMNS),
+        InputData.tree(INPUT_TREE_DATA),
+        InputData.flat(INPUT_FLAT_DATA),
+        InputData.qname(INPUT_QNAME_DATA),
+    ],
+    ids=[
+        "df_and_mapper",
+        "df_with_nested_columns",
+        "df_with_qname_columns",
+        "tree",
+        "flat",
+        "qname",
     ],
 )
 def test_end_to_end(input_data_arg, backend: Literal["numpy", "jax"]):
+    """Every `InputData.*` shape produces the same `Results.df_with_mapper`."""
     result = main(
         main_target=(MainTarget.results.df_with_mapper),
         input_data=input_data_arg,
@@ -124,6 +206,56 @@ def test_end_to_end(input_data_arg, backend: Literal["numpy", "jax"]):
         check_dtype=False,
         check_index_type=False,
     )
+
+
+_EXPECTED_AMOUNTS_IN_USER_ORDER = numpy.array([0.0, 2920.0, 0.0])
+_EXPECTED_CHILD_TAX_CREDIT_IN_USER_ORDER = numpy.array([0.0, 8.333333, 0.0])
+_USER_P_IDS_IN_ORDER = numpy.array([2, 0, 1])
+
+
+@pytest.mark.parametrize(
+    ("output_target", "shape_id"),
+    [
+        (MainTarget.results.tree, "tree"),
+        (MainTarget.results.flat, "flat"),
+        (MainTarget.results.qname, "qname"),
+        (MainTarget.results.df_with_nested_columns, "df_with_nested_columns"),
+        (MainTarget.results.df_with_qname_columns, "df_with_qname_columns"),
+    ],
+    ids=["tree", "flat", "qname", "df_with_nested_columns", "df_with_qname_columns"],
+)
+def test_results_shapes_render_payroll_tax_amount_y(
+    output_target: str, shape_id: str, backend: Literal["numpy", "jax"]
+):
+    """Every `Results.*` output shape exposes `payroll_tax__amount_y` with the
+    same per-row values, indexed in the user's original p_id order.
+    """
+    result = main(
+        main_target=output_target,
+        input_data=InputData.df_with_nested_columns(DF_WITH_NESTED_COLUMNS),
+        tt_targets=TTTargets.tree(TARGETS_TREE_NO_RENAME),
+        policy_date_str="2025-01-01",
+        rounding=False,
+        orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+        backend=backend,
+    )
+
+    if shape_id == "tree":
+        amounts = numpy.asarray(result["payroll_tax"]["amount_y"])
+    elif shape_id == "flat":
+        amounts = numpy.asarray(result[("payroll_tax", "amount_y")])
+    elif shape_id == "qname":
+        amounts = numpy.asarray(result["payroll_tax__amount_y"])
+    elif shape_id == "df_with_nested_columns":
+        # The MultiIndex pads shorter paths with NaN; lookup returns a 2-D
+        # frame whose single column carries the values for this leaf.
+        amounts = result.xs("amount_y", level=1, axis="columns").to_numpy().squeeze()
+        assert list(result.index) == list(_USER_P_IDS_IN_ORDER)
+    elif shape_id == "df_with_qname_columns":
+        amounts = result["payroll_tax__amount_y"].to_numpy()
+        assert list(result.index) == list(_USER_P_IDS_IN_ORDER)
+
+    numpy.testing.assert_allclose(amounts, _EXPECTED_AMOUNTS_IN_USER_ORDER)
 
 
 @pytest.mark.parametrize(
@@ -155,6 +287,51 @@ def test_uint_wage_input_does_not_underflow(
     assert float(amount_y[0]) == 0.0
     assert float(amount_y[1]) == 0.0
     assert float(amount_y[2]) == 0.0
+
+
+def test_df_with_qname_columns_has_qname_string_columns(
+    backend: Literal["numpy", "jax"],
+):
+    """Flat qname-named columns survive adding/removing targets without changing
+    the column index depth — unlike `df_with_nested_columns` which uses a
+    MultiIndex whose depth tracks the deepest target.
+    """
+    result = main(
+        main_target=MainTarget.results.df_with_qname_columns,
+        input_data=InputData.df_with_nested_columns(DF_WITH_NESTED_COLUMNS),
+        tt_targets=TTTargets.tree(
+            {
+                "payroll_tax": {
+                    "amount_y": None,
+                    "child_tax_credit": {"amount_m": None},
+                },
+            }
+        ),
+        policy_date_str="2025-01-01",
+        rounding=False,
+        orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+        backend=backend,
+    )
+    assert list(result.columns) == [
+        "payroll_tax__amount_y",
+        "payroll_tax__child_tax_credit__amount_m",
+    ]
+    assert result.index.name == "p_id"
+    assert list(result.index) == [2, 0, 1]
+    pd.testing.assert_series_equal(
+        result["payroll_tax__amount_y"].reset_index(drop=True),
+        EXPECTED_TT_RESULTS["payroll_tax_amount_y"].reset_index(drop=True),
+        check_dtype=False,
+        check_names=False,
+    )
+    pd.testing.assert_series_equal(
+        result["payroll_tax__child_tax_credit__amount_m"].reset_index(drop=True),
+        EXPECTED_TT_RESULTS["payroll_tax_child_tax_credit_amount_m"].reset_index(
+            drop=True
+        ),
+        check_dtype=False,
+        check_names=False,
+    )
 
 
 def test_can_create_input_template(backend: Literal["numpy", "jax"]):

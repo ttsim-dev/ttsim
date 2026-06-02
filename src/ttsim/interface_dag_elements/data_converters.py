@@ -51,6 +51,32 @@ def nested_data_to_df_with_nested_columns(
     )
 
 
+def nested_data_to_df_with_qname_columns(
+    nested_data_to_convert: NestedResults,
+    index: pd.Index,
+) -> pd.DataFrame:
+    """Convert a nested data structure to a DataFrame with qname-string columns.
+
+    Each output column is named with the qualified-name string for its tree path
+    (parts joined by `__`).
+
+    Args:
+        nested_data_to_convert:
+            A nested data structure.
+        index:
+            The index to use for the DataFrame.
+
+    Returns:
+        A DataFrame with qname-string columns.
+    """
+    flat_data_to_convert = dt.flatten_to_qnames(nested_data_to_convert)
+
+    return pd.DataFrame(
+        flat_data_to_convert,
+        index=index,
+    )
+
+
 def nested_data_to_df_with_mapped_columns(
     nested_data_to_convert: NestedResults,
     nested_outputs_df_column_names: NestedStrings,
@@ -187,6 +213,46 @@ def df_with_nested_columns_to_flat_data(
             xnp=numpy,
             column_label=dt.qname_from_tree_path(clean_key),
         )
+        # See comment in `df_with_mapped_columns_to_flat_data` re: object dtype.
+        if backend == "jax" and numpy_array.dtype != numpy.dtype(object):
+            result[clean_key] = xnp.asarray(numpy_array)
+        else:
+            result[clean_key] = numpy_array
+
+    return result
+
+
+def df_with_qname_columns_to_flat_data(
+    df: pd.DataFrame,
+    backend: Literal["numpy", "jax"],
+    xnp: ModuleType,
+) -> FlatData:
+    """Convert a DataFrame whose flat column index holds qname strings.
+
+    Each column name is split on ``__`` to recover the tree path; everything
+    else mirrors `df_with_nested_columns_to_flat_data`.
+
+    Args:
+        df:
+            The pandas DataFrame with qname-string columns.
+        backend:
+            Backend to use for array creation.
+        xnp:
+            The numpy-compatible module.
+
+    Returns:
+        A flattened data structure keyed by tree paths.
+
+    Examples:
+        >>> df = pd.DataFrame({"a__b": [1, 2, 3], "c": [4, 5, 6]})
+        >>> result = df_with_qname_columns_to_flat_data(df, "numpy", np)
+        >>> result
+        {("a", "b"): np.array([1, 2, 3]), ("c",): np.array([4, 5, 6])}
+    """
+    result = {}
+    for raw_key in df.columns:
+        clean_key = dt.tree_path_from_qname(raw_key)
+        numpy_array = _canonicalize_input_dtype(arr=df[raw_key], xnp=numpy)
         # See comment in `df_with_mapped_columns_to_flat_data` re: object dtype.
         if backend == "jax" and numpy_array.dtype != numpy.dtype(object):
             result[clean_key] = xnp.asarray(numpy_array)
