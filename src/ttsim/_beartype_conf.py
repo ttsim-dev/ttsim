@@ -15,6 +15,8 @@ exception hierarchy at the user boundary. The decorators stack on top of
 the package claw and take precedence at the call sites they cover.
 """
 
+import os
+
 from beartype import BeartypeConf, BeartypeStrategy
 
 from ttsim.exceptions import (
@@ -30,14 +32,30 @@ from ttsim.exceptions import (
     TTTargetsError,
 )
 
+# GEP 9: runtime type checking is on by default; `TTSIM_BEARTYPE_CLAW=0` opts
+# out. Reading the env var here — in the single module that builds every conf
+# — makes the switch authoritative. When off, the strategy of every conf falls
+# back to beartype's no-op `O0`, which reduces `@beartype(conf=...)` to the
+# identity decorator. So opting out disables *all* checking: the package claw
+# (additionally gated in `ttsim/__init__.py`), every perimeter decorator, and
+# the synthesized forwarder in `tt/type_resolution.py` — i.e. pre-GEP
+# behaviour, not just the package claw.
+RUNTIME_TYPE_CHECKING_ENABLED = os.environ.get("TTSIM_BEARTYPE_CLAW", "1") != "0"
+_STRATEGY = (
+    BeartypeStrategy.On if RUNTIME_TYPE_CHECKING_ENABLED else BeartypeStrategy.O0
+)
+
 
 def project_conf(error_class: type[TTSIMError]) -> BeartypeConf:
     """Build a `BeartypeConf` that re-raises violations as `error_class`.
 
-    `On` strategy: full O(n) container validation so every bad entry in a
-    mapping/sequence is reported, not just one sampled element. The
-    decorated entry points are called rarely (construction, main),
-    so per-call cost is invisible.
+    Strategy: `On` when runtime checking is enabled — full O(n) container
+    validation so every bad entry in a mapping/sequence is reported, not
+    just one sampled element; the decorated entry points are called rarely
+    (construction, main), so per-call cost is invisible. When
+    `TTSIM_BEARTYPE_CLAW=0` the strategy is beartype's no-op `O0`, reducing
+    every `@beartype(conf=...)` decorator built here to the identity
+    decorator.
 
     `is_pep484_tower=True`: respect the PEP-484 numeric tower so `int`
     satisfies `float`-typed parameters (matches the implicit numeric
@@ -51,7 +69,7 @@ def project_conf(error_class: type[TTSIMError]) -> BeartypeConf:
     return BeartypeConf(
         is_color=False,
         is_pep484_tower=True,
-        strategy=BeartypeStrategy.On,
+        strategy=_STRATEGY,
         violation_door_type=error_class,
         violation_param_type=error_class,
         violation_return_type=error_class,
@@ -68,7 +86,7 @@ def project_conf(error_class: type[TTSIMError]) -> BeartypeConf:
 INTERNAL_CONF = BeartypeConf(
     is_color=False,
     is_pep484_tower=True,
-    strategy=BeartypeStrategy.On,
+    strategy=_STRATEGY,
 )
 
 ENTRY_POINT_CONF = project_conf(EntryPointError)
