@@ -45,7 +45,7 @@ INTERFACE_COLORMAP: dict[tuple[str, ...] | str, str] = {
     ("warn_if",): "salmon",
     ("backend",): "lightgray",
     ("dnp",): "lightgray",
-    ("num_segments",): "lightgray",
+    ("len_p_id",): "lightgray",
     ("xnp",): "lightgray",
 }
 

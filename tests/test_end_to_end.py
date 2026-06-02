@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from types import ModuleType
 from typing import TYPE_CHECKING
 
 import dags.tree as dt
@@ -9,10 +10,11 @@ import pytest
 from mettsim import middle_earth
 
 from ttsim import InputData, MainTarget, OrigPolicyObjects, TTTargets, main
+from ttsim.tt import AggType, agg_by_group_function
 from ttsim.tt.column_objects_param_function import policy_function, policy_input
+from ttsim.typing import FloatColumn
 
 if TYPE_CHECKING:
-    from types import ModuleType
     from typing import Literal
 
 
@@ -638,14 +640,83 @@ def test_derived_time_converted_scalar_can_partialled(xnp, backend):
         evaluation_date_str="2024-01-01",
         backend=backend,
         include_warn_nodes=False,
-        include_fail_nodes=False,
     )
     assert root_nodes == set()
 
 
 @policy_input()
+def broadcast_x() -> float:
+    pass
+
+
+@policy_function(vectorization_strategy="not_required")
+def cumulative_broadcast_x(broadcast_x: FloatColumn, xnp: ModuleType) -> FloatColumn:
+    """Declared with vectorization_strategy='not_required'; it operates on the whole
+    array and cannot run on a bare scalar.
+    """
+    return xnp.cumsum(broadcast_x)
+
+
+@agg_by_group_function(agg_type=AggType.SUM)
+def broadcast_x_fam(broadcast_x: float, fam_id: int) -> float:
+    pass
+
+
+@policy_input()
 def fam_id() -> int:
     pass
+
+
+def test_scalar_input_to_not_required_function_is_broadcast(xnp, backend):
+    """A scalar bound to a `Column` argument of a function with
+    vectorization_strategy='not_required' is broadcast to the population length at call
+    time, so the function sees a full-length array.
+    """
+    results = main(
+        main_target=MainTarget.results.tree,
+        policy_environment={
+            "p_id": p_id,
+            "broadcast_x": broadcast_x,
+            "cumulative_broadcast_x": cumulative_broadcast_x,
+        },
+        input_data=InputData.tree(
+            {"p_id": xnp.array([1, 2, 3]), "broadcast_x": 100.0},
+        ),
+        tt_targets=TTTargets.tree({"cumulative_broadcast_x": None}),
+        policy_date_str="2024-01-01",
+        evaluation_date_str="2024-01-01",
+        backend=backend,
+        include_warn_nodes=False,
+    )
+    numpy.testing.assert_array_equal(
+        results["cumulative_broadcast_x"],
+        numpy.array([100.0, 200.0, 300.0]),
+    )
+
+
+def test_scalar_input_to_not_required_function_is_baked_in(xnp, backend):
+    """The broadcast scalar is partialled in, so it is not a root node. The population
+    length is taken from the partialled-in `len_p_id`, so the broadcast introduces no
+    root node of its own and none remain.
+    """
+    root_nodes = main(
+        main_target=MainTarget.labels.root_nodes,
+        policy_environment={
+            "p_id": p_id,
+            "broadcast_x": broadcast_x,
+            "cumulative_broadcast_x": cumulative_broadcast_x,
+        },
+        input_data=InputData.tree(
+            {"p_id": xnp.array([1, 2, 3]), "broadcast_x": 100.0},
+        ),
+        tt_targets=TTTargets.tree({"cumulative_broadcast_x": None}),
+        policy_date_str="2024-01-01",
+        evaluation_date_str="2024-01-01",
+        backend=backend,
+        include_warn_nodes=False,
+    )
+    assert "broadcast_x" not in root_nodes
+    assert root_nodes == set()
 
 
 @policy_input()

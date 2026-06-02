@@ -224,7 +224,7 @@ def with_partialled_params_and_scalars(
     return specialized_environment.with_partialled_params_and_scalars(
         with_processed_params_and_scalars=with_processed_params_and_scalars,
         rounding=rounding,
-        num_segments=1,
+        len_p_id=1,
         backend=backend,
         xnp=xnp,
         dnp=dnp,

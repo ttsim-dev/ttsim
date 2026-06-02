@@ -83,9 +83,6 @@ class FailIf(MainTargetABC):
     tt_dag_includes_function_with_fail_msg_if_included_set: str = (
         "fail_if__tt_dag_includes_function_with_fail_msg_if_included_set"
     )
-    passed_scalar_inputs_for_natively_vectorized_functions: str = (
-        "fail_if__passed_scalar_inputs_for_natively_vectorized_functions"
-    )
 
 
 @dataclass(frozen=True)
@@ -206,7 +203,7 @@ class MainTarget(MainTargetABC):
     labels: type[Labels] = field(default=Labels)
     input_data: type[InputData] = field(default=InputData)
     tt_targets: type[Targets] = field(default=Targets)
-    num_segments: str = "num_segments"
+    len_p_id: str = "len_p_id"
     backend: str = "backend"
     evaluation_date_str: str = "evaluation_date_str"
     evaluation_date: str = "evaluation_date"

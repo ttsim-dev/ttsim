@@ -341,7 +341,7 @@ def test_typed_wrapper_skips_non_numeric_param_annotation() -> None:
     )
 
     # A non-dict `lookup` would raise if beartype were enforcing the `"dict"`
-    # annotation; it does not, because `_is_numeric_annotation("dict")` is
-    # `False` and the wrapper only installs checks for numeric parameters.
+    # annotation; it does not, because `is_column_annotation("dict")` is
+    # `False` and the wrapper only installs checks for column parameters.
     result = wrapper(x=np.array([1, 2, 3]), lookup="not a dict")
     np.testing.assert_array_equal(result, np.array([1, 2, 3]))
