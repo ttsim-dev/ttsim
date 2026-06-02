@@ -25,6 +25,7 @@ from ttsim.interface_dag_elements.fail_if import (
     group_ids_are_outside_top_level_namespace,
     group_variables_are_not_constant_within_groups,
     input_data_is_invalid,
+    input_data_uint64_values_overflow_int64,
     input_df_has_bool_or_numeric_column_names,
     input_df_mapper_columns_missing_in_df,
     input_df_mapper_has_incorrect_format,
@@ -930,6 +931,34 @@ def test_fail_if_p_id_does_not_exist(xnp):
         match=r"The input data must contain the `p_id` column.",
     ):
         input_data_is_invalid(data, xnp)
+
+
+def test_fail_if_uint64_input_overflows_int64_raises():
+    data = {
+        ("p_id",): numpy.array([1, 2], dtype=numpy.int64),
+        ("wealth",): numpy.array([0, 2**63], dtype=numpy.uint64),
+    }
+    with pytest.raises(
+        ValueError,
+        match=r"(?s)uint64.*wealth",
+    ):
+        input_data_uint64_values_overflow_int64(data)
+
+
+def test_fail_if_uint64_input_overflows_int64_passes_within_range():
+    data = {
+        ("p_id",): numpy.array([1, 2], dtype=numpy.int64),
+        ("wealth",): numpy.array([0, 2**63 - 1], dtype=numpy.uint64),
+    }
+    input_data_uint64_values_overflow_int64(data)
+
+
+def test_fail_if_uint64_input_overflows_int64_ignores_non_uint64_columns():
+    data = {
+        ("p_id",): numpy.array([1, 2], dtype=numpy.int64),
+        ("wage",): numpy.array([0, 100], dtype=numpy.uint32),
+    }
+    input_data_uint64_values_overflow_int64(data)
 
 
 def test_fail_if_p_id_is_missing_via_main(backend):

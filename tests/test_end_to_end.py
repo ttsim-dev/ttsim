@@ -126,6 +126,37 @@ def test_end_to_end(input_data_arg, backend: Literal["numpy", "jax"]):
     )
 
 
+@pytest.mark.parametrize(
+    "wage_dtype",
+    ["uint32", "UInt32", "uint32[pyarrow]"],
+)
+def test_uint_wage_input_does_not_underflow(
+    wage_dtype: str, backend: Literal["numpy", "jax"]
+):
+    """A `uint`-typed wage column flows through `max(gross - deductions, 0)` as
+    signed arithmetic, so the result is 0 rather than the uint wraparound.
+    """
+    if wage_dtype.endswith("[pyarrow]"):
+        pytest.importorskip("pyarrow")
+    nested_columns_df = DF_WITH_NESTED_COLUMNS.copy()
+    nested_columns_df[("payroll_tax", "income", "gross_wage_y")] = pd.Series(
+        [0, 0, 0], dtype=wage_dtype
+    )
+    result = main(
+        main_target=MainTarget.results.tree,
+        input_data=InputData.df_with_nested_columns(nested_columns_df),
+        tt_targets=TTTargets.tree({"payroll_tax": {"amount_y": None}}),
+        policy_date_str="2025-01-01",
+        rounding=False,
+        orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+        backend=backend,
+    )
+    amount_y = result["payroll_tax"]["amount_y"]
+    assert float(amount_y[0]) == 0.0
+    assert float(amount_y[1]) == 0.0
+    assert float(amount_y[2]) == 0.0
+
+
 def test_can_create_input_template(backend: Literal["numpy", "jax"]):
     result_template = main(
         main_target=MainTarget.templates.input_data_dtypes.tree,

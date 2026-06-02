@@ -7,6 +7,9 @@ import dags.tree as dt
 import numpy
 import pandas as pd
 
+from ttsim.interface_dag_elements.processed_data import (
+    _canonicalize_input_dtype,
+)
 from ttsim.typing import (
     FlatData,
     NestedData,
@@ -132,10 +135,16 @@ def df_with_mapped_columns_to_flat_data(
         if numpy.isscalar(mapper_value) and not isinstance(mapper_value, str):
             numpy_array = numpy.full(len(df), mapper_value)
         else:
-            numpy_array = numpy.asarray(df[mapper_value])
+            numpy_array = _canonicalize_input_dtype(
+                arr=df[mapper_value],
+                xnp=numpy,
+                column_label=dt.qname_from_tree_path(path),
+            )
 
-        # Convert numpy array back to JAX array if JAX backend is chosen
-        if backend == "jax":
+        # Keep NA-containing int/bool columns as numpy object arrays so the
+        # `input_data_has_int_or_bool_missing_values` fail-if can report them;
+        # JAX's `asarray` would crash on `pd.NA` before the fail-if runs.
+        if backend == "jax" and numpy_array.dtype != numpy.dtype(object):
             path_to_array[path] = xnp.asarray(numpy_array)
         else:
             path_to_array[path] = numpy_array
@@ -166,16 +175,23 @@ def df_with_nested_columns_to_flat_data(
         {("a", "b"): np.array([1, 2, 3]), ("c",): np.array([4, 5, 6])}
     """
     result = {}
-    for key, value in df.to_dict(orient="list").items():
-        clean_key = _remove_nan_from_keys(key)
-
-        # Use numpy for array creation if JAX backend is chosen and
-        # immediately convert back to JAX array.
-        # Performance optimization for JAX, PR #34
-        if backend == "jax":
-            result[clean_key] = xnp.asarray(numpy.asarray(value))
+    # Read each column as a `pd.Series` so the canonicalizer sees the
+    # original (possibly nullable / pyarrow) dtype and applies the correct
+    # NA-aware conversion.
+    for raw_key in df.columns:
+        clean_key = _remove_nan_from_keys(
+            raw_key if isinstance(raw_key, tuple) else (raw_key,)
+        )
+        numpy_array = _canonicalize_input_dtype(
+            arr=df[raw_key],
+            xnp=numpy,
+            column_label=dt.qname_from_tree_path(clean_key),
+        )
+        # See comment in `df_with_mapped_columns_to_flat_data` re: object dtype.
+        if backend == "jax" and numpy_array.dtype != numpy.dtype(object):
+            result[clean_key] = xnp.asarray(numpy_array)
         else:
-            result[clean_key] = numpy.asarray(value)
+            result[clean_key] = numpy_array
 
     return result
 
