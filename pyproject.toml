@@ -123,9 +123,9 @@ tests.pypi-dependencies.types-pytz = "*"
 tests.pypi-dependencies.pytest-cov = "*"
 tests.pypi-dependencies.pytest-xdist = "*"
 # Run internal tests with the package-wide beartype claw on. The claw is
-# env-var-gated (see `ttsim/__init__.py`); users of a released package
-# leave `TTSIM_BEARTYPE_CLAW` unset and never see it. The gate stays in
-# place until GEP-09's decision on the rollout lands.
+# on by default (GEP 9, Option A; see `ttsim/__init__.py`); set
+# `TTSIM_BEARTYPE_CLAW=0` to opt out. Set explicitly here so the test
+# environment exercises the claw even if the default ever changes.
 tests.activation.env.TTSIM_BEARTYPE_CLAW = "1"
 tests.target.linux-64.tasks.tests = "pytest"
 tests.target.linux-64.tasks.tests-with-cov = "pytest --cov-report=xml --cov=./"
