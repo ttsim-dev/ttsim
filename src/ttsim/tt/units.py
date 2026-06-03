@@ -64,6 +64,29 @@ from ttsim.exceptions import (
     UnitInferenceError,
 )
 
+#: Maps a GEP-1 time-unit suffix id (``_y``/``_q``/``_m``/``_w``/``_d``) to the
+#: pint unit naming its period. Time is a first-class pint dimension (GEP 10):
+#: the suffix supplies the per-period denominator of a flow.
+TIME_UNIT_ID_TO_PINT_NAME = {
+    "y": "year",
+    "q": "quarter_year",
+    "m": "month",
+    "w": "week",
+    "d": "day",
+}
+
+#: Maps a ``reference_period`` label (the functional flow period of a parameter)
+#: to the pint unit naming its period.
+REFERENCE_PERIOD_TO_PINT_NAME = {
+    "Year": "year",
+    "Quarter": "quarter_year",
+    "Month": "month",
+    "Week": "week",
+    "Day": "day",
+    "Hour": "hour",
+}
+
+
 #: The pint unit anchoring the ``[currency]`` dimension, used internally to
 #: resolve the currency tokens (``CURRENCY_FLOW``, ``CURRENCY_STOCK``, …)
 #: before any concrete currency is registered. Checks compare at the
@@ -442,6 +465,138 @@ def _fail_if_unit_tokens_are_unknown(
             f"about: {', '.join(offending)}. Known units are "
             f"{', '.join(sorted(_ALLOWED_UNIT_TOKENS))} (GEP 10)."
         )
+
+
+def _divide_by_period(non_time_unit: pint.Unit, period_pint_name: str) -> pint.Unit:
+    """Return ``non_time_unit / period`` as a pint unit."""
+    period = UREG.Quantity(1.0, period_pint_name)
+    return (UREG.Quantity(1.0, non_time_unit) / period).units
+
+
+def _token_base_unit(token: Unit) -> pint.Unit:
+    """The pint unit of a token's non-period part."""
+    base = _TOKEN_BASE_AND_IS_FLOW[token][0]
+    return UREG.dimensionless if base is None else UREG.parse_units(base)
+
+
+def resolve_column_unit(
+    token: Unit | None,
+    time_unit_id: str | None,
+) -> pint.Unit:
+    """Resolve a column/function's full unit from its ``unit=`` token and suffix.
+
+    The suffix ⟺ flow rule is checked in both directions (GEP 10): a time
+    suffix (``_y``/``_q``/``_m``/``_w``/``_d``) requires a ``…_FLOW`` token
+    and supplies its period, so ``betrag_m`` declared
+    ``unit=Unit.CURRENCY_FLOW`` resolves to ``CURRENCY / month`` and the
+    auto-generated ``betrag_y`` to ``CURRENCY / year``. A complete token
+    (``CURRENCY_STOCK``, ``YEARS``, …) or a dimensionless declaration
+    (``None``) forbids a suffix.
+
+    Args:
+        token: The ``unit=`` declaration — a :class:`Unit` member, or
+            ``None`` for a dimensionless quantity (a share, a head count).
+        time_unit_id: The GEP-1 time-unit suffix id, or ``None`` for a node
+            without one.
+
+    Returns:
+        The resolved pint unit.
+
+    Raises:
+        UnitDefinitionError: If the suffix ⟺ flow rule is violated or
+            ``time_unit_id`` is not a recognised suffix id.
+    """
+    if time_unit_id is not None and time_unit_id not in TIME_UNIT_ID_TO_PINT_NAME:
+        raise UnitDefinitionError(
+            f"Unknown time-unit suffix id {time_unit_id!r}; expected one of "
+            f"{', '.join(TIME_UNIT_ID_TO_PINT_NAME)}."
+        )
+    if token is None:
+        if time_unit_id is not None:
+            raise UnitDefinitionError(
+                f"A name with a time-unit suffix (_{time_unit_id}) denotes a "
+                f"flow and requires a `…_FLOW` unit token; `unit=None` "
+                f"declares a dimensionless quantity (a dimensionless flow is "
+                f"`{Unit.SHARE_FLOW}`) (GEP 10)."
+            )
+        return UREG.dimensionless
+    if unit_token_is_flow(token):
+        if time_unit_id is None:
+            raise UnitDefinitionError(
+                f"Unit token {token} denotes a flow and requires a time-unit "
+                f"suffix (_y/_q/_m/_w/_d) on the name to supply its period "
+                f"(GEP 10)."
+            )
+        return _divide_by_period(
+            _token_base_unit(token), TIME_UNIT_ID_TO_PINT_NAME[time_unit_id]
+        )
+    if time_unit_id is not None:
+        raise UnitDefinitionError(
+            f"Unit token {token} is complete as written, but the name carries "
+            f"a time-unit suffix (_{time_unit_id}). A suffixed name denotes a "
+            f"flow and requires a `…_FLOW` token (GEP 10)."
+        )
+    return _token_base_unit(token)
+
+
+def resolve_param_unit(
+    token: Unit | None,
+    reference_period: str | None,
+) -> pint.Unit:
+    """Resolve a parameter's full unit from its ``unit:`` token and period.
+
+    ``reference_period`` is *functional* (GEP 10): it is required by a
+    ``…_FLOW`` token, whose period it supplies — the parameter analog of the
+    name suffix — and forbidden otherwise. In particular ``unit: null`` with
+    a non-null ``reference_period`` is an error: ``null`` always and only
+    means dimensionless, and the per-period dimensionless quantity is
+    :attr:`Unit.SHARE_FLOW`.
+
+    Args:
+        token: The ``unit:`` declaration — a :class:`Unit` member, or
+            ``None`` for a dimensionless parameter.
+        reference_period: The ``reference_period`` label (``"Year"``,
+            ``"Month"``, …), or ``None``.
+
+    Returns:
+        The resolved pint unit.
+
+    Raises:
+        UnitDefinitionError: If the flow ⟺ ``reference_period`` rule is
+            violated or ``reference_period`` is not a recognised label.
+    """
+    if (
+        reference_period is not None
+        and reference_period not in REFERENCE_PERIOD_TO_PINT_NAME
+    ):
+        raise UnitDefinitionError(
+            f"Unknown reference_period {reference_period!r}; expected one of "
+            f"{', '.join(REFERENCE_PERIOD_TO_PINT_NAME)}."
+        )
+    if token is None:
+        if reference_period is not None:
+            raise UnitDefinitionError(
+                f"`unit: null` declares a dimensionless parameter and cannot "
+                f"be combined with `reference_period: {reference_period}`. A "
+                f"dimensionless quantity per period declares "
+                f"`unit: {Unit.SHARE_FLOW}` (GEP 10)."
+            )
+        return UREG.dimensionless
+    if unit_token_is_flow(token):
+        if reference_period is None:
+            raise UnitDefinitionError(
+                f"Unit token {token} denotes a flow and requires a non-null "
+                f"`reference_period` to supply its period (GEP 10)."
+            )
+        return _divide_by_period(
+            _token_base_unit(token), REFERENCE_PERIOD_TO_PINT_NAME[reference_period]
+        )
+    if reference_period is not None:
+        raise UnitDefinitionError(
+            f"Unit token {token} is complete as written and cannot be "
+            f"combined with `reference_period: {reference_period}` (GEP 10)."
+        )
+    return _token_base_unit(token)
 
 
 def units_are_equivalent(left: pint.Unit, right: pint.Unit) -> bool:

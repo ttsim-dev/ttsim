@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import math
 from typing import Any, overload
 
 import numpy as np
 import pandas as pd
 from jaxtyping import Float, Int
+
+from ttsim.tt.units import UREG
 
 # `jax` is an optional runtime dependency; the NumPy-only test envs do not
 # install it. Resolve `Array` to a backend-agnostic union of the (optional)
@@ -26,10 +29,34 @@ TIME_UNIT_IDS_TO_LABELS = {
     "d": "Day",
 }
 
-_Q_PER_Y = 4
-_M_PER_Y = 12
-_W_PER_Y = 365.25 / 7
-_D_PER_Y = 365.25
+
+def _ratio(numerator: str, denominator: str) -> float:
+    """Dimensionless magnitude of ``1 numerator / 1 denominator``, from pint."""
+    return (
+        (UREG.Quantity(1.0, numerator) / UREG.Quantity(1.0, denominator))
+        .to("dimensionless")
+        .magnitude
+    )
+
+
+def _as_int_if_integral(magnitude: float) -> int | float:
+    """Return an ``int`` for an exactly-integral factor, else the ``float``.
+
+    Stock converters preserve integer inputs (e.g. ``y_to_m`` of an ``int``
+    stock stays an ``int``), so the integral factors must stay ``int``.
+    """
+    rounded = round(magnitude)
+    return rounded if math.isclose(magnitude, rounded) else magnitude
+
+
+# Conversion factors are sourced from pint rather than hand-written (GEP 10).
+# The week factor is composed via days (365.25 / 7) so it reproduces GEP 1's
+# canonical value to the last bit, rather than pint's slightly different
+# direct year/week reduction.
+_Q_PER_Y = _as_int_if_integral(_ratio("year", "quarter_year"))
+_M_PER_Y = _as_int_if_integral(_ratio("year", "month"))
+_D_PER_Y = _ratio("year", "day")
+_W_PER_Y = _D_PER_Y / _ratio("week", "day")
 
 
 # --- Year conversions (stocks) ---

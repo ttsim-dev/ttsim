@@ -41,6 +41,8 @@ from ttsim.tt.rounding import RoundingSpec
 from ttsim.tt.shared import join
 from ttsim.tt.units import (
     CURRENCY_TOKEN,
+    REFERENCE_PERIOD_TO_PINT_NAME,
+    TIME_UNIT_ID_TO_PINT_NAME,
     UREG,
     CurrencyUnitToken,
     Unit,
@@ -51,12 +53,16 @@ from ttsim.tt.units import (
     infer_function_unit,
     parse_unit,
     register_currency,
+    resolve_column_unit,
+    resolve_param_unit,
     token_source_currency,
     units_are_equivalent,
 )
 
 __all__ = [
     "CURRENCY_TOKEN",
+    "REFERENCE_PERIOD_TO_PINT_NAME",
+    "TIME_UNIT_ID_TO_PINT_NAME",
     "UREG",
     "AggByGroupFunction",
     "AggByPIDFunction",
@@ -103,6 +109,8 @@ __all__ = [
     "policy_function",
     "policy_input",
     "register_currency",
+    "resolve_column_unit",
+    "resolve_param_unit",
     "token_source_currency",
     "units_are_equivalent",
 ]

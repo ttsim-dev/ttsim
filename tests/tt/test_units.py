@@ -10,6 +10,7 @@ from mettsim.middle_earth.property_tax.amount import (
     acre_size_in_hectares_after_cap,
 )
 
+from ttsim import unit_converters
 from ttsim.exceptions import (
     PolicyFunctionDefinitionError,
     UnitConsistencyError,
@@ -27,6 +28,8 @@ from ttsim.tt import (
     parse_unit,
     policy_function,
     register_currency,
+    resolve_column_unit,
+    resolve_param_unit,
     token_source_currency,
     units_are_equivalent,
 )
@@ -380,3 +383,135 @@ def test_policy_function_unit_defaults_to_none():
         return x
 
     assert something.unit is None
+
+
+# ----------------------------------------------------------------------------
+# #118: time as a dimension — suffix/reference_period resolution
+# ----------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("token", "time_unit_id", "expected"),
+    [
+        (Unit.CURRENCY_FLOW, "m", "CURRENCY / month"),
+        (Unit.CURRENCY_FLOW, "y", "CURRENCY / year"),
+        (Unit.CURRENCY_FLOW, "q", "CURRENCY / quarter_year"),
+        (Unit.CURRENCY_FLOW, "w", "CURRENCY / week"),
+        (Unit.CURRENCY_FLOW, "d", "CURRENCY / day"),
+        (Unit.SHARE_FLOW, "y", "1 / year"),  # e.g. a wealth-tax rate
+        (Unit.HOURS_FLOW, "w", "hour / week"),  # e.g. working hours
+        (Unit.CURRENCY_PER_SQUARE_METER_FLOW, "m", "CURRENCY / meter ** 2 / month"),
+        (Unit.CURRENCY_STOCK, None, "CURRENCY"),  # stock
+        (Unit.YEARS, None, "year"),  # intrinsic time, e.g. an age
+        (Unit.SQUARE_METERS, None, "meter ** 2"),
+        (Unit.HECTARES, None, "hectare"),
+    ],
+)
+def test_resolve_column_unit(token, time_unit_id, expected):
+    resolved = resolve_column_unit(token, time_unit_id)
+    assert units_are_equivalent(resolved, parse_unit(expected))
+
+
+def test_resolve_column_unit_none_is_dimensionless():
+    # A share, a rate, a head count: no unit declared at all.
+    assert units_are_equivalent(resolve_column_unit(None, None), UREG.dimensionless)
+
+
+def test_resolve_column_unit_rejects_unknown_suffix():
+    with pytest.raises(UnitDefinitionError, match="time-unit suffix"):
+        resolve_column_unit(Unit.CURRENCY_FLOW, "x")
+
+
+def test_resolve_column_unit_rejects_complete_token_on_suffixed_name():
+    # Suffix ⟺ flow, checked in both directions (GEP 10).
+    with pytest.raises(UnitDefinitionError, match="complete as written"):
+        resolve_column_unit(Unit.CURRENCY_STOCK, "m")
+
+
+def test_resolve_column_unit_rejects_flow_token_without_suffix():
+    with pytest.raises(UnitDefinitionError, match="requires a time-unit suffix"):
+        resolve_column_unit(Unit.CURRENCY_FLOW, None)
+
+
+def test_resolve_column_unit_rejects_dimensionless_on_suffixed_name():
+    with pytest.raises(UnitDefinitionError, match="SHARE_FLOW"):
+        resolve_column_unit(None, "y")
+
+
+@pytest.mark.parametrize(
+    ("token", "reference_period", "expected"),
+    [
+        (Unit.CURRENCY_FLOW, "Year", "CURRENCY / year"),
+        (Unit.CURRENCY_FLOW, "Month", "CURRENCY / month"),
+        (Unit.SHARE_FLOW, "Year", "1 / year"),  # the wealth-tax rate
+        (Unit.CURRENCY_STOCK, None, "CURRENCY"),
+        (Unit.YEARS, None, "year"),
+    ],
+)
+def test_resolve_param_unit(token, reference_period, expected):
+    resolved = resolve_param_unit(token, reference_period)
+    assert units_are_equivalent(resolved, parse_unit(expected))
+
+
+def test_resolve_param_unit_rejects_unknown_reference_period():
+    with pytest.raises(UnitDefinitionError, match="reference_period"):
+        resolve_param_unit(Unit.CURRENCY_FLOW, "Fortnight")
+
+
+def test_resolve_param_unit_rejects_flow_token_without_reference_period():
+    with pytest.raises(UnitDefinitionError, match="requires a non-null"):
+        resolve_param_unit(Unit.CURRENCY_FLOW, None)
+
+
+def test_resolve_param_unit_rejects_complete_token_with_reference_period():
+    with pytest.raises(UnitDefinitionError, match="complete as written"):
+        resolve_param_unit(Unit.CURRENCY_STOCK, "Year")
+
+
+def test_resolve_param_unit_rejects_null_with_reference_period():
+    # The old hidden rule (`unit: null` + `reference_period: Year` -> 1/year)
+    # is dead: null always and only means dimensionless (GEP 10).
+    with pytest.raises(UnitDefinitionError, match="SHARE_FLOW"):
+        resolve_param_unit(None, "Year")
+
+
+def test_flow_period_resolution_distinguishes_month_and_year():
+    """A monthly flow and its yearly variant resolve to non-equivalent units."""
+    betrag_m = resolve_column_unit(Unit.CURRENCY_FLOW, "m")
+    betrag_y = resolve_column_unit(Unit.CURRENCY_FLOW, "y")
+    assert not units_are_equivalent(betrag_m, betrag_y)
+
+
+# ----------------------------------------------------------------------------
+# #118: pint-sourced conversion factors and duration conversion
+# ----------------------------------------------------------------------------
+
+
+def test_unit_converter_factors_sourced_from_pint():
+    # The stock converters multiply by the period-per-year factor; check that
+    # factor against pint via the public converter functions.
+    def per_year(name):
+        return (
+            (UREG.Quantity(1.0, "year") / UREG.Quantity(1.0, name))
+            .to("dimensionless")
+            .magnitude
+        )
+
+    assert unit_converters.y_to_q(1.0) == pytest.approx(per_year("quarter_year"))
+    assert unit_converters.y_to_m(1.0) == pytest.approx(per_year("month"))
+    assert unit_converters.y_to_w(1.0) == pytest.approx(per_year("week"))
+    assert unit_converters.y_to_d(1.0) == pytest.approx(per_year("day"))
+
+
+def test_integral_factors_keep_integer_type():
+    # Stock conversions must keep ints as ints (e.g. y_to_m of an int stock).
+    assert unit_converters.y_to_q(2) == 8
+    assert isinstance(unit_converters.y_to_q(2), int)
+    assert unit_converters.y_to_m(2) == 24
+    assert isinstance(unit_converters.y_to_m(2), int)
+
+
+def test_duration_conversion_year_to_month():
+    """A duration of 2 years is 24 months — sourced from pint."""
+    months = UREG.Quantity(2.0, "year").to("month")
+    assert months.magnitude == pytest.approx(24.0)
