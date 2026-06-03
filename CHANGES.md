@@ -6,6 +6,9 @@ releases are available on [Anaconda.org](https://anaconda.org/conda-forge/ttsim)
 
 ## Unreleased
 
+- {gh}`108` Allow endogenously-computed `p_id_*` columns as targets — the interface DAG
+  reverse-translates internal indices back to user-space `p_id` values, preserving the
+  `-1` no-link sentinel. ({ghuser}`hmgaudecker`)
 - {gh}`106` Document the JAX-optional-runtime-dependency constraint that governs how
   column-type aliases must be imported. ({ghuser}`hmgaudecker`)
 - {gh}`105` Load policy modules under their canonical Python import name so
