@@ -11,7 +11,7 @@ from ttsim.interface_dag_elements.orig_policy_objects import load_module
 # the module via `load_module` — claw-free, exactly how the interface DAG obtains
 # these objects — to assert on the pristine instance.
 _IFACE_DIR = Path(ttsim.interface_dag_elements.__file__).parent
-len_p_id = load_module(_IFACE_DIR / "len_p_id.py", _IFACE_DIR).len_p_id
+len_p_id = load_module(path=_IFACE_DIR / "len_p_id.py", root=_IFACE_DIR).len_p_id
 
 
 def test_len_p_id_is_interface_function():

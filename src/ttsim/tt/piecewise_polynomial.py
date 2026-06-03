@@ -143,7 +143,7 @@ def get_piecewise_parameters(
     intervals = [
         portion.from_string(item["interval"], conv=float) for item in parameter_list
     ]
-    validate_intervals(intervals, leaf_name)
+    validate_intervals(intervals=intervals, leaf_name=leaf_name)
 
     if intervals[0].lower == -portion.inf:
         options = OPTIONS_REGISTRY[func_type]
@@ -236,10 +236,10 @@ def _check_and_get_intercepts(
         )
     if count_intercepts_supplied < n_intervals:
         intercepts = _create_intercepts(
-            lower_thresholds,
-            upper_thresholds,
-            coefficients,
-            intercepts[0],
+            lower_thresholds=lower_thresholds,
+            upper_thresholds=upper_thresholds,
+            coefficients=coefficients,
+            intercept_at_lowest_threshold=intercepts[0],
             xnp=xnp,
         )
     return xnp.array(intercepts)

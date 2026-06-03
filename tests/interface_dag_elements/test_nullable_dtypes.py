@@ -112,13 +112,13 @@ def test_canonicalize_input_dtype_normalises_extension_dtypes(
     ``b`` for booleans). JAX may choose narrower widths than int64 when its
     x64 mode is off — the test asserts kind, not exact width.
     """
-    result = _canonicalize_input_dtype(series_factory(), xnp)
+    result = _canonicalize_input_dtype(arr=series_factory(), xnp=xnp)
     assert result.dtype.kind == expected_dtype_kind
 
 
 def test_canonicalize_input_dtype_floats_map_na_to_nan(xnp: ModuleType):
     series = pd.Series([1.0, pd.NA, 3.0], dtype="Float64")
-    result = _canonicalize_input_dtype(series, xnp)
+    result = _canonicalize_input_dtype(arr=series, xnp=xnp)
     assert result.dtype.kind == "f"
     assert bool(xnp.isnan(result[1]))
 

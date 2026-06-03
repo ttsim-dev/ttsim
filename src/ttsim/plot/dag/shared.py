@@ -106,7 +106,9 @@ def get_figure(
         normalized_colormap = _normalize_colormap(node_colormap)
         # Use provided colormap with glob pattern support
         for qname in dag.nodes():
-            color = _find_color_for_qname(qname, normalized_colormap)
+            color = _find_color_for_qname(
+                qname=qname, node_colormap=normalized_colormap
+            )
             individual_node_colormap[qname] = color
     else:
         # Use default automatic color generation
@@ -251,9 +253,9 @@ def _find_color_for_qname(qname: str, node_colormap: dict[tuple[str, ...], str])
     tp = dt.tree_path_from_qname(qname)
 
     matches = [
-        (color, _pattern_specificity(tp, pattern_tp))
+        (color, _pattern_specificity(tp=tp, pattern_tp=pattern_tp))
         for pattern_tp, color in node_colormap.items()
-        if _matches_glob_pattern(tp, pattern_tp)
+        if _matches_glob_pattern(tp=tp, pattern_tp=pattern_tp)
     ]
 
     if matches:
@@ -295,7 +297,7 @@ def _matches_glob_pattern(tp: tuple[str, ...], pattern_tp: tuple[str, ...]) -> b
 
     # Handle patterns containing "**"
     if "**" in pattern_tp:
-        return _matches_glob_pattern_with_doublestar(tp, pattern_tp)
+        return _matches_glob_pattern_with_doublestar(tp=tp, pattern_tp=pattern_tp)
 
     # Pattern must not be longer than the tree path for prefix matching
     if len(pattern_tp) > len(tp):
@@ -329,7 +331,7 @@ def _matches_glob_pattern_with_doublestar(
         # Recursively handle multiple "**"
         remaining_tp = tp[len(before) :]
         return any(
-            _matches_glob_pattern_with_doublestar(remaining_tp[i:], after)
+            _matches_glob_pattern_with_doublestar(tp=remaining_tp[i:], pattern_tp=after)
             for i in range(len(remaining_tp) + 1)
         )
 
