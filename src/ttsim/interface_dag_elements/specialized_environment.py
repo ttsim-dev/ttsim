@@ -306,6 +306,15 @@ def with_partialled_params_and_scalars(
             if _vectorization_not_required(col_func)
             else rounded_col_func
         )
+        # Functions that are natively vectorized (aggregations, group creation, and
+        # `PolicyFunction`s marked ``vectorization_strategy="not_required"``) expect
+        # their `Column`-typed arguments to be full arrays. Wrap them so such scalars
+        # are broadcast to the population length at call time.
+        final_col_func = (
+            _broadcast_scalar_columns_at_call_time(rounded_col_func, xnp=xnp)
+            if _vectorization_not_required(col_func)
+            else rounded_col_func
+        )
         partial_params_of_this_column_function = {
             arg: all_partial_params[arg]
             for arg in get_free_arguments(final_col_func)
