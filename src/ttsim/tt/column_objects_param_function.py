@@ -60,6 +60,7 @@ from ttsim.tt.type_resolution import (
     synthesize_typed_aggregation_wrapper,
     vectorized_column_kind,
 )
+from ttsim.tt.units import Unit
 from ttsim.tt.vectorization import vectorize_function
 from ttsim.typing import DashedISOString, IntColumn, UnorderedQNames
 
@@ -143,6 +144,10 @@ class PolicyInput(ColumnObject):
     warn_msg_if_included: str | None = None
     fail_msg_if_included: str | None = None
     docstring: str | None = ""
+    unit: Unit | None = None
+    """The input's unit token (GEP 10), e.g. :attr:`Unit.CURRENCY_STOCK`; a
+    ``…_FLOW`` token gets its period from the name suffix. ``None`` until
+    annotated; mandatory from issue #119."""
 
     def remove_tree_logic(
         self,
@@ -160,6 +165,7 @@ def policy_input(
     foreign_key_type: FKType = FKType.IRRELEVANT,
     warn_msg_if_included: str | None = None,
     fail_msg_if_included: str | None = None,
+    unit: Unit | None = None,
 ) -> Callable[[Callable[..., Any]], PolicyInput]:
     """Decorate a (dummy) function to make it a `PolicyInput`.
 
@@ -194,6 +200,7 @@ def policy_input(
             docstring=inspect.getdoc(func),
             warn_msg_if_included=warn_msg_if_included,
             fail_msg_if_included=fail_msg_if_included,
+            unit=unit,
         )
 
     return inner
@@ -247,6 +254,10 @@ class ColumnFunction(ColumnObject, Generic[FunArgTypes, ReturnType]):
     foreign_key_type: FKType = FKType.IRRELEVANT
     warn_msg_if_included: str | None = None
     fail_msg_if_included: str | None = None
+    unit: Unit | None = None
+    """The column's unit token (GEP 10), e.g. :attr:`Unit.CURRENCY_FLOW` (the
+    period comes from the name suffix) or :attr:`Unit.SQUARE_METERS`.
+    ``None`` until annotated; mandatory from issue #119."""
 
     def __post_init__(self) -> None:
         _fail_if_rounding_has_wrong_type(self.rounding_spec)
@@ -337,6 +348,7 @@ class PolicyFunction(ColumnFunction):
             vectorization_strategy=self.vectorization_strategy,
             warn_msg_if_included=self.warn_msg_if_included,
             fail_msg_if_included=self.fail_msg_if_included,
+            unit=self.unit,
         )
 
     def vectorize(
@@ -363,6 +375,7 @@ class PolicyFunction(ColumnFunction):
             vectorization_strategy="not_required",
             warn_msg_if_included=self.warn_msg_if_included,
             fail_msg_if_included=self.fail_msg_if_included,
+            unit=self.unit,
         )
 
 
@@ -377,6 +390,7 @@ def policy_function(
     foreign_key_type: FKType = FKType.IRRELEVANT,
     warn_msg_if_included: str | None = None,
     fail_msg_if_included: str | None = None,
+    unit: Unit | None = None,
 ) -> Callable[[Callable[..., Any]], PolicyFunction]:
     """Decorate a function to make it a `PolicyFunction`.
 
@@ -428,6 +442,7 @@ def policy_function(
             vectorization_strategy=vectorization_strategy,
             warn_msg_if_included=warn_msg_if_included,
             fail_msg_if_included=fail_msg_if_included,
+            unit=unit,
         )
 
     return inner
@@ -591,6 +606,7 @@ class GroupCreationFunction(ColumnFunction):
             foreign_key_type=self.foreign_key_type,
             warn_msg_if_included=self.warn_msg_if_included,
             fail_msg_if_included=self.fail_msg_if_included,
+            unit=self.unit,
         )
 
 
@@ -683,6 +699,7 @@ class AggByGroupFunction(ColumnFunction):
             orig_location=self.orig_location,
             warn_msg_if_included=self.warn_msg_if_included,
             fail_msg_if_included=self.fail_msg_if_included,
+            unit=self.unit,
         )
 
 
@@ -893,6 +910,7 @@ class AggByPIDFunction(ColumnFunction):
             orig_location=self.orig_location,
             warn_msg_if_included=self.warn_msg_if_included,
             fail_msg_if_included=self.fail_msg_if_included,
+            unit=self.unit,
         )
 
 
@@ -1038,6 +1056,7 @@ class TimeConversionFunction(ColumnFunction):
             foreign_key_type=self.foreign_key_type,
             warn_msg_if_included=self.warn_msg_if_included,
             fail_msg_if_included=self.fail_msg_if_included,
+            unit=self.unit,
         )
 
 
@@ -1089,6 +1108,10 @@ class ParamFunction(Generic[FunArgTypes, ReturnType]):
     description: str
     warn_msg_if_included: str | None = None
     fail_msg_if_included: str | None = None
+    unit: Unit | None = None
+    """The parameter function's unit token (GEP 10); a ``…_FLOW`` token gets
+    its period from the name suffix. ``None`` until annotated; mandatory from
+    issue #119."""
 
     def __post_init__(self) -> None:
         # Expose the signature of the wrapped function for dependency resolution
@@ -1134,6 +1157,7 @@ class ParamFunction(Generic[FunArgTypes, ReturnType]):
             description=self.description,
             warn_msg_if_included=self.warn_msg_if_included,
             fail_msg_if_included=self.fail_msg_if_included,
+            unit=self.unit,
         )
 
 
@@ -1145,6 +1169,7 @@ def param_function(
     end_date: str | datetime.date = DEFAULT_END_DATE,
     warn_msg_if_included: str | None = None,
     fail_msg_if_included: str | None = None,
+    unit: Unit | None = None,
 ) -> Callable[[Callable[..., Any]], ParamFunction[..., Any]]:
     """Decorate a function to make it a `ParamFunction`.
 
@@ -1186,6 +1211,7 @@ def param_function(
             description=str(inspect.getdoc(func)),
             warn_msg_if_included=warn_msg_if_included,
             fail_msg_if_included=fail_msg_if_included,
+            unit=unit,
         )
 
     return inner

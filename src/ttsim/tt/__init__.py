@@ -39,8 +39,22 @@ from ttsim.tt.piecewise_polynomial import (
 )
 from ttsim.tt.rounding import RoundingSpec
 from ttsim.tt.shared import join
+from ttsim.tt.units import (
+    CURRENCY_TOKEN,
+    UREG,
+    Unit,
+    base_currency,
+    coerce_unit_token,
+    fail_if_function_unit_is_inconsistent,
+    infer_function_unit,
+    parse_unit,
+    register_currency,
+    units_are_equivalent,
+)
 
 __all__ = [
+    "CURRENCY_TOKEN",
+    "UREG",
     "AggByGroupFunction",
     "AggByPIDFunction",
     "AggType",
@@ -62,19 +76,27 @@ __all__ = [
     "RoundingSpec",
     "ScalarParam",
     "TimeConversionFunction",
+    "Unit",
     "agg_by_group_function",
     "agg_by_p_id_function",
+    "base_currency",
+    "coerce_unit_token",
     "convert_sparse_to_consecutive_int_lookup_table",
+    "fail_if_function_unit_is_inconsistent",
     "get_consecutive_int_lookup_table_param_value",
     "get_month_based_phase_inout_of_age_thresholds_param_value",
     "get_piecewise_parameters",
     "get_year_based_phase_inout_of_age_thresholds_param_value",
     "group_creation_function",
+    "infer_function_unit",
     "intervals_to_thresholds",
     "join",
     "merge_piecewise_intervals",
     "param_function",
+    "parse_unit",
     "piecewise_polynomial",
     "policy_function",
     "policy_input",
+    "register_currency",
+    "units_are_equivalent",
 ]
