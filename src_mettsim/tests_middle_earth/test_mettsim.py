@@ -27,7 +27,7 @@ if TYPE_CHECKING:
 
 POLICY_TEST_IDS_AND_CASES = load_policy_cases(
     policy_cases_root=(
-        middle_earth.ROOT_PATH.parent / "tests_middle_earth" / "policy_cases"
+        middle_earth.ROOT_PATH.parent.parent / "tests_middle_earth" / "policy_cases"
     ),
     policy_name="",
     xnp=numpy,
