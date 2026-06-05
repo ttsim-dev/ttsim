@@ -183,22 +183,26 @@ def test_register_currency_requires_exactly_one_of_base_or_definition():
 
 
 def test_same_unit_is_equivalent():
-    assert units_are_equivalent(parse_unit("hectare"), parse_unit("hectare"))
+    assert units_are_equivalent(left=parse_unit("hectare"), right=parse_unit("hectare"))
 
 
 def test_base_currency_equivalent_to_currency_token():
-    assert units_are_equivalent(parse_unit("gold_coin"), parse_unit("CURRENCY"))
+    assert units_are_equivalent(
+        left=parse_unit("gold_coin"), right=parse_unit("CURRENCY")
+    )
 
 
 def test_month_and_year_flows_are_not_equivalent():
     # Same dimensionality ([currency] / [time]) but different magnitude.
     assert not units_are_equivalent(
-        parse_unit("CURRENCY / month"), parse_unit("CURRENCY / year")
+        left=parse_unit("CURRENCY / month"), right=parse_unit("CURRENCY / year")
     )
 
 
 def test_different_dimensions_are_not_equivalent():
-    assert not units_are_equivalent(parse_unit("CURRENCY"), parse_unit("hectare"))
+    assert not units_are_equivalent(
+        left=parse_unit("CURRENCY"), right=parse_unit("hectare")
+    )
 
 
 # ----------------------------------------------------------------------------
@@ -211,9 +215,10 @@ def test_infer_multiplication_combines_units():
         return price_per_area * area
 
     inferred = infer_function_unit(
-        revenue, {"price_per_area": "CURRENCY / hectare", "area": "hectare"}
+        function=revenue,
+        input_units={"price_per_area": "CURRENCY / hectare", "area": "hectare"},
     )
-    assert units_are_equivalent(inferred, parse_unit("CURRENCY"))
+    assert units_are_equivalent(left=inferred, right=parse_unit("CURRENCY"))
 
 
 def test_infer_raises_on_dimensional_clash():
@@ -222,7 +227,8 @@ def test_infer_raises_on_dimensional_clash():
 
     with pytest.raises(UnitInferenceError):
         infer_function_unit(
-            bad_sum, {"rent": "CURRENCY", "price_per_area": "CURRENCY / hectare"}
+            function=bad_sum,
+            input_units={"rent": "CURRENCY", "price_per_area": "CURRENCY / hectare"},
         )
 
 

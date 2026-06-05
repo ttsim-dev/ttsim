@@ -308,7 +308,7 @@ def parse_unit(unit_str: str) -> pint.Unit:
         unit = UREG.parse_units(unit_str)
     except (pint.errors.PintError, AssertionError, ValueError, TypeError) as e:
         raise UnitDefinitionError(f"Could not parse unit {unit_str!r}: {e}") from e
-    _fail_if_unit_tokens_are_unknown(unit, unit_str)
+    _fail_if_unit_tokens_are_unknown(unit=unit, unit_str=unit_str)
     if not to_units_container(unit):
         raise UnitDefinitionError(
             f"Unit {unit_str!r} resolves to the dimensionless unit. A "
@@ -443,10 +443,10 @@ def fail_if_function_unit_is_inconsistent(
         function, "__qualname__", getattr(function, "__name__", "?")
     )
     inferred = infer_function_unit(
-        function, input_units, non_unit_kwargs=non_unit_kwargs
+        function=function, input_units=input_units, non_unit_kwargs=non_unit_kwargs
     )
     declared = parse_unit(declared_unit)
-    if not units_are_equivalent(inferred, declared):
+    if not units_are_equivalent(left=inferred, right=declared):
         raise UnitConsistencyError(
             f"Function {name!r} declares unit '{declared}' but its body infers "
             f"'{inferred}'."
