@@ -408,34 +408,37 @@ def test_policy_function_unit_defaults_to_none():
     ],
 )
 def test_resolve_column_unit(token, time_unit_id, expected):
-    resolved = resolve_column_unit(token, time_unit_id)
-    assert units_are_equivalent(resolved, parse_unit(expected))
+    resolved = resolve_column_unit(token=token, time_unit_id=time_unit_id)
+    assert units_are_equivalent(left=resolved, right=parse_unit(expected))
 
 
 def test_resolve_column_unit_none_is_dimensionless():
     # A share, a rate, a head count: no unit declared at all.
-    assert units_are_equivalent(resolve_column_unit(None, None), UREG.dimensionless)
+    assert units_are_equivalent(
+        left=resolve_column_unit(token=None, time_unit_id=None),
+        right=UREG.dimensionless,
+    )
 
 
 def test_resolve_column_unit_rejects_unknown_suffix():
     with pytest.raises(UnitDefinitionError, match="time-unit suffix"):
-        resolve_column_unit(Unit.CURRENCY_FLOW, "x")
+        resolve_column_unit(token=Unit.CURRENCY_FLOW, time_unit_id="x")
 
 
 def test_resolve_column_unit_rejects_complete_token_on_suffixed_name():
     # Suffix ⟺ flow, checked in both directions (GEP 10).
     with pytest.raises(UnitDefinitionError, match="complete as written"):
-        resolve_column_unit(Unit.CURRENCY_STOCK, "m")
+        resolve_column_unit(token=Unit.CURRENCY_STOCK, time_unit_id="m")
 
 
 def test_resolve_column_unit_rejects_flow_token_without_suffix():
     with pytest.raises(UnitDefinitionError, match="requires a time-unit suffix"):
-        resolve_column_unit(Unit.CURRENCY_FLOW, None)
+        resolve_column_unit(token=Unit.CURRENCY_FLOW, time_unit_id=None)
 
 
 def test_resolve_column_unit_rejects_dimensionless_on_suffixed_name():
     with pytest.raises(UnitDefinitionError, match="SHARE_FLOW"):
-        resolve_column_unit(None, "y")
+        resolve_column_unit(token=None, time_unit_id="y")
 
 
 @pytest.mark.parametrize(
@@ -449,37 +452,37 @@ def test_resolve_column_unit_rejects_dimensionless_on_suffixed_name():
     ],
 )
 def test_resolve_param_unit(token, reference_period, expected):
-    resolved = resolve_param_unit(token, reference_period)
-    assert units_are_equivalent(resolved, parse_unit(expected))
+    resolved = resolve_param_unit(token=token, reference_period=reference_period)
+    assert units_are_equivalent(left=resolved, right=parse_unit(expected))
 
 
 def test_resolve_param_unit_rejects_unknown_reference_period():
     with pytest.raises(UnitDefinitionError, match="reference_period"):
-        resolve_param_unit(Unit.CURRENCY_FLOW, "Fortnight")
+        resolve_param_unit(token=Unit.CURRENCY_FLOW, reference_period="Fortnight")
 
 
 def test_resolve_param_unit_rejects_flow_token_without_reference_period():
     with pytest.raises(UnitDefinitionError, match="requires a non-null"):
-        resolve_param_unit(Unit.CURRENCY_FLOW, None)
+        resolve_param_unit(token=Unit.CURRENCY_FLOW, reference_period=None)
 
 
 def test_resolve_param_unit_rejects_complete_token_with_reference_period():
     with pytest.raises(UnitDefinitionError, match="complete as written"):
-        resolve_param_unit(Unit.CURRENCY_STOCK, "Year")
+        resolve_param_unit(token=Unit.CURRENCY_STOCK, reference_period="Year")
 
 
 def test_resolve_param_unit_rejects_null_with_reference_period():
     # The old hidden rule (`unit: null` + `reference_period: Year` -> 1/year)
     # is dead: null always and only means dimensionless (GEP 10).
     with pytest.raises(UnitDefinitionError, match="SHARE_FLOW"):
-        resolve_param_unit(None, "Year")
+        resolve_param_unit(token=None, reference_period="Year")
 
 
 def test_flow_period_resolution_distinguishes_month_and_year():
     """A monthly flow and its yearly variant resolve to non-equivalent units."""
-    betrag_m = resolve_column_unit(Unit.CURRENCY_FLOW, "m")
-    betrag_y = resolve_column_unit(Unit.CURRENCY_FLOW, "y")
-    assert not units_are_equivalent(betrag_m, betrag_y)
+    betrag_m = resolve_column_unit(token=Unit.CURRENCY_FLOW, time_unit_id="m")
+    betrag_y = resolve_column_unit(token=Unit.CURRENCY_FLOW, time_unit_id="y")
+    assert not units_are_equivalent(left=betrag_m, right=betrag_y)
 
 
 # ----------------------------------------------------------------------------

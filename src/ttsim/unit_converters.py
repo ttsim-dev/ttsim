@@ -53,10 +53,10 @@ def _as_int_if_integral(magnitude: float) -> int | float:
 # The week factor is composed via days (365.25 / 7) so it reproduces GEP 1's
 # canonical value to the last bit, rather than pint's slightly different
 # direct year/week reduction.
-_Q_PER_Y = _as_int_if_integral(_ratio("year", "quarter_year"))
-_M_PER_Y = _as_int_if_integral(_ratio("year", "month"))
-_D_PER_Y = _ratio("year", "day")
-_W_PER_Y = _D_PER_Y / _ratio("week", "day")
+_Q_PER_Y = _as_int_if_integral(_ratio(numerator="year", denominator="quarter_year"))
+_M_PER_Y = _as_int_if_integral(_ratio(numerator="year", denominator="month"))
+_D_PER_Y = _ratio(numerator="year", denominator="day")
+_W_PER_Y = _D_PER_Y / _ratio(numerator="week", denominator="day")
 
 
 # --- Year conversions (stocks) ---

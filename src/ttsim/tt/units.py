@@ -528,7 +528,8 @@ def resolve_column_unit(
                 f"(GEP 10)."
             )
         return _divide_by_period(
-            _token_base_unit(token), TIME_UNIT_ID_TO_PINT_NAME[time_unit_id]
+            non_time_unit=_token_base_unit(token),
+            period_pint_name=TIME_UNIT_ID_TO_PINT_NAME[time_unit_id],
         )
     if time_unit_id is not None:
         raise UnitDefinitionError(
@@ -589,7 +590,8 @@ def resolve_param_unit(
                 f"`reference_period` to supply its period (GEP 10)."
             )
         return _divide_by_period(
-            _token_base_unit(token), REFERENCE_PERIOD_TO_PINT_NAME[reference_period]
+            non_time_unit=_token_base_unit(token),
+            period_pint_name=REFERENCE_PERIOD_TO_PINT_NAME[reference_period],
         )
     if reference_period is not None:
         raise UnitDefinitionError(
