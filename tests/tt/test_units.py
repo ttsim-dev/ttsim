@@ -478,6 +478,40 @@ def test_resolve_param_unit_rejects_null_with_reference_period():
         resolve_param_unit(token=None, reference_period="Year")
 
 
+def test_resolve_param_unit_currency_token_resolves_like_agnostic_counterpart():
+    # Union semantics: for dimensionality checks, SILVER_PENNY_* means
+    # exactly what CURRENCY_* means; the concrete currency only drives the
+    # build-time conversion.
+    register_currency("silver_penny", definition="castar / 4")
+    stock = coerce_unit_token("SILVER_PENNY_STOCK", where="test")
+    flow = coerce_unit_token("SILVER_PENNY_FLOW", where="test")
+    assert units_are_equivalent(
+        left=resolve_param_unit(token=stock, reference_period=None),
+        right=parse_unit("CURRENCY"),
+    )
+    assert units_are_equivalent(
+        left=resolve_param_unit(token=flow, reference_period="Year"),
+        right=parse_unit("CURRENCY / year"),
+    )
+
+
+def test_resolve_param_unit_currency_flow_token_needs_reference_period():
+    # The flow <-> reference_period rule applies to currency tokens alike.
+    flow = coerce_unit_token("CASTAR_FLOW", where="test")
+    with pytest.raises(UnitDefinitionError, match="requires a non-null"):
+        resolve_param_unit(token=flow, reference_period=None)
+    stock = coerce_unit_token("CASTAR_STOCK", where="test")
+    with pytest.raises(UnitDefinitionError, match="complete as written"):
+        resolve_param_unit(token=stock, reference_period="Year")
+
+
+def test_resolve_column_unit_rejects_currency_token():
+    # Columns and functions are currency-agnostic by design.
+    flow = coerce_unit_token("CASTAR_FLOW", where="test")
+    with pytest.raises(UnitDefinitionError, match="currency-agnostic"):
+        resolve_column_unit(token=flow, time_unit_id="m")
+
+
 def test_flow_period_resolution_distinguishes_month_and_year():
     """A monthly flow and its yearly variant resolve to non-equivalent units."""
     betrag_m = resolve_column_unit(token=Unit.CURRENCY_FLOW, time_unit_id="m")

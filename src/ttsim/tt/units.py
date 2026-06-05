@@ -473,14 +473,22 @@ def _divide_by_period(non_time_unit: pint.Unit, period_pint_name: str) -> pint.U
     return (UREG.Quantity(1.0, non_time_unit) / period).units
 
 
-def _token_base_unit(token: Unit) -> pint.Unit:
-    """The pint unit of a token's non-period part."""
+def _token_base_unit(token: Unit | CurrencyUnitToken) -> pint.Unit:
+    """The pint unit of a token's non-period part.
+
+    A currency token resolves to the agnostic :data:`CURRENCY_TOKEN` unit:
+    for dimensionality checks a registered currency means exactly what its
+    agnostic counterpart means (the union semantics of GEP 10) — the concrete
+    currency only drives the build-time conversion of the numbers.
+    """
+    if isinstance(token, CurrencyUnitToken):
+        return UREG.parse_units(CURRENCY_TOKEN)
     base = _TOKEN_BASE_AND_IS_FLOW[token][0]
     return UREG.dimensionless if base is None else UREG.parse_units(base)
 
 
 def resolve_column_unit(
-    token: Unit | None,
+    token: Unit | CurrencyUnitToken | None,
     time_unit_id: str | None,
 ) -> pint.Unit:
     """Resolve a column/function's full unit from its ``unit=`` token and suffix.
@@ -493,6 +501,11 @@ def resolve_column_unit(
     (``CURRENCY_STOCK``, ``YEARS``, …) or a dimensionless declaration
     (``None``) forbids a suffix.
 
+    Columns and functions are currency-agnostic by design (GEP 10), so a
+    concrete currency token (``SILVER_PENNY_FLOW``, ``DM_STOCK``, …) is
+    rejected here — only parameters pin down the currency their numbers are
+    written in.
+
     Args:
         token: The ``unit=`` declaration — a :class:`Unit` member, or
             ``None`` for a dimensionless quantity (a share, a head count).
@@ -503,9 +516,17 @@ def resolve_column_unit(
         The resolved pint unit.
 
     Raises:
-        UnitDefinitionError: If the suffix ⟺ flow rule is violated or
-            ``time_unit_id`` is not a recognised suffix id.
+        UnitDefinitionError: If the suffix ⟺ flow rule is violated,
+            ``time_unit_id`` is not a recognised suffix id, or the token
+            pins down a concrete currency.
     """
+    if isinstance(token, CurrencyUnitToken):
+        raise UnitDefinitionError(
+            f"Unit token {token} pins down a concrete currency, which only "
+            f"parameters may do. Columns and functions are currency-agnostic "
+            f"and declare {Unit.CURRENCY_FLOW} / {Unit.CURRENCY_STOCK} "
+            f"(GEP 10)."
+        )
     if time_unit_id is not None and time_unit_id not in TIME_UNIT_ID_TO_PINT_NAME:
         raise UnitDefinitionError(
             f"Unknown time-unit suffix id {time_unit_id!r}; expected one of "
@@ -541,7 +562,7 @@ def resolve_column_unit(
 
 
 def resolve_param_unit(
-    token: Unit | None,
+    token: Unit | CurrencyUnitToken | None,
     reference_period: str | None,
 ) -> pint.Unit:
     """Resolve a parameter's full unit from its ``unit:`` token and period.
@@ -553,9 +574,15 @@ def resolve_param_unit(
     means dimensionless, and the per-period dimensionless quantity is
     :attr:`Unit.SHARE_FLOW`.
 
+    Parameters may pin down a concrete currency (``SILVER_PENNY_STOCK``,
+    ``DM_FLOW``, …); such a token resolves exactly like its agnostic
+    counterpart — the concrete currency drives the build-time conversion,
+    not the dimensionality check.
+
     Args:
-        token: The ``unit:`` declaration — a :class:`Unit` member, or
-            ``None`` for a dimensionless parameter.
+        token: The ``unit:`` declaration — a :class:`Unit` member, a
+            :class:`CurrencyUnitToken`, or ``None`` for a dimensionless
+            parameter.
         reference_period: The ``reference_period`` label (``"Year"``,
             ``"Month"``, …), or ``None``.
 
