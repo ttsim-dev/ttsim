@@ -53,7 +53,7 @@ from __future__ import annotations
 import enum
 import math
 from collections.abc import Callable, Mapping
-from typing import Any, Self
+from typing import Any, NamedTuple, Self
 
 import pint
 from pint.util import to_units_container
@@ -143,18 +143,29 @@ class Unit(enum.StrEnum):
     """An amount of currency per square meter per period: rent caps."""
 
 
-#: Maps each token to ``(base, is_flow)``: the pint expression of its
-#: non-period part (``None`` for a dimensionless base) and whether a period
-#: must be supplied. Internal — declarations never contain pint syntax.
-_TOKEN_BASE_AND_IS_FLOW: dict[Unit, tuple[str | None, bool]] = {
-    Unit.CURRENCY_FLOW: (CURRENCY_TOKEN, True),
-    Unit.CURRENCY_STOCK: (CURRENCY_TOKEN, False),
-    Unit.SHARE_FLOW: (None, True),
-    Unit.YEARS: ("year", False),
-    Unit.HOURS_FLOW: ("hour", True),
-    Unit.SQUARE_METERS: ("meter ** 2", False),
-    Unit.HECTARES: ("hectare", False),
-    Unit.CURRENCY_PER_SQUARE_METER_FLOW: (f"{CURRENCY_TOKEN} / meter ** 2", True),
+class _TokenResolution(NamedTuple):
+    """How a token resolves internally: pint base expression and kind."""
+
+    base: str | None
+    """The pint expression of the token's non-period part (``None`` for a
+    dimensionless base)."""
+    is_flow: bool
+    """Whether a period must be supplied."""
+
+
+#: Maps each token to its resolution. Internal — declarations never contain
+#: pint syntax.
+_TOKEN_BASE_AND_IS_FLOW: dict[Unit, _TokenResolution] = {
+    Unit.CURRENCY_FLOW: _TokenResolution(base=CURRENCY_TOKEN, is_flow=True),
+    Unit.CURRENCY_STOCK: _TokenResolution(base=CURRENCY_TOKEN, is_flow=False),
+    Unit.SHARE_FLOW: _TokenResolution(base=None, is_flow=True),
+    Unit.YEARS: _TokenResolution(base="year", is_flow=False),
+    Unit.HOURS_FLOW: _TokenResolution(base="hour", is_flow=True),
+    Unit.SQUARE_METERS: _TokenResolution(base="meter ** 2", is_flow=False),
+    Unit.HECTARES: _TokenResolution(base="hectare", is_flow=False),
+    Unit.CURRENCY_PER_SQUARE_METER_FLOW: _TokenResolution(
+        base=f"{CURRENCY_TOKEN} / meter ** 2", is_flow=True
+    ),
 }
 
 
@@ -199,7 +210,7 @@ def unit_token_is_flow(token: Unit | CurrencyUnitToken) -> bool:
     """Whether a token denotes a per-period quantity (needs a period source)."""
     if isinstance(token, CurrencyUnitToken):
         return token.is_flow
-    return _TOKEN_BASE_AND_IS_FLOW[token][1]
+    return _TOKEN_BASE_AND_IS_FLOW[token].is_flow
 
 
 def token_source_currency(token: Unit | CurrencyUnitToken | None) -> str | None:
@@ -234,13 +245,11 @@ def coerce_unit_token(
     """
     if value is None or isinstance(value, Unit | CurrencyUnitToken):
         return value
+    if value in _CURRENCY_UNIT_TOKENS:
+        return _CURRENCY_UNIT_TOKENS[value]
     try:
         return Unit(value)
     except ValueError:
-        pass
-    try:
-        return _CURRENCY_UNIT_TOKENS[value]
-    except KeyError:
         raise UnitDefinitionError(
             f"{where}: invalid unit token {value!r}. A unit declaration must "
             f"be one of {', '.join([*Unit, *_CURRENCY_UNIT_TOKENS])} — or "
@@ -340,9 +349,13 @@ def register_currency(
             f"`definition=...`; got base={base!r}, definition={definition!r}."
         )
     _fail_if_currency_token_collides(name)
+    if base and _base_currency not in (None, name):
+        raise UnitDefinitionError(
+            f"Cannot register {name!r} as the base currency: "
+            f"{_base_currency!r} is already the base currency."
+        )
 
     currency_dim = UREG.Quantity(1.0, CURRENCY_TOKEN).dimensionality
-
     if name in UREG:
         # Idempotent re-registration (e.g. a re-imported module). Tolerate it
         # only if the existing definition is consistent with this call.
@@ -352,33 +365,16 @@ def register_currency(
                 f"Cannot register currency {name!r}: a non-currency unit of "
                 f"that name already exists ({existing_dim})."
             )
-        if base and _base_currency not in (None, name):
+    else:
+        UREG.define(f"{name} = {CURRENCY_TOKEN}" if base else f"{name} = {definition}")
+        if UREG.Quantity(1.0, name).dimensionality != currency_dim:
             raise UnitDefinitionError(
-                f"Cannot register {name!r} as the base currency: "
-                f"{_base_currency!r} is already the base currency."
+                f"Currency {name!r} defined as {definition!r} does not resolve "
+                f"to the [currency] dimension."
             )
-        if base:
-            _base_currency = name
-        _ALLOWED_UNIT_TOKENS.add(name)
-        _register_currency_unit_tokens(name)
-        return
 
     if base:
-        if _base_currency is not None:
-            raise UnitDefinitionError(
-                f"Cannot register {name!r} as the base currency: "
-                f"{_base_currency!r} is already the base currency."
-            )
-        UREG.define(f"{name} = {CURRENCY_TOKEN}")
         _base_currency = name
-    else:
-        UREG.define(f"{name} = {definition}")
-
-    if UREG.Quantity(1.0, name).dimensionality != currency_dim:
-        raise UnitDefinitionError(
-            f"Currency {name!r} defined as {definition!r} does not resolve to "
-            f"the [currency] dimension."
-        )
     _ALLOWED_UNIT_TOKENS.add(name)
     _register_currency_unit_tokens(name)
 
@@ -483,7 +479,7 @@ def _token_base_unit(token: Unit | CurrencyUnitToken) -> pint.Unit:
     """
     if isinstance(token, CurrencyUnitToken):
         return UREG.parse_units(CURRENCY_TOKEN)
-    base = _TOKEN_BASE_AND_IS_FLOW[token][0]
+    base = _TOKEN_BASE_AND_IS_FLOW[token].base
     return UREG.dimensionless if base is None else UREG.parse_units(base)
 
 
@@ -628,6 +624,11 @@ def resolve_param_unit(
     return _token_base_unit(token)
 
 
+def _function_name(function: Callable[..., Any]) -> str:
+    """A human-readable function name for error messages."""
+    return getattr(function, "__qualname__", getattr(function, "__name__", "?"))
+
+
 def units_are_equivalent(left: pint.Unit, right: pint.Unit) -> bool:
     """Whether two units are interchangeable on a DAG edge.
 
@@ -682,7 +683,7 @@ def infer_function_unit(
         UnitInferenceError: If the body performs a dimensionally invalid
             operation or otherwise fails to dry-run.
     """
-    func_name = getattr(function, "__qualname__", getattr(function, "__name__", "?"))
+    func_name = _function_name(function)
     quantities: dict[str, Any] = {
         name: UREG.Quantity(1.0, parse_unit(unit_str))
         for name, unit_str in input_units.items()
@@ -726,9 +727,7 @@ def fail_if_function_unit_is_inconsistent(
         UnitConsistencyError: If the inferred unit does not match the declared
             unit.
     """
-    name = function_name or getattr(
-        function, "__qualname__", getattr(function, "__name__", "?")
-    )
+    name = function_name or _function_name(function)
     inferred = infer_function_unit(
         function=function, input_units=input_units, non_unit_kwargs=non_unit_kwargs
     )
