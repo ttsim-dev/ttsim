@@ -42,13 +42,16 @@ from ttsim.tt.shared import join
 from ttsim.tt.units import (
     CURRENCY_TOKEN,
     UREG,
+    CurrencyUnitToken,
     Unit,
+    UnitToken,
     base_currency,
     coerce_unit_token,
     fail_if_function_unit_is_inconsistent,
     infer_function_unit,
     parse_unit,
     register_currency,
+    token_source_currency,
     units_are_equivalent,
 )
 
@@ -62,6 +65,7 @@ __all__ = [
     "ColumnObject",
     "ConsecutiveIntLookupTableParam",
     "ConsecutiveIntLookupTableParamValue",
+    "CurrencyUnitToken",
     "DictParam",
     "FKType",
     "GroupCreationFunction",
@@ -77,6 +81,7 @@ __all__ = [
     "ScalarParam",
     "TimeConversionFunction",
     "Unit",
+    "UnitToken",
     "agg_by_group_function",
     "agg_by_p_id_function",
     "base_currency",
@@ -98,5 +103,6 @@ __all__ = [
     "policy_function",
     "policy_input",
     "register_currency",
+    "token_source_currency",
     "units_are_equivalent",
 ]

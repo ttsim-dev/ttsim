@@ -8,8 +8,9 @@ ROOT_PATH = Path(__file__).parent
 
 # Middle Earth's currency. Registered on import so that the [currency] dimension
 # has a concrete base currency before the policy environment is assembled
-# (GEP 10). mettsim uses a single currency, so it is the base.
-register_currency("gold_coin", base=True)
+# (GEP 10). The castar — Gondor's coin — is the realm's unit of account and
+# hence the base currency.
+register_currency("castar", base=True)
 
 COLORMAP: dict[tuple[str, ...] | str, str] = {
     ("housing_benefits",): "red",

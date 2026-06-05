@@ -15,8 +15,20 @@ array**. A :class:`pint.Quantity` is not a JAX pytree and does not trace under
 
 The numeric runtime path stays pure arrays, single currency, JAX-safe.
 
-A declaration is one member of the closed :class:`Unit` enumeration —
-``unit=Unit.CURRENCY_FLOW`` in code, ``unit: CURRENCY_FLOW`` in YAML.
+A declaration is one token of the vocabulary — ``unit=Unit.CURRENCY_FLOW``
+in code, ``unit: CURRENCY_FLOW`` in YAML. The vocabulary has two parts: the
+core :class:`Unit` enumeration, which grows only by GEP amendment plus TTSIM
+PR, and per-package :class:`CurrencyUnitToken`\\ s, which
+:func:`register_currency` derives from each registered concrete currency
+(``DM_STOCK``, ``DM_FLOW``, …). The agnostic currency tokens
+(:attr:`Unit.CURRENCY_STOCK` / :attr:`Unit.CURRENCY_FLOW`) denote the
+*union* of the registered currencies: for dimensionality checks a concrete
+currency token means exactly what its agnostic counterpart means, and in
+addition names the currency a parameter's numbers are denominated in, which
+the build-time conversion to the run currency reads off the declaration.
+Each package's JSON schema for the parameter YAMLs stays enumerable by
+listing the core tokens plus that package's own currency tokens.
+
 Tokens come in two kinds: *flow* tokens (named ``…_FLOW``) denote a
 per-period quantity and are completed by a period supplied by the name
 suffix (columns/functions) or ``reference_period`` (parameters); all other
@@ -25,19 +37,15 @@ never contain pint syntax; internally each token resolves to a pint unit.
 A dimensionless quantity (a share, a rate, a head count) declares *no* unit
 (``unit=None`` in code, ``unit: null`` in YAML) and never combines with a
 period source; the per-period dimensionless quantity is its own flow token
-(:attr:`Unit.SHARE_FLOW`). New tokens require a GEP amendment and a TTSIM
-PR — there is deliberately no registration API, which keeps the JSON schema
-for the parameter YAMLs statically enumerable.
+(:attr:`Unit.SHARE_FLOW`).
 
-Currencies are registered by downstream packages via
-:func:`register_currency`, which provides **conversion factors only** — it
-does not extend the declaration vocabulary. The :data:`CURRENCY_TOKEN` (the
-literal string ``"CURRENCY"``) is a real unit anchoring the ``[currency]``
-dimension, so the currency tokens resolve regardless of whether a concrete
-currency has been registered yet — checks compare at the dimensionality
-level and the concrete currency is resolved separately (issue #120).
-Concrete currencies appear only in Layer-2 input tags and the currency
-machinery, never in a declaration.
+The :data:`CURRENCY_TOKEN` (the literal string ``"CURRENCY"``) is a real
+unit anchoring the ``[currency]`` dimension, so the currency tokens resolve
+regardless of whether a concrete currency has been registered yet — checks
+compare at the dimensionality level and the concrete currency is resolved
+separately (issue #120). Columns and functions must declare the agnostic
+tokens (they are currency-agnostic by design); parameters must pin down the
+concrete currency their numbers are written in.
 """
 
 from __future__ import annotations
@@ -45,7 +53,7 @@ from __future__ import annotations
 import enum
 import math
 from collections.abc import Callable, Mapping
-from typing import Any
+from typing import Any, Self
 
 import pint
 from pint.util import to_units_container
@@ -64,7 +72,7 @@ CURRENCY_TOKEN = "CURRENCY"  # noqa: S105 (a unit token, not a secret)
 
 
 class Unit(enum.StrEnum):
-    """The closed vocabulary of unit tokens (GEP 10).
+    """The core vocabulary of unit tokens (GEP 10).
 
     One token = one meaning, independent of any other field. A bare token is
     *complete* as written; a ``…_FLOW`` token *needs a period*, supplied by
@@ -73,6 +81,13 @@ class Unit(enum.StrEnum):
     (:attr:`CURRENCY_STOCK` / :attr:`CURRENCY_FLOW`) — a bare ``CURRENCY``
     is deliberately unwritable, so no token can be misread as complete when
     it is not.
+
+    The full vocabulary is this enumeration plus the
+    :class:`CurrencyUnitToken` declaration tokens that
+    :func:`register_currency` derives from each registered concrete currency.
+    The agnostic currency tokens here denote the *union* of the registered
+    currencies; they are the only currency tokens columns and functions may
+    declare — functions are currency-agnostic by design.
 
     YAML spells the identical strings (``unit: CURRENCY_FLOW``); Python code
     must use the members themselves (``unit=Unit.CURRENCY_FLOW``).
@@ -120,40 +135,93 @@ _TOKEN_BASE_AND_IS_FLOW: dict[Unit, tuple[str | None, bool]] = {
 }
 
 
-def unit_token_is_flow(token: Unit) -> bool:
+class CurrencyUnitToken(str):
+    """A declaration token pinning down a concrete currency (GEP 10).
+
+    Created by :func:`register_currency`, never directly:
+    ``register_currency("DM", ...)`` derives ``DM_STOCK`` and ``DM_FLOW``.
+    For all dimensionality checks the token means exactly what its agnostic
+    counterpart (:attr:`Unit.CURRENCY_STOCK` / :attr:`Unit.CURRENCY_FLOW`)
+    means — a registered currency *is a* ``CURRENCY``. In addition it names
+    the concrete currency a parameter's numbers are denominated in, which the
+    build-time conversion to the run currency reads off the declaration.
+
+    Only *parameters* may declare these tokens. Columns and functions take
+    :class:`Unit` members and thereby stay currency-agnostic.
+    """
+
+    __slots__ = ("currency", "is_flow")
+
+    currency: str
+    is_flow: bool
+
+    def __new__(cls, spelling: str, *, currency: str, is_flow: bool) -> Self:
+        self = super().__new__(cls, spelling)
+        self.currency = currency
+        self.is_flow = is_flow
+        return self
+
+
+#: One declaration token per (registered currency, kind): ``DM_STOCK``,
+#: ``DM_FLOW``, … — populated by :func:`register_currency`, keyed by spelling.
+_CURRENCY_UNIT_TOKENS: dict[str, CurrencyUnitToken] = {}
+
+
+#: Any member of the full token vocabulary: the core enumeration or a
+#: currency token derived from a registered currency.
+UnitToken = Unit | CurrencyUnitToken
+
+
+def unit_token_is_flow(token: Unit | CurrencyUnitToken) -> bool:
     """Whether a token denotes a per-period quantity (needs a period source)."""
+    if isinstance(token, CurrencyUnitToken):
+        return token.is_flow
     return _TOKEN_BASE_AND_IS_FLOW[token][1]
 
 
+def token_source_currency(token: Unit | CurrencyUnitToken | None) -> str | None:
+    """The concrete currency a declaration token pins down, if any (GEP 10).
+
+    ``None`` for the agnostic tokens, for non-currency tokens, and for
+    dimensionless declarations.
+    """
+    return token.currency if isinstance(token, CurrencyUnitToken) else None
+
+
 def coerce_unit_token(
-    value: str | Unit | None,
+    value: str | Unit | CurrencyUnitToken | None,
     *,
     where: str,
-) -> Unit | None:
-    """Coerce a YAML ``unit:`` value to a :class:`Unit` member (GEP 10).
+) -> Unit | CurrencyUnitToken | None:
+    """Coerce a YAML ``unit:`` value to a vocabulary token (GEP 10).
 
     ``None`` (``unit: null``) declares a dimensionless quantity and passes
-    through. Any string must spell a member of the closed enumeration
-    exactly; everything else — including pint syntax like ``"CURRENCY"`` or
-    ``"CURRENCY / year"`` — is rejected.
+    through. Any string must spell a member of the core enumeration or a
+    currency token derived from a registered currency exactly; everything
+    else — including pint syntax like ``"CURRENCY"`` or ``"CURRENCY / year"``
+    — is rejected.
 
     Args:
         value: The raw declaration (a string from YAML, an already-coerced
-            member, or ``None``).
+            token, or ``None``).
         where: Identifier for error messages (e.g. the parameter's name).
 
     Raises:
-        UnitDefinitionError: If the value is not a member of the enumeration.
+        UnitDefinitionError: If the value is not part of the vocabulary.
     """
-    if value is None or isinstance(value, Unit):
+    if value is None or isinstance(value, Unit | CurrencyUnitToken):
         return value
     try:
         return Unit(value)
     except ValueError:
+        pass
+    try:
+        return _CURRENCY_UNIT_TOKENS[value]
+    except KeyError:
         raise UnitDefinitionError(
             f"{where}: invalid unit token {value!r}. A unit declaration must "
-            f"be one of {', '.join(Unit)} — or null for a dimensionless "
-            f"quantity (GEP 10)."
+            f"be one of {', '.join([*Unit, *_CURRENCY_UNIT_TOKENS])} — or "
+            f"null for a dimensionless quantity (GEP 10)."
         ) from None
 
 
@@ -223,6 +291,11 @@ def register_currency(
     reference); every other currency is defined relative to an already-known
     currency.
 
+    Registration also derives the currency's *declaration tokens*
+    (:class:`CurrencyUnitToken`): ``register_currency("DM", ...)`` makes
+    ``DM_STOCK`` and ``DM_FLOW`` part of the unit vocabulary, so parameters
+    can pin down the concrete currency their numbers are written in.
+
     Args:
         name: The currency's unit name (e.g. ``"euro"``, ``"DM"``).
         base: Whether this is the base currency. Mutually exclusive with
@@ -232,8 +305,9 @@ def register_currency(
 
     Raises:
         UnitDefinitionError: If the arguments are inconsistent, if a second base
-            currency is registered, or if the definition does not resolve to the
-            ``[currency]`` dimension.
+            currency is registered, if the definition does not resolve to the
+            ``[currency]`` dimension, or if a derived declaration token would
+            collide with the core vocabulary.
     """
     global _base_currency  # noqa: PLW0603
 
@@ -242,6 +316,7 @@ def register_currency(
             "register_currency requires exactly one of `base=True` or "
             f"`definition=...`; got base={base!r}, definition={definition!r}."
         )
+    _fail_if_currency_token_collides(name)
 
     currency_dim = UREG.Quantity(1.0, CURRENCY_TOKEN).dimensionality
 
@@ -262,6 +337,7 @@ def register_currency(
         if base:
             _base_currency = name
         _ALLOWED_UNIT_TOKENS.add(name)
+        _register_currency_unit_tokens(name)
         return
 
     if base:
@@ -281,6 +357,33 @@ def register_currency(
             f"the [currency] dimension."
         )
     _ALLOWED_UNIT_TOKENS.add(name)
+    _register_currency_unit_tokens(name)
+
+
+def _fail_if_currency_token_collides(name: str) -> None:
+    """Reject a currency whose declaration tokens would collide (GEP 10)."""
+    for suffix in ("_STOCK", "_FLOW"):
+        spelling = f"{name.upper()}{suffix}"
+        if spelling in Unit.__members__:
+            raise UnitDefinitionError(
+                f"Cannot register currency {name!r}: its declaration token "
+                f"{spelling!r} collides with the core unit vocabulary."
+            )
+
+
+def _register_currency_unit_tokens(name: str) -> None:
+    """Derive a registered currency's declaration tokens (GEP 10).
+
+    ``name`` is upper-cased and suffixed with the stock/flow kind markers:
+    ``"silver_penny"`` yields ``SILVER_PENNY_STOCK`` and ``SILVER_PENNY_FLOW``.
+    Idempotent, mirroring :func:`register_currency`.
+    """
+    for suffix, is_flow in (("_STOCK", False), ("_FLOW", True)):
+        spelling = f"{name.upper()}{suffix}"
+        if spelling not in _CURRENCY_UNIT_TOKENS:
+            _CURRENCY_UNIT_TOKENS[spelling] = CurrencyUnitToken(
+                spelling, currency=name, is_flow=is_flow
+            )
 
 
 def parse_unit(unit_str: str) -> pint.Unit:

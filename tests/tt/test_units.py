@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-# Importing the mettsim package registers its base currency (``gold_coin``) and
+# Importing the mettsim package registers its base currency (``castar``) and
 # makes the tracer-bullet policy function importable.
 import mettsim.middle_earth  # noqa: F401
 import pytest
@@ -19,6 +19,7 @@ from ttsim.exceptions import (
 from ttsim.tt import (
     CURRENCY_TOKEN,
     UREG,
+    CurrencyUnitToken,
     Unit,
     coerce_unit_token,
     fail_if_function_unit_is_inconsistent,
@@ -26,6 +27,7 @@ from ttsim.tt import (
     parse_unit,
     policy_function,
     register_currency,
+    token_source_currency,
     units_are_equivalent,
 )
 from ttsim.tt.units import unit_token_is_flow
@@ -103,7 +105,7 @@ def test_flow_tokens_are_marked_in_the_name():
         "year",
         "quarter_year",
         "month",
-        "gold_coin",
+        "castar",
     ],
 )
 def test_parse_unit_accepts_known_units(unit_str):
@@ -149,20 +151,20 @@ def test_parse_unit_rejects_unparseable_string():
 
 
 def test_mettsim_base_currency_registered():
-    assert UREG.Quantity(1.0, "gold_coin").dimensionality == {"[currency]": 1}
+    assert UREG.Quantity(1.0, "castar").dimensionality == {"[currency]": 1}
 
 
 def test_register_relative_currency_bakes_correct_factor():
-    register_currency("silver_coin", definition="gold_coin / 10")
-    factor = (UREG.Quantity(1.0, "silver_coin") / UREG.Quantity(1.0, "gold_coin")).to(
+    register_currency("silver_penny", definition="castar / 4")
+    factor = (UREG.Quantity(1.0, "silver_penny") / UREG.Quantity(1.0, "castar")).to(
         "dimensionless"
     )
-    assert factor.magnitude == pytest.approx(0.1)
+    assert factor.magnitude == pytest.approx(0.25)
 
 
 def test_register_currency_idempotent():
     # Re-registering with a consistent definition is a no-op, not an error.
-    register_currency("silver_coin", definition="gold_coin / 10")
+    register_currency("silver_penny", definition="castar / 4")
 
 
 def test_register_second_base_currency_fails():
@@ -172,9 +174,70 @@ def test_register_second_base_currency_fails():
 
 def test_register_currency_requires_exactly_one_of_base_or_definition():
     with pytest.raises(UnitDefinitionError, match="exactly one"):
-        register_currency("bad_coin", base=True, definition="gold_coin")
+        register_currency("bad_coin", base=True, definition="castar")
     with pytest.raises(UnitDefinitionError, match="exactly one"):
         register_currency("bad_coin")
+
+
+# ----------------------------------------------------------------------------
+# Currency declaration tokens (registered currencies extend the vocabulary)
+# ----------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("spelling", "currency", "is_flow"),
+    [
+        ("CASTAR_STOCK", "castar", False),
+        ("CASTAR_FLOW", "castar", True),
+        ("SILVER_PENNY_STOCK", "silver_penny", False),
+        ("SILVER_PENNY_FLOW", "silver_penny", True),
+    ],
+)
+def test_registration_derives_declaration_tokens(spelling, currency, is_flow):
+    register_currency("silver_penny", definition="castar / 4")
+    token = coerce_unit_token(spelling, where="test")
+    assert isinstance(token, CurrencyUnitToken)
+    assert token == spelling
+    assert token.currency == currency
+    assert unit_token_is_flow(token) == is_flow
+
+
+def test_coerce_currency_token_is_idempotent_and_singleton():
+    token = coerce_unit_token("CASTAR_STOCK", where="test")
+    assert coerce_unit_token(token, where="test") is token
+    assert coerce_unit_token("CASTAR_STOCK", where="test") is token
+
+
+def test_token_source_currency():
+    assert token_source_currency(coerce_unit_token("CASTAR_FLOW", where="t")) == (
+        "castar"
+    )
+    assert token_source_currency(Unit.CURRENCY_FLOW) is None
+    assert token_source_currency(Unit.HECTARES) is None
+    assert token_source_currency(None) is None
+
+
+def test_unregistered_currency_spelling_is_rejected():
+    with pytest.raises(UnitDefinitionError, match="invalid unit token"):
+        coerce_unit_token("MITHRIL_STOCK", where="test")
+
+
+def test_register_currency_rejects_token_collision_with_core_vocabulary():
+    # "currency".upper() + "_STOCK" would collide with Unit.CURRENCY_STOCK.
+    with pytest.raises(UnitDefinitionError, match="collides"):
+        register_currency("currency", definition="castar / 2")
+
+
+def test_policy_function_rejects_currency_token_at_decoration():
+    # Functions are currency-agnostic by design: the decorator's type
+    # contract only admits `Unit` members, so a concrete currency token is
+    # rejected by the beartype claw at decoration time.
+    token = coerce_unit_token("CASTAR_FLOW", where="test")
+    with pytest.raises(PolicyFunctionDefinitionError, match="unit"):
+
+        @policy_function(unit=token)
+        def betrag_m(x: float) -> float:
+            return x
 
 
 # ----------------------------------------------------------------------------
@@ -187,9 +250,7 @@ def test_same_unit_is_equivalent():
 
 
 def test_base_currency_equivalent_to_currency_token():
-    assert units_are_equivalent(
-        left=parse_unit("gold_coin"), right=parse_unit("CURRENCY")
-    )
+    assert units_are_equivalent(left=parse_unit("castar"), right=parse_unit("CURRENCY"))
 
 
 def test_month_and_year_flows_are_not_equivalent():
