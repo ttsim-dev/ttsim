@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import ttsim.interface_dag_elements
+from ttsim.interface_dag_elements.interface_node_objects import InterfaceFunction
 from ttsim.interface_dag_elements.orig_policy_objects import load_module
 
 # The package claw rewrites normally-imported `interface_dag_elements` modules,
@@ -20,6 +21,10 @@ params = _raw_results.params
 # =============================================================================
 # columns_with_internal_p_ids() function tests
 # =============================================================================
+def test_columns_with_internal_p_ids_is_interface_function():
+    assert isinstance(columns_with_internal_p_ids, InterfaceFunction)
+
+
 def test_columns_filters_to_root_nodes(xnp):
     processed_data = {
         "p_id": xnp.array([0, 1, 2]),
@@ -106,6 +111,10 @@ def test_columns_with_empty_root_nodes(xnp):
 # =============================================================================
 # columns_with_original_p_ids() function tests
 # =============================================================================
+def test_columns_with_original_p_ids_is_interface_function():
+    assert isinstance(columns_with_original_p_ids, InterfaceFunction)
+
+
 def test_columns_with_original_p_ids(xnp):
     """Unit-level localizer for the remapping; end-to-end behavior is covered in
     test_endogenous_p_id_targets.py.
@@ -133,6 +142,10 @@ def test_columns_with_original_p_ids(xnp):
 # =============================================================================
 # from_input_data() function tests
 # =============================================================================
+def test_from_input_data_is_interface_function():
+    assert isinstance(from_input_data, InterfaceFunction)
+
+
 def test_from_input_data_extracts_requested_targets(xnp):
     input_data__flat = {
         ("p_id",): xnp.array([0, 1, 2]),
@@ -217,6 +230,10 @@ def test_from_input_data_returns_arrays_unsorted(xnp):
 # =============================================================================
 # params() function tests
 # =============================================================================
+def test_params_is_interface_function():
+    assert isinstance(params, InterfaceFunction)
+
+
 def test_params_extracts_requested_param_targets():
     specialized_env = {
         "param_a": 100,

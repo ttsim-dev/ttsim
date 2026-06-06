@@ -6,14 +6,9 @@ releases are available on [Anaconda.org](https://anaconda.org/conda-forge/ttsim)
 
 ## Unreleased
 
-- {gh}`130` Split `raw_results.columns` into the symmetric pair
-  `raw_results.columns_with_internal_p_ids` and
-  `raw_results.columns_with_original_p_ids`. The former holds internal indices in
-  endogenous `p_id_*` columns and is computable from `processed_data` alone (without any
-  `input_data`); the latter carries the reverse-translation to user-space `p_id` values
-  introduced in {gh}`108`. `results.tree` and everything downstream keep returning
-  user-space `p_id` values. Breaking: the target `raw_results.columns` no longer exists;
-  use `raw_results.columns_with_internal_p_ids` for the old (pre-{gh}`108`) semantics.
+- {gh}`130` Split `raw_results.columns` into `raw_results.columns_with_internal_p_ids`
+  (computable from `processed_data` alone) and `raw_results.columns_with_original_p_ids`
+  (the reverse-translation of endogenous `p_id_*` columns from {gh}`108`).
   ({ghuser}`MImmesberger`)
 - Fill in the `count_by_p_id`, `mean_by_p_id`, `max_by_p_id`, `min_by_p_id`,
   `any_by_p_id`, and `all_by_p_id` aggregations on both the NumPy and JAX backends.
