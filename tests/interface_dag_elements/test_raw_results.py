@@ -115,30 +115,6 @@ def test_columns_with_original_p_ids_is_interface_function():
     assert isinstance(columns_with_original_p_ids, InterfaceFunction)
 
 
-def test_columns_with_original_p_ids(xnp):
-    """Unit-level localizer for the remapping; end-to-end behavior is covered in
-    test_endogenous_p_id_targets.py.
-
-    Endogenous `p_id_*` columns are gathered through the sorted original p_ids
-    (internal index i → sorted_orig_p_ids[i]); any negative value — not just
-    the canonical `-1` — collapses to the no-link sentinel; non-`p_id_*`
-    columns pass through untouched. Original p_ids are non-monotonic so a
-    dropped or misapplied `sort_indices` shows up.
-    """
-    result = columns_with_original_p_ids(
-        columns_with_internal_p_ids={
-            "p_id_recipient": xnp.array([0, -1, -2, 1]),
-            "income": xnp.array([100, 200, 300, 400]),
-        },
-        input_data__flat={("p_id",): xnp.array([20, 10, 30, 40])},
-        input_data__sort_indices=xnp.array([1, 0, 2, 3]),
-        xnp=xnp,
-    )
-
-    assert list(result["p_id_recipient"]) == [10, -1, -1, 20]
-    assert list(result["income"]) == [100, 200, 300, 400]
-
-
 # =============================================================================
 # from_input_data() function tests
 # =============================================================================
