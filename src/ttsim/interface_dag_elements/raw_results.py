@@ -25,11 +25,9 @@ def columns(
 ) -> QNameData:
     """The raw results of the TT function that have been requested as targets.
 
-    Arrays are sorted according to the internal sort order. Endogenously-
-    computed `p_id_*` columns hold internal indices; see
-    `columns_with_remapped_ids` for the version with user-space `p_id` values.
-
-    Computable from `processed_data` alone, without any `input_data`.
+    Arrays are sorted according to the internal sort order. Endogenously- computed
+    `p_id_*` columns hold internal indices; see `columns_with_remapped_ids` for the
+    version with user-space `p_id` values.
     """
     return tt_function(
         {k: v for k, v in processed_data.items() if k in labels__root_nodes},
@@ -49,8 +47,6 @@ def columns_with_remapped_ids(
     computed `p_id_*` columns hold internal indices; those are reverse-
     translated to user-space `p_id` values here so consumers downstream see
     the original identifiers (with `-1` preserved as the no-link sentinel).
-
-    Requires `input_data` because the original `p_id` values only exist there.
     """
     sorted_orig_p_ids = xnp.asarray(input_data__flat[("p_id",)])[
         input_data__sort_indices
