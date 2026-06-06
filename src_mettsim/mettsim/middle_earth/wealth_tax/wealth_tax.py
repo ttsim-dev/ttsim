@@ -9,10 +9,7 @@ def amount_y(
     tax_rate: float,
     exempt_from_wealth_tax: bool,
 ) -> float:
-    if exempt_from_wealth_tax:
-        return 0.0
-    else:
-        return wealth * tax_rate
+    return 0.0 if exempt_from_wealth_tax else wealth * tax_rate
 
 
 @policy_function()

@@ -48,7 +48,8 @@ def acre_size_in_hectares_after_cap(
     evaluation_year: int,
 ) -> float:
     """The size of the acre in hectares after the cap is applied."""
-    if evaluation_year < year_from_which_cap_is_applied:
-        return acre_size_in_hectares
-    else:
-        return min(acre_size_in_hectares, cap_in_hectares)
+    return (
+        acre_size_in_hectares
+        if evaluation_year < year_from_which_cap_is_applied
+        else min(acre_size_in_hectares, cap_in_hectares)
+    )
