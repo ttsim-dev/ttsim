@@ -235,7 +235,7 @@ def test_policy_function_rejects_currency_token_at_decoration():
     token = coerce_unit_token("CASTAR_FLOW", where="test")
     with pytest.raises(PolicyFunctionDefinitionError, match="unit"):
 
-        @policy_function(unit=token)
+        @policy_function(unit=token)  # ty: ignore[invalid-argument-type]
         def betrag_m(x: float) -> float:
             return x
 
