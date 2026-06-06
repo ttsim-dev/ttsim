@@ -280,10 +280,10 @@ def test_jittable_with_specialized_environment_and_dummy_processed_data(
 ):
     """Jit-compile a single policy function from dummy `processed_data` and a
     pre-built specialized environment, without any `input_data` (regression
-    test for #130). This mirrors GETTSIM's `test_jittable`: the dummy data is
-    derived from the function's free arguments, and the target is
-    `raw_results.columns_with_internal_p_ids` so that the remapping to
-    user-space `p_id`s (`raw_results.columns_with_original_p_ids`) is pruned.
+    test for #130). The dummy data is derived from the function's free
+    arguments, and the target is `raw_results.columns_with_internal_p_ids` so
+    that the remapping to user-space `p_id`s
+    (`raw_results.columns_with_original_p_ids`) is pruned.
     """
     p_id_recipient = policy_function(
         start_date=_DATE,
