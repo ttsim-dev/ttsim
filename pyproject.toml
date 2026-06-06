@@ -214,7 +214,6 @@ per-file-ignores."src_mettsim/mettsim/middle_earth/**/*.py" = [
   "PLR1716", # Boolean chained comparison
   "PLR2004", # Magic value comparison
   "RET",     # Unnecessary return logic
-  "SIM108",  # Use ternary operator
 ]
 per-file-ignores."src_mettsim/tests_middle_earth/*.py" = [
   "ANN",     # Missing type annotations
@@ -240,7 +239,7 @@ per-file-ignores."tests/tt/test_vectorization.py" = [
   "PLR1714", # Repeated equality comparison
   "PLR1716", # Boolean chained comparison
   "RET",     # Unnecessary return logic
-  "SIM108",  # Use ternary operator
+  "SIM108",  # Statement-style if/else blocks are intentional fixtures for the vectorizer
 ]
 pydocstyle.convention = "google"
 
