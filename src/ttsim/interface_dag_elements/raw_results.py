@@ -22,20 +22,36 @@ def columns(
     labels__root_nodes: UnorderedQNames,
     processed_data: QNameData,
     tt_function: Callable[[QNameData], QNameData],
+) -> QNameData:
+    """The raw results of the TT function that have been requested as targets.
+
+    Arrays are sorted according to the internal sort order. Endogenously-
+    computed `p_id_*` columns hold internal indices; see
+    `columns_with_remapped_ids` for the version with user-space `p_id` values.
+
+    Computable from `processed_data` alone, without any `input_data`.
+    """
+    return tt_function(
+        {k: v for k, v in processed_data.items() if k in labels__root_nodes},
+    )
+
+
+@interface_function()
+def columns_with_remapped_ids(
+    columns: QNameData,
     input_data__flat: FlatData,
     input_data__sort_indices: IntColumn,
     xnp: ModuleType,
 ) -> QNameData:
-    """The raw results of the TT function that have been requested as targets.
+    """Raw results with endogenous `p_id_*` columns remapped to user-space `p_id`s.
 
     Arrays are sorted according to the internal sort order. Endogenously-
     computed `p_id_*` columns hold internal indices; those are reverse-
     translated to user-space `p_id` values here so consumers downstream see
     the original identifiers (with `-1` preserved as the no-link sentinel).
+
+    Requires `input_data` because the original `p_id` values only exist there.
     """
-    raw = tt_function(
-        {k: v for k, v in processed_data.items() if k in labels__root_nodes},
-    )
     sorted_orig_p_ids = xnp.asarray(input_data__flat[("p_id",)])[
         input_data__sort_indices
     ]
@@ -47,7 +63,7 @@ def columns(
         )
         if _is_endogenous_p_id_pointer(qname)
         else value
-        for qname, value in raw.items()
+        for qname, value in columns.items()
     }
 
 

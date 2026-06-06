@@ -265,6 +265,7 @@ class Labels(MainArg):
 @dataclass(frozen=True)
 class RawResults(MainArg):
     columns: QNameData | None = None
+    columns_with_remapped_ids: QNameData | None = None
     params: QNameData | None = None
     from_input_data: QNameData | None = None
     combined: QNameData | None = None
@@ -276,6 +277,17 @@ class RawResults(MainArg):
     def columns(cls, columns: QNameData) -> RawResults:
         """Column results data."""
         return _set_single_field(cls=cls, field_name="columns", field_value=columns)
+
+    @classmethod
+    def columns_with_remapped_ids(
+        cls, columns_with_remapped_ids: QNameData
+    ) -> RawResults:
+        """Column results data with endogenous `p_id_*` columns in user space."""
+        return _set_single_field(
+            cls=cls,
+            field_name="columns_with_remapped_ids",
+            field_value=columns_with_remapped_ids,
+        )
 
     @classmethod
     def params(cls, params: QNameData) -> RawResults:

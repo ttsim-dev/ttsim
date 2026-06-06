@@ -13,6 +13,7 @@ from ttsim.interface_dag_elements.orig_policy_objects import load_module
 _IFACE_DIR = Path(ttsim.interface_dag_elements.__file__).parent
 _raw_results = load_module(path=_IFACE_DIR / "raw_results.py", root=_IFACE_DIR)
 columns = _raw_results.columns
+columns_with_remapped_ids = _raw_results.columns_with_remapped_ids
 from_input_data = _raw_results.from_input_data
 params = _raw_results.params
 
@@ -22,18 +23,6 @@ params = _raw_results.params
 # =============================================================================
 def test_columns_is_interface_function():
     assert isinstance(columns, InterfaceFunction)
-
-
-def _identity_p_id_inputs(xnp, n: int) -> dict:
-    """Minimal `input_data__flat` + sort indices for tests that don't care
-    about row order — the original `p_id` array is already sorted, so the
-    sort is the identity permutation.
-    """
-    return {
-        "input_data__flat": {("p_id",): xnp.arange(n)},
-        "input_data__sort_indices": xnp.arange(n),
-        "xnp": xnp,
-    }
 
 
 def test_columns_filters_to_root_nodes(xnp):
@@ -52,7 +41,6 @@ def test_columns_filters_to_root_nodes(xnp):
         labels__root_nodes=root_nodes,
         processed_data=processed_data,
         tt_function=tt_function,
-        **_identity_p_id_inputs(xnp, n=3),
     )
 
     # Only root_nodes should be passed to tt_function
@@ -78,7 +66,6 @@ def test_columns_calls_tt_function_with_filtered_data(xnp):
         labels__root_nodes=root_nodes,
         processed_data=processed_data,
         tt_function=tt_function,
-        **_identity_p_id_inputs(xnp, n=2),
     )
 
     # Verify tt_function was called with only root_nodes data
@@ -100,7 +87,6 @@ def test_columns_returns_tt_function_output(xnp):
         labels__root_nodes=root_nodes,
         processed_data=processed_data,
         tt_function=tt_function,
-        **_identity_p_id_inputs(xnp, n=2),
     )
 
     assert result == expected_output
@@ -117,10 +103,52 @@ def test_columns_with_empty_root_nodes(xnp):
         labels__root_nodes=root_nodes,
         processed_data=processed_data,
         tt_function=tt_function,
-        **_identity_p_id_inputs(xnp, n=2),
     )
 
     assert result == {}
+
+
+# =============================================================================
+# columns_with_remapped_ids() function tests
+# =============================================================================
+def test_columns_with_remapped_ids_is_interface_function():
+    assert isinstance(columns_with_remapped_ids, InterfaceFunction)
+
+
+def test_columns_with_remapped_ids_translates_endogenous_p_id_columns(xnp):
+    # Original p_ids [20, 10, 30] sort to internal order [10, 20, 30],
+    # i.e. sort_indices [1, 0, 2]. Internal index i points to the person at
+    # internal position i, whose original p_id is sorted_orig_p_ids[i].
+    result = columns_with_remapped_ids(
+        columns={"p_id_recipient": xnp.array([0, 1, 2])},
+        input_data__flat={("p_id",): xnp.array([20, 10, 30])},
+        input_data__sort_indices=xnp.array([1, 0, 2]),
+        xnp=xnp,
+    )
+
+    assert list(result["p_id_recipient"]) == [10, 20, 30]
+
+
+def test_columns_with_remapped_ids_collapses_negatives_to_sentinel(xnp):
+    result = columns_with_remapped_ids(
+        columns={"p_id_recipient": xnp.array([-1, -2, 1])},
+        input_data__flat={("p_id",): xnp.array([20, 10, 30])},
+        input_data__sort_indices=xnp.array([1, 0, 2]),
+        xnp=xnp,
+    )
+
+    assert list(result["p_id_recipient"]) == [-1, -1, 20]
+
+
+def test_columns_with_remapped_ids_leaves_other_columns_unchanged(xnp):
+    result = columns_with_remapped_ids(
+        columns={"income": xnp.array([100, 200, 300])},
+        input_data__flat={("p_id",): xnp.array([20, 10, 30])},
+        input_data__sort_indices=xnp.array([1, 0, 2]),
+        xnp=xnp,
+    )
+
+    assert list(result["income"]) == [100, 200, 300]
 
 
 # =============================================================================
@@ -306,6 +334,12 @@ def test_columns_dependencies():
         "labels__root_nodes",
         "processed_data",
         "tt_function",
+    }
+
+
+def test_columns_with_remapped_ids_dependencies():
+    assert columns_with_remapped_ids.dependencies == {
+        "columns",
         "input_data__flat",
         "input_data__sort_indices",
         "xnp",

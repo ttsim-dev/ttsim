@@ -6,6 +6,11 @@ releases are available on [Anaconda.org](https://anaconda.org/conda-forge/ttsim)
 
 ## Unreleased
 
+- {gh}`130` Move the reverse-translation of endogenous `p_id_*` columns out of
+  `raw_results.columns` into the new node `raw_results.columns_with_remapped_ids`.
+  `raw_results.columns` is computable from `processed_data` alone again (without any
+  `input_data`); `results.tree` and everything downstream keep returning user-space
+  `p_id` values via the new node. ({ghuser}`MImmesberger`)
 - Fill in the `count_by_p_id`, `mean_by_p_id`, `max_by_p_id`, `min_by_p_id`,
   `any_by_p_id`, and `all_by_p_id` aggregations on both the NumPy and JAX backends.
   Negative source `p_id` entries are masked out so they cannot influence the result;

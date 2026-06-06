@@ -141,7 +141,7 @@ def test_restore_original_row_order(
 ):
     """Test that the tree function restores original row order correctly."""
     result = tree(
-        raw_results__columns=raw_results_columns,
+        raw_results__columns_with_remapped_ids=raw_results_columns,
         raw_results__params=raw_results_params,
         raw_results__from_input_data=raw_results_from_input_data,
         input_data__sort_indices=input_data__sort_indices,

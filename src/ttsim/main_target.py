@@ -97,6 +97,7 @@ class Results(MainTargetABC):
 @dataclass(frozen=True)
 class RawResults(MainTargetABC):
     columns: str = "raw_results__columns"
+    columns_with_remapped_ids: str = "raw_results__columns_with_remapped_ids"
     from_input_data: str = "raw_results__from_input_data"
     params: str = "raw_results__params"
 
