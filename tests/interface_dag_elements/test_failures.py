@@ -1641,7 +1641,7 @@ def test_fail_if_name_of_last_branch_element_is_not_the_functions_leaf_name(
     "main_target",
     [
         MainTarget.tt_function,
-        MainTarget.raw_results.columns,
+        MainTarget.raw_results.columns_with_internal_p_ids,
     ],
 )
 def test_raise_tt_root_nodes_are_missing_without_input_data(

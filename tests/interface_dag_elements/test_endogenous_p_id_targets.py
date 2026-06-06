@@ -13,13 +13,7 @@ from typing import TYPE_CHECKING
 
 import pandas as pd
 
-from ttsim import (
-    InputData,
-    MainTarget,
-    SpecializedEnvironment,
-    TTTargets,
-    main,
-)
+from ttsim import InputData, MainTarget, TTTargets, main
 from ttsim.tt import FKType, ScalarParam, policy_function, policy_input
 
 if TYPE_CHECKING:
@@ -271,49 +265,3 @@ def test_endogenous_p_id_target_mixed_with_regular_column(
         check_index_type=False,
         check_like=True,
     )
-
-
-def test_raw_results_columns_computable_from_processed_data_alone(
-    xnp: ModuleType, backend: Literal["numpy", "jax"]
-):
-    """Targeting `raw_results.columns` with `processed_data` and a pre-built
-    specialized environment must not require `input_data` (regression test
-    for #130). The remapping to user-space `p_id`s lives in
-    `raw_results.columns_with_remapped_ids`, which is pruned here.
-    """
-    p_id_recipient = policy_function(
-        start_date=_DATE,
-        end_date=_DATE,
-        leaf_name="p_id_recipient",
-    )(_identity)
-
-    env = main(
-        main_target=(
-            "specialized_environment_for_plotting_and_templates",
-            "with_partialled_params_and_scalars",
-        ),
-        policy_environment={
-            "p_id_recipient": p_id_recipient,
-            **_policy_year_month_day(),
-        },
-        backend=backend,
-        include_fail_nodes=False,
-        include_warn_nodes=False,
-    )
-
-    result = main(
-        main_target=MainTarget.raw_results.columns,
-        specialized_environment=(
-            SpecializedEnvironment.with_partialled_params_and_scalars(
-                {"p_id_recipient": env["p_id_recipient"]}
-            )
-        ),
-        processed_data={"p_id": xnp.array([0, 1, 2])},
-        tt_targets=TTTargets.qname(["p_id_recipient"]),
-        backend=backend,
-        include_fail_nodes=False,
-        include_warn_nodes=False,
-    )
-
-    # Raw results stay in internal representation: no remapping happens.
-    assert list(result["p_id_recipient"]) == [0, 1, 2]

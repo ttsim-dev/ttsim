@@ -330,8 +330,12 @@ def test_input_data_classmethods(instance_factory, expected_field_name, xnp):
         ),
         # RawResults
         (
-            lambda xnp: RawResults.columns({"test": xnp.array([1, 2, 3])}),
-            lambda xnp: RawResults(columns={"test": xnp.array([1, 2, 3])}),  # ty: ignore[unknown-argument]
+            lambda xnp: RawResults.columns_with_internal_p_ids(
+                {"test": xnp.array([1, 2, 3])}
+            ),
+            lambda xnp: RawResults(
+                columns_with_internal_p_ids={"test": xnp.array([1, 2, 3])}  # ty: ignore[unknown-argument]
+            ),
         ),
         (
             lambda xnp: RawResults.params({"param": xnp.array([4, 5, 6])}),

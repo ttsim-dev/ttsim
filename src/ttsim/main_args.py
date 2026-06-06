@@ -264,8 +264,8 @@ class Labels(MainArg):
 
 @dataclass(frozen=True)
 class RawResults(MainArg):
-    columns: QNameData | None = None
-    columns_with_remapped_ids: QNameData | None = None
+    columns_with_internal_p_ids: QNameData | None = None
+    columns_with_original_p_ids: QNameData | None = None
     params: QNameData | None = None
     from_input_data: QNameData | None = None
     combined: QNameData | None = None
@@ -274,19 +274,26 @@ class RawResults(MainArg):
         _fix_classmethod_namespace_conflicts(self)
 
     @classmethod
-    def columns(cls, columns: QNameData) -> RawResults:
-        """Column results data."""
-        return _set_single_field(cls=cls, field_name="columns", field_value=columns)
+    def columns_with_internal_p_ids(
+        cls, columns_with_internal_p_ids: QNameData
+    ) -> RawResults:
+        """Column results data with endogenous `p_id_*` columns holding internal
+        indices."""
+        return _set_single_field(
+            cls=cls,
+            field_name="columns_with_internal_p_ids",
+            field_value=columns_with_internal_p_ids,
+        )
 
     @classmethod
-    def columns_with_remapped_ids(
-        cls, columns_with_remapped_ids: QNameData
+    def columns_with_original_p_ids(
+        cls, columns_with_original_p_ids: QNameData
     ) -> RawResults:
         """Column results data with endogenous `p_id_*` columns in user space."""
         return _set_single_field(
             cls=cls,
-            field_name="columns_with_remapped_ids",
-            field_value=columns_with_remapped_ids,
+            field_name="columns_with_original_p_ids",
+            field_value=columns_with_original_p_ids,
         )
 
     @classmethod
