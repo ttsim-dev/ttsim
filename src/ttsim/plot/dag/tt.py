@@ -325,14 +325,18 @@ def select_nodes_from_dag(
         selected_nodes = {
             neighbor
             for node in qnames_primary_nodes
-            for neighbor in _kth_order_neighbors(complete_tt_dag, node, order=order)
+            for neighbor in _kth_order_neighbors(
+                dag=complete_tt_dag, node=node, order=order
+            )
         }
     elif selection_type == "descendants":
         selected_nodes = {
             descendant
             for node in qnames_primary_nodes
             for descendant in (
-                _kth_order_successors(complete_tt_dag, node, order=selection_depth)
+                _kth_order_successors(
+                    dag=complete_tt_dag, node=node, order=selection_depth
+                )
                 if selection_depth
                 else [*list(nx.descendants(complete_tt_dag, node)), node]
             )
@@ -342,7 +346,9 @@ def select_nodes_from_dag(
             ancestor
             for node in qnames_primary_nodes
             for ancestor in (
-                _kth_order_predecessors(complete_tt_dag, node, order=selection_depth)
+                _kth_order_predecessors(
+                    dag=complete_tt_dag, node=node, order=selection_depth
+                )
                 if selection_depth
                 else [*list(nx.ancestors(complete_tt_dag, node)), node]
             )
@@ -376,11 +382,15 @@ def _kth_order_neighbors(
     if order >= 1:
         for predecessor in dag.predecessors(node):
             base.update(
-                _kth_order_predecessors(dag, predecessor, order=order - 1, base=base)
+                _kth_order_predecessors(
+                    dag=dag, node=predecessor, order=order - 1, base=base
+                )
             )
         for successor in dag.successors(node):
             base.update(
-                _kth_order_successors(dag, successor, order=order - 1, base=base)
+                _kth_order_successors(
+                    dag=dag, node=successor, order=order - 1, base=base
+                )
             )
     return base
 
@@ -393,7 +403,9 @@ def _kth_order_predecessors(
     if order >= 1:
         for predecessor in dag.predecessors(node):
             base.update(
-                _kth_order_predecessors(dag, predecessor, order=order - 1, base=base)
+                _kth_order_predecessors(
+                    dag=dag, node=predecessor, order=order - 1, base=base
+                )
             )
     return base
 
@@ -406,7 +418,9 @@ def _kth_order_successors(
     if order >= 1:
         for successor in dag.successors(node):
             base.update(
-                _kth_order_successors(dag, successor, order=order - 1, base=base)
+                _kth_order_successors(
+                    dag=dag, node=successor, order=order - 1, base=base
+                )
             )
     return base
 

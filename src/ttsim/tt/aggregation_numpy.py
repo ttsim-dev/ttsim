@@ -107,7 +107,13 @@ def count_by_p_id(
     p_id_to_aggregate_by: IntColumn,
     p_id_to_store_by: IntColumn,
 ) -> IntColumn:
-    raise NotImplementedError
+    return _aggregate_by_p_id(
+        column=numpy.ones_like(p_id_to_aggregate_by),
+        p_id_to_aggregate_by=p_id_to_aggregate_by,
+        p_id_to_store_by=p_id_to_store_by,
+        func="sum",
+        fill_value=0,
+    )
 
 
 def sum_by_p_id(
@@ -144,7 +150,13 @@ def mean_by_p_id(
     p_id_to_aggregate_by: IntColumn,
     p_id_to_store_by: IntColumn,
 ) -> FloatColumn:
-    raise NotImplementedError
+    return _aggregate_by_p_id(
+        column=column.astype(float),
+        p_id_to_aggregate_by=p_id_to_aggregate_by,
+        p_id_to_store_by=p_id_to_store_by,
+        func="mean",
+        fill_value=0.0,
+    )
 
 
 def max_by_p_id(
@@ -152,7 +164,13 @@ def max_by_p_id(
     p_id_to_aggregate_by: IntColumn,
     p_id_to_store_by: IntColumn,
 ) -> FloatColumn | IntColumn:
-    raise NotImplementedError
+    return _aggregate_by_p_id(
+        column=column,
+        p_id_to_aggregate_by=p_id_to_aggregate_by,
+        p_id_to_store_by=p_id_to_store_by,
+        func="max",
+        fill_value=0,
+    )
 
 
 def min_by_p_id(
@@ -160,7 +178,13 @@ def min_by_p_id(
     p_id_to_aggregate_by: IntColumn,
     p_id_to_store_by: IntColumn,
 ) -> FloatColumn | IntColumn:
-    raise NotImplementedError
+    return _aggregate_by_p_id(
+        column=column,
+        p_id_to_aggregate_by=p_id_to_aggregate_by,
+        p_id_to_store_by=p_id_to_store_by,
+        func="min",
+        fill_value=0,
+    )
 
 
 def any_by_p_id(
@@ -168,7 +192,13 @@ def any_by_p_id(
     p_id_to_aggregate_by: IntColumn,
     p_id_to_store_by: IntColumn,
 ) -> BoolColumn:
-    raise NotImplementedError
+    return _aggregate_by_p_id(
+        column=column.astype(bool),
+        p_id_to_aggregate_by=p_id_to_aggregate_by,
+        p_id_to_store_by=p_id_to_store_by,
+        func="any",
+        fill_value=False,
+    )
 
 
 def all_by_p_id(
@@ -176,4 +206,39 @@ def all_by_p_id(
     p_id_to_aggregate_by: IntColumn,
     p_id_to_store_by: IntColumn,
 ) -> BoolColumn:
-    raise NotImplementedError
+    return _aggregate_by_p_id(
+        column=column.astype(bool),
+        p_id_to_aggregate_by=p_id_to_aggregate_by,
+        p_id_to_store_by=p_id_to_store_by,
+        func="all",
+        fill_value=True,
+    )
+
+
+def _aggregate_by_p_id(
+    column: FloatColumn | IntColumn | BoolColumn,
+    p_id_to_aggregate_by: IntColumn,
+    p_id_to_store_by: IntColumn,
+    func: str,
+    fill_value: float | bool,
+) -> FloatColumn | IntColumn | BoolColumn:
+    """Scatter-aggregate `column` from `p_id_to_aggregate_by` keys to
+    `p_id_to_store_by` keys via `numpy_groupies`. Negative source p_ids
+    are masked out; destinations with no contributors get `fill_value`.
+    """
+    valid_mask = p_id_to_aggregate_by >= 0
+    valid_p_ids = p_id_to_aggregate_by[valid_mask]
+    valid_column = column[valid_mask]
+
+    if len(valid_p_ids) == 0:
+        return numpy.full_like(p_id_to_store_by, fill_value, dtype=column.dtype)
+
+    max_p_id = int(max(numpy.max(valid_p_ids), numpy.max(p_id_to_store_by)))
+    grouped = npg.aggregate(
+        valid_p_ids,
+        valid_column,
+        func=func,
+        size=max_p_id + 1,
+        fill_value=fill_value,
+    )
+    return grouped[p_id_to_store_by]

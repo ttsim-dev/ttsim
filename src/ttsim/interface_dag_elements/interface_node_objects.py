@@ -128,7 +128,7 @@ class InterfaceFunction(InterfaceNodeObject, Generic[FunArgTypes, ReturnType]):
 
     def __post_init__(self) -> None:
         # Expose the signature of the wrapped function for dependency resolution
-        _frozen_safe_update_wrapper(self, self.function)
+        _frozen_safe_update_wrapper(wrapper=self, wrapped=self.function)
 
     @no_type_check  # beartype claw + 'from __future__ import annotations' confuses
     # PEP 612 ParamSpec resolution; this method is a thin pass-through anyway.

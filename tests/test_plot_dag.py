@@ -605,49 +605,58 @@ def test_node_colormap_glob_patterns():
     """Test that node_colormap supports glob-style pattern matching."""
     # Test _matches_glob_pattern
     # Prefix matching with *
-    assert _matches_glob_pattern(("wealth_housing",), ("wealth*",))
-    assert _matches_glob_pattern(("wealth_financial",), ("wealth*",))
-    assert not _matches_glob_pattern(("income",), ("wealth*",))
+    assert _matches_glob_pattern(tp=("wealth_housing",), pattern_tp=("wealth*",))
+    assert _matches_glob_pattern(tp=("wealth_financial",), pattern_tp=("wealth*",))
+    assert not _matches_glob_pattern(tp=("income",), pattern_tp=("wealth*",))
 
     # Suffix matching with *
-    assert _matches_glob_pattern(("amount_m",), ("*_m",))
-    assert _matches_glob_pattern(("income_m",), ("*_m",))
-    assert not _matches_glob_pattern(("amount_y",), ("*_m",))
+    assert _matches_glob_pattern(tp=("amount_m",), pattern_tp=("*_m",))
+    assert _matches_glob_pattern(tp=("income_m",), pattern_tp=("*_m",))
+    assert not _matches_glob_pattern(tp=("amount_y",), pattern_tp=("*_m",))
 
     # Single character matching with ?
-    assert _matches_glob_pattern(("p_id",), ("p_i?",))
+    assert _matches_glob_pattern(tp=("p_id",), pattern_tp=("p_i?",))
     assert not _matches_glob_pattern(
-        ("p_idx",), ("p_i?",)
+        tp=("p_idx",), pattern_tp=("p_i?",)
     )  # ? matches exactly one char
 
     # Exact matching (no wildcards)
-    assert _matches_glob_pattern(("housing_benefits",), ("housing_benefits",))
-    assert not _matches_glob_pattern(("housing",), ("housing_benefits",))
+    assert _matches_glob_pattern(
+        tp=("housing_benefits",), pattern_tp=("housing_benefits",)
+    )
+    assert not _matches_glob_pattern(tp=("housing",), pattern_tp=("housing_benefits",))
 
     # Multi-level patterns
     assert _matches_glob_pattern(
-        ("housing_benefits", "eligibility"), ("housing_benefits", "*")
+        tp=("housing_benefits", "eligibility"), pattern_tp=("housing_benefits", "*")
     )
     assert _matches_glob_pattern(
-        ("housing_benefits", "income_check"), ("housing_benefits", "*_check")
+        tp=("housing_benefits", "income_check"),
+        pattern_tp=("housing_benefits", "*_check"),
     )
 
     # Top-level special case
-    assert _matches_glob_pattern(("p_id",), ("top-level",))
-    assert not _matches_glob_pattern(("housing_benefits", "amount"), ("top-level",))
+    assert _matches_glob_pattern(tp=("p_id",), pattern_tp=("top-level",))
+    assert not _matches_glob_pattern(
+        tp=("housing_benefits", "amount"), pattern_tp=("top-level",)
+    )
 
     # Test _pattern_specificity - longer patterns should score higher
     short_pattern = ("housing*",)
     long_pattern = ("housing_benefits", "*")
-    assert _pattern_specificity(("housing_benefits", "amount"), long_pattern) > (
-        _pattern_specificity(("housing_benefits", "amount"), short_pattern)
+    assert _pattern_specificity(
+        tp=("housing_benefits", "amount"), pattern_tp=long_pattern
+    ) > (
+        _pattern_specificity(
+            tp=("housing_benefits", "amount"), pattern_tp=short_pattern
+        )
     )
 
     # Exact matches should score higher than wildcard matches
     exact_pattern = ("housing_benefits",)
     wildcard_pattern = ("housing*",)
-    assert _pattern_specificity(("housing_benefits",), exact_pattern) > (
-        _pattern_specificity(("housing_benefits",), wildcard_pattern)
+    assert _pattern_specificity(tp=("housing_benefits",), pattern_tp=exact_pattern) > (
+        _pattern_specificity(tp=("housing_benefits",), pattern_tp=wildcard_pattern)
     )
 
     # Test _find_color_for_qname
@@ -661,24 +670,32 @@ def test_node_colormap_glob_patterns():
     }
 
     # Exact match takes precedence over wildcard
-    assert _find_color_for_qname("wealth_housing", colormap) == "navy"
-
-    # Wildcard prefix match
-    assert _find_color_for_qname("wealth_financial", colormap) == "blue"
-
-    # Wildcard suffix match
-    assert _find_color_for_qname("income_m", colormap) == "orange"
-
-    # Hierarchical pattern
-    assert _find_color_for_qname("housing_benefits__eligibility", colormap) == (
-        "lightgreen"
+    assert (
+        _find_color_for_qname(qname="wealth_housing", node_colormap=colormap) == "navy"
     )
 
+    # Wildcard prefix match
+    assert (
+        _find_color_for_qname(qname="wealth_financial", node_colormap=colormap)
+        == "blue"
+    )
+
+    # Wildcard suffix match
+    assert _find_color_for_qname(qname="income_m", node_colormap=colormap) == "orange"
+
+    # Hierarchical pattern
+    assert _find_color_for_qname(
+        qname="housing_benefits__eligibility", node_colormap=colormap
+    ) == ("lightgreen")
+
     # Top-level fallback
-    assert _find_color_for_qname("p_id", colormap) == "gray"
+    assert _find_color_for_qname(qname="p_id", node_colormap=colormap) == "gray"
 
     # No match falls back to default
-    assert _find_color_for_qname("unknown__nested", colormap) == "black"
+    assert (
+        _find_color_for_qname(qname="unknown__nested", node_colormap=colormap)
+        == "black"
+    )
 
 
 def test_node_colormap_glob_patterns_in_plot():
@@ -706,44 +723,54 @@ def test_node_colormap_glob_patterns_in_plot():
 def test_node_colormap_doublestar_patterns():
     """Test that ** patterns match any number of path segments."""
     # ** at the beginning - match suffix at any depth
-    assert _matches_glob_pattern(("betrag_m_bg",), ("**", "*_bg"))
-    assert _matches_glob_pattern(("bürgergeld", "betrag_m_bg"), ("**", "*_bg"))
+    assert _matches_glob_pattern(tp=("betrag_m_bg",), pattern_tp=("**", "*_bg"))
     assert _matches_glob_pattern(
-        ("bürgergeld", "einkommen", "betrag_m_bg"), ("**", "*_bg")
+        tp=("bürgergeld", "betrag_m_bg"), pattern_tp=("**", "*_bg")
     )
-    assert not _matches_glob_pattern(("bürgergeld", "betrag_m"), ("**", "*_bg"))
+    assert _matches_glob_pattern(
+        tp=("bürgergeld", "einkommen", "betrag_m_bg"), pattern_tp=("**", "*_bg")
+    )
+    assert not _matches_glob_pattern(
+        tp=("bürgergeld", "betrag_m"), pattern_tp=("**", "*_bg")
+    )
 
     # ** in the middle - match prefix and suffix
     assert _matches_glob_pattern(
-        ("bürgergeld", "einkommen", "betrag_m"), ("bürgergeld", "**", "*_m")
+        tp=("bürgergeld", "einkommen", "betrag_m"),
+        pattern_tp=("bürgergeld", "**", "*_m"),
     )
     assert _matches_glob_pattern(
-        ("bürgergeld", "a", "b", "c", "betrag_m"), ("bürgergeld", "**", "*_m")
+        tp=("bürgergeld", "a", "b", "c", "betrag_m"),
+        pattern_tp=("bürgergeld", "**", "*_m"),
     )
     # ** can match zero segments
     assert _matches_glob_pattern(
-        ("bürgergeld", "betrag_m"), ("bürgergeld", "**", "*_m")
+        tp=("bürgergeld", "betrag_m"), pattern_tp=("bürgergeld", "**", "*_m")
     )
     assert not _matches_glob_pattern(
-        ("wohngeld", "betrag_m"), ("bürgergeld", "**", "*_m")
+        tp=("wohngeld", "betrag_m"), pattern_tp=("bürgergeld", "**", "*_m")
     )
 
     # ** at the end - match any descendants
-    assert _matches_glob_pattern(("bürgergeld",), ("bürgergeld", "**"))
-    assert _matches_glob_pattern(("bürgergeld", "x"), ("bürgergeld", "**"))
-    assert _matches_glob_pattern(("bürgergeld", "x", "y", "z"), ("bürgergeld", "**"))
+    assert _matches_glob_pattern(tp=("bürgergeld",), pattern_tp=("bürgergeld", "**"))
+    assert _matches_glob_pattern(
+        tp=("bürgergeld", "x"), pattern_tp=("bürgergeld", "**")
+    )
+    assert _matches_glob_pattern(
+        tp=("bürgergeld", "x", "y", "z"), pattern_tp=("bürgergeld", "**")
+    )
 
     # Just ** matches everything
-    assert _matches_glob_pattern(("anything",), ("**",))
-    assert _matches_glob_pattern(("a", "b", "c"), ("**",))
+    assert _matches_glob_pattern(tp=("anything",), pattern_tp=("**",))
+    assert _matches_glob_pattern(tp=("a", "b", "c"), pattern_tp=("**",))
 
     # Specificity: patterns without ** should win over patterns with **
     tp = ("bürgergeld", "betrag_m_bg")
     specific_pattern = ("bürgergeld", "*_bg")
     doublestar_pattern = ("**", "*_bg")
-    assert _pattern_specificity(tp, specific_pattern) > _pattern_specificity(
-        tp, doublestar_pattern
-    )
+    assert _pattern_specificity(
+        tp=tp, pattern_tp=specific_pattern
+    ) > _pattern_specificity(tp=tp, pattern_tp=doublestar_pattern)
 
     # Test _find_color_for_qname with ** patterns
     colormap: dict[tuple[str, ...], str] = {
@@ -754,16 +781,29 @@ def test_node_colormap_doublestar_patterns():
     }
 
     # Most specific wins
-    assert _find_color_for_qname("bürgergeld__betrag_m_bg", colormap) == "darkgreen"
+    assert (
+        _find_color_for_qname(qname="bürgergeld__betrag_m_bg", node_colormap=colormap)
+        == "darkgreen"
+    )
 
     # Namespace pattern wins over **
-    assert _find_color_for_qname("bürgergeld__einkommen_bg", colormap) == "green"
+    assert (
+        _find_color_for_qname(qname="bürgergeld__einkommen_bg", node_colormap=colormap)
+        == "green"
+    )
 
     # ** pattern catches nested _bg
-    assert _find_color_for_qname("wohngeld__nested__amount_bg", colormap) == "purple"
+    assert (
+        _find_color_for_qname(
+            qname="wohngeld__nested__amount_bg", node_colormap=colormap
+        )
+        == "purple"
+    )
 
     # ** pattern catches top-level _bg
-    assert _find_color_for_qname("some_var_bg", colormap) == "purple"
+    assert (
+        _find_color_for_qname(qname="some_var_bg", node_colormap=colormap) == "purple"
+    )
 
 
 def test_node_colormap_doublestar_in_plot():

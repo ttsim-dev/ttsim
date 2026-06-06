@@ -12,7 +12,7 @@ from ttsim.tt import param_function, policy_function, policy_input
 # the module via `load_module` — claw-free, exactly how the interface DAG obtains
 # these objects — to assert on the pristine instances.
 _IFACE_DIR = Path(ttsim.interface_dag_elements.__file__).parent
-_tt_targets = load_module(_IFACE_DIR / "tt_targets.py", _IFACE_DIR)
+_tt_targets = load_module(path=_IFACE_DIR / "tt_targets.py", root=_IFACE_DIR)
 qname = _tt_targets.qname
 tree = _tt_targets.tree
 

@@ -55,8 +55,8 @@ def string_equal(s1, s2):
 
 
 def test_compare_str():
-    assert string_equal("This ! is a     test.", "This is a test")
-    assert not string_equal("This is a test", "This is not a test")
+    assert string_equal(s1="This ! is a     test.", s2="This is a test")
+    assert not string_equal(s1="This is a test", s2="This is not a test")
 
 
 # ======================================================================================
@@ -274,7 +274,7 @@ def test_change_if_to_where_source(func, expected, args):  # noqa: ARG001
     exp = inspect.getsource(expected)
     exp = exp.replace("_exp", "")
     got = make_vectorizable_source(func, backend="numpy", xnp=numpy)
-    assert string_equal(exp, got)
+    assert string_equal(s1=exp, s2=got)
 
 
 @pytest.mark.parametrize(("func", "expected", "args"), TEST_CASES)
@@ -752,7 +752,7 @@ def test_vectorize_scalar_func(backend, xnp):
 
 def test_already_vectorized_func(xnp):
     assert numpy.array_equal(
-        already_vectorized_func(xnp.array([-1, 0, 2, 3]), xnp),
+        already_vectorized_func(x=xnp.array([-1, 0, 2, 3]), xnp=xnp),
         xnp.array([0, 0, 4, 6]),
     )
 

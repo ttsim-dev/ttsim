@@ -97,7 +97,7 @@ def test_create_tree_from_path_and_value(paths, expected):
     ],
 )
 def test_create_tree_from_path_and_value_if_path_is_empty(paths, value, expected):
-    assert create_tree_from_path_and_value(paths, value) == expected
+    assert create_tree_from_path_and_value(path=paths, value=value) == expected
 
 
 def test_create_tree_from_path_and_value_with_dataclass():
