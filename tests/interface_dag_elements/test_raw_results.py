@@ -3,7 +3,6 @@ from __future__ import annotations
 from pathlib import Path
 
 import ttsim.interface_dag_elements
-from ttsim.interface_dag_elements.interface_node_objects import InterfaceFunction
 from ttsim.interface_dag_elements.orig_policy_objects import load_module
 
 # The package claw rewrites normally-imported `interface_dag_elements` modules,
@@ -21,10 +20,6 @@ params = _raw_results.params
 # =============================================================================
 # columns_with_internal_p_ids() function tests
 # =============================================================================
-def test_columns_with_internal_p_ids_is_interface_function():
-    assert isinstance(columns_with_internal_p_ids, InterfaceFunction)
-
-
 def test_columns_filters_to_root_nodes(xnp):
     processed_data = {
         "p_id": xnp.array([0, 1, 2]),
@@ -111,53 +106,33 @@ def test_columns_with_empty_root_nodes(xnp):
 # =============================================================================
 # columns_with_original_p_ids() function tests
 # =============================================================================
-def test_columns_with_original_p_ids_is_interface_function():
-    assert isinstance(columns_with_original_p_ids, InterfaceFunction)
+def test_columns_with_original_p_ids(xnp):
+    """Unit-level localizer for the remapping; end-to-end behavior is covered in
+    test_endogenous_p_id_targets.py.
 
-
-def test_columns_with_original_p_ids_translates_endogenous_p_id_columns(xnp):
-    # Original p_ids [20, 10, 30] sort to internal order [10, 20, 30],
-    # i.e. sort_indices [1, 0, 2]. Internal index i points to the person at
-    # internal position i, whose original p_id is sorted_orig_p_ids[i].
+    Endogenous `p_id_*` columns are gathered through the sorted original p_ids
+    (internal index i → sorted_orig_p_ids[i]); any negative value — not just
+    the canonical `-1` — collapses to the no-link sentinel; non-`p_id_*`
+    columns pass through untouched. Original p_ids are non-monotonic so a
+    dropped or misapplied `sort_indices` shows up.
+    """
     result = columns_with_original_p_ids(
-        columns_with_internal_p_ids={"p_id_recipient": xnp.array([0, 1, 2])},
-        input_data__flat={("p_id",): xnp.array([20, 10, 30])},
-        input_data__sort_indices=xnp.array([1, 0, 2]),
+        columns_with_internal_p_ids={
+            "p_id_recipient": xnp.array([0, -1, -2, 1]),
+            "income": xnp.array([100, 200, 300, 400]),
+        },
+        input_data__flat={("p_id",): xnp.array([20, 10, 30, 40])},
+        input_data__sort_indices=xnp.array([1, 0, 2, 3]),
         xnp=xnp,
     )
 
-    assert list(result["p_id_recipient"]) == [10, 20, 30]
-
-
-def test_columns_with_original_p_ids_collapses_negatives_to_sentinel(xnp):
-    result = columns_with_original_p_ids(
-        columns_with_internal_p_ids={"p_id_recipient": xnp.array([-1, -2, 1])},
-        input_data__flat={("p_id",): xnp.array([20, 10, 30])},
-        input_data__sort_indices=xnp.array([1, 0, 2]),
-        xnp=xnp,
-    )
-
-    assert list(result["p_id_recipient"]) == [-1, -1, 20]
-
-
-def test_columns_with_original_p_ids_leaves_other_columns_unchanged(xnp):
-    result = columns_with_original_p_ids(
-        columns_with_internal_p_ids={"income": xnp.array([100, 200, 300])},
-        input_data__flat={("p_id",): xnp.array([20, 10, 30])},
-        input_data__sort_indices=xnp.array([1, 0, 2]),
-        xnp=xnp,
-    )
-
-    assert list(result["income"]) == [100, 200, 300]
+    assert list(result["p_id_recipient"]) == [10, -1, -1, 20]
+    assert list(result["income"]) == [100, 200, 300, 400]
 
 
 # =============================================================================
 # from_input_data() function tests
 # =============================================================================
-def test_from_input_data_is_interface_function():
-    assert isinstance(from_input_data, InterfaceFunction)
-
-
 def test_from_input_data_extracts_requested_targets(xnp):
     input_data__flat = {
         ("p_id",): xnp.array([0, 1, 2]),
@@ -242,10 +217,6 @@ def test_from_input_data_returns_arrays_unsorted(xnp):
 # =============================================================================
 # params() function tests
 # =============================================================================
-def test_params_is_interface_function():
-    assert isinstance(params, InterfaceFunction)
-
-
 def test_params_extracts_requested_param_targets():
     specialized_env = {
         "param_a": 100,
