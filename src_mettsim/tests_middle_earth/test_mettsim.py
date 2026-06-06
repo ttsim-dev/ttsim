@@ -73,6 +73,11 @@ def test_policy_cases(test: PolicyTest, backend: Literal["numpy", "jax"]):
     execute_test(test=test, root=middle_earth.ROOT_PATH, backend=backend)
 
 
+def test_enough_policy_cases_are_collected():
+    """Guard against silently skipping all policy cases via a broken glob root."""
+    assert len(POLICY_TEST_IDS_AND_CASES) >= 20
+
+
 def test_python314_annotation_extraction_bug(backend: Literal["numpy", "jax"]):
     """Check Python 3.14 annotation extraction bug (fixed in dags>=0.4.2)."""
 
