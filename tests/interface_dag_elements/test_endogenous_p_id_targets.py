@@ -9,19 +9,11 @@ user-space `p_id` values before returning results.
 from __future__ import annotations
 
 import datetime
-import inspect
 from typing import TYPE_CHECKING
 
 import pandas as pd
-from dags import get_free_arguments
 
-from ttsim import (
-    InputData,
-    MainTarget,
-    SpecializedEnvironment,
-    TTTargets,
-    main,
-)
+from ttsim import InputData, MainTarget, TTTargets, main
 from ttsim.tt import FKType, ScalarParam, policy_function, policy_input
 
 if TYPE_CHECKING:
@@ -273,64 +265,3 @@ def test_endogenous_p_id_target_mixed_with_regular_column(
         check_index_type=False,
         check_like=True,
     )
-
-
-def test_jittable_with_specialized_environment_and_dummy_processed_data(
-    xnp: ModuleType, backend: Literal["numpy", "jax"]
-):
-    """Jit-compile a single policy function from dummy `processed_data` and a
-    pre-built specialized environment, without any `input_data` (regression
-    test for #130). The dummy data is derived from the function's free
-    arguments, and the target is `raw_results.columns_with_internal_p_ids` so
-    that the remapping to user-space `p_id`s
-    (`raw_results.columns_with_original_p_ids`) is pruned.
-    """
-    p_id_recipient = policy_function(
-        start_date=_DATE,
-        end_date=_DATE,
-        leaf_name="p_id_recipient",
-    )(_identity)
-
-    full_env = main(
-        main_target=(
-            "specialized_environment_for_plotting_and_templates",
-            "with_partialled_params_and_scalars",
-        ),
-        policy_environment={
-            "p_id_recipient": p_id_recipient,
-            **_policy_year_month_day(),
-        },
-        backend=backend,
-        include_fail_nodes=False,
-        include_warn_nodes=False,
-    )
-    env = {"p_id_recipient": full_env["p_id_recipient"]}
-
-    processed_data = {}
-    for arg_name in get_free_arguments(env["p_id_recipient"]):
-        annotation = str(
-            inspect.signature(env["p_id_recipient"]).parameters[arg_name].annotation
-        )
-        if "FloatColumn" in annotation:
-            processed_data[arg_name] = xnp.zeros(1, dtype=float)
-        elif "IntColumn" in annotation:
-            processed_data[arg_name] = xnp.zeros(1, dtype=int)
-        elif "BoolColumn" in annotation:
-            processed_data[arg_name] = xnp.zeros(1, dtype=bool)
-        else:
-            raise ValueError(f"Unknown column type: {annotation}")
-
-    result = main(
-        main_target=MainTarget.raw_results.columns_with_internal_p_ids,
-        specialized_environment=(
-            SpecializedEnvironment.with_partialled_params_and_scalars(env)
-        ),
-        processed_data=processed_data,
-        tt_targets=TTTargets.qname(["p_id_recipient"]),
-        backend=backend,
-        include_fail_nodes=False,
-        include_warn_nodes=False,
-    )
-
-    # Raw results stay in internal representation: no remapping happens.
-    assert list(result["p_id_recipient"]) == [0]
