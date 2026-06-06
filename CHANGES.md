@@ -6,6 +6,10 @@ releases are available on [Anaconda.org](https://anaconda.org/conda-forge/ttsim)
 
 ## Unreleased
 
+- Fill in the `count_by_p_id`, `mean_by_p_id`, `max_by_p_id`, `min_by_p_id`,
+  `any_by_p_id`, and `all_by_p_id` aggregations on both the NumPy and JAX backends.
+  Negative source `p_id` entries are masked out so they cannot influence the result;
+  destinations without contributors get the identity fill value. ({ghuser}`hmgaudecker`)
 - {gh}`108` Allow endogenously-computed `p_id_*` columns as targets — the interface DAG
   reverse-translates internal indices back to user-space `p_id` values, preserving the
   `-1` no-link sentinel. ({ghuser}`hmgaudecker`)

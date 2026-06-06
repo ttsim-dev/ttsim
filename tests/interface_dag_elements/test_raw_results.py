@@ -11,7 +11,7 @@ from ttsim.interface_dag_elements.orig_policy_objects import load_module
 # the module via `load_module` — claw-free, exactly how the interface DAG obtains
 # these objects — to assert on the pristine instances.
 _IFACE_DIR = Path(ttsim.interface_dag_elements.__file__).parent
-_raw_results = load_module(_IFACE_DIR / "raw_results.py", _IFACE_DIR)
+_raw_results = load_module(path=_IFACE_DIR / "raw_results.py", root=_IFACE_DIR)
 columns = _raw_results.columns
 from_input_data = _raw_results.from_input_data
 params = _raw_results.params

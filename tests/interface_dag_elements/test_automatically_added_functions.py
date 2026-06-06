@@ -94,20 +94,20 @@ def test_should_overwrite_with_data_cols_differing_only_in_time_period() -> None
 
 
 def test_create_function_for_time_unit_should_rename_parameter():
-    function = _create_function_for_time_unit("test", per_d_to_per_m)
+    function = _create_function_for_time_unit(source="test", converter=per_d_to_per_m)
 
     parameter_spec = inspect.getfullargspec(function)
     assert parameter_spec.args == ["test"]
 
 
 def test_create_function_for_time_unit_should_not_set_info_if_none():
-    function = _create_function_for_time_unit("test", per_d_to_per_m)
+    function = _create_function_for_time_unit(source="test", converter=per_d_to_per_m)
 
     assert not hasattr(function, "__info__")
 
 
 def test_create_function_for_time_unit_should_apply_converter(xnp):
-    function = _create_function_for_time_unit("test", per_d_to_per_w)
+    function = _create_function_for_time_unit(source="test", converter=per_d_to_per_w)
 
     assert function(xnp.array(1)) == 7
 

@@ -379,8 +379,10 @@ def synthesize_typed_aggregation_wrapper(
         raise TypeResolutionError(msg)
 
     output_kind = resolve_agg_output_kind(
-        agg_type,
-        source_column_kind if source_column_kind is not None else ResolvedKind.OTHER,
+        agg_type=agg_type,
+        input_kind=source_column_kind
+        if source_column_kind is not None
+        else ResolvedKind.OTHER,
         node_name=node_name,
     )
     return_type_string = column_kind_to_type_string(output_kind)

@@ -27,7 +27,7 @@ if TYPE_CHECKING:
 
 POLICY_TEST_IDS_AND_CASES = load_policy_cases(
     policy_cases_root=(
-        middle_earth.ROOT_PATH.parent / "tests_middle_earth" / "policy_cases"
+        middle_earth.ROOT_PATH.parent.parent / "tests_middle_earth" / "policy_cases"
     ),
     policy_name="",
     xnp=numpy,
@@ -71,6 +71,11 @@ def orig_mettsim_objects():
 )
 def test_policy_cases(test: PolicyTest, backend: Literal["numpy", "jax"]):
     execute_test(test=test, root=middle_earth.ROOT_PATH, backend=backend)
+
+
+def test_enough_policy_cases_are_collected():
+    """Guard against silently skipping all policy cases via a broken glob root."""
+    assert len(POLICY_TEST_IDS_AND_CASES) >= 20
 
 
 def test_python314_annotation_extraction_bug(backend: Literal["numpy", "jax"]):

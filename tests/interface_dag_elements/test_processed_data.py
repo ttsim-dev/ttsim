@@ -148,7 +148,7 @@ def test_canonicalize_input_dtype_returns_signed_array(uint_input_factory, xnp):
     int64 on numpy, int32 on jax with the default x64-disabled config).
     """
     uint_input = uint_input_factory()
-    result = _canonicalize_input_dtype(uint_input, xnp)
+    result = _canonicalize_input_dtype(arr=uint_input, xnp=xnp)
     assert result.dtype.kind == "i"
     assert int(result[0]) == 0
     assert int(result[1]) == 100
@@ -159,7 +159,7 @@ def test_canonicalize_input_dtype_returns_signed_array(uint_input_factory, xnp):
 
 def test_canonicalize_input_dtype_passes_non_uint_through(xnp):
     arr = numpy.array([-5, 0, 5], dtype=numpy.int32)
-    result = _canonicalize_input_dtype(arr, xnp)
+    result = _canonicalize_input_dtype(arr=arr, xnp=xnp)
     assert result.dtype == xnp.int32
     assert int(result[0]) == -5
 

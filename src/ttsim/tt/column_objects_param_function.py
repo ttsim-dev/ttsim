@@ -187,7 +187,9 @@ def policy_input(
         A decorator that returns a PolicyInput object.
 
     """
-    start_date, end_date = _convert_and_validate_dates(start_date, end_date)
+    start_date, end_date = _convert_and_validate_dates(
+        start_date=start_date, end_date=end_date
+    )
 
     def inner(func: Callable[..., Any]) -> PolicyInput:
         return PolicyInput(
@@ -262,7 +264,7 @@ class ColumnFunction(ColumnObject, Generic[FunArgTypes, ReturnType]):
     def __post_init__(self) -> None:
         _fail_if_rounding_has_wrong_type(self.rounding_spec)
         # Expose the signature of the wrapped function for dependency resolution
-        _frozen_safe_update_wrapper(self, self.function)
+        _frozen_safe_update_wrapper(wrapper=self, wrapped=self.function)
 
     @no_type_check  # beartype claw + 'from __future__ import annotations' confuses
     # PEP 612 ParamSpec resolution; this method is a thin pass-through anyway.
@@ -420,7 +422,9 @@ def policy_function(
         A decorator that returns a PolicyFunction object.
 
     """
-    start_date, end_date = _convert_and_validate_dates(start_date, end_date)
+    start_date, end_date = _convert_and_validate_dates(
+        start_date=start_date, end_date=end_date
+    )
 
     def inner(func: Callable[..., Any]) -> PolicyFunction:
         _fail_if_missing_annotations(
@@ -630,7 +634,9 @@ def group_creation_function(
             consecutively numbered starting from 0.
 
     """
-    start_date, end_date = _convert_and_validate_dates(start_date, end_date)
+    start_date, end_date = _convert_and_validate_dates(
+        start_date=start_date, end_date=end_date
+    )
 
     def decorator(func: Callable[..., Any]) -> GroupCreationFunction:
         _fail_if_missing_annotations(
@@ -713,7 +719,9 @@ def agg_by_group_function(
     warn_msg_if_included: str | None = None,
     fail_msg_if_included: str | None = None,
 ) -> Callable[[Callable[..., Any]], AggByGroupFunction]:
-    start_date, end_date = _convert_and_validate_dates(start_date, end_date)
+    start_date, end_date = _convert_and_validate_dates(
+        start_date=start_date, end_date=end_date
+    )
 
     agg_registry: dict[AggType, Callable[..., Any]] = {
         AggType.SUM: grouped_sum,
@@ -734,16 +742,20 @@ def agg_by_group_function(
         orig_location = f"{func.__module__}.{func.__name__}"  # ty: ignore[unresolved-attribute]
         args = set(inspect.signature(func).parameters)
         group_ids = {p for p in args if p.endswith("_id")}
-        _fail_if_group_id_is_invalid(group_ids, orig_location)
+        _fail_if_group_id_is_invalid(group_ids=group_ids, orig_location=orig_location)
         group_id = group_ids.pop()
         other_args = args - {group_id, "num_segments", "backend"}
         column_name: str | None
         if agg_type == AggType.COUNT:
-            _fail_if_other_arg_is_present(other_args, orig_location)
+            _fail_if_other_arg_is_present(
+                other_args=other_args, orig_location=orig_location
+            )
             mapper = {"group_id": group_id}
             column_name = None
         else:
-            _fail_if_other_arg_is_invalid(other_args, orig_location)
+            _fail_if_other_arg_is_invalid(
+                other_args=other_args, orig_location=orig_location
+            )
             column_name = other_args.pop()
             mapper = {"group_id": group_id, "column": column_name}
         agg_func = _make_typed_aggregation_function(
@@ -924,7 +936,9 @@ def agg_by_p_id_function(
     warn_msg_if_included: str | None = None,
     fail_msg_if_included: str | None = None,
 ) -> Callable[[Callable[..., Any]], AggByPIDFunction]:
-    start_date, end_date = _convert_and_validate_dates(start_date, end_date)
+    start_date, end_date = _convert_and_validate_dates(
+        start_date=start_date, end_date=end_date
+    )
 
     agg_registry: dict[AggType, Callable[..., Any]] = {
         AggType.SUM: sum_by_p_id,
@@ -950,11 +964,15 @@ def agg_by_p_id_function(
             if any(e.startswith("p_id_") for e in dt.tree_path_from_qname(p))
         }
         other_args = args - {*other_p_ids, "p_id", "num_segments", "backend"}
-        _fail_if_p_id_is_not_present(args, orig_location)
-        _fail_if_other_p_id_is_invalid(other_p_ids, orig_location)
+        _fail_if_p_id_is_not_present(args=args, orig_location=orig_location)
+        _fail_if_other_p_id_is_invalid(
+            other_p_ids=other_p_ids, orig_location=orig_location
+        )
         column_name: str | None
         if agg_type == AggType.COUNT:
-            _fail_if_other_arg_is_present(other_args, orig_location)
+            _fail_if_other_arg_is_present(
+                other_args=other_args, orig_location=orig_location
+            )
             mapper = {
                 "p_id_to_aggregate_by": other_p_ids.pop(),
                 "p_id_to_store_by": "p_id",
@@ -963,7 +981,9 @@ def agg_by_p_id_function(
             }
             column_name = None
         else:
-            _fail_if_other_arg_is_invalid(other_args, orig_location)
+            _fail_if_other_arg_is_invalid(
+                other_args=other_args, orig_location=orig_location
+            )
             column_name = other_args.pop()
             mapper = {
                 "column": column_name,
@@ -1115,7 +1135,7 @@ class ParamFunction(Generic[FunArgTypes, ReturnType]):
 
     def __post_init__(self) -> None:
         # Expose the signature of the wrapped function for dependency resolution
-        _frozen_safe_update_wrapper(self, self.function)
+        _frozen_safe_update_wrapper(wrapper=self, wrapped=self.function)
 
     @no_type_check  # see ColumnFunction.__call__ for rationale.
     def __call__(
@@ -1195,7 +1215,9 @@ def param_function(
         A decorator that returns a ParamFunction object.
 
     """
-    start_date, end_date = _convert_and_validate_dates(start_date, end_date)
+    start_date, end_date = _convert_and_validate_dates(
+        start_date=start_date, end_date=end_date
+    )
 
     def inner(func: Callable[..., Any]) -> ParamFunction:
         _fail_if_missing_annotations(
