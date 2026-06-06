@@ -18,7 +18,7 @@ from ttsim.typing import (
 
 
 @interface_function()
-def columns(
+def columns_with_internal_p_ids(
     labels__root_nodes: UnorderedQNames,
     processed_data: QNameData,
     tt_function: Callable[[QNameData], QNameData],
@@ -27,7 +27,7 @@ def columns(
 
     Arrays are sorted according to the internal sort order. Endogenously-
     computed `p_id_*` columns hold internal indices; see
-    `columns_with_remapped_ids` for the version with user-space `p_id` values.
+    `columns_with_original_p_ids` for the version with user-space `p_id` values.
 
     Computable from `processed_data` alone, without any `input_data`.
     """
@@ -37,8 +37,8 @@ def columns(
 
 
 @interface_function()
-def columns_with_remapped_ids(
-    columns: QNameData,
+def columns_with_original_p_ids(
+    columns_with_internal_p_ids: QNameData,
     input_data__flat: FlatData,
     input_data__sort_indices: IntColumn,
     xnp: ModuleType,
@@ -63,7 +63,7 @@ def columns_with_remapped_ids(
         )
         if _is_endogenous_p_id_pointer(qname)
         else value
-        for qname, value in columns.items()
+        for qname, value in columns_with_internal_p_ids.items()
     }
 
 

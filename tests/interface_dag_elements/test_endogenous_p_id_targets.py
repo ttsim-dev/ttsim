@@ -276,10 +276,10 @@ def test_endogenous_p_id_target_mixed_with_regular_column(
 def test_raw_results_columns_computable_from_processed_data_alone(
     xnp: ModuleType, backend: Literal["numpy", "jax"]
 ):
-    """Targeting `raw_results.columns` with `processed_data` and a pre-built
-    specialized environment must not require `input_data` (regression test
-    for #130). The remapping to user-space `p_id`s lives in
-    `raw_results.columns_with_remapped_ids`, which is pruned here.
+    """Targeting `raw_results.columns_with_internal_p_ids` with `processed_data`
+    and a pre-built specialized environment must not require `input_data`
+    (regression test for #130). The remapping to user-space `p_id`s lives in
+    `raw_results.columns_with_original_p_ids`, which is pruned here.
     """
     p_id_recipient = policy_function(
         start_date=_DATE,
@@ -302,7 +302,7 @@ def test_raw_results_columns_computable_from_processed_data_alone(
     )
 
     result = main(
-        main_target=MainTarget.raw_results.columns,
+        main_target=MainTarget.raw_results.columns_with_internal_p_ids,
         specialized_environment=(
             SpecializedEnvironment.with_partialled_params_and_scalars(
                 {"p_id_recipient": env["p_id_recipient"]}
