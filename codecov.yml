@@ -13,3 +13,7 @@ coverage:
     project:
       default:
         target: 85%
+ignore:
+  # Runs on the JAX backend only; the coverage job uses the NumPy backend,
+  # under which all of its cases are skipped.
+  - src_mettsim/tests_middle_earth/test_jittability.py

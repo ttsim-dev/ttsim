@@ -25,7 +25,7 @@ from ttsim.typing import (
 
 @interface_function()
 def tree(
-    raw_results__columns: QNameData,
+    raw_results__columns_with_original_p_ids: QNameData,
     raw_results__params: QNameResults,
     raw_results__from_input_data: QNameData,
     input_data__sort_indices: IntColumn,
@@ -43,7 +43,10 @@ def tree(
         {
             **raw_results__params,
             **raw_results__from_input_data,
-            **{k: reorder_arrays(v) for k, v in raw_results__columns.items()},
+            **{
+                k: reorder_arrays(v)
+                for k, v in raw_results__columns_with_original_p_ids.items()
+            },
         }
     )
 

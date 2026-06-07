@@ -147,7 +147,7 @@ def test_warn_if_evaluation_date_set_in_multiple_places_implicitly_added(backend
     }
     with pytest.warns(match="You have specified the evaluation date in more than one"):
         main(
-            main_target=MainTarget.raw_results.columns,
+            main_target=MainTarget.raw_results.columns_with_internal_p_ids,
             policy_environment=policy_environment,
             evaluation_date=datetime.date(2025, 1, 1),
             processed_data={"p_id": xnp.array([0])},
@@ -168,7 +168,7 @@ def test_do_not_need_to_warn_if_evaluation_date_is_set_only_once(backend, xnp):
     with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter("always")
         main(
-            main_target=MainTarget.raw_results.columns,
+            main_target=MainTarget.raw_results.columns_with_internal_p_ids,
             policy_environment=policy_environment,
             evaluation_date=datetime.date(2025, 1, 1),
             processed_data={"p_id": xnp.array([0])},

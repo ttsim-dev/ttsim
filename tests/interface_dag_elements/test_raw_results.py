@@ -12,28 +12,17 @@ from ttsim.interface_dag_elements.orig_policy_objects import load_module
 # these objects — to assert on the pristine instances.
 _IFACE_DIR = Path(ttsim.interface_dag_elements.__file__).parent
 _raw_results = load_module(path=_IFACE_DIR / "raw_results.py", root=_IFACE_DIR)
-columns = _raw_results.columns
+columns_with_internal_p_ids = _raw_results.columns_with_internal_p_ids
+columns_with_original_p_ids = _raw_results.columns_with_original_p_ids
 from_input_data = _raw_results.from_input_data
 params = _raw_results.params
 
 
 # =============================================================================
-# columns() function tests
+# columns_with_internal_p_ids() function tests
 # =============================================================================
-def test_columns_is_interface_function():
-    assert isinstance(columns, InterfaceFunction)
-
-
-def _identity_p_id_inputs(xnp, n: int) -> dict:
-    """Minimal `input_data__flat` + sort indices for tests that don't care
-    about row order — the original `p_id` array is already sorted, so the
-    sort is the identity permutation.
-    """
-    return {
-        "input_data__flat": {("p_id",): xnp.arange(n)},
-        "input_data__sort_indices": xnp.arange(n),
-        "xnp": xnp,
-    }
+def test_columns_with_internal_p_ids_is_interface_function():
+    assert isinstance(columns_with_internal_p_ids, InterfaceFunction)
 
 
 def test_columns_filters_to_root_nodes(xnp):
@@ -48,11 +37,10 @@ def test_columns_filters_to_root_nodes(xnp):
     def tt_function(data):
         return data
 
-    result = columns(
+    result = columns_with_internal_p_ids(
         labels__root_nodes=root_nodes,
         processed_data=processed_data,
         tt_function=tt_function,
-        **_identity_p_id_inputs(xnp, n=3),
     )
 
     # Only root_nodes should be passed to tt_function
@@ -74,11 +62,10 @@ def test_columns_calls_tt_function_with_filtered_data(xnp):
         call_args.append(data)
         return {"output": xnp.array([1, 2])}
 
-    columns(
+    columns_with_internal_p_ids(
         labels__root_nodes=root_nodes,
         processed_data=processed_data,
         tt_function=tt_function,
-        **_identity_p_id_inputs(xnp, n=2),
     )
 
     # Verify tt_function was called with only root_nodes data
@@ -96,11 +83,10 @@ def test_columns_returns_tt_function_output(xnp):
     def tt_function(_data):
         return expected_output
 
-    result = columns(
+    result = columns_with_internal_p_ids(
         labels__root_nodes=root_nodes,
         processed_data=processed_data,
         tt_function=tt_function,
-        **_identity_p_id_inputs(xnp, n=2),
     )
 
     assert result == expected_output
@@ -113,14 +99,20 @@ def test_columns_with_empty_root_nodes(xnp):
     def tt_function(data):
         return data
 
-    result = columns(
+    result = columns_with_internal_p_ids(
         labels__root_nodes=root_nodes,
         processed_data=processed_data,
         tt_function=tt_function,
-        **_identity_p_id_inputs(xnp, n=2),
     )
 
     assert result == {}
+
+
+# =============================================================================
+# columns_with_original_p_ids() function tests
+# =============================================================================
+def test_columns_with_original_p_ids_is_interface_function():
+    assert isinstance(columns_with_original_p_ids, InterfaceFunction)
 
 
 # =============================================================================
@@ -301,11 +293,17 @@ def test_params_returns_various_value_types():
 # =============================================================================
 # Dependencies property tests
 # =============================================================================
-def test_columns_dependencies():
-    assert columns.dependencies == {
+def test_columns_with_internal_p_ids_dependencies():
+    assert columns_with_internal_p_ids.dependencies == {
         "labels__root_nodes",
         "processed_data",
         "tt_function",
+    }
+
+
+def test_columns_with_original_p_ids_dependencies():
+    assert columns_with_original_p_ids.dependencies == {
+        "columns_with_internal_p_ids",
         "input_data__flat",
         "input_data__sort_indices",
         "xnp",
