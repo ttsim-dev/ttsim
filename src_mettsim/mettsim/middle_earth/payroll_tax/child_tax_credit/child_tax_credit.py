@@ -29,10 +29,7 @@ def claim_of_child_y(
     child_eligible: bool,
     schedule: dict[str, float],
 ) -> float:
-    if child_eligible:
-        return schedule["child_amount_y"]
-    else:
-        return 0
+    return schedule["child_amount_y"] if child_eligible else 0
 
 
 @policy_function()
