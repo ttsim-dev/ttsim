@@ -209,9 +209,6 @@ per-file-ignores."src/ttsim/typing.py" = [
   "PYI051", # Redundant literal union
 ]
 per-file-ignores."src_mettsim/mettsim/middle_earth/**/*.py" = [
-  "E721",    # Type comparison using ==
-  "PLR1714", # Repeated equality comparison
-  "PLR1716", # Boolean chained comparison
   "PLR2004", # Magic value comparison
   "RET505",  # Vectorizer requires both if/else branches; it rejects the early-return form
 ]
@@ -235,11 +232,9 @@ per-file-ignores."tests/interface_dag_elements/test_failures.py" = [
   "E501", # Line too long
 ]
 per-file-ignores."tests/tt/test_vectorization.py" = [
-  "E721",    # Type comparison using ==
-  "PLR1714", # Repeated equality comparison
-  "PLR1716", # Boolean chained comparison
-  "RET",     # Unnecessary return logic
-  "SIM108",  # Statement-style if/else blocks are intentional fixtures for the vectorizer
+  "RET504", # `out = ...; return out` fixtures mirror the vectorizer's output
+  "RET505", # Vectorizer requires both if/else branches; it rejects the early-return form
+  "SIM108", # Statement-style if/else blocks are intentional fixtures for the vectorizer
 ]
 pydocstyle.convention = "google"
 
