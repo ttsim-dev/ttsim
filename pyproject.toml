@@ -209,6 +209,8 @@ per-file-ignores."src/ttsim/typing.py" = [
   "PYI051", # Redundant literal union
 ]
 per-file-ignores."src_mettsim/mettsim/middle_earth/**/*.py" = [
+  "PLR1714", # Consider merging multiple comparisons with `in` — not vectorizable
+  "PLR1716", # Boolean expression may be simplified with chained comparison — not vectorizable
   "PLR2004", # Magic value comparison
   "RET505",  # Vectorizer requires both if/else branches; it rejects the early-return form
 ]
