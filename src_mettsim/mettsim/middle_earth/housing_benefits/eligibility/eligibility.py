@@ -80,3 +80,12 @@ def adult(
     max_age_children: int,
 ) -> bool:
     return age > max_age_children
+
+
+@policy_function(vectorization_strategy="vectorize")
+def young_adult(
+    age: int,
+    max_age_children: int,
+) -> bool:
+    """Whether the person is a young adult: past child age but not yet of age."""
+    return max_age_children < age and age < 33
