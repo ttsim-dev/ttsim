@@ -26,18 +26,19 @@ pixi run -e py314 pytest tests/test_main.py
 # Run a single test
 pixi run -e py314 pytest tests/test_main.py::test_function_name -v
 
-# Type checking with ty
-pixi run -e ty ty
+# Type checking with ty (runs as pre-commit hooks against the py314 and
+# py314-jax environments; requires both to be installed)
+pixi run -e py314 prek run ty --all-files
+pixi run -e py314 prek run ty-jax --all-files
 
-# Available environments: py311, py312, py313, py314, py314-jax, py314-cuda, py314-metal, ty
+# Available environments: py311, py312, py313, py314, py314-jax, py314-cuda, py314-metal
 ```
 
-Before finishing any task that modifies code, always run these three verification steps
-in order:
+Before finishing any task that modifies code, always run these two verification steps in
+order:
 
-1. `pixi run ty` (type checker)
 1. `pixi run -e py314-jax prek run --all-files` (quality checks: linting, formatting,
-   yaml, etc.)
+   yaml, type checking with ty under both backends, etc.)
 1. `pixi run -e py314-jax tests -n 7` (full test suite)
 
 Pre-commit hooks run automatically via pre-commit.ci. Linting uses Ruff with `ALL` rules
