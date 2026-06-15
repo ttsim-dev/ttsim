@@ -256,6 +256,9 @@ def test_results_shapes_render_payroll_tax_amount_y(
     elif shape_id == "df_with_qname_columns":
         amounts = result["payroll_tax__amount_y"].to_numpy()
         assert list(result.index) == list(_USER_P_IDS_IN_ORDER)
+    else:
+        msg = f"Unknown shape_id: {shape_id}"
+        raise ValueError(msg)
 
     numpy.testing.assert_allclose(amounts, _EXPECTED_AMOUNTS_IN_USER_ORDER)
 
