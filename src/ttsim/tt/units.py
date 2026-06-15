@@ -535,7 +535,7 @@ def resolve_column_unit(
                 f"A name with a time-unit suffix (_{time_unit_id}) denotes a "
                 f"flow and requires a `…_FLOW` unit token; `unit=None` "
                 f"declares a dimensionless quantity (a dimensionless flow is "
-                f"`{Unit.SHARE_FLOW}`) (GEP 10)."
+                f"`{Unit.DIMENSIONLESS_FLOW}`) (GEP 10)."
             )
         return UREG.dimensionless
     if unit_token_is_flow(token):
@@ -569,7 +569,7 @@ def resolve_param_unit(
     name suffix — and forbidden otherwise. In particular ``unit: null`` with
     a non-null ``reference_period`` is an error: ``null`` always and only
     means dimensionless, and the per-period dimensionless quantity is
-    :attr:`Unit.SHARE_FLOW`.
+    :attr:`Unit.DIMENSIONLESS_FLOW`.
 
     Parameters may pin down a concrete currency (``SILVER_PENNY_STOCK``,
     ``DM_FLOW``, …); such a token resolves exactly like its agnostic
@@ -604,7 +604,7 @@ def resolve_param_unit(
                 f"`unit: null` declares a dimensionless parameter and cannot "
                 f"be combined with `reference_period: {reference_period}`. A "
                 f"dimensionless quantity per period declares "
-                f"`unit: {Unit.SHARE_FLOW}` (GEP 10)."
+                f"`unit: {Unit.DIMENSIONLESS_FLOW}` (GEP 10)."
             )
         return UREG.dimensionless
     if unit_token_is_flow(token):

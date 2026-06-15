@@ -398,7 +398,7 @@ def test_policy_function_unit_defaults_to_none():
         (Unit.CURRENCY_FLOW, "q", "CURRENCY / quarter_year"),
         (Unit.CURRENCY_FLOW, "w", "CURRENCY / week"),
         (Unit.CURRENCY_FLOW, "d", "CURRENCY / day"),
-        (Unit.SHARE_FLOW, "y", "1 / year"),  # e.g. a wealth-tax rate
+        (Unit.DIMENSIONLESS_FLOW, "y", "1 / year"),  # e.g. a wealth-tax rate
         (Unit.HOURS_FLOW, "w", "hour / week"),  # e.g. working hours
         (Unit.CURRENCY_PER_SQUARE_METER_FLOW, "m", "CURRENCY / meter ** 2 / month"),
         (Unit.CURRENCY_STOCK, None, "CURRENCY"),  # stock
@@ -437,7 +437,7 @@ def test_resolve_column_unit_rejects_flow_token_without_suffix():
 
 
 def test_resolve_column_unit_rejects_dimensionless_on_suffixed_name():
-    with pytest.raises(UnitDefinitionError, match="SHARE_FLOW"):
+    with pytest.raises(UnitDefinitionError, match="DIMENSIONLESS_FLOW"):
         resolve_column_unit(token=None, time_unit_id="y")
 
 
@@ -446,7 +446,7 @@ def test_resolve_column_unit_rejects_dimensionless_on_suffixed_name():
     [
         (Unit.CURRENCY_FLOW, "Year", "CURRENCY / year"),
         (Unit.CURRENCY_FLOW, "Month", "CURRENCY / month"),
-        (Unit.SHARE_FLOW, "Year", "1 / year"),  # the wealth-tax rate
+        (Unit.DIMENSIONLESS_FLOW, "Year", "1 / year"),  # the wealth-tax rate
         (Unit.CURRENCY_STOCK, None, "CURRENCY"),
         (Unit.YEARS, None, "year"),
     ],
@@ -474,7 +474,7 @@ def test_resolve_param_unit_rejects_complete_token_with_reference_period():
 def test_resolve_param_unit_rejects_null_with_reference_period():
     # The old hidden rule (`unit: null` + `reference_period: Year` -> 1/year)
     # is dead: null always and only means dimensionless (GEP 10).
-    with pytest.raises(UnitDefinitionError, match="SHARE_FLOW"):
+    with pytest.raises(UnitDefinitionError, match="DIMENSIONLESS_FLOW"):
         resolve_param_unit(token=None, reference_period="Year")
 
 
