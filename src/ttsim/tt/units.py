@@ -37,7 +37,7 @@ never contain pint syntax; internally each token resolves to a pint unit.
 A dimensionless quantity (a share, a rate, a head count) declares *no* unit
 (``unit=None`` in code, ``unit: null`` in YAML) and never combines with a
 period source; the per-period dimensionless quantity is its own flow token
-(:attr:`Unit.SHARE_FLOW`).
+(:attr:`Unit.DIMENSIONLESS_FLOW`).
 
 The :data:`CURRENCY_TOKEN` (the literal string ``"CURRENCY"``) is a real
 unit anchoring the ``[currency]`` dimension, so the currency tokens resolve
@@ -99,10 +99,11 @@ class Unit(enum.StrEnum):
     CURRENCY_STOCK = "CURRENCY_STOCK"
     """An amount of currency, full stop: wealth, asset thresholds."""
 
-    SHARE_FLOW = "SHARE_FLOW"
-    """A dimensionless share per period (``1/period``), e.g. a wealth-tax
-    rate. Not to be confused with a plain share (a Steuersatz), which is
-    dimensionless and declares ``unit=None``."""
+    DIMENSIONLESS_FLOW = "DIMENSIONLESS_FLOW"
+    """A dimensionless quantity *per period* (``1/period``): a count or a
+    share per unit time — births per year, or the per-year change of a
+    dimensionless factor (the pension Zugangsfaktor). The complete,
+    non-period counterpart is ``unit=None`` (``unit: null`` in YAML)."""
 
     YEARS = "YEARS"
     """A quantity measured in years: ages, age thresholds, calendar years."""
@@ -135,7 +136,7 @@ class _TokenResolution(NamedTuple):
 _TOKEN_BASE_AND_IS_FLOW: dict[Unit, _TokenResolution] = {
     Unit.CURRENCY_FLOW: _TokenResolution(base=CURRENCY_TOKEN, is_flow=True),
     Unit.CURRENCY_STOCK: _TokenResolution(base=CURRENCY_TOKEN, is_flow=False),
-    Unit.SHARE_FLOW: _TokenResolution(base=None, is_flow=True),
+    Unit.DIMENSIONLESS_FLOW: _TokenResolution(base=None, is_flow=True),
     Unit.YEARS: _TokenResolution(base="year", is_flow=False),
     Unit.HOURS_FLOW: _TokenResolution(base="hour", is_flow=True),
     Unit.SQUARE_METERS: _TokenResolution(base="meter ** 2", is_flow=False),
