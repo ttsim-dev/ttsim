@@ -34,8 +34,8 @@ per-period quantity and are completed by a period supplied by the name
 suffix (columns/functions) or ``reference_period`` (parameters); all other
 tokens are *complete* as written and admit no period source. Declarations
 never contain pint syntax; internally each token resolves to a pint unit.
-A dimensionless quantity (a share, a rate, a head count) declares *no* unit
-(``unit=None`` in code, ``unit: null`` in YAML) and never combines with a
+A dimensionless quantity (a share, a rate, a head count) declares
+:attr:`Unit.DIMENSIONLESS` (``unit: DIMENSIONLESS``) and never combines with a
 period source; the per-period dimensionless quantity is its own flow token
 (:attr:`Unit.DIMENSIONLESS_FLOW`).
 
@@ -122,11 +122,17 @@ class Unit(enum.StrEnum):
     CURRENCY_STOCK = "CURRENCY_STOCK"
     """An amount of currency, full stop: wealth, asset thresholds."""
 
+    DIMENSIONLESS = "DIMENSIONLESS"
+    """A plain dimensionless number: a share (a Steuersatz), a rate, a head
+    count. The complete (non-period) counterpart of :attr:`DIMENSIONLESS_FLOW`.
+    There is no ``DIMENSIONLESS_STOCK`` — a dimensionless level is the bare
+    token. Replaces the former ``unit=None`` / ``unit: null`` spelling."""
+
     DIMENSIONLESS_FLOW = "DIMENSIONLESS_FLOW"
     """A dimensionless quantity *per period* (``1/period``): a count or a
     share per unit time — births per year, or the per-year change of a
     dimensionless factor (the pension Zugangsfaktor). The complete,
-    non-period counterpart is ``unit=None`` (``unit: null`` in YAML)."""
+    non-period counterpart is :attr:`DIMENSIONLESS`."""
 
     YEARS = "YEARS"
     """A quantity measured in years: ages, age thresholds, calendar years."""
@@ -159,6 +165,7 @@ class _TokenResolution(NamedTuple):
 _TOKEN_BASE_AND_IS_FLOW: dict[Unit, _TokenResolution] = {
     Unit.CURRENCY_FLOW: _TokenResolution(base=CURRENCY_TOKEN, is_flow=True),
     Unit.CURRENCY_STOCK: _TokenResolution(base=CURRENCY_TOKEN, is_flow=False),
+    Unit.DIMENSIONLESS: _TokenResolution(base=None, is_flow=False),
     Unit.DIMENSIONLESS_FLOW: _TokenResolution(base=None, is_flow=True),
     Unit.YEARS: _TokenResolution(base="year", is_flow=False),
     Unit.HOURS_FLOW: _TokenResolution(base="hour", is_flow=True),
@@ -230,15 +237,17 @@ def coerce_unit_token(
 ) -> Unit | CurrencyUnitToken | None:
     """Coerce a YAML ``unit:`` value to a vocabulary token (GEP 10).
 
-    ``None`` (``unit: null``) declares a dimensionless quantity and passes
-    through. Any string must spell a member of the core enumeration or a
+    A *declared* dimensionless quantity uses :attr:`Unit.DIMENSIONLESS`
+    (``unit: DIMENSIONLESS``); ``None`` only ever reaches here as an
+    internally-resolved dimensionless unit (e.g. a head-count aggregation) and
+    passes through. Any string must spell a member of the core enumeration or a
     currency token derived from a registered currency exactly; everything
-    else — including pint syntax like ``"CURRENCY"`` or ``"CURRENCY / year"``
-    — is rejected.
+    else — including pint syntax like ``"CURRENCY"`` or ``"CURRENCY / year"``,
+    and the former ``"null"`` spelling — is rejected.
 
     Args:
         value: The raw declaration (a string from YAML, an already-coerced
-            token, or ``None``).
+            token, or an internal ``None``).
         where: Identifier for error messages (e.g. the parameter's name).
 
     Raises:
@@ -252,9 +261,9 @@ def coerce_unit_token(
         return Unit(value)
     except ValueError:
         raise UnitDefinitionError(
-            f"{where}: invalid unit token {value!r}. A unit declaration must "
-            f"be one of {', '.join([*Unit, *_CURRENCY_UNIT_TOKENS])} — or "
-            f"null for a dimensionless quantity (GEP 10)."
+            f"{where}: invalid unit token {value!r}. A unit declaration must be "
+            f"one of {', '.join([*Unit, *_CURRENCY_UNIT_TOKENS])} (GEP 10); use "
+            f"DIMENSIONLESS for a dimensionless quantity."
         ) from None
 
 
@@ -421,7 +430,7 @@ def parse_unit(unit_str: str) -> pint.Unit:
     Raises:
         UnitDefinitionError: If the string cannot be parsed, involves a unit
             token TTSIM does not know about, or resolves to the dimensionless
-            unit (declare ``unit=None`` / ``unit: null`` instead).
+            unit (declare ``DIMENSIONLESS`` instead).
     """
     if not isinstance(unit_str, str):
         raise UnitDefinitionError(
@@ -436,8 +445,7 @@ def parse_unit(unit_str: str) -> pint.Unit:
         raise UnitDefinitionError(
             f"Unit {unit_str!r} resolves to the dimensionless unit. A "
             f"dimensionless quantity (a share, a rate, a head count) declares "
-            f"no unit at all: `unit=None` in code, `unit: null` in YAML "
-            f"(GEP 10)."
+            f"`DIMENSIONLESS` (GEP 10)."
         )
     return unit
 
