@@ -138,8 +138,8 @@ def test_parse_unit_rejects_unknown_unit_tokens(unit_str):
 @pytest.mark.parametrize("unit_str", ["dimensionless", ""])
 def test_parse_unit_rejects_dimensionless_spellings(unit_str):
     # There is exactly one way to declare a dimensionless quantity:
-    # `unit=None` in code, `unit: null` in YAML.
-    with pytest.raises(UnitDefinitionError, match="unit: null"):
+    # `DIMENSIONLESS` — a pint-string spelling is rejected.
+    with pytest.raises(UnitDefinitionError, match="DIMENSIONLESS"):
         parse_unit(unit_str)
 
 
