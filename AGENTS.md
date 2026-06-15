@@ -28,8 +28,8 @@ pixi run -e py314 pytest tests/test_main.py::test_function_name -v
 
 # Type checking with ty (runs as pre-commit hooks against the py314 and
 # py314-jax environments; requires both to be installed)
-pixi run -e py314 prek run ty --all-files
-pixi run -e py314 prek run ty-jax --all-files
+prek run ty --all-files
+prek run ty-jax --all-files
 
 # Available environments: py311, py312, py313, py314, py314-jax, py314-cuda, py314-metal
 ```
