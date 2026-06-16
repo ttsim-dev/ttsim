@@ -20,8 +20,8 @@ in code, ``unit: CURRENCY_FLOW`` in YAML. The vocabulary has two parts: the
 core :class:`Unit` enumeration, which grows only by GEP amendment plus TTSIM
 PR, and per-package :class:`CurrencyUnitToken`\\ s, which
 :func:`register_currency` derives from each registered concrete currency
-(``DM_STOCK``, ``DM_FLOW``, …). The agnostic currency tokens
-(:attr:`Unit.CURRENCY_STOCK` / :attr:`Unit.CURRENCY_FLOW`) denote the
+(``DM``, ``DM_FLOW``, …). The agnostic currency tokens
+(:attr:`Unit.CURRENCY` / :attr:`Unit.CURRENCY_FLOW`) denote the
 *union* of the registered currencies: for dimensionality checks a concrete
 currency token means exactly what its agnostic counterpart means, and in
 addition names the currency a parameter's numbers are denominated in, which
@@ -65,7 +65,7 @@ from ttsim.exceptions import (
 )
 
 #: The pint unit anchoring the ``[currency]`` dimension, used internally to
-#: resolve the currency tokens (``CURRENCY_FLOW``, ``CURRENCY_STOCK``, …)
+#: resolve the currency tokens (``CURRENCY_FLOW``, ``CURRENCY``, …)
 #: before any concrete currency is registered. Checks compare at the
 #: dimensionality level; the concrete currency is resolved separately.
 CURRENCY_TOKEN = "CURRENCY"  # noqa: S105 (a unit token, not a secret)
@@ -77,10 +77,9 @@ class Unit(enum.StrEnum):
     One token = one meaning, independent of any other field. A bare token is
     *complete* as written; a ``…_FLOW`` token *needs a period*, supplied by
     the name suffix (columns/functions) or ``reference_period`` (parameters).
-    Where both kinds of a quantity exist, both are marked
-    (:attr:`CURRENCY_STOCK` / :attr:`CURRENCY_FLOW`) — a bare ``CURRENCY``
-    is deliberately unwritable, so no token can be misread as complete when
-    it is not.
+    Where both a stock and a flow of a quantity exist, the flow is marked
+    ``…_FLOW`` and the stock is the bare token (:attr:`CURRENCY` /
+    :attr:`CURRENCY_FLOW`).
 
     The full vocabulary is this enumeration plus the
     :class:`CurrencyUnitToken` declaration tokens that
@@ -96,8 +95,11 @@ class Unit(enum.StrEnum):
     CURRENCY_FLOW = "CURRENCY_FLOW"
     """An amount of currency per period: wages, claims, benefits."""
 
-    CURRENCY_STOCK = "CURRENCY_STOCK"
-    """An amount of currency, full stop: wealth, asset thresholds."""
+    CURRENCY = "CURRENCY"
+    """An amount of currency, full stop: wealth, asset thresholds. The complete
+    (non-period) counterpart of :attr:`CURRENCY_FLOW` — a currency *stock* is this
+    bare token, a currency *flow* is :attr:`CURRENCY_FLOW`. There is no
+    ``CURRENCY_STOCK`` spelling: the ``…_FLOW`` suffix is the only flow marker."""
 
     DIMENSIONLESS = "DIMENSIONLESS"
     """A plain dimensionless number: a share (a Steuersatz), a rate, a head
@@ -141,7 +143,7 @@ class _TokenResolution(NamedTuple):
 #: pint syntax.
 _TOKEN_BASE_AND_IS_FLOW: dict[Unit, _TokenResolution] = {
     Unit.CURRENCY_FLOW: _TokenResolution(base=CURRENCY_TOKEN, is_flow=True),
-    Unit.CURRENCY_STOCK: _TokenResolution(base=CURRENCY_TOKEN, is_flow=False),
+    Unit.CURRENCY: _TokenResolution(base=CURRENCY_TOKEN, is_flow=False),
     Unit.DIMENSIONLESS: _TokenResolution(base=None, is_flow=False),
     Unit.DIMENSIONLESS_FLOW: _TokenResolution(base=None, is_flow=True),
     Unit.YEARS: _TokenResolution(base="year", is_flow=False),
@@ -158,9 +160,9 @@ class CurrencyUnitToken(str):
     """A declaration token pinning down a concrete currency (GEP 10).
 
     Created by :func:`register_currency`, never directly:
-    ``register_currency("DM", ...)`` derives ``DM_STOCK`` and ``DM_FLOW``.
+    ``register_currency("DM", ...)`` derives ``DM`` and ``DM_FLOW``.
     For all dimensionality checks the token means exactly what its agnostic
-    counterpart (:attr:`Unit.CURRENCY_STOCK` / :attr:`Unit.CURRENCY_FLOW`)
+    counterpart (:attr:`Unit.CURRENCY` / :attr:`Unit.CURRENCY_FLOW`)
     means — a registered currency *is a* ``CURRENCY``. In addition it names
     the concrete currency a parameter's numbers are denominated in, which the
     build-time conversion to the run currency reads off the declaration.
@@ -181,7 +183,7 @@ class CurrencyUnitToken(str):
         return self
 
 
-#: One declaration token per (registered currency, kind): ``DM_STOCK``,
+#: One declaration token per (registered currency, kind): ``DM``,
 #: ``DM_FLOW``, … — populated by :func:`register_currency`, keyed by spelling.
 _CURRENCY_UNIT_TOKENS: dict[str, CurrencyUnitToken] = {}
 
@@ -312,7 +314,7 @@ def register_currency(
 
     Registration also derives the currency's *declaration tokens*
     (:class:`CurrencyUnitToken`): ``register_currency("DM", ...)`` makes
-    ``DM_STOCK`` and ``DM_FLOW`` part of the unit vocabulary, so parameters
+    ``DM`` and ``DM_FLOW`` part of the unit vocabulary, so parameters
     can pin down the concrete currency their numbers are written in.
 
     Args:
@@ -368,7 +370,7 @@ def register_currency(
 
 def _fail_if_currency_token_collides(name: str) -> None:
     """Reject a currency whose declaration tokens would collide (GEP 10)."""
-    for suffix in ("_STOCK", "_FLOW"):
+    for suffix in ("", "_FLOW"):
         spelling = f"{name.upper()}{suffix}"
         if spelling in Unit.__members__:
             raise UnitDefinitionError(
@@ -381,10 +383,10 @@ def _register_currency_unit_tokens(name: str) -> None:
     """Derive a registered currency's declaration tokens (GEP 10).
 
     ``name`` is upper-cased and suffixed with the stock/flow kind markers:
-    ``"silver_penny"`` yields ``SILVER_PENNY_STOCK`` and ``SILVER_PENNY_FLOW``.
+    ``"silver_penny"`` yields ``SILVER_PENNY`` and ``SILVER_PENNY_FLOW``.
     Idempotent, mirroring :func:`register_currency`.
     """
-    for suffix, is_flow in (("_STOCK", False), ("_FLOW", True)):
+    for suffix, is_flow in (("", False), ("_FLOW", True)):
         spelling = f"{name.upper()}{suffix}"
         if spelling not in _CURRENCY_UNIT_TOKENS:
             _CURRENCY_UNIT_TOKENS[spelling] = CurrencyUnitToken(
