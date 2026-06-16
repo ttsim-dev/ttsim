@@ -77,8 +77,9 @@ def test_coerce_unit_token_rejects_none():
 @pytest.mark.parametrize(
     "value",
     [
-        # Pint syntax is not a declaration: one token = one meaning.
-        "CURRENCY",
+        # Pint syntax is not a declaration: one token = one meaning. (Bare
+        # "CURRENCY" is now the agnostic stock token Unit.CURRENCY, so it is
+        # valid — only composite/pint spellings remain rejected.)
         "CURRENCY / year",
         "year",
         "hectare",
@@ -195,9 +196,9 @@ def test_register_currency_requires_exactly_one_of_base_or_definition():
 @pytest.mark.parametrize(
     ("spelling", "currency", "is_flow"),
     [
-        ("CASTAR_STOCK", "castar", False),
+        ("CASTAR", "castar", False),
         ("CASTAR_FLOW", "castar", True),
-        ("SILVER_PENNY_STOCK", "silver_penny", False),
+        ("SILVER_PENNY", "silver_penny", False),
         ("SILVER_PENNY_FLOW", "silver_penny", True),
     ],
 )
@@ -211,9 +212,9 @@ def test_registration_derives_declaration_tokens(spelling, currency, is_flow):
 
 
 def test_coerce_currency_token_is_idempotent_and_singleton():
-    token = coerce_unit_token("CASTAR_STOCK", where="test")
+    token = coerce_unit_token("CASTAR", where="test")
     assert coerce_unit_token(token, where="test") is token
-    assert coerce_unit_token("CASTAR_STOCK", where="test") is token
+    assert coerce_unit_token("CASTAR", where="test") is token
 
 
 def test_token_source_currency():
@@ -227,11 +228,11 @@ def test_token_source_currency():
 
 def test_unregistered_currency_spelling_is_rejected():
     with pytest.raises(UnitDefinitionError, match="invalid unit token"):
-        coerce_unit_token("MITHRIL_STOCK", where="test")
+        coerce_unit_token("MITHRIL", where="test")
 
 
 def test_register_currency_rejects_token_collision_with_core_vocabulary():
-    # "currency".upper() + "_STOCK" would collide with Unit.CURRENCY_STOCK.
+    # "currency".upper() collides with the core Unit.CURRENCY token.
     with pytest.raises(UnitDefinitionError, match="collides"):
         register_currency("currency", definition="castar / 2")
 

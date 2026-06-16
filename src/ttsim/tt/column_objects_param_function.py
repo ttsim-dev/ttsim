@@ -145,7 +145,7 @@ class PolicyInput(ColumnObject):
     fail_msg_if_included: str | None = None
     docstring: str | None = ""
     unit: Unit | None = None
-    """The input's unit token (GEP 10), e.g. :attr:`Unit.CURRENCY_STOCK`; a
+    """The input's unit token (GEP 10), e.g. :attr:`Unit.CURRENCY`; a
     ``…_FLOW`` token gets its period from the name suffix. ``None`` until
     annotated; mandatory from issue #119."""
 
