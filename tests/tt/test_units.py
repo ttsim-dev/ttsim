@@ -491,7 +491,7 @@ def test_resolve_param_unit_currency_token_resolves_like_agnostic_counterpart():
     # Union semantics: for dimensionality checks, SILVER_PENNY_* means
     # exactly what CURRENCY_* means; the concrete currency only drives the
     # build-time conversion.
-    register_currency("silver_penny", definition="castar / 4")
+    register_currency("SILVER_PENNY", definition="CASTAR / 4")
     stock = coerce_unit_token("SILVER_PENNY", where="test")
     flow = coerce_unit_token("SILVER_PENNY_FLOW", where="test")
     assert units_are_equivalent(
