@@ -505,12 +505,12 @@ def resolve_column_unit(
     and supplies its period, so ``betrag_m`` declared
     ``unit=Unit.CURRENCY_FLOW`` resolves to ``CURRENCY / month`` and the
     auto-generated ``betrag_y`` to ``CURRENCY / year``. A complete token
-    (``CURRENCY_STOCK``, ``YEARS``, ``DIMENSIONLESS``, …) forbids a suffix; a
+    (``CURRENCY``, ``YEARS``, ``DIMENSIONLESS``, …) forbids a suffix; a
     dimensionless quantity therefore declares :attr:`Unit.DIMENSIONLESS` and a
     dimensionless flow :attr:`Unit.DIMENSIONLESS_FLOW`.
 
     Columns and functions are currency-agnostic by design (GEP 10), so a
-    concrete currency token (``SILVER_PENNY_FLOW``, ``DM_STOCK``, …) is
+    concrete currency token (``SILVER_PENNY_FLOW``, ``DM``, …) is
     rejected here — only parameters pin down the currency their numbers are
     written in.
 
@@ -532,9 +532,23 @@ def resolve_column_unit(
         raise UnitDefinitionError(
             f"Unit token {token} pins down a concrete currency, which only "
             f"parameters may do. Columns and functions are currency-agnostic "
-            f"and declare {Unit.CURRENCY_FLOW} / {Unit.CURRENCY_STOCK} "
+            f"and declare {Unit.CURRENCY_FLOW} / {Unit.CURRENCY} "
             f"(GEP 10)."
         )
+    return _resolve_token_via_suffix(token=token, time_unit_id=time_unit_id)
+
+
+def _resolve_token_via_suffix(
+    token: Unit | CurrencyUnitToken,
+    time_unit_id: str | None,
+) -> pint.Unit:
+    """Resolve a token whose period (if any) comes from a name suffix (GEP 10).
+
+    Shared by columns/functions (:func:`resolve_column_unit`) and scalar
+    parameters (:func:`resolve_scalar_param_unit`): a ``…_FLOW`` token requires
+    a time suffix on the name and is divided by its period; a complete token
+    forbids one.
+    """
     if time_unit_id is not None and time_unit_id not in TIME_UNIT_ID_TO_PINT_NAME:
         raise UnitDefinitionError(
             f"Unknown time-unit suffix id {time_unit_id!r}; expected one of "
@@ -560,20 +574,42 @@ def resolve_column_unit(
     return _token_base_unit(token)
 
 
+def resolve_scalar_param_unit(
+    token: Unit | CurrencyUnitToken,
+    time_unit_id: str | None,
+) -> pint.Unit:
+    """Resolve a scalar parameter's unit from its token and name suffix (GEP 10).
+
+    A scalar parameter takes its period from a time suffix on its *name*, just
+    like a column (GEP 1): ``lump_sum_deduction_y`` resolves a
+    :attr:`Unit.CURRENCY_FLOW` declaration to ``CURRENCY / year``.
+    ``reference_period`` plays no part — it is reserved for the period sources
+    with no name to suffix (integer-keyed dict leaves, function-like-parameter
+    axes), and the caller rejects a scalar parameter that sets one. Unlike
+    :func:`resolve_column_unit`, a concrete currency token is allowed:
+    parameters pin down the currency their numbers are written in.
+    """
+    return _resolve_token_via_suffix(token=token, time_unit_id=time_unit_id)
+
+
 def resolve_param_unit(
     token: Unit | CurrencyUnitToken,
     reference_period: str | None,
 ) -> pint.Unit:
-    """Resolve a parameter's full unit from its ``unit:`` token and period.
+    """Resolve a unit from its ``unit:`` token and a ``reference_period``.
 
-    ``reference_period`` is *functional* (GEP 10): it is required by a
-    ``…_FLOW`` token, whose period it supplies — the parameter analog of the
-    name suffix — and forbidden otherwise. In particular ``DIMENSIONLESS``
-    with a non-null ``reference_period`` is an error: ``DIMENSIONLESS`` is
-    complete as written, and the per-period dimensionless quantity is
-    :attr:`Unit.DIMENSIONLESS_FLOW`.
+    Used for the period sources that have no name to carry a suffix (GEP 10):
+    integer-keyed dict leaves, uniformly-typed dict parameters, raw parameters,
+    and function-like-parameter axes. Scalar parameters take their period from a
+    name suffix instead — see :func:`resolve_scalar_param_unit`.
 
-    Parameters may pin down a concrete currency (``SILVER_PENNY_STOCK``,
+    ``reference_period`` is *functional*: it is required by a ``…_FLOW`` token,
+    whose period it supplies, and forbidden otherwise. In particular
+    ``DIMENSIONLESS`` with a non-null ``reference_period`` is an error:
+    ``DIMENSIONLESS`` is complete as written, and the per-period dimensionless
+    quantity is :attr:`Unit.DIMENSIONLESS_FLOW`.
+
+    Parameters may pin down a concrete currency (``SILVER_PENNY``,
     ``DM_FLOW``, …); such a token resolves exactly like its agnostic
     counterpart — the concrete currency drives the build-time conversion,
     not the dimensionality check.

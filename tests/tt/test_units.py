@@ -407,7 +407,7 @@ def test_policy_function_unit_defaults_to_none():
         (Unit.DIMENSIONLESS_FLOW, "y", "1 / year"),  # e.g. a wealth-tax rate
         (Unit.HOURS_FLOW, "w", "hour / week"),  # e.g. working hours
         (Unit.CURRENCY_PER_SQUARE_METER_FLOW, "m", "CURRENCY / meter ** 2 / month"),
-        (Unit.CURRENCY_STOCK, None, "CURRENCY"),  # stock
+        (Unit.CURRENCY, None, "CURRENCY"),  # stock
         (Unit.YEARS, None, "year"),  # intrinsic time, e.g. an age
         (Unit.SQUARE_METERS, None, "meter ** 2"),
         (Unit.HECTARES, None, "hectare"),
@@ -434,7 +434,7 @@ def test_resolve_column_unit_rejects_unknown_suffix():
 def test_resolve_column_unit_rejects_complete_token_on_suffixed_name():
     # Suffix ⟺ flow, checked in both directions (GEP 10).
     with pytest.raises(UnitDefinitionError, match="complete as written"):
-        resolve_column_unit(token=Unit.CURRENCY_STOCK, time_unit_id="m")
+        resolve_column_unit(token=Unit.CURRENCY, time_unit_id="m")
 
 
 def test_resolve_column_unit_rejects_flow_token_without_suffix():
@@ -455,7 +455,7 @@ def test_resolve_column_unit_rejects_dimensionless_on_suffixed_name():
         (Unit.CURRENCY_FLOW, "Year", "CURRENCY / year"),
         (Unit.CURRENCY_FLOW, "Month", "CURRENCY / month"),
         (Unit.DIMENSIONLESS_FLOW, "Year", "1 / year"),  # the wealth-tax rate
-        (Unit.CURRENCY_STOCK, None, "CURRENCY"),
+        (Unit.CURRENCY, None, "CURRENCY"),
         (Unit.YEARS, None, "year"),
     ],
 )
@@ -476,7 +476,7 @@ def test_resolve_param_unit_rejects_flow_token_without_reference_period():
 
 def test_resolve_param_unit_rejects_complete_token_with_reference_period():
     with pytest.raises(UnitDefinitionError, match="complete as written"):
-        resolve_param_unit(token=Unit.CURRENCY_STOCK, reference_period="Year")
+        resolve_param_unit(token=Unit.CURRENCY, reference_period="Year")
 
 
 def test_resolve_param_unit_rejects_dimensionless_with_reference_period():
@@ -492,7 +492,7 @@ def test_resolve_param_unit_currency_token_resolves_like_agnostic_counterpart():
     # exactly what CURRENCY_* means; the concrete currency only drives the
     # build-time conversion.
     register_currency("silver_penny", definition="castar / 4")
-    stock = coerce_unit_token("SILVER_PENNY_STOCK", where="test")
+    stock = coerce_unit_token("SILVER_PENNY", where="test")
     flow = coerce_unit_token("SILVER_PENNY_FLOW", where="test")
     assert units_are_equivalent(
         left=resolve_param_unit(token=stock, reference_period=None),
@@ -509,7 +509,7 @@ def test_resolve_param_unit_currency_flow_token_needs_reference_period():
     flow = coerce_unit_token("CASTAR_FLOW", where="test")
     with pytest.raises(UnitDefinitionError, match="requires a non-null"):
         resolve_param_unit(token=flow, reference_period=None)
-    stock = coerce_unit_token("CASTAR_STOCK", where="test")
+    stock = coerce_unit_token("CASTAR", where="test")
     with pytest.raises(UnitDefinitionError, match="complete as written"):
         resolve_param_unit(token=stock, reference_period="Year")
 
