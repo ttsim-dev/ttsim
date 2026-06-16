@@ -493,7 +493,7 @@ def _token_base_unit(token: Unit | CurrencyUnitToken) -> pint.Unit:
 
 
 def resolve_column_unit(
-    token: Unit | CurrencyUnitToken | None,
+    token: Unit | CurrencyUnitToken,
     time_unit_id: str | None,
 ) -> pint.Unit:
     """Resolve a column/function's full unit from its ``unit=`` token and suffix.
@@ -503,8 +503,9 @@ def resolve_column_unit(
     and supplies its period, so ``betrag_m`` declared
     ``unit=Unit.CURRENCY_FLOW`` resolves to ``CURRENCY / month`` and the
     auto-generated ``betrag_y`` to ``CURRENCY / year``. A complete token
-    (``CURRENCY_STOCK``, ``YEARS``, …) or a dimensionless declaration
-    (``None``) forbids a suffix.
+    (``CURRENCY_STOCK``, ``YEARS``, ``DIMENSIONLESS``, …) forbids a suffix; a
+    dimensionless quantity therefore declares :attr:`Unit.DIMENSIONLESS` and a
+    dimensionless flow :attr:`Unit.DIMENSIONLESS_FLOW`.
 
     Columns and functions are currency-agnostic by design (GEP 10), so a
     concrete currency token (``SILVER_PENNY_FLOW``, ``DM_STOCK``, …) is
@@ -512,8 +513,8 @@ def resolve_column_unit(
     written in.
 
     Args:
-        token: The ``unit=`` declaration — a :class:`Unit` member, or
-            ``None`` for a dimensionless quantity (a share, a head count).
+        token: The ``unit=`` declaration — a :class:`Unit` member
+            (:attr:`Unit.DIMENSIONLESS` for a share, a head count).
         time_unit_id: The GEP-1 time-unit suffix id, or ``None`` for a node
             without one.
 
@@ -537,15 +538,6 @@ def resolve_column_unit(
             f"Unknown time-unit suffix id {time_unit_id!r}; expected one of "
             f"{', '.join(TIME_UNIT_ID_TO_PINT_NAME)}."
         )
-    if token is None:
-        if time_unit_id is not None:
-            raise UnitDefinitionError(
-                f"A name with a time-unit suffix (_{time_unit_id}) denotes a "
-                f"flow and requires a `…_FLOW` unit token; `unit=None` "
-                f"declares a dimensionless quantity (a dimensionless flow is "
-                f"`{Unit.DIMENSIONLESS_FLOW}`) (GEP 10)."
-            )
-        return UREG.dimensionless
     if unit_token_is_flow(token):
         if time_unit_id is None:
             raise UnitDefinitionError(
@@ -567,16 +559,16 @@ def resolve_column_unit(
 
 
 def resolve_param_unit(
-    token: Unit | CurrencyUnitToken | None,
+    token: Unit | CurrencyUnitToken,
     reference_period: str | None,
 ) -> pint.Unit:
     """Resolve a parameter's full unit from its ``unit:`` token and period.
 
     ``reference_period`` is *functional* (GEP 10): it is required by a
     ``…_FLOW`` token, whose period it supplies — the parameter analog of the
-    name suffix — and forbidden otherwise. In particular ``unit: null`` with
-    a non-null ``reference_period`` is an error: ``null`` always and only
-    means dimensionless, and the per-period dimensionless quantity is
+    name suffix — and forbidden otherwise. In particular ``DIMENSIONLESS``
+    with a non-null ``reference_period`` is an error: ``DIMENSIONLESS`` is
+    complete as written, and the per-period dimensionless quantity is
     :attr:`Unit.DIMENSIONLESS_FLOW`.
 
     Parameters may pin down a concrete currency (``SILVER_PENNY_STOCK``,
@@ -585,9 +577,9 @@ def resolve_param_unit(
     not the dimensionality check.
 
     Args:
-        token: The ``unit:`` declaration — a :class:`Unit` member, a
-            :class:`CurrencyUnitToken`, or ``None`` for a dimensionless
-            parameter.
+        token: The ``unit:`` declaration — a :class:`Unit` member
+            (:attr:`Unit.DIMENSIONLESS` for a dimensionless parameter) or a
+            :class:`CurrencyUnitToken`.
         reference_period: The ``reference_period`` label (``"Year"``,
             ``"Month"``, …), or ``None``.
 
@@ -606,15 +598,6 @@ def resolve_param_unit(
             f"Unknown reference_period {reference_period!r}; expected one of "
             f"{', '.join(REFERENCE_PERIOD_TO_PINT_NAME)}."
         )
-    if token is None:
-        if reference_period is not None:
-            raise UnitDefinitionError(
-                f"`unit: null` declares a dimensionless parameter and cannot "
-                f"be combined with `reference_period: {reference_period}`. A "
-                f"dimensionless quantity per period declares "
-                f"`unit: {Unit.DIMENSIONLESS_FLOW}` (GEP 10)."
-            )
-        return UREG.dimensionless
     if unit_token_is_flow(token):
         if reference_period is None:
             raise UnitDefinitionError(

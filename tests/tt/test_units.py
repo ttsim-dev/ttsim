@@ -417,10 +417,10 @@ def test_resolve_column_unit(token, time_unit_id, expected):
     assert units_are_equivalent(left=resolved, right=parse_unit(expected))
 
 
-def test_resolve_column_unit_none_is_dimensionless():
-    # A share, a rate, a head count: no unit declared at all.
+def test_resolve_column_unit_dimensionless():
+    # A share, a rate, a head count: declared `Unit.DIMENSIONLESS`.
     assert units_are_equivalent(
-        left=resolve_column_unit(token=None, time_unit_id=None),
+        left=resolve_column_unit(token=Unit.DIMENSIONLESS, time_unit_id=None),
         right=UREG.dimensionless,
     )
 
@@ -442,8 +442,10 @@ def test_resolve_column_unit_rejects_flow_token_without_suffix():
 
 
 def test_resolve_column_unit_rejects_dimensionless_on_suffixed_name():
-    with pytest.raises(UnitDefinitionError, match="DIMENSIONLESS_FLOW"):
-        resolve_column_unit(token=None, time_unit_id="y")
+    # DIMENSIONLESS is complete as written; a suffixed name needs a flow token
+    # (here DIMENSIONLESS_FLOW).
+    with pytest.raises(UnitDefinitionError, match="complete as written"):
+        resolve_column_unit(token=Unit.DIMENSIONLESS, time_unit_id="y")
 
 
 @pytest.mark.parametrize(
@@ -476,11 +478,12 @@ def test_resolve_param_unit_rejects_complete_token_with_reference_period():
         resolve_param_unit(token=Unit.CURRENCY_STOCK, reference_period="Year")
 
 
-def test_resolve_param_unit_rejects_null_with_reference_period():
+def test_resolve_param_unit_rejects_dimensionless_with_reference_period():
     # The old hidden rule (`unit: null` + `reference_period: Year` -> 1/year)
-    # is dead: null always and only means dimensionless (GEP 10).
-    with pytest.raises(UnitDefinitionError, match="DIMENSIONLESS_FLOW"):
-        resolve_param_unit(token=None, reference_period="Year")
+    # is dead: DIMENSIONLESS is complete as written; the per-period
+    # dimensionless quantity declares DIMENSIONLESS_FLOW (GEP 10).
+    with pytest.raises(UnitDefinitionError, match="complete as written"):
+        resolve_param_unit(token=Unit.DIMENSIONLESS, reference_period="Year")
 
 
 def test_resolve_param_unit_currency_token_resolves_like_agnostic_counterpart():
