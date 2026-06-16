@@ -10,7 +10,7 @@ ROOT_PATH = Path(__file__).parent
 # has a concrete base currency before the policy environment is assembled
 # (GEP 10). The castar — Gondor's coin — is the realm's unit of account and
 # hence the base currency.
-register_currency("castar", base=True)
+register_currency("CASTAR", base=True)
 
 COLORMAP: dict[tuple[str, ...] | str, str] = {
     ("housing_benefits",): "red",

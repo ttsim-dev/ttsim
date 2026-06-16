@@ -8,7 +8,7 @@ import mettsim.middle_earth  # noqa: F401
 import pytest
 from beartype.roar import BeartypeCallHintViolation
 from mettsim.middle_earth.property_tax.amount import (
-    acre_size_in_hectares_after_cap,
+    acre_size_after_cap,
 )
 
 from ttsim.exceptions import (
@@ -111,7 +111,7 @@ def test_flow_tokens_are_marked_in_the_name():
         "year",
         "quarter_year",
         "month",
-        "castar",
+        "CASTAR",
     ],
 )
 def test_parse_unit_accepts_known_units(unit_str):
@@ -157,12 +157,12 @@ def test_parse_unit_rejects_unparseable_string():
 
 
 def test_mettsim_base_currency_registered():
-    assert UREG.Quantity(1.0, "castar").dimensionality == {"[currency]": 1}
+    assert UREG.Quantity(1.0, "CASTAR").dimensionality == {"[currency]": 1}
 
 
 def test_register_relative_currency_bakes_correct_factor():
-    register_currency("silver_penny", definition="castar / 4")
-    factor = (UREG.Quantity(1.0, "silver_penny") / UREG.Quantity(1.0, "castar")).to(
+    register_currency("SILVER_PENNY", definition="CASTAR / 4")
+    factor = (UREG.Quantity(1.0, "SILVER_PENNY") / UREG.Quantity(1.0, "CASTAR")).to(
         "dimensionless"
     )
     assert factor.magnitude == pytest.approx(0.25)
@@ -170,7 +170,7 @@ def test_register_relative_currency_bakes_correct_factor():
 
 def test_register_currency_idempotent():
     # Re-registering with a consistent definition is a no-op, not an error.
-    register_currency("silver_penny", definition="castar / 4")
+    register_currency("SILVER_PENNY", definition="CASTAR / 4")
 
 
 def test_register_second_base_currency_fails():
@@ -180,7 +180,7 @@ def test_register_second_base_currency_fails():
 
 def test_register_currency_requires_exactly_one_of_base_or_definition():
     with pytest.raises(UnitDefinitionError, match="exactly one"):
-        register_currency("bad_coin", base=True, definition="castar")
+        register_currency("bad_coin", base=True, definition="CASTAR")
     with pytest.raises(UnitDefinitionError, match="exactly one"):
         register_currency("bad_coin")
 
@@ -193,14 +193,14 @@ def test_register_currency_requires_exactly_one_of_base_or_definition():
 @pytest.mark.parametrize(
     ("spelling", "currency", "is_flow"),
     [
-        ("CASTAR", "castar", False),
-        ("CASTAR_FLOW", "castar", True),
-        ("SILVER_PENNY", "silver_penny", False),
-        ("SILVER_PENNY_FLOW", "silver_penny", True),
+        ("CASTAR", "CASTAR", False),
+        ("CASTAR_FLOW", "CASTAR", True),
+        ("SILVER_PENNY", "SILVER_PENNY", False),
+        ("SILVER_PENNY_FLOW", "SILVER_PENNY", True),
     ],
 )
 def test_registration_derives_declaration_tokens(spelling, currency, is_flow):
-    register_currency("silver_penny", definition="castar / 4")
+    register_currency("SILVER_PENNY", definition="CASTAR / 4")
     token = coerce_unit_token(spelling, where="test")
     assert isinstance(token, CurrencyUnitToken)
     assert token == spelling
@@ -216,7 +216,7 @@ def test_coerce_currency_token_is_idempotent_and_singleton():
 
 def test_token_source_currency():
     assert token_source_currency(coerce_unit_token("CASTAR_FLOW", where="t")) == (
-        "castar"
+        "CASTAR"
     )
     assert token_source_currency(Unit.CURRENCY_FLOW) is None
     assert token_source_currency(Unit.HECTARES) is None
@@ -231,7 +231,7 @@ def test_unregistered_currency_spelling_is_rejected():
 def test_register_currency_rejects_token_collision_with_core_vocabulary():
     # "currency".upper() collides with the core Unit.CURRENCY token.
     with pytest.raises(UnitDefinitionError, match="collides"):
-        register_currency("currency", definition="castar / 2")
+        register_currency("currency", definition="CASTAR / 2")
 
 
 def test_policy_function_rejects_currency_token_at_decoration():
@@ -256,7 +256,7 @@ def test_same_unit_is_equivalent():
 
 
 def test_base_currency_equivalent_to_currency_token():
-    assert units_are_equivalent(left=parse_unit("castar"), right=parse_unit("CURRENCY"))
+    assert units_are_equivalent(left=parse_unit("CASTAR"), right=parse_unit("CURRENCY"))
 
 
 def test_month_and_year_flows_are_not_equivalent():
@@ -305,13 +305,13 @@ def test_infer_raises_on_dimensional_clash():
 
 
 def test_tracer_bullet_mettsim_function_passes():
-    """`acre_size_in_hectares_after_cap` returns an area; the body is sound."""
+    """`acre_size_after_cap` returns an area; the body is sound."""
     fail_if_function_unit_is_inconsistent(
-        function=acre_size_in_hectares_after_cap.function,
+        function=acre_size_after_cap.function,
         declared_unit="hectare",
         input_units={
-            "acre_size_in_hectares": "hectare",
-            "cap_in_hectares": "hectare",
+            "acre_size": "hectare",
+            "cap": "hectare",
             "year_from_which_cap_is_applied": "year",
             "evaluation_year": "year",
         },

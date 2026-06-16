@@ -491,14 +491,14 @@ def test_modify_evaluation_date_after_creating_policy_environment(
         tree={
             "p_id": xnp.array([2, 0, 1]),
             "property_tax": {
-                "acre_size_in_hectares": xnp.array([200, 5, 20]),
+                "acre_size": xnp.array([200, 5, 20]),
             },
         }
     )
     result = main(
         main_target=MainTarget.results.df_with_mapper,
         policy_environment=policy_environment,
-        # acre_size_in_hectares capped starting in 2020
+        # acre_size capped starting in 2020
         evaluation_date_str="2020-01-01",
         input_data=input_data,
         tt_targets=TTTargets.tree(

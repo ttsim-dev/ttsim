@@ -383,7 +383,7 @@ def _register_currency_unit_tokens(name: str) -> None:
     """Derive a registered currency's declaration tokens (GEP 10).
 
     ``name`` is upper-cased and suffixed with the stock/flow kind markers:
-    ``"silver_penny"`` yields ``SILVER_PENNY`` and ``SILVER_PENNY_FLOW``.
+    ``"SILVER_PENNY"`` yields ``SILVER_PENNY`` and ``SILVER_PENNY_FLOW``.
     Idempotent, mirroring :func:`register_currency`.
     """
     for suffix, is_flow in (("", False), ("_FLOW", True)):
