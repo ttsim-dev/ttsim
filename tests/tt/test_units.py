@@ -6,6 +6,7 @@ from __future__ import annotations
 # makes the tracer-bullet policy function importable.
 import mettsim.middle_earth  # noqa: F401
 import pytest
+from beartype.roar import BeartypeCallHintViolation
 from mettsim.middle_earth.property_tax.amount import (
     acre_size_in_hectares_after_cap,
 )
@@ -65,8 +66,12 @@ def test_coerce_unit_token_accepts_every_member_spelling(token):
     assert coerce_unit_token(str(token), where="test") is token
 
 
-def test_coerce_unit_token_passes_none_through():
-    assert coerce_unit_token(None, where="test") is None
+def test_coerce_unit_token_rejects_none():
+    # `None` is no longer a dimensionless declaration (GEP 10): it reaches
+    # `coerce_unit_token` only through an internal bug, so the package claw
+    # rejects it before the body runs.
+    with pytest.raises(BeartypeCallHintViolation):
+        coerce_unit_token(None, where="test")  # ty: ignore[invalid-argument-type]
 
 
 @pytest.mark.parametrize(

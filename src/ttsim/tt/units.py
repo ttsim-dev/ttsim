@@ -231,29 +231,29 @@ def token_source_currency(token: Unit | CurrencyUnitToken | None) -> str | None:
 
 
 def coerce_unit_token(
-    value: str | Unit | CurrencyUnitToken | None,
+    value: str | Unit | CurrencyUnitToken,
     *,
     where: str,
-) -> Unit | CurrencyUnitToken | None:
+) -> Unit | CurrencyUnitToken:
     """Coerce a YAML ``unit:`` value to a vocabulary token (GEP 10).
 
-    A *declared* dimensionless quantity uses :attr:`Unit.DIMENSIONLESS`
-    (``unit: DIMENSIONLESS``); ``None`` only ever reaches here as an
-    internally-resolved dimensionless unit (e.g. a head-count aggregation) and
-    passes through. Any string must spell a member of the core enumeration or a
-    currency token derived from a registered currency exactly; everything
+    A dimensionless quantity (a share, a rate, a head count) declares
+    :attr:`Unit.DIMENSIONLESS` (``unit: DIMENSIONLESS``) like any other token;
+    ``None`` is no longer a unit declaration (GEP 10) and reaching here with it
+    is an internal bug. Any string must spell a member of the core enumeration
+    or a currency token derived from a registered currency exactly; everything
     else — including pint syntax like ``"CURRENCY"`` or ``"CURRENCY / year"``,
     and the former ``"null"`` spelling — is rejected.
 
     Args:
-        value: The raw declaration (a string from YAML, an already-coerced
-            token, or an internal ``None``).
+        value: The raw declaration — a string from YAML or an already-coerced
+            token.
         where: Identifier for error messages (e.g. the parameter's name).
 
     Raises:
         UnitDefinitionError: If the value is not part of the vocabulary.
     """
-    if value is None or isinstance(value, Unit | CurrencyUnitToken):
+    if isinstance(value, Unit | CurrencyUnitToken):
         return value
     if value in _CURRENCY_UNIT_TOKENS:
         return _CURRENCY_UNIT_TOKENS[value]
