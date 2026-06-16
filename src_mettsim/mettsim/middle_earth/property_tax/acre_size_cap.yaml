@@ -12,7 +12,7 @@ year_from_which_cap_is_applied:
   type: scalar
   1900-01-01:
     value: 2020
-cap_in_hectares:
+cap:
   name:
     de: Größe des berücksichtigten Ackers
     en: Acre size, from which the tax is capped

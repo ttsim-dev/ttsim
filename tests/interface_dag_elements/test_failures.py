@@ -1753,7 +1753,7 @@ def test_backend_has_changed_from_jax_to_numpy_passes():
         tree={
             "p_id": jax.numpy.array([0, 1, 2]),
             "property_tax": {
-                "acre_size_in_hectares": jax.numpy.array([5, 20, 200]),
+                "acre_size": jax.numpy.array([5, 20, 200]),
             },
         }
     )
@@ -1772,7 +1772,7 @@ def test_backend_has_changed_from_numpy_for_processed_data_to_jax_passes():
         tree={
             "p_id": numpy.array([0, 1, 2]),
             "property_tax": {
-                "acre_size_in_hectares": numpy.array([5, 20, 200]),
+                "acre_size": numpy.array([5, 20, 200]),
             },
         }
     )
@@ -1807,7 +1807,7 @@ def test_backend_has_changed_from_numpy_for_policy_environment_to_jax_raises(
         tree={
             "p_id": xnp.array([0, 1, 2]),
             "property_tax": {
-                "acre_size_in_hectares": xnp.array([5, 20, 200]),
+                "acre_size": xnp.array([5, 20, 200]),
             },
         }
     )
