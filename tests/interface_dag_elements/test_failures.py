@@ -41,6 +41,7 @@ from ttsim.tt import (
     DictParam,
     PiecewisePolynomialParam,
     PiecewisePolynomialParamValue,
+    Unit,
     group_creation_function,
     param_function,
     policy_function,
@@ -61,11 +62,10 @@ if TYPE_CHECKING:
         PolicyEnvironment,
     )
 
-
 _GENERIC_PARAM_HEADER = {
     "name": {"de": "foo", "en": "foo"},
     "description": {"de": "foo", "en": "foo"},
-    "unit": None,
+    "unit": "DIMENSIONLESS",
     "reference_period": None,
 }
 _GENERIC_PARAM_SPEC = {
@@ -79,6 +79,11 @@ some_dict_param = DictParam(
     **_GENERIC_PARAM_SPEC,  # ty: ignore[invalid-argument-type]
 )
 
+# Mapping parameters declare per-axis tokens instead of `unit:` (GEP 10).
+_GENERIC_PARAM_MAPPING_OBJECT_SPEC = {
+    key: value for key, value in _GENERIC_PARAM_SPEC.items() if key != "unit"
+} | {"input_unit": "DIMENSIONLESS", "output_unit": "DIMENSIONLESS"}
+
 
 def _make_consecutive_int_lookup_table_param(
     xnp: ModuleType,
@@ -89,7 +94,7 @@ def _make_consecutive_int_lookup_table_param(
             xnp=xnp,
             values_to_look_up=xnp.array([1, 2, 3]),
         ),
-        **_GENERIC_PARAM_SPEC,  # ty: ignore[invalid-argument-type]
+        **_GENERIC_PARAM_MAPPING_OBJECT_SPEC,  # ty: ignore[invalid-argument-type]
     )
 
 
@@ -100,7 +105,7 @@ def _make_piecewise_polynomial_param(xnp: ModuleType) -> PiecewisePolynomialPara
             intercepts=xnp.array([1, 2, 3]),
             coefficients=xnp.array([[1], [2], [3]]),
         ),
-        **_GENERIC_PARAM_SPEC,  # ty: ignore[invalid-argument-type]
+        **_GENERIC_PARAM_MAPPING_OBJECT_SPEC,  # ty: ignore[invalid-argument-type]
     )
 
 
@@ -173,7 +178,7 @@ def should_fail_sp_id(
     return xnp.maximum(p_id, p_id_spouse) + xnp.minimum(p_id, p_id_spouse) * n
 
 
-@policy_input(fail_msg_if_included="""This should fail.""")
+@policy_input(fail_msg_if_included="""This should fail.""", unit=Unit.DIMENSIONLESS)
 def p_id_spouse() -> IntColumn:
     """Just to test that we can pass a policy input with `fail_msg_if_included` set."""
 
@@ -191,12 +196,12 @@ def some_x(x):
     return x
 
 
-@param_function()
+@param_function(unit=Unit.DIMENSIONLESS)
 def some_param_func_returning_array_of_length_2(xnp: ModuleType) -> Float[Array, 2]:
     return xnp.array([1, 2])
 
 
-@param_function()
+@param_function(unit=Unit.DIMENSIONLESS)
 def some_param_func_returning_list_of_length_2() -> list[int]:
     return [1, 2]
 
@@ -352,7 +357,7 @@ def test_assert_valid_ttsim_pytree(tree, leaf_checker, err_substr):
                 ("c", "f"): {
                     "name": {"de": "foo", "en": "foo"},
                     "description": {"de": "foo", "en": "foo"},
-                    "unit": None,
+                    "unit": "DIMENSIONLESS",
                     "reference_period": None,
                     "type": "scalar",
                     datetime.date(1984, 1, 1): {"value": 1},
@@ -378,7 +383,7 @@ def test_assert_valid_ttsim_pytree(tree, leaf_checker, err_substr):
                 ("c", "f"): {
                     "name": {"de": "foo", "en": "foo"},
                     "description": {"de": "foo", "en": "foo"},
-                    "unit": None,
+                    "unit": "DIMENSIONLESS",
                     "reference_period": None,
                     "type": "scalar",
                     datetime.date(1984, 1, 1): {"value": 1},
@@ -389,7 +394,7 @@ def test_assert_valid_ttsim_pytree(tree, leaf_checker, err_substr):
                 ("d", "f"): {
                     "name": {"de": "foo", "en": "foo"},
                     "description": {"de": "foo", "en": "foo"},
-                    "unit": None,
+                    "unit": "DIMENSIONLESS",
                     "reference_period": None,
                     "type": "scalar",
                     datetime.date(2016, 1, 1): {"value": 10},
@@ -1075,8 +1080,8 @@ def test_fail_if_tt_root_nodes_are_missing_via_main(minimal_input_data, backend)
         return b
 
     policy_environment = {
-        "b": policy_function(leaf_name="b")(b),
-        "c": policy_function(leaf_name="c")(c),
+        "b": policy_function(leaf_name="b", unit=Unit.DIMENSIONLESS)(b),
+        "c": policy_function(leaf_name="c", unit=Unit.DIMENSIONLESS)(c),
     }
 
     with pytest.raises(
@@ -1188,7 +1193,7 @@ def test_fail_if_targets_are_not_in_specialized_environment_or_data_via_main(
             {
                 "name": {"de": "spam", "en": "spam"},
                 "description": {"de": "spam", "en": "spam"},
-                "unit": None,
+                "unit": "DIMENSIONLESS",
                 "reference_period": None,
                 "type": "scalar",
                 datetime.date(1984, 1, 1): {"note": "completely empty"},
@@ -1200,7 +1205,7 @@ def test_fail_if_targets_are_not_in_specialized_environment_or_data_via_main(
             {
                 "name": {"de": "foo", "en": "foo"},
                 "description": {"de": "foo", "en": "foo"},
-                "unit": None,
+                "unit": "DIMENSIONLESS",
                 "reference_period": None,
                 "type": "scalar",
                 datetime.date(1984, 1, 1): {"value": 1},
@@ -1219,7 +1224,7 @@ def test_fail_if_targets_are_not_in_specialized_environment_or_data_via_main(
             {
                 "name": {"de": "foo", "en": "foo"},
                 "description": {"de": "foo", "en": "foo"},
-                "unit": None,
+                "unit": "DIMENSIONLESS",
                 "reference_period": None,
                 "type": "scalar",
                 datetime.date(1984, 1, 1): {"value": 1},
@@ -1239,7 +1244,7 @@ def test_fail_if_targets_are_not_in_specialized_environment_or_data_via_main(
             {
                 "name": {"de": "bar", "en": "bar"},
                 "description": {"de": "bar", "en": "bar"},
-                "unit": None,
+                "unit": "DIMENSIONLESS",
                 "reference_period": None,
                 "type": "scalar",
                 datetime.date(1984, 1, 1): {"value": 1},
@@ -1264,7 +1269,7 @@ def test_fail_if_targets_are_not_in_specialized_environment_or_data_via_main(
                     end_date=datetime.date(2099, 12, 31),
                     name={"de": "bar", "en": "bar"},
                     description={"de": "bar", "en": "bar"},
-                    unit=None,
+                    unit=Unit.DIMENSIONLESS,
                     reference_period=None,
                 ),
                 _ParamWithActivePeriod(
@@ -1273,7 +1278,7 @@ def test_fail_if_targets_are_not_in_specialized_environment_or_data_via_main(
                     end_date=datetime.date(2023, 1, 31),
                     name={"de": "bar", "en": "bar"},
                     description={"de": "bar", "en": "bar"},
-                    unit=None,
+                    unit=Unit.DIMENSIONLESS,
                     reference_period=None,
                 ),
                 _ParamWithActivePeriod(
@@ -1282,7 +1287,7 @@ def test_fail_if_targets_are_not_in_specialized_environment_or_data_via_main(
                     end_date=datetime.date(2011, 12, 31),
                     name={"de": "bar", "en": "bar"},
                     description={"de": "bar", "en": "bar"},
-                    unit=None,
+                    unit=Unit.DIMENSIONLESS,
                     reference_period=None,
                 ),
             ],
@@ -1753,7 +1758,7 @@ def test_backend_has_changed_from_jax_to_numpy_passes():
         tree={
             "p_id": jax.numpy.array([0, 1, 2]),
             "property_tax": {
-                "acre_size_in_hectares": jax.numpy.array([5, 20, 200]),
+                "acre_size": jax.numpy.array([5, 20, 200]),
             },
         }
     )
@@ -1772,7 +1777,7 @@ def test_backend_has_changed_from_numpy_for_processed_data_to_jax_passes():
         tree={
             "p_id": numpy.array([0, 1, 2]),
             "property_tax": {
-                "acre_size_in_hectares": numpy.array([5, 20, 200]),
+                "acre_size": numpy.array([5, 20, 200]),
             },
         }
     )
@@ -1807,7 +1812,7 @@ def test_backend_has_changed_from_numpy_for_policy_environment_to_jax_raises(
         tree={
             "p_id": xnp.array([0, 1, 2]),
             "property_tax": {
-                "acre_size_in_hectares": xnp.array([5, 20, 200]),
+                "acre_size": xnp.array([5, 20, 200]),
             },
         }
     )

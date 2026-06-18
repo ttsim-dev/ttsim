@@ -10,7 +10,7 @@ import pytest
 from mettsim import middle_earth
 
 from ttsim import InputData, MainTarget, OrigPolicyObjects, TTTargets, main
-from ttsim.tt import AggType, agg_by_group_function
+from ttsim.tt import AggType, Unit, agg_by_group_function
 from ttsim.tt.column_objects_param_function import policy_function, policy_input
 from ttsim.typing import FloatColumn
 
@@ -150,25 +150,25 @@ TARGETS_TREE_NO_RENAME = {
 
 EXPECTED_TT_RESULTS = pd.DataFrame(
     {
-        "payroll_tax_amount_y": [0.0, 2920.0, 0.0],
-        "payroll_tax_child_tax_credit_amount_m": [0.0, 8.333333, 0.0],
+        "payroll_tax_amount_y": [0.0, 2980.0, 0.0],
+        "payroll_tax_child_tax_credit_amount_m": [0.0, 2.083333, 0.0],
     },
     index=pd.Index([2, 0, 1], name="p_id"),
 )
 
 
-@policy_input()
+@policy_input(unit=Unit.DIMENSIONLESS)
 def p_id() -> int:
     pass
 
 
-@policy_input()
+@policy_input(unit=Unit.CURRENCY_FLOW)
 def income_m() -> float:
     pass
 
 
-@policy_function(vectorization_strategy="vectorize")
-def benefit(income_m: float) -> float:
+@policy_function(vectorization_strategy="vectorize", unit=Unit.CURRENCY_FLOW)
+def benefit_m(income_m: float) -> float:
     return income_m * 0.5
 
 
@@ -210,8 +210,8 @@ def test_end_to_end(input_data_arg, backend: Literal["numpy", "jax"]):
     )
 
 
-_EXPECTED_AMOUNTS_IN_USER_ORDER = numpy.array([0.0, 2920.0, 0.0])
-_EXPECTED_CHILD_TAX_CREDIT_IN_USER_ORDER = numpy.array([0.0, 8.333333, 0.0])
+_EXPECTED_AMOUNTS_IN_USER_ORDER = numpy.array([0.0, 2980.0, 0.0])
+_EXPECTED_CHILD_TAX_CREDIT_IN_USER_ORDER = numpy.array([0.0, 2.083333, 0.0])
 _USER_P_IDS_IN_ORDER = numpy.array([2, 0, 1])
 
 
@@ -421,18 +421,18 @@ def test_cloudpickle_round_trip_with_inline_policy_environment(tmp_path):
         import numpy as np
 
         from ttsim import InputData, TTTargets, main
-        from ttsim.tt import policy_function, policy_input
+        from ttsim.tt import Unit, policy_function, policy_input
 
 
-        @policy_input()
+        @policy_input(unit=Unit.DIMENSIONLESS)
         def p_id() -> int: ...
 
 
-        @policy_input()
+        @policy_input(unit=Unit.CURRENCY_FLOW)
         def income_m() -> float: ...
 
 
-        @policy_function(vectorization_strategy="vectorize")
+        @policy_function(vectorization_strategy="vectorize", unit=Unit.CURRENCY_FLOW)
         def benefit_m(income_m: float) -> float:
             return income_m * 0.5
 
@@ -491,14 +491,14 @@ def test_modify_evaluation_date_after_creating_policy_environment(
         tree={
             "p_id": xnp.array([2, 0, 1]),
             "property_tax": {
-                "acre_size_in_hectares": xnp.array([200, 5, 20]),
+                "acre_size": xnp.array([200, 5, 20]),
             },
         }
     )
     result = main(
         main_target=MainTarget.results.df_with_mapper,
         policy_environment=policy_environment,
-        # acre_size_in_hectares capped starting in 2020
+        # acre_size capped starting in 2020
         evaluation_date_str="2020-01-01",
         input_data=input_data,
         tt_targets=TTTargets.tree(
@@ -508,7 +508,9 @@ def test_modify_evaluation_date_after_creating_policy_environment(
     )
     expected = pd.DataFrame(
         {
-            "property_tax_amount_y": [1000.0, 0.0, 1000.0],
+            # The 1900 schedule is denominated in silver pennies; a default
+            # (castar) run converts it at build: 1000 pennies = 250 castar.
+            "property_tax_amount_y": [250.0, 0.0, 250.0],
         },
         index=pd.Index([2, 0, 1], name="p_id"),
     )
@@ -520,7 +522,7 @@ def test_modify_evaluation_date_after_creating_policy_environment(
 def test_different_evaluation_dates_across_data_rows(
     backend: Literal["numpy", "jax"], xnp: ModuleType
 ):
-    @policy_function()
+    @policy_function(unit=Unit.YEARS)
     def f(evaluation_year: int) -> int:
         return evaluation_year
 
@@ -625,7 +627,7 @@ def test_derived_time_converted_scalar_can_partialled(xnp, backend):
     policy_environment = {
         "p_id": p_id,
         "income_m": income_m,
-        "benefit": benefit,
+        "benefit_m": benefit_m,
     }
     input_data = {
         "p_id": xnp.array([1, 2, 3]),
@@ -635,7 +637,7 @@ def test_derived_time_converted_scalar_can_partialled(xnp, backend):
         main_target=MainTarget.labels.root_nodes,
         policy_environment=policy_environment,
         input_data=InputData.tree(input_data),
-        tt_targets=TTTargets.tree({"benefit": None}),
+        tt_targets=TTTargets.tree({"benefit_m": None}),
         policy_date_str="2024-01-01",
         evaluation_date_str="2024-01-01",
         backend=backend,
@@ -644,12 +646,12 @@ def test_derived_time_converted_scalar_can_partialled(xnp, backend):
     assert root_nodes == set()
 
 
-@policy_input()
+@policy_input(unit=Unit.DIMENSIONLESS)
 def broadcast_x() -> float:
     pass
 
 
-@policy_function(vectorization_strategy="not_required")
+@policy_function(vectorization_strategy="not_required", unit=Unit.DIMENSIONLESS)
 def cumulative_broadcast_x(broadcast_x: FloatColumn, xnp: ModuleType) -> FloatColumn:
     """Declared with vectorization_strategy='not_required'; it operates on the whole
     array and cannot run on a bare scalar.
@@ -657,12 +659,12 @@ def cumulative_broadcast_x(broadcast_x: FloatColumn, xnp: ModuleType) -> FloatCo
     return xnp.cumsum(broadcast_x)
 
 
-@agg_by_group_function(agg_type=AggType.SUM)
+@agg_by_group_function(agg_type=AggType.SUM, unit=Unit.DIMENSIONLESS)
 def broadcast_x_fam(broadcast_x: float, fam_id: int) -> float:
     pass
 
 
-@policy_input()
+@policy_input(unit=Unit.DIMENSIONLESS)
 def fam_id() -> int:
     pass
 
@@ -719,12 +721,12 @@ def test_scalar_input_to_not_required_function_is_baked_in(xnp, backend):
     assert root_nodes == set()
 
 
-@policy_input()
+@policy_input(unit=Unit.CURRENCY_FLOW)
 def bonus_m() -> float:
     pass
 
 
-@policy_function(vectorization_strategy="vectorize")
+@policy_function(vectorization_strategy="vectorize", unit=Unit.CURRENCY_FLOW)
 def doubled_y_fam(bonus_y_fam: float) -> float:
     return 2.0 * bonus_y_fam
 
@@ -738,8 +740,9 @@ def test_auto_aggregation_resolves_dtype_from_sibling_time_unit(
 
     `bonus_m` is declared as a `PolicyInput`; the caller supplies `bonus_y`
     in input data; `doubled_y_fam` consumes the `bonus_y_fam` auto-aggregation.
-    The resolver walks to `bonus_m` for the dtype, the SUM-by-`fam` wrapper is
-    synthesised, and `doubled_y_fam` returns twice the per-`fam` yearly sum.
+    The resolver walks to `bonus_m` for the dtype (and, GEP 10, for the
+    non-time unit), the SUM-by-`fam` wrapper is synthesised, and
+    `doubled_y_fam` returns twice the per-`fam` yearly sum.
     """
     result = main(
         main_target=MainTarget.results.df_with_nested_columns,

@@ -23,6 +23,7 @@ from ttsim.plot.dag.tt import _get_tt_dag_with_node_metadata
 from ttsim.tt import (
     PolicyInput,
     ScalarParam,
+    Unit,
     param_function,
     policy_function,
 )
@@ -73,7 +74,7 @@ SOME_PARAM_OBJECT = ScalarParam(
     value=111,
     start_date=datetime.date(2025, 1, 1),
     end_date=datetime.date(2025, 12, 31),
-    unit=None,
+    unit=Unit.DIMENSIONLESS,
     reference_period=None,
     name={"de": ""},
     description={"de": ""},
@@ -216,12 +217,12 @@ def test_input_dependent_interface_functions_with_same_path_have_same_docstring(
             {"property_tax__amount_m"},
             [
                 "evaluation_year",
-                "property_tax__acre_size_in_hectares",
-                "property_tax__acre_size_in_hectares_after_cap",
+                "property_tax__acre_size",
+                "property_tax__acre_size_after_cap",
                 "evaluation_year",
                 "property_tax__tax_schedule",
                 "property_tax__year_from_which_cap_is_applied",
-                "property_tax__cap_in_hectares",
+                "property_tax__cap",
                 "property_tax__amount_y",
                 "property_tax__amount_m",
             ],
