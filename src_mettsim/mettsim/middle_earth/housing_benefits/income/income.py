@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ttsim.tt import RoundingSpec, policy_function
+from ttsim.tt import RoundingSpec, Unit, policy_function
 
 
 @policy_function(
@@ -9,6 +9,7 @@ from ttsim.tt import RoundingSpec, policy_function
         direction="down",
         reference="§ 4 Gondorian Housing Benefit Law",
     ),
+    unit=Unit.CURRENCY_FLOW,
 )
 def amount_m(
     payroll_tax__income__gross_wage_m: float,

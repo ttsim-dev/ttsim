@@ -8,8 +8,9 @@ tax_schedule:
       Vermögenssteuer auf Landbesitz. Bemisst sich an Größe des landwirtschaftlich
       nutzbaren Landes in Hektar.
     en: Wealth tax on land. Depends on size of arable land in hectares.
-  unit: Euros
-  reference_period: null
+  input_unit: HECTARES
+  output_unit: SILVER_PENNY_FLOW
+  reference_period: Year
   type: piecewise_constant
   1900-01-01:
     intervals:

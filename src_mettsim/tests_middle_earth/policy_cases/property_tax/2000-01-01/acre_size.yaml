@@ -11,7 +11,7 @@ inputs:
       - 1
       - 2
     property_tax:
-      acre_size_in_hectares:
+      acre_size:
         - 5
         - 20
         - 200

@@ -12,6 +12,7 @@ from ttsim.main_args import InputData
 from ttsim.testing_utils import (
     PolicyTest,
     check_env_completeness,
+    check_env_units,
     execute_test,
     load_policy_cases,
 )
@@ -70,7 +71,12 @@ def orig_mettsim_objects():
     ids=POLICY_TEST_IDS_AND_CASES.keys(),
 )
 def test_policy_cases(test: PolicyTest, backend: Literal["numpy", "jax"]):
-    execute_test(test=test, root=middle_earth.ROOT_PATH, backend=backend)
+    execute_test(
+        test=test,
+        root=middle_earth.ROOT_PATH,
+        backend=backend,
+        default_currency="SILVER_PENNY",
+    )
 
 
 def test_enough_policy_cases_are_collected():
@@ -101,7 +107,12 @@ def test_python314_annotation_extraction_bug(backend: Literal["numpy", "jax"]):
         if str(test.path) == str(test_file):
             # In Python 3.14, this will raise AnnotationMismatchError (test fails)
             # In Python 3.13, this will succeed (test passes)
-            execute_test(test=test, root=middle_earth.ROOT_PATH, backend=backend)
+            execute_test(
+                test=test,
+                root=middle_earth.ROOT_PATH,
+                backend=backend,
+                default_currency="SILVER_PENNY",
+            )
             break
     else:
         pytest.fail(f"Could not find test case: {test_file}")
@@ -141,6 +152,24 @@ def test_mettsim_policy_environment_is_complete(orig_mettsim_objects, date):
     )
 
 
+@pytest.mark.parametrize(
+    "date",
+    dates_in_orig_mettsim_objects(),
+    ids=lambda x: x.isoformat(),
+)
+def test_mettsim_units_are_complete_and_consistent(orig_mettsim_objects, date):
+    """GEP 10 Layer-1 check over all policy dates (ttsim #121).
+
+    Every active node must declare (or auto-receive) a unit, and every
+    dry-runnable function body must infer a unit consistent with its
+    declaration.
+    """
+    check_env_units(
+        policy_date=date,
+        orig_policy_objects=orig_mettsim_objects,
+    )
+
+
 def test_fail_functions_are_executed_with_priority(backend: Literal["numpy", "jax"]):
     data: dict[tuple[str, ...], Any] = {("p_id",): numpy.array([0, 1, 2, 3])}
     with pytest.raises(
@@ -155,3 +184,43 @@ def test_fail_functions_are_executed_with_priority(backend: Literal["numpy", "ja
             tt_targets=TTTargets.tree({"property_tax": {"amount_y": None}}),
             backend=backend,
         )
+
+
+def test_run_currency_scales_currency_outputs(backend: Literal["numpy", "jax"]):
+    """The same household in both run currencies (GEP 10).
+
+    Castar amounts times four (1 castar = 4 silver pennies) must give the
+    silver-penny amounts — for the inputs by construction, for the outputs
+    because every currency-denominated parameter is converted at build time
+    while the functions stay currency-agnostic.
+    """
+    results = {}
+    for currency, factor in (("CASTAR", 1.0), ("SILVER_PENNY", 4.0)):
+        input_tree = {
+            "p_id": numpy.array([0, 1]),
+            "kin_id": numpy.array([0, 0]),
+            "p_id_spouse": numpy.array([1, 0]),
+            "p_id_parent_1": numpy.array([-1, -1]),
+            "p_id_parent_2": numpy.array([-1, -1]),
+            "age": numpy.array([30, 30]),
+            "parent_is_noble": numpy.array([False, False]),
+            "wealth": numpy.array([0.0, 0.0]) * factor,
+            "payroll_tax": {
+                "child_tax_credit": {"p_id_recipient": numpy.array([-1, -1])},
+                "income": {"gross_wage_y": numpy.array([10000.0, 0.0]) * factor},
+            },
+        }
+        results[currency] = main(
+            main_target="results__tree",
+            policy_date_str="2025-01-01",
+            input_data=InputData.tree(input_tree),
+            orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+            tt_targets=TTTargets.tree({"payroll_tax": {"amount_y": None}}),
+            rounding=False,
+            currency=currency,
+            backend=backend,
+        )
+    castar = results["CASTAR"]["payroll_tax"]["amount_y"]
+    silver = results["SILVER_PENNY"]["payroll_tax"]["amount_y"]
+    numpy.testing.assert_allclose(numpy.asarray(silver), numpy.asarray(castar) * 4.0)
+    assert float(numpy.asarray(castar)[0]) > 0.0

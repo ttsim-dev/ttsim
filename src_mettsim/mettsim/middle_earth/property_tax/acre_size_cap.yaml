@@ -7,12 +7,11 @@ year_from_which_cap_is_applied:
     de: >-
       Jahr, ab dem steuerlich berücksichtigte Größe des Ackers begrenzt wird.
     en: Year from which the acre size is capped.
-  unit: null
-  reference_period: null
+  unit: YEARS
   type: scalar
   1900-01-01:
     value: 2020
-cap_in_hectares:
+cap:
   name:
     de: Größe des berücksichtigten Ackers
     en: Acre size, from which the tax is capped
@@ -20,8 +19,7 @@ cap_in_hectares:
     de: >-
       Größe des berücksichtigten Ackers.
     en: Acre size, from which the tax is capped.
-  unit: null
-  reference_period: null
+  unit: HECTARES
   type: scalar
   1900-01-01:
     value: 50.0

@@ -12,10 +12,10 @@ BoolColumn.
 
 from __future__ import annotations
 
-from ttsim.tt import RoundingSpec, policy_function
+from ttsim.tt import RoundingSpec, Unit, policy_function
 
 
-@policy_function()
+@policy_function(unit=Unit.DIMENSIONLESS)
 def child_in_household_for_bug_reproducer(p_id: int) -> bool:
     """A function that returns a boolean column (for Python 3.14 bug reproducer).
 
@@ -25,12 +25,13 @@ def child_in_household_for_bug_reproducer(p_id: int) -> bool:
 
 
 @policy_function(
-    leaf_name="net_income_parents_m",
+    leaf_name="net_wealth_parents",
     rounding_spec=RoundingSpec(
         base=1, direction="down", reference="Python 3.14 bug reproducer"
     ),
+    unit=Unit.CURRENCY,
 )
-def net_income_parents_m(
+def net_wealth_parents(
     wealth: float,  # Use an existing input
     # This annotation extraction fails in Python 3.14
     payroll_tax__child_tax_credit__child_in_household_for_bug_reproducer: bool,

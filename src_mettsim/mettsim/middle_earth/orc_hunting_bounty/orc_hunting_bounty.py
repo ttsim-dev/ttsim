@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from ttsim.tt import param_function, policy_function, policy_input
+from ttsim.tt import Unit, param_function, policy_function, policy_input
 
 if TYPE_CHECKING:
     from ttsim.tt import ConsecutiveIntLookupTableParamValue
@@ -22,7 +22,9 @@ class BountyPerOrc:
     large_orc: BountyPerLargeOrc
 
 
-@param_function()
+# Returns a structured dataclass, not a scalar; the dry-run cannot unit-check it,
+# so opt out of body inference (GEP 10).
+@param_function(unit=Unit.CURRENCY, verify_units=False)
 def bounty_per_orc(raw_bounties_per_orc: RawParamValue) -> BountyPerOrc:
     return BountyPerOrc(
         small_orc=raw_bounties_per_orc["small_orc"],
@@ -33,17 +35,17 @@ def bounty_per_orc(raw_bounties_per_orc: RawParamValue) -> BountyPerOrc:
     )
 
 
-@policy_input()
+@policy_input(unit=Unit.DIMENSIONLESS)
 def small_orcs_hunted() -> int:
     """The number of small orcs hunted."""
 
 
-@policy_input()
+@policy_input(unit=Unit.DIMENSIONLESS)
 def large_orcs_hunted() -> int:
     """The number of large orcs hunted."""
 
 
-@policy_function()
+@policy_function(unit=Unit.CURRENCY, verify_units=False)
 def amount(
     amount_without_topup: float,
     bounty_topup_by_age: ConsecutiveIntLookupTableParamValue,
@@ -53,7 +55,9 @@ def amount(
     return amount_without_topup * bounty_topup_by_age.look_up(age)
 
 
-@policy_function()
+# `bounty_per_orc` is a structured parameter object, not a plain quantity, so the
+# dry-run cannot evaluate this body; opt out of unit inference (GEP 10).
+@policy_function(unit=Unit.CURRENCY, verify_units=False)
 def amount_without_topup(
     small_orcs_hunted: int,
     large_orcs_hunted: int,

@@ -1,13 +1,12 @@
 ---
-tax_rate:
+tax_rate_y:
   name:
     de: Vermögenssteuersatz
     en: Wealth tax rate
   description:
     de: Steuersatz für Vermögenssteuer
     en: Tax rate for wealth tax
-  unit: Share
-  reference_period: null
+  unit: DIMENSIONLESS_FLOW
   type: scalar
   1900-01-01:
     value: 0.01
@@ -18,8 +17,7 @@ wealth_above_which_individual_is_exempt:
   description:
     de: Vermögensschwelle, ab der die Steuer erhoben wird
     en: Wealth threshold above which the tax is levied
-  unit: Euros
-  reference_period: null
+  unit: SILVER_PENNY
   type: scalar
   1900-01-01:
     value: 10000
@@ -30,8 +28,7 @@ wealth_above_which_family_is_exempt:
   description:
     de: Vermögensschwelle, ab der die Familie von der Steuer befreit ist
     en: Wealth threshold above which the family is exempt from the tax
-  unit: Euros
-  reference_period: null
+  unit: SILVER_PENNY
   type: scalar
   1900-01-01:
     value: 20000
@@ -42,8 +39,7 @@ wealth_above_which_kin_is_exempt:
   description:
     de: Vermögensschwelle, ab der die Sippe von der Steuer befreit ist
     en: Wealth threshold above which the kin is exempt from the tax
-  unit: Euros
-  reference_period: null
+  unit: SILVER_PENNY
   type: scalar
   1900-01-01:
     value: 8000

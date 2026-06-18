@@ -2,7 +2,18 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from ttsim.tt import register_currency
+
 ROOT_PATH = Path(__file__).parent
+
+# Middle Earth's currencies. Registered on import so that the [currency]
+# dimension has concrete currencies before the policy environment is assembled
+# (GEP 10). The castar — Gondor's coin — is the realm's unit of account since
+# the currency reform of 2020 and hence the base currency; the silver penny —
+# the Shire's coin and the unit of account before the reform — is worth a
+# quarter-castar.
+register_currency("CASTAR", base=True)
+register_currency("SILVER_PENNY", definition="CASTAR / 4")
 
 COLORMAP: dict[tuple[str, ...] | str, str] = {
     ("housing_benefits",): "red",
