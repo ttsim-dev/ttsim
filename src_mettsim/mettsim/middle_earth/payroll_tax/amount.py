@@ -7,12 +7,13 @@ if TYPE_CHECKING:
 
 from ttsim.tt import (
     PiecewisePolynomialParamValue,
+    Unit,
     piecewise_polynomial,
     policy_function,
 )
 
 
-@policy_function()
+@policy_function(unit=Unit.CURRENCY_FLOW)
 def amount_y(
     amount_standard_y: float,
     amount_reduced_y: float,
@@ -28,7 +29,7 @@ def amount_y(
         return amount_standard_y
 
 
-@policy_function()
+@policy_function(unit=Unit.CURRENCY_FLOW, verify_units=False)
 def amount_standard_y(
     income__amount_y: float,
     tax_schedule_standard: PiecewisePolynomialParamValue,
@@ -42,7 +43,7 @@ def amount_standard_y(
     )
 
 
-@policy_function()
+@policy_function(unit=Unit.CURRENCY_FLOW, verify_units=False)
 def amount_reduced_y(
     income__amount_y: float,
     tax_schedule_reduced: PiecewisePolynomialParamValue,

@@ -6,8 +6,7 @@ raw_bounties_per_orc:
   description:
     de: Test für den Typ require_converter
     en: Test the require_converter type
-  unit: Euros
-  reference_period: null
+  unit: SILVER_PENNY
   type: require_converter
   1900-01-01:
     small_orc: 100
@@ -21,8 +20,8 @@ bounty_topup_by_age:
   description:
     de: Test für den Typ sparse_to_consecutive_int_lookup_table
     en: Test the sparse_to_consecutive_int_lookup_table type
-  unit: Euros
-  reference_period: null
+  input_unit: YEARS
+  output_unit: DIMENSIONLESS
   type: sparse_to_consecutive_int_lookup_table
   1900-01-01:
     0: 1.0

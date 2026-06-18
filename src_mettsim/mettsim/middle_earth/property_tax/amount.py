@@ -15,40 +15,43 @@ if TYPE_CHECKING:
 
 from ttsim.tt import (
     PiecewisePolynomialParamValue,
+    Unit,
     piecewise_polynomial,
     policy_function,
     policy_input,
 )
 
 
-@policy_input()
-def acre_size_in_hectares() -> float:
+@policy_input(unit=Unit.HECTARES)
+def acre_size() -> float:
     """The size of the acre in hectares."""
 
 
-@policy_function(vectorization_strategy="vectorize")
+@policy_function(
+    vectorization_strategy="vectorize", unit=Unit.CURRENCY_FLOW, verify_units=False
+)
 def amount_y(
-    acre_size_in_hectares_after_cap: float,
+    acre_size_after_cap: float,
     tax_schedule: PiecewisePolynomialParamValue,
     xnp: ModuleType,
 ) -> float:
     """Property tax amount for the standard tax schedule."""
     return piecewise_polynomial(
-        x=acre_size_in_hectares_after_cap,
+        x=acre_size_after_cap,
         parameters=tax_schedule,
         xnp=xnp,
     )
 
 
-@policy_function()
-def acre_size_in_hectares_after_cap(
-    acre_size_in_hectares: float,
-    cap_in_hectares: float,
+@policy_function(unit=Unit.HECTARES)
+def acre_size_after_cap(
+    acre_size: float,
+    cap: float,
     year_from_which_cap_is_applied: int,
     evaluation_year: int,
 ) -> float:
     """The size of the acre in hectares after the cap is applied."""
     if evaluation_year < year_from_which_cap_is_applied:
-        return acre_size_in_hectares
+        return acre_size
     else:
-        return min(acre_size_in_hectares, cap_in_hectares)
+        return min(acre_size, cap)
