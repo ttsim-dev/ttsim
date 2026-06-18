@@ -22,6 +22,10 @@ from ttsim.interface_dag_elements.shared import to_datetime
 from ttsim.interface_dag_elements.specialized_environment_for_plotting_and_templates import (  # noqa: E501
     dummy_callable,
 )
+from ttsim.interface_dag_elements.unit_checks import (
+    fail_if_environment_units_are_inconsistent,
+    fail_if_environment_units_are_missing,
+)
 from ttsim.main_args import InputData, OrigPolicyObjects, TTTargets
 from ttsim.typing import (
     FlatColumnObjectsParamFunctions,
@@ -41,12 +45,14 @@ def cached_policy_environment(
     policy_date: datetime.date,
     root: Path,
     backend: Literal["numpy", "jax"],
+    currency: str | None = None,
 ) -> PolicyEnvironment:
     return main(
         main_target="policy_environment",
         policy_date=policy_date,
         orig_policy_objects=OrigPolicyObjects.root(root),
         backend=backend,
+        currency=currency,
         include_fail_nodes=True,
         include_warn_nodes=False,
     )
@@ -99,9 +105,13 @@ def execute_test(
     test: PolicyTest,
     root: Path,
     backend: Literal["numpy", "jax"],
+    default_currency: str | None = None,
 ) -> None:
     environment = cached_policy_environment(
-        policy_date=test.policy_date, root=root, backend=backend
+        policy_date=test.policy_date,
+        root=root,
+        backend=backend,
+        currency=test.info.get("currency", default_currency),
     )
     if test.target_structure:
         result_df = main(
@@ -284,3 +294,38 @@ def check_env_completeness(
             "Please add corresponding elements. Typically, these will be "
             "`@policy_input()`s or parameters in the yaml files."
         )
+
+
+def check_env_units(
+    policy_date: datetime.date,
+    orig_policy_objects: dict[
+        str, FlatColumnObjectsParamFunctions | FlatOrigParamSpecs
+    ],
+) -> None:
+    """Run the GEP-10 unit checks over the full environment at a policy date.
+
+    Builds the data-independent specialized environment (all derivable nodes
+    included) and runs both environment-level unit checks: mandatory units and
+    the conservative body/edge verification. Intended to be parametrized over
+    all policy dates of a country package (Layer 1 of GEP 10 as a CI test).
+
+    Raises:
+        UnitDefinitionError: If any active node lacks a mandatory unit.
+        UnitConsistencyError: If any function body infers a concrete unit
+            that disagrees with its declaration.
+    """
+    targets = main(
+        main_targets=[
+            "specialized_environment_for_plotting_and_templates__without_tree_logic_and_with_derived_functions",
+            "labels__grouping_levels",
+        ],
+        policy_date=policy_date,
+        orig_policy_objects=OrigPolicyObjects(**orig_policy_objects),
+        backend="numpy",
+    )
+    env = targets["specialized_environment_for_plotting_and_templates"][
+        "without_tree_logic_and_with_derived_functions"
+    ]
+    grouping_levels = targets["labels"]["grouping_levels"]
+    fail_if_environment_units_are_missing(env=env, grouping_levels=grouping_levels)
+    fail_if_environment_units_are_inconsistent(env=env, grouping_levels=grouping_levels)

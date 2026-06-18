@@ -82,6 +82,8 @@ class FailIf(MainTargetABC):
     tt_dag_includes_function_with_fail_msg_if_included_set: str = (
         "fail_if__tt_dag_includes_function_with_fail_msg_if_included_set"
     )
+    tt_units_are_inconsistent: str = "fail_if__tt_units_are_inconsistent"
+    tt_units_are_missing: str = "fail_if__tt_units_are_missing"
 
 
 @dataclass(frozen=True)
@@ -205,6 +207,7 @@ class MainTarget(MainTargetABC):
     tt_targets: type[Targets] = field(default=Targets)
     len_p_id: str = "len_p_id"
     backend: str = "backend"
+    currency: str = "currency"
     evaluation_date_str: str = "evaluation_date_str"
     evaluation_date: str = "evaluation_date"
     policy_date_str: str = "policy_date_str"
