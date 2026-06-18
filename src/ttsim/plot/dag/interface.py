@@ -41,6 +41,7 @@ INTERFACE_COLORMAP: dict[tuple[str, ...] | str, str] = {
     ("specialized_environment",): "darkgreen",
     ("specialized_environment_for_plotting_and_templates",): "palegreen",
     ("templates",): "limegreen",
+    ("unit_checks",): "plum",
     ("fail_if",): "indianred",
     ("warn_if",): "salmon",
     ("backend",): "lightgray",

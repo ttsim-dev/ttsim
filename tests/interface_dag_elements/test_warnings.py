@@ -10,7 +10,7 @@ import pytest
 from mettsim import middle_earth
 
 from ttsim import InputData, MainTarget, OrigPolicyObjects, TTTargets, main
-from ttsim.tt import ScalarParam, group_creation_function, policy_function
+from ttsim.tt import ScalarParam, Unit, group_creation_function, policy_function
 
 if TYPE_CHECKING:
     from types import ModuleType
@@ -27,12 +27,12 @@ def minimal_data_tree():
     }
 
 
-@policy_function()
+@policy_function(unit=Unit.DIMENSIONLESS)
 def some_func(p_id: int) -> int:
     return p_id
 
 
-@policy_function()
+@policy_function(unit=Unit.DIMENSIONLESS)
 def another_func(some_func: int) -> int:
     return some_func
 

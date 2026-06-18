@@ -24,7 +24,10 @@ from ttsim.interface_dag_elements.interface_node_objects import (
     interface_function,
     interface_input,
 )
-from ttsim.interface_dag_elements.shared import merge_trees
+from ttsim.interface_dag_elements.shared import (
+    FRAMEWORK_PARTIAL_ARGUMENTS,
+    merge_trees,
+)
 from ttsim.tt.column_objects_param_function import (
     AggByGroupFunction,
     AggByPIDFunction,
@@ -270,12 +273,11 @@ def with_partialled_params_and_scalars(
         for k, v in with_processed_params_and_scalars.items()
         if isinstance(v, ColumnFunction)
     }
-    all_partial_params = {
-        **{
-            k: v
-            for k, v in with_processed_params_and_scalars.items()
-            if not isinstance(v, ColumnObject)
-        },
+    # The values of the framework arguments the framework partials into every
+    # function. The *names* live in `FRAMEWORK_PARTIAL_ARGUMENTS` (shared with the
+    # unit checks); building the dict by iterating that constant keeps the two in
+    # sync — a new framework argument added there without a value here fails loudly.
+    framework_argument_values = {
         "len_p_id": len_p_id,
         # Aggregation functions take a jax `num_segments` argument; the number of
         # distinct groups is at most `len_p_id`, so feed it that safe upper bound.
@@ -283,6 +285,17 @@ def with_partialled_params_and_scalars(
         "backend": backend,
         "xnp": xnp,
         "dnp": dnp,
+    }
+    all_partial_params = {
+        **{
+            k: v
+            for k, v in with_processed_params_and_scalars.items()
+            if not isinstance(v, ColumnObject)
+        },
+        **{
+            name: framework_argument_values[name]
+            for name in FRAMEWORK_PARTIAL_ARGUMENTS
+        },
     }
 
     processed_functions = {}

@@ -17,7 +17,7 @@ from ttsim.interface_dag_elements.policy_environment import (
     _active_column_objects_and_param_functions,
     _active_param_objects,
 )
-from ttsim.tt import ScalarParam, policy_function
+from ttsim.tt import ScalarParam, Unit, policy_function
 
 if TYPE_CHECKING:
     from types import ModuleType
@@ -37,7 +37,7 @@ def some_int_param():
         end_date=datetime.date(2025, 12, 31),
         name={"de": "Some int param", "en": "Some int param"},
         description={"de": "Some int param", "en": "Some int param"},
-        unit=None,
+        unit=Unit.DIMENSIONLESS,
         reference_period=None,
         note=None,
         reference=None,

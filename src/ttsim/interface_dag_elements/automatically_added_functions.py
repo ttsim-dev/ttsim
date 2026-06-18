@@ -34,6 +34,13 @@ from ttsim.tt.type_resolution import (
     synthesize_typed_aggregation_wrapper,
     vectorized_column_kind,
 )
+from ttsim.tt.units import (
+    UNSET_UNIT,
+    Unit,
+    UnsetUnitType,
+    unit_for_aggregation,
+    unit_for_derived_node,
+)
 from ttsim.typing import (
     OrderedQNames,
     PolicyEnvironment,
@@ -278,6 +285,11 @@ def _create_one_set_of_time_conversion_functions(
                 f"Time conversion of {dt.tree_path_from_qname(qname_source)} "
                 f"from per {time_unit} to per {target_time_unit}"
             ),
+            # One flow token covers every time-unit variant: it carries no
+            # period of its own, so the same token serves the _y/_q/_m/_w/_d
+            # columns while each variant's concrete period is read off its
+            # suffix (GEP 10, #119). `UNSET_UNIT` until the source is annotated.
+            unit=unit_for_derived_node(getattr(element, "unit", UNSET_UNIT)),
         )
 
     return result
@@ -385,6 +397,13 @@ def create_agg_by_group_functions(
                 column_functions=column_functions,
                 qname_policy_environment=qname_policy_environment,
             )
+            # Auto-assign the unit: a sum aggregation preserves the source's
+            # unit token (GEP 10, #119).
+            source_unit = _resolve_source_unit(
+                source_name=base_name_with_time_unit,
+                column_functions=column_functions,
+                qname_policy_environment=qname_policy_environment,
+            )
             # Stamp concrete column-type annotations onto the `grouped_sum`
             # wrapper. Its runtime implementation signature widens to
             # `FloatColumn | IntColumn`; left untouched, that union becomes
@@ -407,8 +426,46 @@ def create_agg_by_group_functions(
                     f"{dt.tree_path_from_qname(base_name_with_time_unit)} by "
                     f"{group_id} ID."
                 ),
+                unit=unit_for_aggregation(
+                    source_unit=source_unit, agg_type=AggType.SUM
+                ),
             )
     return out
+
+
+def _resolve_source_unit(
+    source_name: str,
+    column_functions: dict[str, ColumnFunction],
+    qname_policy_environment: PolicyEnvironment,
+) -> Unit | UnsetUnitType:
+    """Resolve the unit token of an auto-aggregation source column (GEP 10).
+
+    Mirrors `_resolve_source_column_kind`: the source is a column function, a
+    `PolicyInput` declared at `source_name`, or a user-supplied input at a
+    different time unit than its declared `PolicyInput` sibling (e.g. caller
+    passes `bonus_y` against a `bonus_m` declaration). A flow token is
+    period-invariant, so a sibling's token applies verbatim — only the
+    period (taken from the name suffix) differs.
+
+    A boolean source declares ``DIMENSIONLESS`` like any other node (GEP 10),
+    so its token flows through unchanged. Returns ``UNSET_UNIT`` if the source
+    is unannotated; the environment-level mandatory-units check reports the
+    source itself in that case.
+    """
+    source = column_functions.get(source_name) or qname_policy_environment.get(
+        source_name
+    )
+    if source is not None:
+        declared = getattr(source, "unit", UNSET_UNIT)
+        # A derived function computes on already-converted run-currency
+        # values, so a concrete currency token passes its agnostic
+        # counterpart on (GEP 10).
+        return unit_for_derived_node(declared)
+    sibling = _find_sibling_policy_input_at_other_time_unit(
+        source_name=source_name,
+        qname_policy_environment=qname_policy_environment,
+    )
+    return sibling.unit if sibling is not None else UNSET_UNIT
 
 
 def _resolve_source_column_kind(

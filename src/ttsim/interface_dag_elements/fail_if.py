@@ -17,6 +17,7 @@ import networkx as nx
 import numpy
 import optree
 import pandas as pd
+import pint
 from dags import get_free_arguments
 from dags.tree.validation import fail_if_paths_are_invalid
 
@@ -26,6 +27,10 @@ from ttsim.interface_dag_elements.interface_node_objects import fail_function
 from ttsim.interface_dag_elements.shared import (
     get_name_of_group_by_id,
     param_has_substantive_content,
+)
+from ttsim.interface_dag_elements.unit_checks import (
+    fail_if_environment_units_are_inconsistent,
+    fail_if_environment_units_are_missing,
 )
 from ttsim.tt.column_objects_param_function import (
     DEFAULT_END_DATE,
@@ -40,6 +45,7 @@ from ttsim.tt.param_objects import (
     PLACEHOLDER_VALUE,
     ParamObject,
 )
+from ttsim.tt.units import UNSET_UNIT, UnsetUnitType
 from ttsim.typing import (
     FlatColumnObjectsParamFunctions,
     FlatData,
@@ -923,8 +929,8 @@ def _param_with_active_periods(
         param_spec.get("description", None),
     )
     p_s_unit = cast(
-        "Literal['Euros', 'DM', 'Share', 'Percent', 'Years', 'Months', 'Hours', 'Square Meters', 'Euros / Square Meter'] | None",
-        param_spec.get("unit", None),
+        "str | dict[str | int, Any] | UnsetUnitType",
+        param_spec.get("unit", UNSET_UNIT),
     )
     p_s_reference_period = cast(
         "Literal['Year', 'Quarter', 'Month', 'Week', 'Day'] | None",
@@ -966,6 +972,62 @@ def _param_with_active_periods(
         )
 
     return out
+
+
+@fail_function()
+def tt_units_are_missing(
+    specialized_environment__without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
+    labels__grouping_levels: OrderedQNames,
+) -> None:
+    """Fail if any active node lacks a mandatory `unit=` declaration (GEP 10).
+
+    Raises:
+        UnitDefinitionError: If any node (or dict-parameter leaf) lacks a
+            unit declaration.
+    """
+    fail_if_environment_units_are_missing(
+        env=specialized_environment__without_tree_logic_and_with_derived_functions,
+        grouping_levels=labels__grouping_levels,
+    )
+
+
+@fail_function(
+    # Gate inclusion on the always-present environment + grouping levels (the old
+    # dependencies of this check), NOT on `unit_checks__resolved_units`: a
+    # no-condition fail function is auto-included only if *all* its args are
+    # already in the base DAG, and the resolved-units node is not pulled by a
+    # plain run — so depending on it without this gate would silently drop the
+    # check. With the gate, inclusion matches the pre-node behaviour and the node
+    # is pulled (and computed once) whenever the check runs.
+    include_if_all_elements_present=[
+        "specialized_environment__without_tree_logic_and_with_derived_functions",
+        "labels__grouping_levels",
+    ],
+)
+def tt_units_are_inconsistent(
+    specialized_environment__without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
+    labels__grouping_levels: OrderedQNames,
+    unit_checks__resolved_units: dict[str, pint.Unit | dict[str | int, Any]],
+) -> None:
+    """Fail if a function body infers a unit that contradicts its declaration.
+
+    Each `@policy_function` / `@param_function` body is dry-run on representative
+    values built from its producers' resolved units, across every reachable
+    branch path, without any user data (GEP 10). A mismatch is flagged when the
+    inferred unit is concrete (non-dimensionless) and disagrees with the
+    declaration; a dimensionless inference (e.g. an early `return 0.0`) falls
+    back to the declaration.
+
+    Raises:
+        UnitConsistencyError: If any body infers a concrete unit that
+            disagrees with its declaration, or cannot be dry-run and has not
+            opted out via `verify_units=False`.
+    """
+    fail_if_environment_units_are_inconsistent(
+        env=specialized_environment__without_tree_logic_and_with_derived_functions,
+        grouping_levels=labels__grouping_levels,
+        resolved_units=unit_checks__resolved_units,
+    )
 
 
 @fail_function()

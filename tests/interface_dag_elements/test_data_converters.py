@@ -20,6 +20,7 @@ from ttsim.interface_dag_elements.data_converters import (
 )
 from ttsim.tt import (
     ScalarParam,
+    Unit,
     param_function,
     policy_function,
 )
@@ -27,7 +28,7 @@ from ttsim.tt import (
 _GENERIC_PARAM_SPEC = {
     "start_date": datetime.date(2024, 1, 1),
     "end_date": datetime.date(2024, 12, 31),
-    "unit": None,
+    "unit": "DIMENSIONLESS",
     "reference_period": None,
     "name": {
         "de": "generic_param",
@@ -40,17 +41,17 @@ _GENERIC_PARAM_SPEC = {
 }
 
 
-@policy_function()
+@policy_function(unit=Unit.DIMENSIONLESS)
 def int_policy_function() -> int:
     return 1
 
 
-@policy_function()
+@policy_function(unit=Unit.DIMENSIONLESS)
 def another_int_policy_function() -> int:
     return 1
 
 
-@param_function()
+@param_function(unit=Unit.DIMENSIONLESS)
 def int_param_function() -> int:
     return 1
 

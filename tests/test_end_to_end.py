@@ -651,7 +651,11 @@ def broadcast_x() -> float:
     pass
 
 
-@policy_function(vectorization_strategy="not_required", unit=Unit.DIMENSIONLESS)
+@policy_function(
+    vectorization_strategy="not_required",
+    unit=Unit.DIMENSIONLESS,
+    verify_units=False,  # not_required body returns a column, not a scalar
+)
 def cumulative_broadcast_x(broadcast_x: FloatColumn, xnp: ModuleType) -> FloatColumn:
     """Declared with vectorization_strategy='not_required'; it operates on the whole
     array and cannot run on a bare scalar.

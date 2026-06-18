@@ -185,6 +185,11 @@ class Templates(MainTargetABC):
 
 
 @dataclass(frozen=True)
+class UnitChecks(MainTargetABC):
+    resolved_units: str = "unit_checks__resolved_units"
+
+
+@dataclass(frozen=True)
 class MainTarget(MainTargetABC):
     results: type[Results] = field(default=Results)
     templates: type[Templates] = field(default=Templates)
@@ -201,6 +206,7 @@ class MainTarget(MainTargetABC):
     processed_data: str = "processed_data"
     raw_results: type[RawResults] = field(default=RawResults)
     labels: type[Labels] = field(default=Labels)
+    unit_checks: type[UnitChecks] = field(default=UnitChecks)
     input_data: type[InputData] = field(default=InputData)
     tt_targets: type[Targets] = field(default=Targets)
     len_p_id: str = "len_p_id"

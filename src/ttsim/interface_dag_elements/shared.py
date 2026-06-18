@@ -4,6 +4,7 @@ import datetime
 import re
 from collections.abc import Mapping
 from copy import copy
+from functools import lru_cache
 from typing import Any, TypeAlias, overload
 
 import optree
@@ -28,6 +29,15 @@ SomeEnv: TypeAlias = (
 _DASHED_ISO_DATE_REGEX = re.compile(r"\d{4}-\d{2}-\d{2}")
 
 _PARAM_METADATA_KEYS = frozenset({"note", "reference"})
+
+#: Names of the arguments the framework partials into every column/param function
+#: (the backend handles, the population size, the segment count). The single
+#: source of truth shared by `specialized_environment` (which supplies their
+#: values) and the unit checks (which exclude them from the unit-carrying
+#: inputs, GEP 10).
+FRAMEWORK_PARTIAL_ARGUMENTS = frozenset(
+    {"xnp", "dnp", "backend", "num_segments", "len_p_id"}
+)
 
 
 def param_has_substantive_content(
@@ -54,6 +64,21 @@ def to_datetime(date: datetime.date | DashedISOString) -> datetime.date:
     )
 
 
+@lru_cache
+def _compiled_time_unit_and_grouping_pattern(
+    time_units: tuple[str, ...],
+    grouping_levels: tuple[str, ...],
+) -> re.Pattern[str]:
+    re_units = "".join(time_units)
+    re_groupings = "|".join(grouping_levels)
+    return re.compile(
+        f"(?P<base_name>.*?)"
+        f"(?:_(?P<time_unit>[{re_units}]))?"
+        f"(?:_(?P<grouping>{re_groupings}))?"
+        f"$",
+    )
+
+
 def get_re_pattern_for_all_time_units_and_groupings(
     time_units: OrderedQNames,
     grouping_levels: OrderedQNames,
@@ -66,6 +91,10 @@ def get_re_pattern_for_all_time_units_and_groupings(
     - <base_name>_<grouping>
     - <base_name>_<time_unit>_<grouping>
 
+    The compiled pattern is cached on the (time_units, grouping_levels) tuple, so
+    the several call sites that request it per build share one compilation. The
+    arguments are coerced to tuples first because some callers pass lists.
+
     Args:
         time_units: The supported time units.
         grouping_levels: The supported grouping levels.
@@ -74,13 +103,8 @@ def get_re_pattern_for_all_time_units_and_groupings(
         The regex pattern.
 
     """
-    re_units = "".join(time_units)
-    re_groupings = "|".join(grouping_levels)
-    return re.compile(
-        f"(?P<base_name>.*?)"
-        f"(?:_(?P<time_unit>[{re_units}]))?"
-        f"(?:_(?P<grouping>{re_groupings}))?"
-        f"$",
+    return _compiled_time_unit_and_grouping_pattern(
+        tuple(time_units), tuple(grouping_levels)
     )
 
 
