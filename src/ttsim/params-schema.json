@@ -1,6 +1,37 @@
 {
   "$comment": "If you change this file, always change it in both locations:  1. ttsim/src/ttsim/params-schema.json  2. gettsim/docs/geps/params-schema.json",
   "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "unitToken": {
+      "type": "string",
+      "enum": [
+        "DIMENSIONLESS",
+        "DIMENSIONLESS_FLOW",
+        "YEARS",
+        "HOURS_FLOW",
+        "SQUARE_METERS",
+        "HECTARES",
+        "CASTAR",
+        "CASTAR_FLOW",
+        "CASTAR_PER_SQUARE_METER_FLOW",
+        "SILVER_PENNY",
+        "SILVER_PENNY_FLOW",
+        "SILVER_PENNY_PER_SQUARE_METER_FLOW"
+      ]
+    },
+    "unitDeclaration": {
+      "oneOf": [
+        { "$ref": "#/definitions/unitToken" },
+        {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/definitions/unitDeclaration" }
+        }
+      ]
+    },
+    "axisUnitDeclaration": {
+      "$ref": "#/definitions/unitToken"
+    }
+  },
   "type": "object",
   "patternProperties": {
     "^[a-zA-Z0-9äöüßÄÖÜ_]+$": {
@@ -25,19 +56,13 @@
           "additionalProperties": false
         },
         "unit": {
-          "type": ["string", "null"],
-          "enum": [
-            "Euros",
-            "DM",
-            "Share",
-            "Percent",
-            "Years",
-            "Months",
-            "Hours",
-            "Square Meters",
-            "Euros / Square Meter",
-            null
-          ]
+          "$ref": "#/definitions/unitDeclaration"
+        },
+        "input_unit": {
+          "$ref": "#/definitions/axisUnitDeclaration"
+        },
+        "output_unit": {
+          "$ref": "#/definitions/axisUnitDeclaration"
         },
         "type": {
           "type": "string",
@@ -82,6 +107,15 @@
                 "additionalProperties": true
               }
             },
+            "unit": {
+              "$ref": "#/definitions/unitDeclaration"
+            },
+            "input_unit": {
+              "$ref": "#/definitions/axisUnitDeclaration"
+            },
+            "output_unit": {
+              "$ref": "#/definitions/axisUnitDeclaration"
+            },
             "reference": { "type": "string" },
             "note": { "type": "string" },
             "deviation_from": { "type": "string" },
@@ -95,11 +129,38 @@
         { "required": [
           "name",
           "description",
-          "unit",
-          "reference_period",
           "type"
         ]
       },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "enum": [
+                  "piecewise_constant",
+                  "piecewise_linear",
+                  "piecewise_quadratic",
+                  "piecewise_cubic",
+                  "consecutive_int_lookup_table",
+                  "sparse_to_consecutive_int_lookup_table",
+                  "month_based_phase_inout_of_age_thresholds",
+                  "year_based_phase_inout_of_age_thresholds"
+                ]
+              }
+            }
+          },
+          "then": {
+            "required": ["input_unit", "output_unit"],
+            "not": { "required": ["unit"] }
+          },
+          "else": {
+            "required": ["unit"],
+            "allOf": [
+              { "not": { "required": ["input_unit"] } },
+              { "not": { "required": ["output_unit"] } }
+            ]
+          }
+        },
         {
           "minProperties": 1,
           "patternProperties": {

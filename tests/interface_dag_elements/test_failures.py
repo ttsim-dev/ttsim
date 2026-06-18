@@ -196,12 +196,12 @@ def some_x(x):
     return x
 
 
-@param_function(unit=Unit.DIMENSIONLESS)
+@param_function(unit=Unit.DIMENSIONLESS, verify_units=False)
 def some_param_func_returning_array_of_length_2(xnp: ModuleType) -> Float[Array, 2]:
     return xnp.array([1, 2])
 
 
-@param_function(unit=Unit.DIMENSIONLESS)
+@param_function(unit=Unit.DIMENSIONLESS, verify_units=False)
 def some_param_func_returning_list_of_length_2() -> list[int]:
     return [1, 2]
 
