@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 from mettsim import middle_earth
 
 from ttsim import InputData, MainTarget, OrigPolicyObjects, TTTargets, main
+from ttsim.tt import Unit
 from ttsim.tt.column_objects_param_function import policy_function, policy_input
 from ttsim.tt.param_objects import DictParam, ScalarParam
 
@@ -18,7 +19,7 @@ par1 = ScalarParam(
     end_date=datetime.date(2025, 12, 31),
     name={"de": "Ein int param", "en": "Some int param"},
     description={"de": "Ein int param", "en": "Some int param"},
-    unit=None,
+    unit=Unit.DIMENSIONLESS,
     reference_period=None,
     note=None,
     reference=None,
@@ -30,7 +31,7 @@ par2 = DictParam(
     end_date=datetime.date(2025, 12, 31),
     name={"de": "Ein dict param", "en": "Some dict param"},
     description={"de": "Ein dict param", "en": "Some dict param"},
-    unit=None,
+    unit=Unit.DIMENSIONLESS,
     reference_period=None,
     note=None,
     reference=None,

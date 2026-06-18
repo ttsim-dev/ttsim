@@ -27,6 +27,10 @@ from ttsim.interface_dag_elements.shared import (
     get_name_of_group_by_id,
     param_has_substantive_content,
 )
+from ttsim.interface_dag_elements.unit_checks import (
+    fail_if_environment_units_are_inconsistent,
+    fail_if_environment_units_are_missing,
+)
 from ttsim.tt.column_objects_param_function import (
     DEFAULT_END_DATE,
     ColumnFunction,
@@ -40,6 +44,7 @@ from ttsim.tt.param_objects import (
     PLACEHOLDER_VALUE,
     ParamObject,
 )
+from ttsim.tt.units import UNSET_UNIT, UnsetUnitType
 from ttsim.typing import (
     FlatColumnObjectsParamFunctions,
     FlatData,
@@ -923,8 +928,8 @@ def _param_with_active_periods(
         param_spec.get("description", None),
     )
     p_s_unit = cast(
-        "Literal['Euros', 'DM', 'Share', 'Percent', 'Years', 'Months', 'Hours', 'Square Meters', 'Euros / Square Meter'] | None",
-        param_spec.get("unit", None),
+        "str | dict[str | int, Any] | UnsetUnitType",
+        param_spec.get("unit", UNSET_UNIT),
     )
     p_s_reference_period = cast(
         "Literal['Year', 'Quarter', 'Month', 'Week', 'Day'] | None",
@@ -966,6 +971,48 @@ def _param_with_active_periods(
         )
 
     return out
+
+
+@fail_function()
+def tt_units_are_missing(
+    specialized_environment__without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
+    labels__grouping_levels: OrderedQNames,
+) -> None:
+    """Fail if any active node lacks a mandatory `unit=` declaration (GEP 10).
+
+    Raises:
+        UnitDefinitionError: If any node (or dict-parameter leaf) lacks a
+            unit declaration.
+    """
+    fail_if_environment_units_are_missing(
+        env=specialized_environment__without_tree_logic_and_with_derived_functions,
+        grouping_levels=labels__grouping_levels,
+    )
+
+
+@fail_function()
+def tt_units_are_inconsistent(
+    specialized_environment__without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
+    labels__grouping_levels: OrderedQNames,
+) -> None:
+    """Fail if a function body infers a unit that contradicts its declaration.
+
+    Each `@policy_function` / `@param_function` body is dry-run on representative
+    values built from its producers' resolved units, across every reachable
+    branch path, without any user data (GEP 10). A mismatch is flagged when the
+    inferred unit is concrete (non-dimensionless) and disagrees with the
+    declaration; a dimensionless inference (e.g. an early `return 0.0`) falls
+    back to the declaration.
+
+    Raises:
+        UnitConsistencyError: If any body infers a concrete unit that
+            disagrees with its declaration, or cannot be dry-run and has not
+            opted out via `verify_units=False`.
+    """
+    fail_if_environment_units_are_inconsistent(
+        env=specialized_environment__without_tree_logic_and_with_derived_functions,
+        grouping_levels=labels__grouping_levels,
+    )
 
 
 @fail_function()

@@ -2,13 +2,14 @@ from __future__ import annotations
 
 import copy
 import datetime
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from types import ModuleType
 from typing import TYPE_CHECKING, Any
 
 import dags.tree as dt
 import numpy
 
+from ttsim.exceptions import UnitDefinitionError
 from ttsim.interface_dag_elements.interface_node_objects import interface_function
 from ttsim.interface_dag_elements.shared import (
     merge_trees,
@@ -16,7 +17,9 @@ from ttsim.interface_dag_elements.shared import (
     upsert_tree,
 )
 from ttsim.tt import (
+    UNSET_UNIT,
     ConsecutiveIntLookupTableParam,
+    ConsecutiveIntLookupTableParamValue,
     DictParam,
     ParamObject,
     PiecewisePolynomialParam,
@@ -32,7 +35,14 @@ from ttsim.tt.column_objects_param_function import (
     DEFAULT_END_DATE,
 )
 from ttsim.tt.interval_utils import merge_piecewise_intervals
+from ttsim.tt.param_objects import PiecewisePolynomialParamValue
 from ttsim.tt.piecewise_polynomial import PIECEWISE_TYPES, get_piecewise_parameters
+from ttsim.tt.units import (
+    coerce_unit_token,
+    currency_conversion_factor,
+    token_is_agnostic_currency,
+    token_source_currency,
+)
 from ttsim.typing import (
     FlatColumnObjectsParamFunctions,
     FlatOrigParamSpecs,
@@ -41,10 +51,19 @@ from ttsim.typing import (
     OrigParamSpec,
 )
 
+#: YAML ``type:``\ s whose parameters are functions between quantities
+#: (GEP 10): they declare ``input_unit:``/``output_unit:`` instead of
+#: ``unit:``.
+PARAM_MAPPING_OBJECT_TYPES: frozenset[str] = PIECEWISE_TYPES | {
+    "consecutive_int_lookup_table",
+    "sparse_to_consecutive_int_lookup_table",
+    "month_based_phase_inout_of_age_thresholds",
+    "year_based_phase_inout_of_age_thresholds",
+}
+
 if TYPE_CHECKING:
     from types import ModuleType
 
-    from ttsim.tt import ConsecutiveIntLookupTableParamValue
     from ttsim.typing import (
         FlatColumnObjectsParamFunctions,
         FlatOrigParamSpecs,
@@ -61,6 +80,7 @@ def policy_environment(
     orig_policy_objects__param_specs: FlatOrigParamSpecs,
     policy_date: datetime.date,
     xnp: ModuleType,
+    currency: str | None,
 ) -> PolicyEnvironment:
     """The policy environment at a particular date."""
     return {
@@ -109,6 +129,7 @@ def policy_environment(
                 orig=orig_policy_objects__param_specs,
                 policy_date=policy_date,
                 xnp=xnp,
+                currency=currency,
             ),
         ),
     }
@@ -141,6 +162,7 @@ def _active_param_objects(
     orig: FlatOrigParamSpecs,
     policy_date: datetime.date,
     xnp: ModuleType,
+    currency: str | None = None,
 ) -> NestedParamObjects:
     """Parse the original yaml tree."""
     flat_tree_with_params = {}
@@ -152,6 +174,7 @@ def _active_param_objects(
             spec=orig_params_spec,
             policy_date=policy_date,
             xnp=xnp,
+            currency=currency,
         )
         if param is not None:
             flat_tree_with_params[(*path_to_keep, leaf_name)] = param
@@ -163,10 +186,105 @@ def _active_param_objects(
                 spec=orig_params_spec,
                 policy_date=date_jan1,
                 xnp=xnp,
+                currency=currency,
             )
             if param is not None:
                 flat_tree_with_params[(*path_to_keep, leaf_name_jan1)] = param
     return dt.unflatten_from_tree_paths(flat_tree_with_params)
+
+
+def _currency_conversion_factor_for_token(
+    raw_token: Any,  # noqa: ANN401
+    run_currency: str | None,
+) -> float:
+    """Factor converting a declaration's currency into the run currency (GEP 10).
+
+    A non-currency declaration (dimensionless, an area, a time, or none) carries
+    no currency to convert, so the factor is ``1.0``. A currency declaration
+    must pin down a concrete, registered currency: an agnostic token
+    (``CURRENCY``, ``CURRENCY_FLOW``) or an unknown one is rejected.
+    """
+    if run_currency is None or raw_token is None or raw_token is UNSET_UNIT:
+        return 1.0
+    token = coerce_unit_token(raw_token, where="currency conversion")
+    if token_is_agnostic_currency(token):
+        raise UnitDefinitionError(
+            f"Currency conversion: a parameter must pin down the concrete "
+            f"currency its numbers are written in; the agnostic token {token} "
+            f"cannot be converted to {run_currency!r} (GEP 10)."
+        )
+    source = token_source_currency(token)
+    if source is None or source == run_currency:
+        return 1.0
+    return currency_conversion_factor(source_currency=source, run_currency=run_currency)
+
+
+def _scale_numeric_leaves(
+    value: Any,  # noqa: ANN401
+    factor: float,
+) -> Any:  # noqa: ANN401
+    """Scale every numeric leaf of a (possibly nested) value by ``factor``.
+
+    Booleans and non-numeric leaves pass through untouched.
+    """
+    if isinstance(value, Mapping):
+        return {
+            key: _scale_numeric_leaves(value=sub_value, factor=factor)
+            for key, sub_value in value.items()
+        }
+    if isinstance(value, bool) or not isinstance(value, int | float):
+        return value
+    return value * factor
+
+
+def _dict_param_value_in_run_currency(
+    value: Any,  # noqa: ANN401
+    unit: Any,  # noqa: ANN401
+    run_currency: str | None,
+) -> Any:  # noqa: ANN401
+    """Restate a dict param's value in the run currency, leaf by leaf (GEP 10).
+
+    A per-leaf ``unit:`` mapping rescales each currency-denominated leaf by its
+    own token; a scalar token rescales the whole value uniformly. Non-currency
+    leaves keep their numbers (their factor is ``1.0``).
+    """
+    if isinstance(unit, Mapping) and isinstance(value, Mapping):
+        return {
+            key: _dict_param_value_in_run_currency(
+                value=sub_value,
+                unit=unit.get(key),
+                run_currency=run_currency,
+            )
+            for key, sub_value in value.items()
+        }
+    factor = _currency_conversion_factor_for_token(
+        raw_token=unit, run_currency=run_currency
+    )
+    return _scale_numeric_leaves(value=value, factor=factor)
+
+
+def _piecewise_param_value_in_run_currency(
+    value: PiecewisePolynomialParamValue,
+    input_factor: float,
+    output_factor: float,
+    xnp: ModuleType,
+) -> PiecewisePolynomialParamValue:
+    """Restate a schedule in the run currency, axis by axis (GEP 10).
+
+    The piecewise form is ``y = intercept_i + Σ_j c_{i,j} (x - t_i)^j``.
+    Scaling the input axis by ``f_in`` and the output axis by ``f_out``
+    rescales the thresholds by ``f_in``, the intercepts by ``f_out``, and the
+    order-``j`` coefficient by ``f_out / f_in**j`` — for an income schedule
+    (both axes the same currency) the slopes are invariant, for an area
+    schedule the slopes carry the full output factor. A non-currency axis has
+    a factor of ``1.0`` and is left as is.
+    """
+    orders = xnp.arange(1, value.coefficients.shape[1] + 1)
+    return PiecewisePolynomialParamValue(
+        thresholds=value.thresholds * input_factor,
+        intercepts=value.intercepts * output_factor,
+        coefficients=value.coefficients * (output_factor / input_factor**orders),
+    )
 
 
 def _get_one_param(
@@ -174,6 +292,7 @@ def _get_one_param(
     spec: OrigParamSpec,
     policy_date: datetime.date,
     xnp: ModuleType,
+    currency: str | None = None,
 ) -> ParamObject | None:
     """Parse the original specification found in the yaml tree to a ParamObject."""
     cleaned_spec = _clean_one_param_spec(spec=spec, policy_date=policy_date)
@@ -184,14 +303,36 @@ def _get_one_param(
     param_type = spec["type"]
 
     if param_type == "scalar":
+        cleaned_spec["value"] = _scale_numeric_leaves(
+            value=cleaned_spec["value"],
+            factor=_currency_conversion_factor_for_token(
+                raw_token=cleaned_spec.get("unit"), run_currency=currency
+            ),
+        )
         return ScalarParam(**cleaned_spec)
-    if param_type == "dict":
-        return DictParam(**cleaned_spec)
+    if param_type in ("dict", "require_converter"):
+        cleaned_spec["value"] = _dict_param_value_in_run_currency(
+            value=cleaned_spec["value"],
+            unit=cleaned_spec.get("unit"),
+            run_currency=currency,
+        )
+        if param_type == "dict":
+            return DictParam(**cleaned_spec)
+        return RawParam(**cleaned_spec)
     if param_type in PIECEWISE_TYPES:
-        cleaned_spec["value"] = get_piecewise_parameters(
-            leaf_name=leaf_name,
-            func_type=param_type,  # ty: ignore[invalid-argument-type]
-            parameter_list=cleaned_spec["value"],
+        cleaned_spec["value"] = _piecewise_param_value_in_run_currency(
+            value=get_piecewise_parameters(
+                leaf_name=leaf_name,
+                func_type=param_type,  # ty: ignore[invalid-argument-type]
+                parameter_list=cleaned_spec["value"],
+                xnp=xnp,
+            ),
+            input_factor=_currency_conversion_factor_for_token(
+                raw_token=cleaned_spec.get("input_unit"), run_currency=currency
+            ),
+            output_factor=_currency_conversion_factor_for_token(
+                raw_token=cleaned_spec.get("output_unit"), run_currency=currency
+            ),
             xnp=xnp,
         )
         return PiecewisePolynomialParam(**cleaned_spec)
@@ -210,11 +351,23 @@ def _get_one_param(
         ),
     }
     if param_type in lookup_table_converters:
+        input_factor = _currency_conversion_factor_for_token(
+            raw_token=cleaned_spec.get("input_unit"), run_currency=currency
+        )
+        if input_factor != 1.0:
+            raise UnitDefinitionError(
+                f"Parameter {leaf_name!r}: lookup-table input axes are "
+                f"integer-keyed and cannot be converted between currencies; "
+                f"a concrete currency `input_unit:` is not supported (GEP 10)."
+            )
         converter = lookup_table_converters[param_type]
-        cleaned_spec["value"] = converter(raw=cleaned_spec["value"], xnp=xnp)
+        table = converter(raw=cleaned_spec["value"], xnp=xnp)
+        output_factor = _currency_conversion_factor_for_token(
+            raw_token=cleaned_spec.get("output_unit"), run_currency=currency
+        )
+        table.values_to_look_up = table.values_to_look_up * output_factor
+        cleaned_spec["value"] = table
         return ConsecutiveIntLookupTableParam(**cleaned_spec)
-    if param_type == "require_converter":
-        return RawParam(**cleaned_spec)
 
     raise ValueError(f"Unknown parameter type: {param_type} for {leaf_name}")
 
@@ -243,14 +396,31 @@ def _clean_one_param_spec(
         if len(policy_dates) > idx
         else DEFAULT_END_DATE
     )
-    out["unit"] = spec.get("unit", None)
+    if spec["type"] in PARAM_MAPPING_OBJECT_TYPES:
+        # Mapping parameters declare one unit token per axis (GEP 10).
+        # A stray `unit:` is passed through so that ParamMappingObject
+        # rejects it with a precise error message.
+        if "unit" in spec:
+            out["unit"] = spec["unit"]
+        out["input_unit"] = spec.get("input_unit", UNSET_UNIT)
+        out["output_unit"] = spec.get("output_unit", UNSET_UNIT)
+    else:
+        out["unit"] = spec.get("unit", UNSET_UNIT)
     out["reference_period"] = spec.get("reference_period", None)
     out["name"] = spec["name"]
     out["description"] = spec["description"]
 
-    current_spec: dict[str, Any] = copy.deepcopy(spec[policy_dates[idx - 1]])  # ty: ignore[invalid-assignment]
+    current_spec: dict[str | int, Any] = copy.deepcopy(spec[policy_dates[idx - 1]])
     out["note"] = current_spec.pop("note", None)
     out["reference"] = current_spec.pop("reference", None)
+    # A dated entry may restate the unit field(s), overriding the top-level
+    # declaration for that entry's numbers — this is how a currency
+    # changeover within one parameter's history is written (GEP 10): old
+    # entries denominated in the legacy currency, entries from the reform
+    # date in the new one.
+    for unit_key in ("unit", "input_unit", "output_unit"):
+        if unit_key in current_spec:
+            out[unit_key] = current_spec.pop(unit_key)
 
     if not param_has_substantive_content(current_spec):
         return None
@@ -263,26 +433,53 @@ def _clean_one_param_spec(
             )
         out["value"] = current_spec["value"]
     elif param_type in PIECEWISE_TYPES:
-        relevant_specs: list[dict[str, Any]] = [
+        relevant_specs: list[dict[str | int, Any]] = [
             copy.deepcopy(spec[policy_dates[i]]) for i in range(idx)
-        ]  # ty: ignore[invalid-assignment]
+        ]
         out["value"] = _get_param_value_piecewise(relevant_specs)
     else:
-        relevant_specs: list[dict[str, Any]] = [
+        relevant_specs: list[dict[str | int, Any]] = [
             copy.deepcopy(spec[policy_dates[i]]) for i in range(idx)
-        ]  # ty: ignore[invalid-assignment]
+        ]
         out["value"] = _get_param_value(relevant_specs)
     return out
 
 
+def _pop_unit_overrides(
+    current: dict[str | int, Any],
+    updates_previous: bool,
+) -> None:
+    """Strip a dated entry's unit override keys from its value dict (GEP 10).
+
+    The override itself is consumed in :func:`_clean_one_param_spec`; here it
+    must not leak into the assembled value. Combining an override with
+    ``updates_previous`` is rejected: the merged value would mix numbers
+    denominated in different currencies.
+    """
+    restates_unit = False
+    for unit_key in ("unit", "input_unit", "output_unit"):
+        if unit_key in current:
+            # A present unit key is a restatement whatever its value — hence
+            # the membership test rather than a `pop` default.
+            del current[unit_key]
+            restates_unit = True
+    if restates_unit and updates_previous:
+        raise UnitDefinitionError(
+            "`updates_previous` cannot cross a unit (currency) changeover: "
+            "an entry that restates the unit declaration must restate the "
+            "full value (GEP 10)."
+        )
+
+
 def _get_param_value(
-    relevant_specs: list[dict[str, Any]],
-) -> dict[str, Any]:
+    relevant_specs: list[dict[str | int, Any]],
+) -> dict[str | int, Any]:
     """Resolve parameter value, handling `updates_previous` chains."""
     current = relevant_specs[-1]
     current.pop("note", None)
     current.pop("reference", None)
     updates_previous = current.pop("updates_previous", False)
+    _pop_unit_overrides(current=current, updates_previous=updates_previous)
 
     if updates_previous and len(relevant_specs) <= 1:
         raise ValueError(
@@ -297,13 +494,14 @@ def _get_param_value(
 
 
 def _get_param_value_piecewise(
-    relevant_specs: list[dict[str, Any]],
+    relevant_specs: list[dict[str | int, Any]],
 ) -> list[dict[str, Any]]:
     """Resolve piecewise parameter value, handling `updates_previous` chains."""
     current = relevant_specs[-1]
     current.pop("note", None)
     current.pop("reference", None)
     updates_previous = current.pop("updates_previous", False)
+    _pop_unit_overrides(current=current, updates_previous=updates_previous)
 
     if updates_previous and len(relevant_specs) <= 1:
         raise ValueError(
