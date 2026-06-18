@@ -69,6 +69,30 @@ class RoundingSpecError(TTSIMError):
     """Raised when a `RoundingSpec` is constructed with invalid arguments."""
 
 
+class UnitDefinitionError(TTSIMError):
+    """Raised when a `unit=` declaration or a `register_currency` call is invalid.
+
+    Covers an unparseable unit string, a unit involving a dimension outside the
+    closed GEP-10 vocabulary, and inconsistent currency registration.
+    """
+
+
+class UnitInferenceError(TTSIMError):
+    """Raised when the build-time unit dry-run of a function body fails.
+
+    Includes a dimensionally invalid operation inside the body (e.g. adding a
+    currency to a currency-per-area).
+    """
+
+
+class UnitConsistencyError(TTSIMError):
+    """Raised when a declared unit disagrees with the inferred or producer unit.
+
+    Covers the per-function body check (inferred output unit vs. declared unit)
+    and the DAG edge-consistency check (producer unit vs. consumer expectation).
+    """
+
+
 # `ConflictingActivePeriodsError` and `TranslateToVectorizableError` subclass
 # `TTSIMError` from their definition sites (`ttsim.interface_dag_elements.fail_if`
 # and `ttsim.tt.vectorization`) — re-importing them here would create an
@@ -86,4 +110,7 @@ __all__ = [
     "RoundingSpecError",
     "TTSIMError",
     "TTTargetsError",
+    "UnitConsistencyError",
+    "UnitDefinitionError",
+    "UnitInferenceError",
 ]
