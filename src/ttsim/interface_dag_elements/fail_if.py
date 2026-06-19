@@ -17,6 +17,7 @@ import networkx as nx
 import numpy
 import optree
 import pandas as pd
+import pint
 from dags import get_free_arguments
 from dags.tree.validation import fail_if_paths_are_invalid
 
@@ -30,6 +31,9 @@ from ttsim.interface_dag_elements.shared import (
 from ttsim.interface_dag_elements.unit_checks import (
     fail_if_environment_units_are_inconsistent,
     fail_if_environment_units_are_missing,
+    fail_if_input_units_are_inconsistent,
+    fail_if_not_all_leaves_are_quantities,
+    resolve_environment_units,
 )
 from ttsim.tt.column_objects_param_function import (
     DEFAULT_END_DATE,
@@ -1012,6 +1016,48 @@ def tt_units_are_inconsistent(
     fail_if_environment_units_are_inconsistent(
         env=specialized_environment__without_tree_logic_and_with_derived_functions,
         grouping_levels=labels__grouping_levels,
+    )
+
+
+@fail_function(
+    include_if_any_element_present=["input_data__tree_with_unit_annotations"]
+)
+def not_all_input_leaves_are_quantities(
+    input_data__tree_with_unit_annotations: NestedData,
+) -> None:
+    """Reject a unit-annotated input tree with any bare (untagged) leaf (GEP 10).
+
+    Raises:
+        UnitConsistencyError: If any leaf is not a ``pint.Quantity``.
+    """
+    fail_if_not_all_leaves_are_quantities(
+        flat=dt.flatten_to_tree_paths(input_data__tree_with_unit_annotations)
+    )
+
+
+@fail_function(
+    include_if_any_element_present=["input_data__tree_with_unit_annotations"]
+)
+def input_units_are_inconsistent(
+    input_data__units: dict[str, pint.Unit],
+    specialized_environment__without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
+    labels__grouping_levels: OrderedQNames,
+) -> None:
+    """Fail if a tagged input column's dimension contradicts its declared unit (GEP 10).
+
+    Each tagged input column's pint tag must share the *dimension* of its
+    declared (resolved) DAG unit.
+
+    Raises:
+        UnitConsistencyError: If any tagged column is dimensionally incompatible
+            with its declared unit.
+    """
+    fail_if_input_units_are_inconsistent(
+        input_units=input_data__units,
+        resolved_units=resolve_environment_units(
+            env=specialized_environment__without_tree_logic_and_with_derived_functions,
+            grouping_levels=labels__grouping_levels,
+        ),
     )
 
 

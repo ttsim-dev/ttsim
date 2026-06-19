@@ -1188,6 +1188,35 @@ def _currency_component_of(units: pint.Unit) -> pint.Unit | None:
     return None
 
 
+def output_unit_in_run_currency(
+    units: pint.Unit, run_currency: str | None
+) -> pint.Unit:
+    """Restate a resolved (agnostic) DAG unit in the concrete run currency (GEP 10).
+
+    Output columns are *computed* in the run currency, so labelling them is pure
+    naming, not conversion: the agnostic ``CURRENCY`` component of the resolved
+    unit is swapped for the run currency (``CURRENCY / month`` → ``euro / month``)
+    while period and area are left untouched. A unit with no currency component
+    (``year``, ``hectare``, dimensionless) is returned unchanged.
+
+    This is the inverse of the currency move
+    :func:`strip_input_quantity_at_boundary` makes on the way in.
+
+    Raises:
+        UnitDefinitionError: If the unit is currency-dimensioned but no run
+            currency is set — a run with currency quantities must pin one down.
+    """
+    currency_component = _currency_component_of(units)
+    if currency_component is None:
+        return units
+    if run_currency is None:
+        raise UnitDefinitionError(
+            f"Cannot restate '{units}' without a run currency: a run that uses "
+            f"currency quantities must pin down a concrete currency (GEP 10)."
+        )
+    return units / currency_component * UNIT_REGISTRY.parse_units(run_currency)
+
+
 def _flow_period_of(units: pint.Unit) -> pint.Unit | None:
     """Return a unit's flow period — its time component in the *denominator*.
 
