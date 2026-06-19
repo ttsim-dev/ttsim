@@ -8,6 +8,7 @@ import pytest
 from mettsim import middle_earth
 
 from ttsim import OrigPolicyObjects, TTTargets, main, plot
+from ttsim.exceptions import UnitConsistencyError
 from ttsim.main_args import InputData
 from ttsim.testing_utils import (
     PolicyTest,
@@ -16,6 +17,7 @@ from ttsim.testing_utils import (
     execute_test,
     load_policy_cases,
 )
+from ttsim.tt.units import UNIT_REGISTRY
 
 if TYPE_CHECKING:
     import datetime
@@ -202,7 +204,7 @@ def test_run_currency_scales_currency_outputs(backend: Literal["numpy", "jax"]):
             "p_id_spouse": numpy.array([1, 0]),
             "p_id_parent_1": numpy.array([-1, -1]),
             "p_id_parent_2": numpy.array([-1, -1]),
-            "age": numpy.array([30, 30]),
+            "geburtsjahr": numpy.array([1995, 1995]),  # age 30 in 2025
             "parent_is_noble": numpy.array([False, False]),
             "wealth": numpy.array([0.0, 0.0]) * factor,
             "payroll_tax": {
@@ -224,3 +226,178 @@ def test_run_currency_scales_currency_outputs(backend: Literal["numpy", "jax"]):
     silver = results["SILVER_PENNY"]["payroll_tax"]["amount_y"]
     numpy.testing.assert_allclose(numpy.asarray(silver), numpy.asarray(castar) * 4.0)
     assert float(numpy.asarray(castar)[0]) > 0.0
+
+
+def _bare_payroll_tree(factor: float = 1.0) -> dict[str, Any]:
+    """A household for the 2025 payroll-tax run, currency amounts scaled by `factor`."""
+    return {
+        "p_id": numpy.array([0, 1]),
+        "kin_id": numpy.array([0, 0]),
+        "p_id_spouse": numpy.array([1, 0]),
+        "p_id_parent_1": numpy.array([-1, -1]),
+        "p_id_parent_2": numpy.array([-1, -1]),
+        "geburtsjahr": numpy.array([1995, 1995]),  # age 30 in 2025
+        "parent_is_noble": numpy.array([False, False]),
+        "wealth": numpy.array([100.0, 200.0]) * factor,
+        "payroll_tax": {
+            "child_tax_credit": {"p_id_recipient": numpy.array([-1, -1])},
+            "income": {"gross_wage_y": numpy.array([10000.0, 0.0]) * factor},
+        },
+    }
+
+
+def _annotated_payroll_tree(currency: str, factor: float = 1.0) -> dict[str, Any]:
+    """`_bare_payroll_tree` with every leaf wrapped in its pint unit tag (GEP 10).
+
+    Ids, the boolean, and the (dimensionless) head-style columns are tagged
+    ``dimensionless``; the birth year as a calendar year; wealth as a currency
+    stock; the wage as a currency flow per year.
+    """
+    q = UNIT_REGISTRY.Quantity
+    return {
+        "p_id": q(numpy.array([0, 1]), "dimensionless"),
+        "kin_id": q(numpy.array([0, 0]), "dimensionless"),
+        "p_id_spouse": q(numpy.array([1, 0]), "dimensionless"),
+        "p_id_parent_1": q(numpy.array([-1, -1]), "dimensionless"),
+        "p_id_parent_2": q(numpy.array([-1, -1]), "dimensionless"),
+        "geburtsjahr": q(numpy.array([1995, 1995]), "calendar_year"),  # age 30
+        "parent_is_noble": q(numpy.array([False, False]), "dimensionless"),
+        "wealth": q(numpy.array([100.0, 200.0]) * factor, currency),
+        "payroll_tax": {
+            "child_tax_credit": {
+                "p_id_recipient": q(numpy.array([-1, -1]), "dimensionless")
+            },
+            "income": {
+                "gross_wage_y": q(
+                    numpy.array([10000.0, 0.0]) * factor, f"{currency} / year"
+                )
+            },
+        },
+    }
+
+
+def _run_payroll(
+    input_data: InputData,
+    currency: str,
+    backend: Literal["numpy", "jax"],
+    main_target: str,
+):
+    return main(
+        main_target=main_target,
+        policy_date_str="2025-01-01",
+        input_data=input_data,
+        orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+        tt_targets=TTTargets.tree({"payroll_tax": {"amount_y": None}}),
+        rounding=False,
+        currency=currency,
+        backend=backend,
+    )
+
+
+def test_unit_annotated_input_matches_bare_run(backend: Literal["numpy", "jax"]):
+    """Run-currency-tagged annotated input gives the same result as bare (GEP 10)."""
+    bare = _run_payroll(
+        InputData.tree(_bare_payroll_tree()), "CASTAR", backend, "results__tree"
+    )
+    annotated = _run_payroll(
+        InputData.tree_with_unit_annotations(_annotated_payroll_tree("CASTAR")),
+        "CASTAR",
+        backend,
+        "results__tree",
+    )
+    numpy.testing.assert_allclose(
+        numpy.asarray(annotated["payroll_tax"]["amount_y"]),
+        numpy.asarray(bare["payroll_tax"]["amount_y"]),
+    )
+
+
+def test_unit_annotated_input_converts_currency_at_boundary(
+    backend: Literal["numpy", "jax"],
+):
+    """Silver-penny-tagged input (x4) into a castar run converts at the boundary."""
+    bare = _run_payroll(
+        InputData.tree(_bare_payroll_tree()), "CASTAR", backend, "results__tree"
+    )
+    converted = _run_payroll(
+        InputData.tree_with_unit_annotations(
+            _annotated_payroll_tree("SILVER_PENNY", factor=4.0)
+        ),
+        "CASTAR",
+        backend,
+        "results__tree",
+    )
+    numpy.testing.assert_allclose(
+        numpy.asarray(converted["payroll_tax"]["amount_y"]),
+        numpy.asarray(bare["payroll_tax"]["amount_y"]),
+    )
+    assert float(numpy.asarray(bare["payroll_tax"]["amount_y"])[0]) > 0.0
+
+
+def test_results_tree_with_unit_annotations_are_precise(
+    backend: Literal["numpy", "jax"],
+):
+    """Annotated results carry precise run-currency units (GEP 10)."""
+    tagged = _run_payroll(
+        InputData.tree(_bare_payroll_tree()),
+        "CASTAR",
+        backend,
+        "results__tree_with_unit_annotations",
+    )
+    bare = _run_payroll(
+        InputData.tree(_bare_payroll_tree()), "CASTAR", backend, "results__tree"
+    )
+    amount = tagged["payroll_tax"]["amount_y"]
+    assert isinstance(amount, UNIT_REGISTRY.Quantity)
+    assert str(amount.units) == "CASTAR / year"
+    numpy.testing.assert_allclose(
+        numpy.asarray(amount.magnitude),
+        numpy.asarray(bare["payroll_tax"]["amount_y"]),
+    )
+
+
+def test_unit_annotated_input_rejects_wrong_dimension(
+    backend: Literal["numpy", "jax"],
+):
+    """A currency tag on the CALENDAR_YEAR birth-year column is rejected (GEP 10)."""
+    tree = _annotated_payroll_tree("CASTAR")
+    tree["geburtsjahr"] = UNIT_REGISTRY.Quantity(numpy.array([1995, 1995]), "CASTAR")
+    with pytest.raises(UnitConsistencyError, match="inconsistent with the DAG"):
+        _run_payroll(
+            InputData.tree_with_unit_annotations(tree),
+            "CASTAR",
+            backend,
+            "results__tree",
+        )
+
+
+def test_age_is_computed_from_the_birth_year(backend: Literal["numpy", "jax"]):
+    """The calendar-point worked example (GEP 10, S1).
+
+    Age is computed as ``policy_year - geburtsjahr`` (a duration in years from
+    two calendar years), and the birthday check reads the calendar-month
+    framework node as a cyclic ordinal against the birth month.
+    """
+    results = main(
+        main_target="results__tree",
+        policy_date_str="2025-01-01",
+        input_data=InputData.tree(
+            {
+                "p_id": numpy.array([0, 1, 2]),
+                "geburtsjahr": numpy.array([1995, 2015, 1914]),
+                "geburtsmonat": numpy.array([1, 6, 12]),
+            }
+        ),
+        orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+        tt_targets=TTTargets.tree({"age": None, "had_birthday_this_year": None}),
+        rounding=False,
+        backend=backend,
+    )
+    numpy.testing.assert_array_equal(
+        numpy.asarray(results["age"]), numpy.array([30, 10, 111])
+    )
+    # policy_month is January (1): only a person born in January has already had
+    # their birthday by 2025-01-01.
+    numpy.testing.assert_array_equal(
+        numpy.asarray(results["had_birthday_this_year"]),
+        numpy.array([True, False, False]),
+    )

@@ -28,9 +28,22 @@ def p_id_spouse() -> int:
     """Identifier of married partner."""
 
 
-@policy_input(unit=Unit.YEARS)
-def age() -> int:
-    """Age of the person."""
+@policy_input(unit=Unit.CALENDAR_YEAR)
+def geburtsjahr() -> int:
+    """Year of birth: a point on the calendar, not a duration (GEP 10).
+
+    The person's age is computed from it (``demographics.age``): subtracting two
+    calendar years yields a duration in years.
+    """
+
+
+@policy_input(unit=Unit.DIMENSIONLESS)
+def geburtsmonat() -> int:
+    """Month of birth (1-12): a cyclic ordinal, hence ``DIMENSIONLESS`` (GEP 10).
+
+    Unlike :func:`geburtsjahr`, a month-of-year is not a point on a running
+    calendar but a recurring label, so it carries no calendar-month unit.
+    """
 
 
 @policy_input(unit=Unit.DIMENSIONLESS)
