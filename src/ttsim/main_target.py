@@ -55,6 +55,10 @@ class FailIf(MainTargetABC):
     input_data_uint64_values_overflow_int64: str = (
         "fail_if__input_data_uint64_values_overflow_int64"
     )
+    input_units_are_inconsistent: str = "fail_if__input_units_are_inconsistent"
+    not_all_input_leaves_are_quantities: str = (
+        "fail_if__not_all_input_leaves_are_quantities"
+    )
     input_df_has_bool_or_numeric_column_names: str = (
         "fail_if__input_df_has_bool_or_numeric_column_names"
     )
@@ -94,6 +98,7 @@ class Results(MainTargetABC):
     flat: str = "results__flat"
     qname: str = "results__qname"
     tree: str = "results__tree"
+    tree_with_unit_annotations: str = "results__tree_with_unit_annotations"
 
 
 @dataclass(frozen=True)
@@ -164,6 +169,8 @@ class InputData(MainTargetABC):
     qname: str = "input_data__qname"
     sort_indices: str = "input_data__sort_indices"
     tree: str = "input_data__tree"
+    tree_with_unit_annotations: str = "input_data__tree_with_unit_annotations"
+    units: str = "input_data__units"
 
 
 @dataclass(frozen=True)

@@ -558,6 +558,74 @@ def fail_if_environment_units_are_inconsistent(
         )
 
 
+def fail_if_not_all_leaves_are_quantities(
+    flat: Mapping[tuple[str, ...], Any],
+) -> None:
+    """Reject a unit-annotated input tree with any bare (untagged) leaf (GEP 10).
+
+    Every leaf of the unit-annotated input tree must carry a pint unit tag. The
+    producers that strip the tags (``input_data__flat`` / ``input_data__units``)
+    assume this, so the ``not_all_input_leaves_are_quantities`` fail node — which
+    the ``fail_if`` namespace orders ahead of them (see ``entry_point.lexsort_key``)
+    — calls this first, turning a bare leaf into a clean error rather than an
+    ``AttributeError`` when a producer reaches for ``.units``.
+
+    Raises:
+        UnitConsistencyError: If any leaf is not a ``pint.Quantity``.
+    """
+    untagged = sorted(
+        dt.qname_from_tree_path(path)
+        for path, value in flat.items()
+        if not isinstance(value, pint.Quantity)
+    )
+    if untagged:
+        raise UnitConsistencyError(
+            "input_data__tree_with_unit_annotations requires every leaf to carry a "
+            "pint unit tag (GEP 10), but these are bare: "
+            f"{', '.join(untagged)}. Tag a dimensionless column (an id, a head "
+            "count) with `Quantity(arr, 'dimensionless')`, or pass untagged data "
+            "via input_data__tree."
+        )
+
+
+def fail_if_input_units_are_inconsistent(
+    input_units: Mapping[str, pint.Unit],
+    resolved_units: Mapping[str, Any],
+) -> None:
+    """Fail if a tagged input column's dimension contradicts its declared unit (GEP 10).
+
+    ``input_units`` maps each tagged input column to its pint unit tag;
+    ``resolved_units`` maps every declared node to its resolved (agnostic) DAG
+    unit. For each tagged column the tag's *dimensionality* must match the
+    declared unit's — a registered currency *is a* ``CURRENCY`` at this level, so
+    a DM tag on a euro-run currency column passes (it is converted at the
+    boundary), while a currency tag on a ``YEARS`` age column is rejected.
+
+    Raises:
+        UnitConsistencyError: If any tagged column's dimension is incompatible
+            with its declared unit. All offending columns are reported together.
+    """
+    errors: list[str] = []
+    for qname, tag in input_units.items():
+        expected = resolved_units.get(qname)
+        if not isinstance(expected, pint.Unit):
+            # Column without a (scalar) declared unit — e.g. absent from the
+            # environment, or a dict parameter. Nothing to check here.
+            continue
+        tag_dim = UNIT_REGISTRY.Quantity(1.0, tag).dimensionality
+        expected_dim = UNIT_REGISTRY.Quantity(1.0, expected).dimensionality
+        if tag_dim != expected_dim:
+            errors.append(
+                f"  {qname}: tagged '{tag}' ({tag_dim or 'dimensionless'}), but the "
+                f"declared unit is '{expected}' ({expected_dim or 'dimensionless'})."
+            )
+    if errors:
+        raise UnitConsistencyError(
+            "Input unit annotations are inconsistent with the DAG's declared "
+            "units:\n" + "\n".join(sorted(errors))
+        )
+
+
 def node_is_boolean(qname: str, obj: Any) -> bool:  # noqa: ANN401
     """Whether a node's output is boolean (used to build the dry-run's symbolic
     values and drive its branch exploration; orthogonal to the declared unit)."""

@@ -9,7 +9,7 @@ from ttsim.interface_dag_elements.processed_data import (
     _canonicalize_input_dtype,
     processed_data,
 )
-from ttsim.tt import UREG
+from ttsim.tt import UNIT_REGISTRY
 
 
 @pytest.fixture
@@ -226,7 +226,7 @@ def test_processed_data_converts_pint_tagged_currency_input(xnp):
 
     input_data__flat = {
         ("p_id",): numpy.array([0, 1]),
-        ("wealth",): UREG.Quantity(numpy.array([4.0, 8.0]), "SILVER_PENNY"),
+        ("wealth",): UNIT_REGISTRY.Quantity(numpy.array([4.0, 8.0]), "SILVER_PENNY"),
     }
     out = processed_data(
         input_data__flat=input_data__flat,
@@ -236,5 +236,5 @@ def test_processed_data_converts_pint_tagged_currency_input(xnp):
         xnp=xnp,
         currency="CASTAR",
     )
-    assert not isinstance(out["wealth"], UREG.Quantity)
+    assert not isinstance(out["wealth"], UNIT_REGISTRY.Quantity)
     assert list(numpy.asarray(out["wealth"])) == pytest.approx([1.0, 2.0])
