@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 
 DF_WITH_NESTED_COLUMNS = pd.DataFrame(
     {
-        ("age",): [10, 30, 30],
+        ("geburtsjahr",): [2015, 1995, 1995],
         ("kin_id",): [0, 0, 0],
         ("p_id",): [2, 0, 1],
         ("p_id_parent_1",): [0, -1, -1],
@@ -36,7 +36,7 @@ DF_WITH_NESTED_COLUMNS = pd.DataFrame(
 
 DF_WITH_QNAME_COLUMNS = pd.DataFrame(
     {
-        "age": [10, 30, 30],
+        "geburtsjahr": [2015, 1995, 1995],
         "kin_id": [0, 0, 0],
         "p_id": [2, 0, 1],
         "p_id_parent_1": [0, -1, -1],
@@ -52,7 +52,7 @@ DF_WITH_QNAME_COLUMNS = pd.DataFrame(
 
 DF_FOR_MAPPER = pd.DataFrame(
     {
-        "age": [10, 30, 30],
+        "geburtsjahr": [2015, 1995, 1995],
         "kin_id": [0, 0, 0],
         "p_id": [2, 0, 1],
         "parent_1": [0, -1, -1],
@@ -67,7 +67,7 @@ DF_FOR_MAPPER = pd.DataFrame(
 
 
 INPUT_QNAME_DATA = {
-    "age": numpy.array([10, 30, 30]),
+    "geburtsjahr": numpy.array([2015, 1995, 1995]),
     "kin_id": numpy.array([0, 0, 0]),
     "p_id": numpy.array([2, 0, 1]),
     "p_id_parent_1": numpy.array([0, -1, -1]),
@@ -81,7 +81,7 @@ INPUT_QNAME_DATA = {
 
 
 INPUT_DF_MAPPER = {
-    "age": "age",
+    "geburtsjahr": "geburtsjahr",
     "kin_id": "kin_id",
     "p_id": "p_id",
     "p_id_parent_1": "parent_1",
@@ -101,7 +101,7 @@ INPUT_DF_MAPPER = {
 
 
 INPUT_TREE_DATA = {
-    "age": numpy.array([10, 30, 30]),
+    "geburtsjahr": numpy.array([2015, 1995, 1995]),
     "kin_id": numpy.array([0, 0, 0]),
     "p_id": numpy.array([2, 0, 1]),
     "p_id_parent_1": numpy.array([0, -1, -1]),
@@ -117,7 +117,7 @@ INPUT_TREE_DATA = {
 
 
 INPUT_FLAT_DATA = {
-    ("age",): numpy.array([10, 30, 30]),
+    ("geburtsjahr",): numpy.array([2015, 1995, 1995]),
     ("kin_id",): numpy.array([0, 0, 0]),
     ("p_id",): numpy.array([2, 0, 1]),
     ("p_id_parent_1",): numpy.array([0, -1, -1]),
@@ -376,7 +376,7 @@ def test_cloudpickle_round_trip_preserves_tt_function_output(tmp_path):
         from ttsim import InputData, OrigPolicyObjects, TTTargets, main
 
         data = {
-            ("age",): np.array([30, 30]),
+            ("geburtsjahr",): np.array([1995, 1995]),
             ("kin_id",): np.array([0, 0]),
             ("p_id",): np.array([0, 1]),
             ("p_id_parent_1",): np.array([-1, -1]),

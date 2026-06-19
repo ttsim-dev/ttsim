@@ -23,10 +23,10 @@ inputs:
       - false
       - false
       - true
-    age:
-      - 0
-      - 60
-      - 100
+    geburtsjahr:
+      - 1900
+      - 1840
+      - 1800
 outputs:
   orc_hunting_bounty:
     amount:
