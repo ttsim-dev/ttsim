@@ -228,6 +228,52 @@ def test_run_currency_scales_currency_outputs(backend: Literal["numpy", "jax"]):
     assert float(numpy.asarray(castar)[0]) > 0.0
 
 
+def test_function_like_require_converter_converts_per_axis(
+    backend: Literal["numpy", "jax"],
+):
+    """A function-like require_converter converts its typed output per axis (GEP 10).
+
+    The king's levy schedule is built by a converter that turns raw rates into
+    a quadratic coefficient (a Progressionsfaktor) of units ``1/currency``.
+    Running the same household in both currencies, the silver-penny levy must
+    equal four times the castar levy — which holds only if the quadratic term
+    scaled by ``1 / f_in`` (x4), not by a single uniform factor (which would
+    give x64). This exercises the per-axis conversion of a require_converter's
+    piecewise output, the bug behind GEP-10 finding S3.
+    """
+    results = {}
+    for currency, factor in (("CASTAR", 1.0), ("SILVER_PENNY", 4.0)):
+        input_tree = {
+            "p_id": numpy.array([0, 1]),
+            "kin_id": numpy.array([0, 0]),
+            "p_id_spouse": numpy.array([1, 0]),
+            "p_id_parent_1": numpy.array([-1, -1]),
+            "p_id_parent_2": numpy.array([-1, -1]),
+            "geburtsjahr": numpy.array([1995, 1995]),  # age 30 in 2025
+            "parent_is_noble": numpy.array([False, False]),
+            # Wealth lands in the schedule's quadratic bracket in both currencies.
+            "wealth": numpy.array([100.0, 200.0]) * factor,
+            "payroll_tax": {
+                "child_tax_credit": {"p_id_recipient": numpy.array([-1, -1])},
+                "income": {"gross_wage_y": numpy.array([0.0, 0.0]) * factor},
+            },
+        }
+        results[currency] = main(
+            main_target="results__tree",
+            policy_date_str="2025-01-01",
+            input_data=InputData.tree(input_tree),
+            orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+            tt_targets=TTTargets.tree({"kings_levy": {"amount_y": None}}),
+            rounding=False,
+            currency=currency,
+            backend=backend,
+        )
+    castar = numpy.asarray(results["CASTAR"]["kings_levy"]["amount_y"])
+    silver = numpy.asarray(results["SILVER_PENNY"]["kings_levy"]["amount_y"])
+    numpy.testing.assert_allclose(silver, castar * 4.0)
+    assert float(castar[1]) > 0.0
+
+
 def _bare_payroll_tree(factor: float = 1.0) -> dict[str, Any]:
     """A household for the 2025 payroll-tax run, currency amounts scaled by `factor`."""
     return {
