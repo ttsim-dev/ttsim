@@ -174,11 +174,24 @@
               ]
             },
             "else": {
-              "required": ["unit"],
+              "$comment": "Scalar/dict parameter: `unit:` may sit at the top level (shared by every date) or one level lower, inside each date-specific key, so a parameter re-denominated over time can spell its unit symmetrically per date. The schema therefore does not require `unit:` here; the build-time mandatory-units check (`fail_if_environment_units_are_missing`) is the guarantee that every active leaf resolves to a unit (GEP 10).",
               "allOf": [
                 { "not": { "required": ["input_unit"] } },
                 { "not": { "required": ["output_unit"] } }
               ]
+            }
+          }
+        },
+        {
+          "$comment": "A scalar parameter takes its period from a time suffix on its name, never `reference_period` (GEP 10), and declares a single `unit:` token, not a per-leaf mapping (which only a dict parameter may use).",
+          "if": {
+            "properties": { "type": { "const": "scalar" } },
+            "required": ["type"]
+          },
+          "then": {
+            "not": { "required": ["reference_period"] },
+            "properties": {
+              "unit": { "$ref": "#/definitions/unitToken" }
             }
           }
         },
