@@ -361,6 +361,19 @@ def fail_if_environment_units_are_missing(
                 "Unit | CurrencyUnitToken | UnsetUnitType", obj.output_unit
             )
             continue
+        if isinstance(obj, RawParam) and (
+            obj.input_unit is not UNSET_UNIT or obj.output_unit is not UNSET_UNIT
+        ):
+            # A function-like require_converter declares per-axis units instead
+            # of a single `unit:`; its converter's typed output is converted
+            # per axis (GEP 10).
+            units_by_qname[f"{qname} (input_unit)"] = cast(
+                "Unit | CurrencyUnitToken | UnsetUnitType", obj.input_unit
+            )
+            units_by_qname[f"{qname} (output_unit)"] = cast(
+                "Unit | CurrencyUnitToken | UnsetUnitType", obj.output_unit
+            )
+            continue
         if isinstance(obj, ParamObject) and isinstance(declared_unit, Mapping):
             value = getattr(obj, "value", None)
             value_tree = value if isinstance(value, Mapping) else {}

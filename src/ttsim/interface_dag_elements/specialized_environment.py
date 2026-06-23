@@ -4,7 +4,7 @@ import datetime
 import functools
 from collections.abc import Callable
 from types import ModuleType
-from typing import Literal, cast
+from typing import Any, Literal, cast
 
 import dags.tree as dt
 import networkx as nx
@@ -16,6 +16,7 @@ from dags import (
     with_signature,
 )
 
+from ttsim.exceptions import UnitDefinitionError
 from ttsim.interface_dag_elements.automatically_added_functions import (
     create_agg_by_group_functions,
     create_time_conversion_functions,
@@ -23,6 +24,9 @@ from ttsim.interface_dag_elements.automatically_added_functions import (
 from ttsim.interface_dag_elements.interface_node_objects import (
     interface_function,
     interface_input,
+)
+from ttsim.interface_dag_elements.policy_environment import (
+    function_like_converter_output_in_run_currency,
 )
 from ttsim.interface_dag_elements.shared import merge_trees
 from ttsim.tt.column_objects_param_function import (
@@ -35,8 +39,14 @@ from ttsim.tt.column_objects_param_function import (
     PolicyFunction,
     PolicyInput,
 )
-from ttsim.tt.param_objects import ParamObject, RawParam
+from ttsim.tt.param_objects import (
+    ConsecutiveIntLookupTableParamValue,
+    ParamObject,
+    PiecewisePolynomialParamValue,
+    RawParam,
+)
 from ttsim.tt.type_resolution import is_column_annotation
+from ttsim.tt.units import UNSET_UNIT, CurrencyUnitToken
 from ttsim.typing import (
     OrderedQNames,
     PolicyEnvironment,
@@ -159,6 +169,63 @@ def _add_derived_functions(
     }
 
 
+def _convert_function_like_converter_outputs(
+    *,
+    outputs: dict[str, Any],
+    params: dict[str, ParamObject],
+    param_functions: dict[str, ParamFunction],
+    run_currency: str | None,
+    xnp: ModuleType,
+) -> None:
+    """Restate function-like ``require_converter`` outputs in the run currency (GEP 10).
+
+    A ``require_converter`` declaring ``input_unit:`` / ``output_unit:`` is left
+    raw at build time; once its converter has produced the typed value (a
+    schedule or lookup table), that *output* is converted per axis here — the
+    only place that knows both the converted structure and the run currency.
+
+    A *homogeneous* ``require_converter`` (one currency ``unit:``) that
+    nonetheless produces such a function-like value was scaled uniformly, leaf
+    by leaf — which silently mis-states polynomial coefficients (the order-``j``
+    term must scale by ``f_out / f_in**j``, not by a single factor). That is
+    rejected, pointing the author at the per-axis declaration.
+    """
+    for raw_qname, raw in params.items():
+        if not isinstance(raw, RawParam):
+            continue
+        declares_axes = (
+            raw.input_unit is not UNSET_UNIT or raw.output_unit is not UNSET_UNIT
+        )
+        consumers = [
+            pf_name
+            for pf_name, pf in param_functions.items()
+            if raw_qname in pf.dependencies
+        ]
+        for pf_name in consumers:
+            if declares_axes:
+                outputs[pf_name] = function_like_converter_output_in_run_currency(
+                    value=outputs[pf_name],
+                    input_unit=raw.input_unit,
+                    output_unit=raw.output_unit,
+                    run_currency=run_currency,
+                    xnp=xnp,
+                    leaf_name=raw_qname,
+                )
+            elif isinstance(raw.unit, CurrencyUnitToken) and isinstance(
+                outputs[pf_name],
+                PiecewisePolynomialParamValue | ConsecutiveIntLookupTableParamValue,
+            ):
+                raise UnitDefinitionError(
+                    f"require_converter {raw_qname!r} declares a homogeneous "
+                    f"currency `unit:` ({raw.unit}), but its converter "
+                    f"{pf_name!r} produces a {type(outputs[pf_name]).__name__} "
+                    f"— a function whose coefficients do not all scale by one "
+                    f"factor. Scaling them uniformly silently mis-states the "
+                    f"schedule; declare `input_unit:` / `output_unit:` on the "
+                    f"require_converter so each axis converts correctly (GEP 10)."
+                )
+
+
 @interface_function()
 def with_processed_params_and_scalars(
     without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
@@ -167,6 +234,7 @@ def with_processed_params_and_scalars(
     xnp: ModuleType,
     dnp: ModuleType,
     evaluation_date: datetime.date | None,
+    currency: str | None = None,
 ) -> SpecEnvWithProcessedParamsAndScalars:
     """
     The policy environment where all parameters and param functions have been processed.
@@ -240,6 +308,13 @@ def with_processed_params_and_scalars(
         xnp=xnp,
         dnp=dnp,
         backend=backend,
+    )
+    _convert_function_like_converter_outputs(
+        outputs=processed_param_functions,
+        params=params,
+        param_functions=param_functions,
+        run_currency=currency,
+        xnp=xnp,
     )
     processed_params = merge_trees(
         left={k: v.value for k, v in params.items() if not isinstance(v, RawParam)},

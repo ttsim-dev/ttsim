@@ -287,6 +287,64 @@ def _piecewise_param_value_in_run_currency(
     )
 
 
+def function_like_converter_output_in_run_currency(
+    value: Any,  # noqa: ANN401
+    *,
+    input_unit: Any,  # noqa: ANN401
+    output_unit: Any,  # noqa: ANN401
+    run_currency: str | None,
+    xnp: ModuleType,
+    leaf_name: str,
+) -> Any:  # noqa: ANN401
+    """Restate a function-like ``require_converter``'s output in the run currency.
+
+    A ``require_converter`` that declares ``input_unit:`` / ``output_unit:`` is
+    handed to a converter producing a function-like value (a schedule or a
+    lookup table). ttsim cannot read the polynomial convention out of the raw
+    blob, so its raw value is left unscaled and the conversion happens here, on
+    the *typed* output, per axis — the input axis by ``input_unit``, the output
+    axis by ``output_unit`` (GEP 10). This is what makes the order-``j``
+    polynomial coefficient scale by ``f_out / f_in**j`` rather than by a single
+    uniform factor.
+
+    Raises:
+        UnitDefinitionError: If the converter did not produce a convertible
+            function-like value, or if a currency conversion is requested for
+            an integer-keyed lookup input axis.
+    """
+    input_factor = _currency_conversion_factor_for_token(
+        raw_token=input_unit, run_currency=run_currency
+    )
+    output_factor = _currency_conversion_factor_for_token(
+        raw_token=output_unit, run_currency=run_currency
+    )
+    if input_factor == 1.0 and output_factor == 1.0:
+        return value
+    if isinstance(value, PiecewisePolynomialParamValue):
+        return _piecewise_param_value_in_run_currency(
+            value=value,
+            input_factor=input_factor,
+            output_factor=output_factor,
+            xnp=xnp,
+        )
+    if isinstance(value, ConsecutiveIntLookupTableParamValue):
+        if input_factor != 1.0:
+            raise UnitDefinitionError(
+                f"Parameter {leaf_name!r}: lookup-table input axes are "
+                f"integer-keyed and cannot be converted between currencies; a "
+                f"concrete currency `input_unit:` is not supported (GEP 10)."
+            )
+        value.values_to_look_up = value.values_to_look_up * output_factor
+        return value
+    raise UnitDefinitionError(
+        f"Parameter {leaf_name!r} declares `input_unit:` / `output_unit:`, so "
+        f"its converter must produce a PiecewisePolynomialParamValue or a "
+        f"ConsecutiveIntLookupTableParamValue that ttsim can convert per axis; "
+        f"got {type(value).__name__} (GEP 10). A converter returning some "
+        f"other structure must instead declare a single homogeneous `unit:`."
+    )
+
+
 def _get_one_param(
     leaf_name: str,
     spec: OrigParamSpec,
@@ -310,14 +368,30 @@ def _get_one_param(
             ),
         )
         return ScalarParam(**cleaned_spec)
-    if param_type in ("dict", "require_converter"):
+    if param_type == "dict":
         cleaned_spec["value"] = _dict_param_value_in_run_currency(
             value=cleaned_spec["value"],
             unit=cleaned_spec.get("unit"),
             run_currency=currency,
         )
-        if param_type == "dict":
-            return DictParam(**cleaned_spec)
+        return DictParam(**cleaned_spec)
+    if param_type == "require_converter":
+        # A homogeneous require_converter (single currency `unit:`) is scaled
+        # uniformly here, leaf by leaf. A function-like one (`input_unit:` /
+        # `output_unit:`) is left raw: ttsim cannot read the polynomial
+        # convention out of an arbitrary blob, so its converter's *typed*
+        # output is converted per-axis in `with_processed_params_and_scalars`
+        # instead (GEP 10).
+        declares_axes = (
+            cleaned_spec.get("input_unit", UNSET_UNIT) is not UNSET_UNIT
+            or cleaned_spec.get("output_unit", UNSET_UNIT) is not UNSET_UNIT
+        )
+        if not declares_axes:
+            cleaned_spec["value"] = _dict_param_value_in_run_currency(
+                value=cleaned_spec["value"],
+                unit=cleaned_spec.get("unit"),
+                run_currency=currency,
+            )
         return RawParam(**cleaned_spec)
     if param_type in PIECEWISE_TYPES:
         cleaned_spec["value"] = _piecewise_param_value_in_run_currency(
@@ -372,6 +446,34 @@ def _get_one_param(
     raise ValueError(f"Unknown parameter type: {param_type} for {leaf_name}")
 
 
+def _unit_fields_from_spec(spec: OrigParamSpec) -> dict[str, Any]:
+    """Map a spec's ``unit:`` / ``input_unit:`` / ``output_unit:`` to ParamObject
+    kwargs (GEP 10).
+
+    Mapping parameters declare one token per axis; a require_converter declares
+    either a single ``unit:`` (homogeneous, scaled uniformly) or per-axis tokens
+    (a function-like output, converted per axis) — RawParam enforces the
+    exclusivity; everything else declares a single ``unit:``. A stray ``unit:``
+    on a mapping parameter is passed through so that ParamMappingObject rejects
+    it with a precise message.
+    """
+    if spec["type"] in PARAM_MAPPING_OBJECT_TYPES:
+        fields: dict[str, Any] = {
+            "input_unit": spec.get("input_unit", UNSET_UNIT),
+            "output_unit": spec.get("output_unit", UNSET_UNIT),
+        }
+        if "unit" in spec:
+            fields["unit"] = spec["unit"]
+        return fields
+    if spec["type"] == "require_converter":
+        return {
+            "unit": spec.get("unit", UNSET_UNIT),
+            "input_unit": spec.get("input_unit", UNSET_UNIT),
+            "output_unit": spec.get("output_unit", UNSET_UNIT),
+        }
+    return {"unit": spec.get("unit", UNSET_UNIT)}
+
+
 def _clean_one_param_spec(
     spec: OrigParamSpec,
     policy_date: datetime.date,
@@ -398,16 +500,7 @@ def _clean_one_param_spec(
         if len(policy_dates) > idx
         else DEFAULT_END_DATE
     )
-    if spec["type"] in PARAM_MAPPING_OBJECT_TYPES:
-        # Mapping parameters declare one unit token per axis (GEP 10).
-        # A stray `unit:` is passed through so that ParamMappingObject
-        # rejects it with a precise error message.
-        if "unit" in spec:
-            out["unit"] = spec["unit"]
-        out["input_unit"] = spec.get("input_unit", UNSET_UNIT)
-        out["output_unit"] = spec.get("output_unit", UNSET_UNIT)
-    else:
-        out["unit"] = spec.get("unit", UNSET_UNIT)
+    out.update(_unit_fields_from_spec(spec))
     out["reference_period"] = spec.get("reference_period", None)
     out["name"] = spec["name"]
     out["description"] = spec["description"]

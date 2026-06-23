@@ -261,17 +261,51 @@ class RawParam(ParamObject):
     """
     A parameter directly read from a YAML file that is an arbitrarily nested
     dictionary.
+
+    A ``require_converter`` is handed to a ``param_function`` that knows its
+    structure. For currency conversion it declares one of two honest shapes
+    (GEP 10): a single ``unit:`` token if the whole structure is homogeneously
+    one currency (every numeric leaf is that currency, scaled uniformly), or
+    ``input_unit:`` / ``output_unit:`` axes if its converter produces a
+    function-like value (a piecewise schedule or lookup table) whose output is
+    converted per-axis. A structure that mixes currency with non-currency
+    numbers (ages, shares) is neither — it must be split into separate
+    homogeneous parameters, since a single blob has no surface to declare a
+    unit per leaf.
     """
 
     value: dict[str | int, Any] = PLACEHOLDER_FIELD
     note: str | None = None
     reference: str | None = None
+    input_unit: Unit | str | UnsetUnitType = UNSET_UNIT
+    """The input-axis token of a function-like converter's output (GEP 10);
+    mutually exclusive with :attr:`unit`. :data:`UNSET_UNIT` until annotated."""
+    output_unit: Unit | str | UnsetUnitType = UNSET_UNIT
+    """The output-axis token of a function-like converter's output (GEP 10);
+    mutually exclusive with :attr:`unit`. :data:`UNSET_UNIT` until annotated."""
 
     def __post_init__(self) -> None:
         super().__post_init__()
         if any(x in self.value for x in ["note", "reference"]):
             raise ValueError(
                 "'note' and 'reference' cannot be keys in the value dictionary"
+            )
+        declares_axes = (
+            self.input_unit is not UNSET_UNIT or self.output_unit is not UNSET_UNIT
+        )
+        if declares_axes and self.unit is not UNSET_UNIT:
+            raise UnitDefinitionError(
+                "A require_converter declares either a single `unit:` (a "
+                "homogeneous structure, scaled uniformly) or `input_unit:` / "
+                "`output_unit:` axes (a function-like output, converted "
+                f"per-axis), not both (GEP 10); got unit={self.unit!r}, "
+                f"input_unit={self.input_unit!r}, output_unit={self.output_unit!r}."
+            )
+        for axis in ("input_unit", "output_unit"):
+            object.__setattr__(
+                self,
+                axis,
+                _coerce_declared_unit(declared=getattr(self, axis), obj=self),
             )
 
 
