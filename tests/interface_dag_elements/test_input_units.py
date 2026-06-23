@@ -112,6 +112,39 @@ def test_input_units_dimension_mismatch_raises():
         )
 
 
+def test_input_units_compatible_but_differently_scaled_area_raises():
+    # A HECTARES column tagged in m² shares the area dimension but is a
+    # 10,000-fold level error — rejected, not silently mis-stripped (S4, GEP 10).
+    resolved = {"land": UNIT_REGISTRY.parse_units("hectare")}
+    with pytest.raises(UnitConsistencyError, match="not equivalent"):
+        fail_if_input_units_are_inconsistent(
+            input_units={"land": UNIT_REGISTRY.parse_units("meter ** 2")},
+            resolved_units=resolved,
+        )
+
+
+def test_input_units_compatible_but_differently_scaled_time_raises():
+    # A YEARS age tagged in months is a 12-fold level error (S4, GEP 10).
+    resolved = {"alter": UNIT_REGISTRY.parse_units("year")}
+    with pytest.raises(UnitConsistencyError, match="not equivalent"):
+        fail_if_input_units_are_inconsistent(
+            input_units={"alter": UNIT_REGISTRY.parse_units("month")},
+            resolved_units=resolved,
+        )
+
+
+def test_input_units_period_mismatch_is_left_to_the_suffix_guard():
+    # The flow period is screened against the name suffix by the dedicated period
+    # guard, not here: once currency and period are factored out, a `_m` flow
+    # tagged per year has an equivalent (bare) residual, so this check passes and
+    # the period guard owns the mismatch (S4, GEP 10).
+    resolved = {"wage_m": UNIT_REGISTRY.parse_units("CURRENCY / month")}
+    fail_if_input_units_are_inconsistent(
+        input_units={"wage_m": UNIT_REGISTRY.parse_units("CURRENCY / year")},
+        resolved_units=resolved,
+    )
+
+
 def test_input_units_skips_columns_without_a_scalar_declared_unit():
     # A dict-parameter style entry (nested dict, not a single pint.Unit) and an
     # unknown column are both skipped rather than raising.
