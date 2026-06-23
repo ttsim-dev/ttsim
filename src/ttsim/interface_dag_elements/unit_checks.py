@@ -85,6 +85,7 @@ from ttsim.tt.units import (
     resolve_scalar_param_unit,
     resolved_unit_for_aggregation,
     token_is_agnostic_currency,
+    unit_residual_excluding_currency_and_flow_period,
     unit_token_carries_level,
     unit_token_is_flow,
     units_are_equivalent,
@@ -636,18 +637,23 @@ def fail_if_input_units_are_inconsistent(
     input_units: Mapping[str, pint.Unit],
     resolved_units: Mapping[str, Any],
 ) -> None:
-    """Fail if a tagged input column's dimension contradicts its declared unit (GEP 10).
+    """Fail if a tagged input column is not equivalent to its declared unit (GEP 10).
 
     ``input_units`` maps each tagged input column to its pint unit tag;
     ``resolved_units`` maps every declared node to its resolved (agnostic) DAG
-    unit. For each tagged column the tag's *dimensionality* must match the
-    declared unit's — a registered currency *is a* ``CURRENCY`` at this level, so
-    a DM tag on a euro-run currency column passes (it is converted at the
-    boundary), while a currency tag on a ``YEARS`` age column is rejected.
+    unit. The tag must be *equivalent* to the declared unit once two axes the
+    boundary handles separately are factored out: the currency (converted to the
+    run currency at the boundary — a DM tag on a euro-run column passes) and the
+    flow period (screened against the name suffix by the dedicated period guard).
+    What remains — the numerator scale — must match *exactly*, not merely share a
+    dimension: a ``HECTARES`` column tagged ``m²`` (a 10,000-fold level error) or
+    a ``YEARS`` age tagged ``month`` is rejected here rather than silently
+    mis-stripped at the boundary, while a currency tag on a ``YEARS`` column
+    (different residual dimension) is rejected as before.
 
     Raises:
-        UnitConsistencyError: If any tagged column's dimension is incompatible
-            with its declared unit. All offending columns are reported together.
+        UnitConsistencyError: If any tagged column is not equivalent to its
+            declared unit. All offending columns are reported together.
     """
     errors: list[str] = []
     for qname, tag in input_units.items():
@@ -656,12 +662,14 @@ def fail_if_input_units_are_inconsistent(
             # Column without a (scalar) declared unit — e.g. absent from the
             # environment, or a dict parameter. Nothing to check here.
             continue
-        tag_dim = UNIT_REGISTRY.Quantity(1.0, tag).dimensionality
-        expected_dim = UNIT_REGISTRY.Quantity(1.0, expected).dimensionality
-        if tag_dim != expected_dim:
+        tag_residual = unit_residual_excluding_currency_and_flow_period(tag)
+        expected_residual = unit_residual_excluding_currency_and_flow_period(expected)
+        if not units_are_equivalent(left=tag_residual, right=expected_residual):
             errors.append(
-                f"  {qname}: tagged '{tag}' ({tag_dim or 'dimensionless'}), but the "
-                f"declared unit is '{expected}' ({expected_dim or 'dimensionless'})."
+                f"  {qname}: tagged '{tag}', which is not equivalent to the declared "
+                f"unit '{expected}' (the boundary converts currency and screens the "
+                f"flow period against the name suffix, but the remaining magnitude "
+                f"must match exactly)."
             )
     if errors:
         raise UnitConsistencyError(
