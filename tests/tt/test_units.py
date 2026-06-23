@@ -205,6 +205,14 @@ def test_register_currency_idempotent():
     register_currency("SILVER_PENNY", definition="CASTAR / 4")
 
 
+def test_register_currency_with_inconsistent_factor_fails():
+    # Re-registering an existing currency with a *different* factor must fail
+    # loudly rather than silently keep the original definition (GEP 10).
+    register_currency("SILVER_PENNY", definition="CASTAR / 4")
+    with pytest.raises(UnitDefinitionError, match="must be consistent"):
+        register_currency("SILVER_PENNY", definition="CASTAR / 5")
+
+
 def test_register_second_base_currency_fails():
     with pytest.raises(UnitDefinitionError, match="base currency"):
         register_currency("mithril_coin", base=True)
