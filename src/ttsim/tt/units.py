@@ -961,6 +961,24 @@ def _flow_period_of(units: pint.Unit) -> pint.Unit | None:
     return None
 
 
+def unit_residual_excluding_currency_and_flow_period(units: pint.Unit) -> pint.Unit:
+    """A unit with its currency component and flow period divided out (GEP 10).
+
+    The two axes the Layer-2 input boundary does *not* require to match exactly:
+    the currency is converted to the run currency at the boundary, and the flow
+    period is screened against the column's name suffix. What remains — the
+    numerator scale (area, intrinsic time, plain counts) — must match the
+    declared unit *exactly*, so the input check compares the residuals of a tag
+    and its declared unit for equivalence rather than mere dimensionality
+    (a ``HECTARES`` column tagged ``m²`` shares the area dimension but is a
+    10,000-fold level error).
+    """
+    currency = _currency_component_of(units)
+    residual = units / currency if currency is not None else units
+    period = _flow_period_of(residual)
+    return residual * period if period is not None else residual
+
+
 def _suffix_period_of(column_label: str | None) -> pint.Unit | None:
     """Return the flow period named by a column's GEP-1 time suffix.
 
