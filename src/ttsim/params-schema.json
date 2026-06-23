@@ -183,6 +183,19 @@
           }
         },
         {
+          "$comment": "A scalar parameter takes its period from a time suffix on its name, never `reference_period` (GEP 10), and declares a single `unit:` token, not a per-leaf mapping (which only a dict parameter may use).",
+          "if": {
+            "properties": { "type": { "const": "scalar" } },
+            "required": ["type"]
+          },
+          "then": {
+            "not": { "required": ["reference_period"] },
+            "properties": {
+              "unit": { "$ref": "#/definitions/unitToken" }
+            }
+          }
+        },
+        {
           "minProperties": 1,
           "patternProperties": {
             "^(19|20)[0-9]{2}-(0[1-9]|1[0-2])-[0-3][0-9]$": {}
