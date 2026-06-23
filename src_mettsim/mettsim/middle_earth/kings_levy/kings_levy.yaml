@@ -1,0 +1,28 @@
+---
+raw_kings_levy_schedule:
+  name:
+    de: Rohdaten für den Königszehnt
+    en: Raw data for the king's levy schedule
+  description:
+    de: >-
+      Test für einen require_converter mit Achsen-Einheiten (GEP 10): Der
+      Konverter berechnet aus dem Eingangs- und dem Spitzensatz einen
+      Progressionsfaktor (den quadratischen Koeffizienten). Da dieser die
+      Einheit 1/Währung trägt, würde eine gleichförmige Skalierung aller
+      Zahlenwerte ihn falsch umrechnen — die Achsen-Einheiten erzwingen die
+      korrekte Umrechnung pro Achse.
+    en: >-
+      Exercises a require_converter that declares per-axis units (GEP 10): the
+      converter turns an entry rate and a top rate into a Progressionsfaktor
+      (the quadratic coefficient). That coefficient carries units 1/currency,
+      so a uniform leaf-scale would mis-convert it; the axes force the correct
+      per-axis conversion, scaling the quadratic term by 1 / f_in rather than
+      by a single factor.
+  input_unit: SILVER_PENNY
+  output_unit: SILVER_PENNY_FLOW
+  reference_period: Year
+  type: require_converter
+  1900-01-01:
+    bracket_ceiling: 1000
+    entry_rate: 0.0
+    top_rate: 0.2
