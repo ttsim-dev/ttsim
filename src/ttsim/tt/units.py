@@ -511,12 +511,31 @@ def register_currency(
     currency_dim = UNIT_REGISTRY.Quantity(1.0, CURRENCY_TOKEN).dimensionality
     if name in UNIT_REGISTRY:
         # Idempotent re-registration (e.g. a re-imported module). Tolerate it
-        # only if the existing definition is consistent with this call.
+        # only if the existing definition is consistent with this call — same
+        # dimension *and* same conversion factor against CURRENCY. Checking the
+        # dimension alone would silently keep the old factor: re-registering
+        # `castar / 4` as `castar / 5`, or a derived currency as `base=True`,
+        # would be swallowed and invalidate every later conversion (GEP 10).
         existing_dim = UNIT_REGISTRY.Quantity(1.0, name).dimensionality
         if existing_dim != currency_dim:
             raise UnitDefinitionError(
                 f"Cannot register currency {name!r}: a non-currency unit of "
                 f"that name already exists ({existing_dim})."
+            )
+        existing_factor = UNIT_REGISTRY.Quantity(1.0, name).to(CURRENCY_TOKEN).magnitude
+        if definition is not None:
+            requested_factor = (
+                UNIT_REGISTRY.parse_expression(definition).to(CURRENCY_TOKEN).magnitude
+            )
+        else:  # base currency: factor 1 against CURRENCY by definition.
+            requested_factor = 1.0
+        if not math.isclose(existing_factor, requested_factor, rel_tol=_REL_TOL):
+            requested_desc = "base (factor 1)" if base else f"{definition!r}"
+            raise UnitDefinitionError(
+                f"Cannot re-register currency {name!r}: it already converts to "
+                f"{existing_factor} {CURRENCY_TOKEN}, but this call ({requested_desc}) "
+                f"requests {requested_factor}. A currency's factor against "
+                f"{CURRENCY_TOKEN} must be consistent across registrations (GEP 10)."
             )
     else:
         UNIT_REGISTRY.define(
