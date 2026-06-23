@@ -11,7 +11,16 @@ from mettsim import middle_earth
 
 from ttsim import MainTarget, OrigPolicyObjects, main
 from ttsim.exceptions import UnitDefinitionError
-from ttsim.interface_dag_elements.policy_environment import _get_one_param
+from ttsim.interface_dag_elements.policy_environment import (
+    _get_one_param,
+    function_like_converter_output_in_run_currency,
+)
+from ttsim.interface_dag_elements.specialized_environment import (
+    _convert_function_like_converter_outputs,
+)
+from ttsim.tt import param_function
+from ttsim.tt.param_objects import PiecewisePolynomialParamValue, RawParam
+from ttsim.tt.units import UNSET_UNIT
 
 POLICY_DATE = datetime.date(2020, 1, 1)
 
@@ -317,6 +326,91 @@ def test_dict_param_converts_currency_leaves_only():
     )
     assert param.value["child_amount_y"] == pytest.approx(25.0)
     assert param.value["max_age"] == 18
+
+
+def test_function_like_converter_output_converts_polynomial_per_order():
+    """A require_converter's piecewise output scales per polynomial order (GEP 10 S3).
+
+    The order-``j`` coefficient must scale by ``f_out / f_in**j`` — the slope
+    invariant, the quadratic by ``1 / f_in`` — not by one uniform factor, which
+    would silently mis-state the schedule (the audit's polynomial case).
+    """
+    schedule = PiecewisePolynomialParamValue(
+        thresholds=np.array([0.0, 100.0]),
+        intercepts=np.array([0.0, 5.0]),
+        coefficients=np.array([[1.0, 0.5], [0.3, 0.0]]),
+    )
+    converted = function_like_converter_output_in_run_currency(
+        value=schedule,
+        input_unit="SILVER_PENNY_FLOW",
+        output_unit="SILVER_PENNY_FLOW",
+        run_currency="CASTAR",
+        xnp=np,
+        leaf_name="tax_schedule",
+    )
+    # f_in = f_out = silver_penny in castar = 0.25.
+    assert converted.thresholds[1] == pytest.approx(25.0)  # input axis x 0.25
+    assert converted.intercepts[1] == pytest.approx(1.25)  # output axis x 0.25
+    assert converted.coefficients[0, 0] == pytest.approx(1.0)  # slope: invariant
+    # Quadratic: f_out / f_in**2 = 0.25 / 0.0625 = 4 (NOT the uniform 0.25).
+    assert converted.coefficients[0, 1] == pytest.approx(2.0)
+
+
+def test_require_converter_with_axes_is_left_raw_for_its_converter():
+    """A function-like require_converter is not uniform-scaled at load (GEP 10).
+
+    Its raw blob passes through unchanged; the conversion happens later, on the
+    converter's typed output, per axis.
+    """
+    spec = {
+        **_HEADER,
+        "input_unit": "SILVER_PENNY",
+        "output_unit": "SILVER_PENNY_FLOW",
+        "reference_period": "Year",
+        "type": "require_converter",
+        datetime.date(1900, 1, 1): {"top_rate": 0.2, "ceiling": 100},
+    }
+    param = _load(
+        leaf_name="raw_schedule", spec=spec, policy_date=POLICY_DATE, currency="CASTAR"
+    )
+    # The ceiling is a currency amount but is NOT scaled here.
+    assert param.value["ceiling"] == 100
+    assert param.input_unit is not UNSET_UNIT
+
+
+def test_homogeneous_require_converter_producing_a_schedule_is_rejected():
+    """Uniform-scaling a structured schedule is rejected; declare axes (GEP 10 S3)."""
+
+    @param_function()
+    def schedule(raw_schedule: Any) -> Any:
+        return raw_schedule
+
+    raw = RawParam(value={"a": 1.0}, unit="SILVER_PENNY")
+    outputs = {
+        "schedule": PiecewisePolynomialParamValue(
+            thresholds=np.array([0.0]),
+            intercepts=np.array([0.0]),
+            coefficients=np.array([[0.0]]),
+        )
+    }
+    with pytest.raises(UnitDefinitionError, match="input_unit"):
+        _convert_function_like_converter_outputs(
+            outputs=outputs,
+            params={"raw_schedule": raw},
+            param_functions={"schedule": schedule},
+            run_currency="CASTAR",
+            xnp=np,
+        )
+
+
+def test_require_converter_unit_and_axes_are_mutually_exclusive():
+    """A require_converter declares `unit:` xor axes, not both (GEP 10)."""
+    with pytest.raises(UnitDefinitionError, match="not both"):
+        RawParam(
+            value={"a": 1.0},
+            unit="SILVER_PENNY",
+            input_unit="SILVER_PENNY",
+        )
 
 
 def test_unknown_annotation_is_rejected_at_load():

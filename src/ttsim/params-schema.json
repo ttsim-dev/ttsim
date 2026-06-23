@@ -155,11 +155,31 @@
             "not": { "required": ["unit"] }
           },
           "else": {
-            "required": ["unit"],
-            "allOf": [
-              { "not": { "required": ["input_unit"] } },
-              { "not": { "required": ["output_unit"] } }
-            ]
+            "if": {
+              "properties": { "type": { "const": "require_converter" } }
+            },
+            "then": {
+              "oneOf": [
+                {
+                  "required": ["unit"],
+                  "allOf": [
+                    { "not": { "required": ["input_unit"] } },
+                    { "not": { "required": ["output_unit"] } }
+                  ]
+                },
+                {
+                  "required": ["input_unit", "output_unit"],
+                  "not": { "required": ["unit"] }
+                }
+              ]
+            },
+            "else": {
+              "required": ["unit"],
+              "allOf": [
+                { "not": { "required": ["input_unit"] } },
+                { "not": { "required": ["output_unit"] } }
+              ]
+            }
           }
         },
         {
