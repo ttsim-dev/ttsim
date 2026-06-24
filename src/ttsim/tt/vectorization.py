@@ -312,7 +312,7 @@ def _not_to_call(node: ast.UnaryOp, module: str) -> ast.Call:
 
 def _if_to_call(node: ast.If, module: str, func_loc: str) -> ast.Call:
     """Transform If statement to Call."""
-    args = [node.test, node.body[0].value]  # ty: ignore[unresolved-attribute]
+    args: list[ast.expr] = [node.test, node.body[0].value]  # ty: ignore[unresolved-attribute]
 
     if len(node.orelse) > 1 or len(node.body) > 1:
         msg = _too_many_operations_error_message(node, func_loc=func_loc)
@@ -327,7 +327,7 @@ def _if_to_call(node: ast.If, module: str, func_loc: str) -> ast.Call:
             name = ast.Name(id=node.body[0].target.id, ctx=ast.Load())  # ty: ignore[unresolved-attribute]
         args.append(name)
     elif isinstance(node.orelse[0], ast.Return):
-        args.append(node.orelse[0].value)
+        args.append(cast("ast.expr", node.orelse[0].value))
     elif isinstance(node.orelse[0], ast.If):
         call_if = _if_to_call(node.orelse[0], module=module, func_loc=func_loc)
         args.append(call_if)
