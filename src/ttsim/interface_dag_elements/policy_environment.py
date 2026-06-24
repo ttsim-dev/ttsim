@@ -226,8 +226,10 @@ def _clean_one_param_spec(
     """Prepare the specification of one parameter for creating a ParamObject."""
     date_keys = [key for key in spec if isinstance(key, datetime.date)]
     policy_dates_dt64 = numpy.sort([numpy.datetime64(d) for d in date_keys])
-    idx = numpy.searchsorted(
-        policy_dates_dt64, numpy.datetime64(policy_date), side="right"
+    idx = int(
+        numpy.searchsorted(
+            policy_dates_dt64, numpy.datetime64(policy_date), side="right"
+        )
     )
     policy_dates = [
         datetime.date.fromisoformat(str(d.astype("datetime64[D]")))
