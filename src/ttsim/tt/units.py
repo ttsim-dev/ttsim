@@ -67,7 +67,7 @@ from __future__ import annotations
 import enum
 import math
 import re
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass
 from typing import Any, Self
 
@@ -116,6 +116,19 @@ REFERENCE_PERIOD_TO_PINT_NAME = {
 #: before any concrete currency is registered. Checks compare at the
 #: dimensionality level; the concrete currency is resolved separately.
 CURRENCY_TOKEN = "CURRENCY"  # noqa: S105 (a unit token, not a secret)
+
+#: The internal pint-unit-name prefix for a grouping-level dimension (GEP 10).
+#: A grouping level (``hh``, ``bg``, … and the individual ``person``) is its own
+#: base dimension; its pint unit and dimension are prefixed so a bare level name
+#: cannot collide with a pint built-in (``hour``) or a currency token: ``hh``
+#: alone is pint's hour unit, ``grouping_level_hh`` is free.
+_GROUPING_LEVEL_PREFIX = "grouping_level_"
+
+#: The individual (leaf) grouping level — the entity identified by ``p_id``
+#: (GEP 10). It always exists and doubles as the ``[person]`` *count* dimension:
+#: a person-level quantity's ``/[person]`` denominator and a head count's
+#: ``[person]`` numerator are the same dimension, so they cancel.
+PERSON_LEVEL = "person"
 
 
 class Unit(enum.StrEnum):
@@ -219,26 +232,63 @@ class _TokenResolution:
     dimensionless base)."""
     is_flow: bool
     """Whether a period must be supplied."""
+    carries_level: bool
+    """Whether the token carries a grouping level by default (GEP 10).
+
+    The *extensive/intensive* distinction: a token carries a ``/[level]``
+    denominator exactly when summing the level's members sums it meaningfully —
+    currency and area are extensive (a household income is the sum of its
+    members'), durations / calendar points / rates / dimensionless quantities are
+    intensive. A token whose physical part is already dimensionless
+    (``HOURS_FLOW``, ``DIMENSIONLESS``) must stay level-less: a level on a
+    dimensionless base would be a bare inverse-level and break comparisons
+    against plain numbers (``arbeitsstunden_w > 15``)."""
 
 
 #: Maps each token to its resolution. Internal — declarations never contain
 #: pint syntax.
 _TOKEN_BASE_AND_IS_FLOW: dict[Unit, _TokenResolution] = {
-    Unit.CURRENCY_FLOW: _TokenResolution(base=CURRENCY_TOKEN, is_flow=True),
-    Unit.CURRENCY: _TokenResolution(base=CURRENCY_TOKEN, is_flow=False),
-    Unit.DIMENSIONLESS: _TokenResolution(base=None, is_flow=False),
-    Unit.DIMENSIONLESS_FLOW: _TokenResolution(base=None, is_flow=True),
-    Unit.YEARS: _TokenResolution(base="delta_calendar_year", is_flow=False),
-    Unit.MONTHS: _TokenResolution(base="delta_calendar_month", is_flow=False),
-    Unit.DAYS: _TokenResolution(base="delta_calendar_day", is_flow=False),
-    Unit.CALENDAR_YEAR: _TokenResolution(base="calendar_year", is_flow=False),
-    Unit.CALENDAR_MONTH: _TokenResolution(base="calendar_month", is_flow=False),
-    Unit.CALENDAR_DAY: _TokenResolution(base="calendar_day", is_flow=False),
-    Unit.HOURS_FLOW: _TokenResolution(base="hour", is_flow=True),
-    Unit.SQUARE_METERS: _TokenResolution(base="meter ** 2", is_flow=False),
-    Unit.HECTARES: _TokenResolution(base="hectare", is_flow=False),
+    Unit.CURRENCY_FLOW: _TokenResolution(
+        base=CURRENCY_TOKEN, is_flow=True, carries_level=True
+    ),
+    Unit.CURRENCY: _TokenResolution(
+        base=CURRENCY_TOKEN, is_flow=False, carries_level=True
+    ),
+    Unit.DIMENSIONLESS: _TokenResolution(
+        base=None, is_flow=False, carries_level=False
+    ),
+    Unit.DIMENSIONLESS_FLOW: _TokenResolution(
+        base=None, is_flow=True, carries_level=False
+    ),
+    Unit.YEARS: _TokenResolution(
+        base="delta_calendar_year", is_flow=False, carries_level=False
+    ),
+    Unit.MONTHS: _TokenResolution(
+        base="delta_calendar_month", is_flow=False, carries_level=False
+    ),
+    Unit.DAYS: _TokenResolution(
+        base="delta_calendar_day", is_flow=False, carries_level=False
+    ),
+    Unit.CALENDAR_YEAR: _TokenResolution(
+        base="calendar_year", is_flow=False, carries_level=False
+    ),
+    Unit.CALENDAR_MONTH: _TokenResolution(
+        base="calendar_month", is_flow=False, carries_level=False
+    ),
+    Unit.CALENDAR_DAY: _TokenResolution(
+        base="calendar_day", is_flow=False, carries_level=False
+    ),
+    Unit.HOURS_FLOW: _TokenResolution(
+        base="hour", is_flow=True, carries_level=False
+    ),
+    Unit.SQUARE_METERS: _TokenResolution(
+        base="meter ** 2", is_flow=False, carries_level=True
+    ),
+    Unit.HECTARES: _TokenResolution(
+        base="hectare", is_flow=False, carries_level=True
+    ),
     Unit.CURRENCY_PER_SQUARE_METER_FLOW: _TokenResolution(
-        base=f"{CURRENCY_TOKEN} / meter ** 2", is_flow=True
+        base=f"{CURRENCY_TOKEN} / meter ** 2", is_flow=True, carries_level=False
     ),
 }
 
@@ -306,6 +356,19 @@ def unit_token_is_flow(token: Unit | CurrencyUnitToken) -> bool:
     if isinstance(token, CurrencyUnitToken):
         token = token.agnostic
     return _TOKEN_BASE_AND_IS_FLOW[token].is_flow
+
+
+def unit_token_carries_level(token: Unit | CurrencyUnitToken) -> bool:
+    """Whether a token carries a grouping level by default (GEP 10).
+
+    The per-token *extensive/intensive* default: an extensive token (currency,
+    area, the ``[person]`` count) carries a ``/[level]`` denominator; an intensive
+    one (durations, calendar points, rates, dimensionless) does not. A concrete
+    currency token inherits its agnostic counterpart's default.
+    """
+    if isinstance(token, CurrencyUnitToken):
+        token = token.agnostic
+    return _TOKEN_BASE_AND_IS_FLOW[token].carries_level
 
 
 def token_source_currency(token: Unit | CurrencyUnitToken | None) -> str | None:
@@ -592,6 +655,109 @@ def _register_currency_unit_tokens(name: str) -> None:
             )
 
 
+#: The grouping levels registered so far (the bare names, e.g. ``"person"``,
+#: ``"hh"``), populated by :func:`register_grouping_levels`. ``person`` (the
+#: individual leaf, doubling as the ``[person]`` count dimension) is always
+#: present once any level has been registered. The set is discovered per build
+#: from the policy environment's ``*_id`` columns; ttsim ships no fixed list.
+_registered_grouping_levels: set[str] = set()
+
+
+def _grouping_level_unit_name(name: str) -> str:
+    """The internal pint unit name anchoring a grouping level's dimension."""
+    return f"{_GROUPING_LEVEL_PREFIX}{name}"
+
+
+def register_grouping_levels(names: Iterable[str]) -> None:
+    """Register grouping levels as base dimensions in the registry (GEP 10).
+
+    Each grouping level — the individual ``person`` (the leaf, identified by
+    ``p_id``) and one per ``*_id`` group column (``hh``, ``bg``, ``fg``, …) — is
+    its *own* pint base dimension with no conversion to any other: a household
+    holds a variable number of persons, so the levels are not units of one shared
+    dimension (the way ``month`` and ``year`` are units of ``[time]``) but
+    distinct, non-interconvertible base dimensions. The level set is not fixed; it
+    is discovered per build from the policy environment's ``*_id`` columns, so the
+    orchestration (issue #119) calls this with the levels it found.
+
+    ``person`` (the leaf level) is always registered: it doubles as the
+    ``[person]`` *count* dimension, the conversion factor between levels that lets
+    head counts and per-person amounts cancel.
+
+    Each level is defined under an internal :data:`_GROUPING_LEVEL_PREFIX`-prefixed
+    pint name anchoring a fresh base dimension and added to the closed pint-token
+    vocabulary, so ``CURRENCY / month`` divided by a level resolves and the
+    level's token is admissible in an internal pint surface. Re-registering an
+    already-known level is a tolerated no-op (e.g. a re-imported module), mirroring
+    :func:`register_currency`.
+
+    Args:
+        names: The grouping-level names to register (e.g. ``["hh", "bg"]``).
+            ``person`` is added unconditionally.
+    """
+    for name in (PERSON_LEVEL, *names):
+        if name in _registered_grouping_levels:
+            continue
+        unit_name = _grouping_level_unit_name(name)
+        UNIT_REGISTRY.define(f"{unit_name} = [{unit_name}]")
+        _ALLOWED_UNIT_TOKENS.add(unit_name)
+        _registered_grouping_levels.add(name)
+
+
+def _fail_if_grouping_level_is_unknown(name: str) -> None:
+    """Reject a grouping-level name that has not been registered (GEP 10)."""
+    if name not in _registered_grouping_levels:
+        known = ", ".join(sorted(_registered_grouping_levels)) or "(none registered)"
+        raise UnitDefinitionError(
+            f"Unknown grouping level {name!r}; expected one of {known}. Grouping "
+            f"levels are discovered per build from the `*_id` columns and "
+            f"registered via register_grouping_levels (GEP 10)."
+        )
+
+
+def _grouping_level_unit(name: str) -> pint.Unit:
+    """The pint unit of a registered grouping level (GEP 10).
+
+    Raises:
+        UnitDefinitionError: If the level has not been registered.
+    """
+    _fail_if_grouping_level_is_unknown(name)
+    return UNIT_REGISTRY.parse_units(_grouping_level_unit_name(name))
+
+
+def divide_by_grouping_level(unit: pint.Unit, level: str) -> pint.Unit:
+    """Return ``unit`` divided by a grouping level's unit (GEP 10).
+
+    A leveled quantity carries its level as a denominator, exactly as a flow
+    carries its period as one: ``CURRENCY / month`` at level ``hh`` becomes
+    ``CURRENCY / month / [hh]``, and at the individual level ``person`` it becomes
+    ``CURRENCY / month / [person]``. The ``[person]`` denominator of a person-level
+    quantity is the same dimension as a head count's ``[person]`` numerator, so the
+    two cancel.
+
+    Raises:
+        UnitDefinitionError: If the level has not been registered.
+    """
+    level_quantity = UNIT_REGISTRY.Quantity(1.0, _grouping_level_unit(level))
+    return (UNIT_REGISTRY.Quantity(1.0, unit) / level_quantity).units
+
+
+def grouping_level_count_unit(target_level: str) -> pint.Unit:
+    """The unit of a head count over ``target_level`` (GEP 10).
+
+    A head count is the ``[person]`` *count* dimension over the group it counts
+    within: counting persons in a household is ``[person] / [hh]`` — persons per
+    household. ``COUNT`` aggregations mint this, and it is the conversion factor
+    that bridges levels (``[person]/[hh] · CURRENCY/[hh] = CURRENCY/[person]``).
+
+    Raises:
+        UnitDefinitionError: If ``person`` or ``target_level`` is not registered.
+    """
+    person = UNIT_REGISTRY.Quantity(1.0, _grouping_level_unit(PERSON_LEVEL))
+    target = UNIT_REGISTRY.Quantity(1.0, _grouping_level_unit(target_level))
+    return (person / target).units
+
+
 def parse_unit(unit_str: str) -> pint.Unit:
     """Parse a pint unit string, enforcing the closed pint-token vocabulary.
 
@@ -758,8 +924,9 @@ def _resolve_token_via_suffix(
 def resolve_scalar_param_unit(
     token: Unit | CurrencyUnitToken,
     time_unit_id: str | None,
+    reference_level: str | None = None,
 ) -> pint.Unit:
-    """Resolve a scalar parameter's unit from its token and name suffix (GEP 10).
+    """Resolve a scalar parameter's unit from its token, name suffix, and level.
 
     A scalar parameter takes its period from a time suffix on its *name*, just
     like a column (GEP 1): ``lump_sum_deduction_y`` resolves a
@@ -769,15 +936,41 @@ def resolve_scalar_param_unit(
     axes), and the caller rejects a scalar parameter that sets one. Unlike
     :func:`resolve_column_unit`, a concrete currency token is allowed:
     parameters pin down the currency their numbers are written in.
+
+    ``reference_level`` *is* allowed here (GEP 10): a scalar parameter has no
+    aggregation suffix and no body to infer a level from, so a per-person or
+    per-group amount declares it directly. The resolved unit is divided by that
+    level's unit; the default ``None`` is level-agnostic.
+
+    Raises:
+        UnitDefinitionError: If ``reference_level`` names an unregistered level
+            (or via the shared suffix ⟺ flow checks).
     """
-    return _resolve_token_via_suffix(token=token, time_unit_id=time_unit_id)
+    unit = _resolve_token_via_suffix(token=token, time_unit_id=time_unit_id)
+    return _apply_reference_level(unit=unit, reference_level=reference_level)
+
+
+def _apply_reference_level(unit: pint.Unit, reference_level: str | None) -> pint.Unit:
+    """Divide a resolved unit by a declared ``reference_level``, if any (GEP 10).
+
+    The grouping-level counterpart of a flow's ``reference_period``: a per-person
+    or per-group parameter (``reference_level: Person``) carries its level as a
+    denominator. The default ``None`` is *level-agnostic* — no level denominator.
+
+    Raises:
+        UnitDefinitionError: If ``reference_level`` names an unregistered level.
+    """
+    if reference_level is None:
+        return unit
+    return divide_by_grouping_level(unit=unit, level=reference_level)
 
 
 def resolve_param_unit(
     token: Unit | CurrencyUnitToken,
     reference_period: str | None,
+    reference_level: str | None = None,
 ) -> pint.Unit:
-    """Resolve a unit from its ``unit:`` token and a ``reference_period``.
+    """Resolve a unit from its ``unit:`` token, ``reference_period``, and level.
 
     Used for the period sources that have no name to carry a suffix (GEP 10):
     integer-keyed dict leaves, uniformly-typed dict parameters, raw parameters,
@@ -790,6 +983,14 @@ def resolve_param_unit(
     ``DIMENSIONLESS`` is complete as written, and the per-period dimensionless
     quantity is :attr:`Unit.DIMENSIONLESS_FLOW`.
 
+    ``reference_level`` is the grouping-level counterpart of ``reference_period``
+    (GEP 10): a per-person or per-group parameter declares the level it is
+    denominated per, and the resolved unit is divided by that level's unit (so a
+    ``CURRENCY_FLOW`` / ``Year`` / ``Person`` parameter resolves to
+    ``CURRENCY / year / [person]``). Its default ``None`` is *level-agnostic* — no
+    level denominator. Unlike ``reference_period`` it carries no flow constraint:
+    any token may declare it.
+
     Parameters may pin down a concrete currency (``SILVER_PENNY``,
     ``DM_FLOW``, …); such a token resolves exactly like its agnostic
     counterpart — the concrete currency drives the build-time conversion,
@@ -801,13 +1002,16 @@ def resolve_param_unit(
             :class:`CurrencyUnitToken`.
         reference_period: The ``reference_period`` label (``"Year"``,
             ``"Month"``, …), or ``None``.
+        reference_level: The grouping level the parameter is denominated per
+            (e.g. ``"person"``), or ``None`` for level-agnostic.
 
     Returns:
         The resolved pint unit.
 
     Raises:
         UnitDefinitionError: If the flow ⟺ ``reference_period`` rule is
-            violated or ``reference_period`` is not a recognised label.
+            violated, ``reference_period`` is not a recognised label, or
+            ``reference_level`` names an unregistered grouping level.
     """
     if (
         reference_period is not None
@@ -823,16 +1027,19 @@ def resolve_param_unit(
                 f"Unit token {token} denotes a flow and requires a non-null "
                 f"`reference_period` to supply its period (GEP 10)."
             )
-        return _divide_by_period(
+        unit = _divide_by_period(
             non_time_unit=_token_base_unit(token),
             period_pint_name=REFERENCE_PERIOD_TO_PINT_NAME[reference_period],
         )
+        return _apply_reference_level(unit=unit, reference_level=reference_level)
     if reference_period is not None:
         raise UnitDefinitionError(
             f"Unit token {token} is complete as written and cannot be "
             f"combined with `reference_period: {reference_period}` (GEP 10)."
         )
-    return _token_base_unit(token)
+    return _apply_reference_level(
+        unit=_token_base_unit(token), reference_level=reference_level
+    )
 
 
 def _function_name(function: Callable[..., Any]) -> str:
@@ -1162,6 +1369,66 @@ def unit_for_aggregation(
     if agg_type in (AggType.COUNT, AggType.ANY, AggType.ALL):
         return Unit.DIMENSIONLESS
     # SUM, MEAN, MIN, MAX preserve the source unit.
+    return source_unit
+
+
+def resolved_unit_for_aggregation(
+    *,
+    source_unit: pint.Unit,
+    agg_type: AggType,
+    target_level: str,
+    source_level: str | None,
+) -> pint.Unit:
+    """The resolved unit of an aggregation node, level-aware (GEP 10, #119).
+
+    The level-aware counterpart of :func:`unit_for_aggregation`: it operates on
+    *resolved* pint units (the physical token combined with its flow period and
+    grouping level) and is where a grouping level is minted, swapped, or
+    preserved. The orchestration (issue #119) threads the ``target_level`` (the
+    group being aggregated *to*, read off the aggregation suffix) and the
+    ``source_level`` (the source column's own level, ``None`` for a level-less
+    source such as an age).
+
+    - ``SUM`` is the extensive aggregation: it preserves the physical token and
+      *swaps* the source level for the target level in the denominator — summing
+      per-person amounts to the household gives ``CURRENCY/month/[hh]``. A
+      level-less source (``source_level=None``) is summed as-is.
+    - ``COUNT`` mints a head count ``[person] / [target]`` — persons per target
+      group, the ``[person]`` count dimension over the target level — independent
+      of the source.
+    - ``MEAN`` / ``MIN`` / ``MAX`` pick a representative member's value, the same
+      kind of quantity as the source, so they *preserve* the source unit verbatim,
+      level-ness and all: the min of person incomes stays ``CURRENCY/[person]``,
+      the min of a level-less age stays ``MONTHS``. They do *not* swap to the
+      target level.
+    - ``ANY`` / ``ALL`` yield a boolean — the dimensionless, level-less unit.
+
+    Args:
+        source_unit: The source column's resolved pint unit.
+        agg_type: The :class:`ttsim.tt.aggregation.AggType` of the aggregation.
+        target_level: The group level being aggregated to (e.g. ``"hh"``).
+        source_level: The source column's grouping level (e.g. ``"person"``), or
+            ``None`` if the source carries no level.
+
+    Returns:
+        The aggregation node's resolved pint unit.
+
+    Raises:
+        UnitDefinitionError: If ``target_level`` or ``source_level`` names an
+            unregistered grouping level.
+    """
+    if agg_type in (AggType.ANY, AggType.ALL):
+        return UNIT_REGISTRY.dimensionless
+    if agg_type is AggType.COUNT:
+        return grouping_level_count_unit(target_level=target_level)
+    if agg_type is AggType.SUM:
+        if source_level is None:
+            return source_unit
+        numerator = UNIT_REGISTRY.Quantity(
+            1.0, source_unit
+        ) * UNIT_REGISTRY.Quantity(1.0, _grouping_level_unit(source_level))
+        return divide_by_grouping_level(unit=numerator.units, level=target_level)
+    # MEAN, MIN, MAX preserve the source unit verbatim (level-ness and all).
     return source_unit
 
 
