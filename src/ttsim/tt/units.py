@@ -255,9 +255,7 @@ _TOKEN_BASE_AND_IS_FLOW: dict[Unit, _TokenResolution] = {
     Unit.CURRENCY: _TokenResolution(
         base=CURRENCY_TOKEN, is_flow=False, carries_level=True
     ),
-    Unit.DIMENSIONLESS: _TokenResolution(
-        base=None, is_flow=False, carries_level=False
-    ),
+    Unit.DIMENSIONLESS: _TokenResolution(base=None, is_flow=False, carries_level=False),
     Unit.DIMENSIONLESS_FLOW: _TokenResolution(
         base=None, is_flow=True, carries_level=False
     ),
@@ -279,15 +277,11 @@ _TOKEN_BASE_AND_IS_FLOW: dict[Unit, _TokenResolution] = {
     Unit.CALENDAR_DAY: _TokenResolution(
         base="calendar_day", is_flow=False, carries_level=False
     ),
-    Unit.HOURS_FLOW: _TokenResolution(
-        base="hour", is_flow=True, carries_level=False
-    ),
+    Unit.HOURS_FLOW: _TokenResolution(base="hour", is_flow=True, carries_level=False),
     Unit.SQUARE_METERS: _TokenResolution(
         base="meter ** 2", is_flow=False, carries_level=True
     ),
-    Unit.HECTARES: _TokenResolution(
-        base="hectare", is_flow=False, carries_level=True
-    ),
+    Unit.HECTARES: _TokenResolution(base="hectare", is_flow=False, carries_level=True),
     Unit.CURRENCY_PER_SQUARE_METER_FLOW: _TokenResolution(
         base=f"{CURRENCY_TOKEN} / meter ** 2", is_flow=True, carries_level=False
     ),
@@ -1503,9 +1497,9 @@ def resolved_unit_for_aggregation(
     if agg_type is AggType.SUM:
         if source_level is None:
             return source_unit
-        numerator = UNIT_REGISTRY.Quantity(
-            1.0, source_unit
-        ) * UNIT_REGISTRY.Quantity(1.0, _grouping_level_unit(source_level))
+        numerator = UNIT_REGISTRY.Quantity(1.0, source_unit) * UNIT_REGISTRY.Quantity(
+            1.0, _grouping_level_unit(source_level)
+        )
         return divide_by_grouping_level(unit=numerator.units, level=target_level)
     # MEAN, MIN, MAX preserve the source unit verbatim (level-ness and all).
     return source_unit
