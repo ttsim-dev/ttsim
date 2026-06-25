@@ -8,6 +8,7 @@ subsistence_income_level:
     en: Dict, because it changes over time, but the parameter name remains the same.
   unit: SILVER_PENNY_FLOW
   reference_period: Month
+  reference_level: person
   type: dict
   1900-01-01:
     per_spouse: 500.0

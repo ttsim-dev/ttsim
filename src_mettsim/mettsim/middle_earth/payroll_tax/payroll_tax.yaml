@@ -7,6 +7,7 @@ wealth_threshold_for_reduced_tax_rate:
     de: Umgekehrte Bennenung schiene sinnvoll.
     en: The reverse naming would seem more sensible.
   unit: SILVER_PENNY
+  reference_level: fam
   type: scalar
   1900-01-01:
     value: 50000

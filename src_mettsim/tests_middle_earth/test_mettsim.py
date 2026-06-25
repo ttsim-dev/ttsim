@@ -308,14 +308,18 @@ def _annotated_payroll_tree(currency: str, factor: float = 1.0) -> dict[str, Any
         "p_id_parent_2": q(numpy.array([-1, -1]), "dimensionless"),
         "geburtsjahr": q(numpy.array([1995, 1995]), "calendar_year"),  # age 30
         "parent_is_noble": q(numpy.array([False, False]), "dimensionless"),
-        "wealth": q(numpy.array([100.0, 200.0]) * factor, currency),
+        "wealth": q(
+            numpy.array([100.0, 200.0]) * factor,
+            f"{currency} / grouping_level_person",
+        ),
         "payroll_tax": {
             "child_tax_credit": {
                 "p_id_recipient": q(numpy.array([-1, -1]), "dimensionless")
             },
             "income": {
                 "gross_wage_y": q(
-                    numpy.array([10000.0, 0.0]) * factor, f"{currency} / year"
+                    numpy.array([10000.0, 0.0]) * factor,
+                    f"{currency} / grouping_level_person / year",
                 )
             },
         },
@@ -394,7 +398,7 @@ def test_results_tree_with_unit_annotations_are_precise(
     )
     amount = tagged["payroll_tax"]["amount_y"]
     assert isinstance(amount, UNIT_REGISTRY.Quantity)
-    assert str(amount.units) == "CASTAR / year"
+    assert str(amount.units) == "CASTAR / grouping_level_person / year"
     numpy.testing.assert_allclose(
         numpy.asarray(amount.magnitude),
         numpy.asarray(bare["payroll_tax"]["amount_y"]),
