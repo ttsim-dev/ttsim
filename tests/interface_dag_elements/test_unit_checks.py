@@ -248,9 +248,12 @@ def test_resolution_combines_token_and_name_suffix():
         },
         grouping_levels=GROUPING_LEVELS,
     )
+    # `wealth` is a person-level currency stock, so it carries the individual
+    # level as a denominator (GEP 10); `tax_rate_y` is dimensionless and stays
+    # level-less.
     assert units_are_equivalent(
         left=_scalar_unit(resolved=resolved, qname="wealth"),
-        right=parse_unit("CURRENCY"),
+        right=parse_unit("CURRENCY / grouping_level_person"),
     )
     assert units_are_equivalent(
         left=_scalar_unit(resolved=resolved, qname="tax_rate_y"),
@@ -258,7 +261,7 @@ def test_resolution_combines_token_and_name_suffix():
     )
     assert units_are_equivalent(
         left=_scalar_unit(resolved=resolved, qname="amount_y"),
-        right=parse_unit("CURRENCY / year"),
+        right=parse_unit("CURRENCY / year / grouping_level_person"),
     )
 
 
@@ -1285,9 +1288,10 @@ def test_param_function_unit_resolves_via_leaf_name_suffix():
         env={"max_amount_m_fam": max_amount_m_fam},
         grouping_levels=GROUPING_LEVELS,
     )
+    # The `_fam` suffix puts this flow at the family level (GEP 10).
     assert units_are_equivalent(
         left=_scalar_unit(resolved=resolved, qname="max_amount_m_fam"),
-        right=parse_unit("CURRENCY / month"),
+        right=parse_unit("CURRENCY / month / grouping_level_fam"),
     )
 
 
