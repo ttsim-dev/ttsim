@@ -703,6 +703,12 @@ class AggByGroupFunction(ColumnFunction):
 
     # Default value is necessary because we have defaults in the superclass.
     orig_location: str = "automatically generated"
+    agg_type: AggType = AggType.SUM
+    """The aggregation kind (GEP 10): the unit orchestration mints a head
+    count [person]/[target] for COUNT and SUM-over-a-boolean, swaps the level
+    for SUM over an extensive value, preserves the source for MEAN/MIN/MAX,
+    and is dimensionless for ANY/ALL. Always set by `agg_by_group_function`;
+    the default is a dataclass placeholder."""
 
     def remove_tree_logic(
         self,
@@ -726,6 +732,7 @@ class AggByGroupFunction(ColumnFunction):
             warn_msg_if_included=self.warn_msg_if_included,
             fail_msg_if_included=self.fail_msg_if_included,
             unit=self.unit,
+            agg_type=self.agg_type,
         )
 
 
@@ -804,6 +811,7 @@ def agg_by_group_function(
             warn_msg_if_included=warn_msg_if_included,
             fail_msg_if_included=fail_msg_if_included,
             unit=unit,
+            agg_type=agg_type,
         )
 
     return inner
