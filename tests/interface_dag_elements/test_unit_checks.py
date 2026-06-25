@@ -1437,3 +1437,61 @@ def test_param_mapping_object_missing_axis_units_are_reported():
         )
     assert "schedule (input_unit)" in str(excinfo.value)
     assert "schedule (output_unit)" in str(excinfo.value)
+
+
+def test_count_and_sum_of_boolean_both_mint_head_counts():
+    """A COUNT and a SUM over a boolean are both head counts (GEP 10): each
+    resolves to [person]/[target], not DIMENSIONLESS."""
+
+    @agg_by_group_function(agg_type=AggType.COUNT)
+    def number_of_individuals_fam(fam_id: int) -> int: ...
+
+    @policy_input(unit=Unit.DIMENSIONLESS)
+    def is_adult() -> bool: ...
+
+    @agg_by_group_function(agg_type=AggType.SUM, unit=Unit.DIMENSIONLESS)
+    def number_of_adults_fam(fam_id: int, is_adult: bool) -> int: ...
+
+    resolved = resolve_environment_units(
+        env={
+            "number_of_individuals_fam": number_of_individuals_fam,
+            "is_adult": is_adult,
+            "number_of_adults_fam": number_of_adults_fam,
+        },
+        grouping_levels=GROUPING_LEVELS,
+    )
+    head_count = parse_unit("grouping_level_person / grouping_level_fam")
+    assert units_are_equivalent(
+        left=_scalar_unit(resolved, "number_of_individuals_fam"), right=head_count
+    )
+    assert units_are_equivalent(
+        left=_scalar_unit(resolved, "number_of_adults_fam"), right=head_count
+    )
+
+
+def test_per_capita_division_bridges_via_head_count():
+    """A group total divided by a head count type-checks to a per-person amount:
+    (CURRENCY/[fam]) / ([person]/[fam]) = CURRENCY/[person] (GEP 10)."""
+
+    @agg_by_group_function(agg_type=AggType.COUNT)
+    def number_of_individuals_fam(fam_id: int) -> int: ...
+
+    @policy_input(unit=Unit.CURRENCY_FLOW)
+    def rent_m_fam() -> float: ...
+
+    @policy_function(unit=Unit.CURRENCY_FLOW)
+    def rent_per_head_m(rent_m_fam: float, number_of_individuals_fam: int) -> float:
+        return rent_m_fam / number_of_individuals_fam
+
+    env = {
+        "number_of_individuals_fam": number_of_individuals_fam,
+        "rent_m_fam": rent_m_fam,
+        "rent_per_head_m": rent_per_head_m,
+    }
+    resolved = resolve_environment_units(env=env, grouping_levels=GROUPING_LEVELS)
+    assert units_are_equivalent(
+        left=_scalar_unit(resolved, "rent_per_head_m"),
+        right=parse_unit("CURRENCY / month / grouping_level_person"),
+    )
+    # The [fam] cancels against the count's [person]/[fam] — no level mismatch.
+    fail_if_environment_units_are_inconsistent(env=env, grouping_levels=GROUPING_LEVELS)
