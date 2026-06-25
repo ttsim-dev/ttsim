@@ -38,7 +38,9 @@ from ttsim.interface_dag_elements.shared import (
     FRAMEWORK_PARTIAL_ARGUMENTS,
     get_re_pattern_for_all_time_units_and_groupings,
 )
+from ttsim.tt.aggregation import AggType
 from ttsim.tt.column_objects_param_function import (
+    AggByGroupFunction,
     ColumnObject,
     ParamFunction,
     PolicyFunction,
@@ -58,7 +60,9 @@ from ttsim.tt.type_resolution import (
     resolve_kind_of_column_function,
 )
 from ttsim.tt.units import (
+    _GROUPING_LEVEL_PREFIX,
     _QNAME_TIME_SUFFIX_PATTERN,
+    PERSON_LEVEL,
     REFERENCE_PERIOD_TO_PINT_NAME,
     TIME_UNIT_ID_TO_PINT_NAME,
     UNIT_REGISTRY,
@@ -67,13 +71,17 @@ from ttsim.tt.units import (
     Unit,
     UnsetUnitType,
     base_currency,
+    divide_by_grouping_level,
     fail_if_units_are_missing,
     is_calendar_point_unit,
     parse_unit,
+    register_grouping_levels,
     resolve_column_unit,
     resolve_param_unit,
     resolve_scalar_param_unit,
+    resolved_unit_for_aggregation,
     token_is_agnostic_currency,
+    unit_token_carries_level,
     unit_token_is_flow,
     units_are_equivalent,
 )
@@ -160,6 +168,7 @@ def resolve_environment_units(
     :data:`UNSET_UNIT`) is absent from the result; the mandatory-units check
     reports it.
     """
+    register_grouping_levels(grouping_levels)
     pattern = get_re_pattern_for_all_time_units_and_groupings(
         time_units=tuple(TIME_UNIT_IDS_TO_LABELS),
         grouping_levels=grouping_levels,
@@ -181,16 +190,141 @@ def resolve_environment_units(
             )
             if param_unit is not None:
                 resolved[qname] = param_unit
+        elif isinstance(obj, AggByGroupFunction):
+            agg_unit = _resolve_agg_by_group_unit(qname=qname, env=env, pattern=pattern)
+            if agg_unit is not None:
+                resolved[qname] = agg_unit
         else:  # ColumnObject | ParamFunction
             token = getattr(obj, "unit", UNSET_UNIT)
             if token is not UNSET_UNIT:
                 leaf_name = dt.tree_path_from_qname(qname)[-1]
                 match = pattern.fullmatch(leaf_name)
-                time_unit_id = match.group("time_unit") if match else None
-                resolved[qname] = resolve_column_unit(
-                    token=cast("Unit", token), time_unit_id=time_unit_id
+                resolved[qname] = _resolve_leveled_column_unit(
+                    token=cast("Unit", token), match=match
                 )
     return resolved
+
+
+def _resolve_leveled_column_unit(
+    token: Unit,
+    match: re.Match[str] | None,
+) -> pint.Unit:
+    """Resolve a column/function's full unit, including its grouping level (GEP 10).
+
+    Combines the declared token with the name's time-unit suffix
+    (:func:`resolve_column_unit`) and then, when the token carries a level by
+    default (currency, area, the ``[person]`` count), divides by the name's
+    aggregation-suffix level — an unsuffixed name is at :data:`PERSON_LEVEL`. A
+    level-less token stays level-less regardless of any suffix: the suffix is then
+    a pure *index* level (a ``MIN``-of-age at ``_fg``), not a unit level.
+    """
+    time_unit_id = match.group("time_unit") if match else None
+    column_unit = resolve_column_unit(token=token, time_unit_id=time_unit_id)
+    if unit_token_carries_level(token):
+        return divide_by_grouping_level(
+            unit=column_unit, level=_suffix_grouping_level(match)
+        )
+    return column_unit
+
+
+def _resolve_agg_by_group_unit(
+    qname: str,
+    env: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
+    pattern: re.Pattern[str],
+) -> pint.Unit | None:
+    """Resolve an auto-aggregation node's unit, level-aware (GEP 10, #119).
+
+    Auto-aggregations are the orchestration site where a grouping level is minted,
+    swapped, or preserved (GEP 10): this routes through
+    :func:`resolved_unit_for_aggregation`, the level-aware resolver, rather than the
+    plain token+suffix path. The aggregation's *target* level is its own
+    aggregation suffix (an ``_hh`` node aggregates to ``[hh]``); the *source* level
+    is the source column's own level (:data:`PERSON_LEVEL` for an extensive
+    person-level source, ``None`` for a level-less source such as an age).
+
+    The stored ``unit`` token already encodes the aggregation rule's effect on the
+    physical token (``SUM`` preserves, ``COUNT`` → ``DIMENSIONLESS``; see
+    :func:`unit_for_aggregation`); here it is combined with the levels. Returns
+    ``None`` if the source carries no resolvable unit — the mandatory-units check
+    reports the source.
+    """
+    leaf_name = dt.tree_path_from_qname(qname)[-1]
+    match = pattern.fullmatch(leaf_name)
+    target_level = _suffix_grouping_level(match)
+    source_qname, source_match = _agg_source(qname=qname, pattern=pattern)
+    source_obj = env.get(source_qname)
+    source_token = getattr(source_obj, "unit", UNSET_UNIT)
+    if source_token is UNSET_UNIT:
+        return None
+    source_unit = _resolve_leveled_column_unit(
+        token=cast("Unit", source_token), match=source_match
+    )
+    source_level = (
+        _suffix_grouping_level(source_match)
+        if unit_token_carries_level(cast("Unit", source_token))
+        else None
+    )
+    return resolved_unit_for_aggregation(
+        source_unit=source_unit,
+        agg_type=AggType.SUM,
+        target_level=target_level,
+        source_level=source_level,
+    )
+
+
+def _agg_source(
+    qname: str,
+    pattern: re.Pattern[str],
+) -> tuple[str, re.Match[str] | None]:
+    """The source qname of an auto-aggregation and its parsed name (GEP 10).
+
+    An auto-aggregation ``…_hh`` sums the same-named individual-level source with
+    the grouping suffix stripped (``betrag_m_hh`` → ``betrag_m``); the source keeps
+    the time-unit suffix, since a flow is summed period-for-period.
+    """
+    leaf_match = pattern.fullmatch(qname)
+    if leaf_match is None or not leaf_match.group("grouping"):
+        return qname, pattern.fullmatch(qname)
+    base = leaf_match.group("base_name")
+    time_unit = leaf_match.group("time_unit")
+    source_qname = f"{base}_{time_unit}" if time_unit else base
+    return source_qname, pattern.fullmatch(source_qname)
+
+
+def _suffix_grouping_level(match: re.Match[str] | None) -> str:
+    """The grouping level named by a name's aggregation suffix (GEP 10).
+
+    The combined time+grouping regex captures the aggregation suffix in its
+    ``grouping`` group (``betrag_m_hh`` → ``"hh"``); an unsuffixed name has no
+    such group and is at the individual leaf level :data:`PERSON_LEVEL`.
+    """
+    if match is None:
+        return PERSON_LEVEL
+    return match.group("grouping") or PERSON_LEVEL
+
+
+#: The dimensionality-key prefix of a grouping-level dimension: the internal pint
+#: unit name :data:`_GROUPING_LEVEL_PREFIX` wrapped in pint's ``[…]`` dimension
+#: brackets (e.g. ``[grouping_level_hh]``).
+_GROUPING_LEVEL_DIM_PREFIX = f"[{_GROUPING_LEVEL_PREFIX}"
+
+
+def _unit_level_denominator(unit: pint.Unit) -> str | None:
+    """The grouping level a resolved unit carries as a denominator (GEP 10).
+
+    A leveled quantity carries its level as a ``/[level]`` denominator (negative
+    exponent in the dimensionality), exactly as a flow carries its period. Returns
+    the level name (``"hh"``, ``"person"``, …) found in the denominator, or
+    ``None`` for a level-less unit. A head count's ``[person]`` *numerator*
+    (positive exponent) is not a denominator level and is ignored, so a
+    ``[person]/[hh]`` count reports ``"hh"`` — its index level (GEP 10).
+    """
+    for dimension, exponent in UNIT_REGISTRY.Quantity(1.0, unit).dimensionality.items():
+        if isinstance(exponent, complex):  # pint exponents are real; narrow for ty
+            continue
+        if exponent < 0 and dimension.startswith(_GROUPING_LEVEL_DIM_PREFIX):
+            return dimension[len(_GROUPING_LEVEL_DIM_PREFIX) : -1]
+    return None
 
 
 def fail_if_environment_units_are_missing(
@@ -272,6 +406,10 @@ def fail_if_environment_units_are_inconsistent(
     representative_values = _representative_values_by_qname(
         env=env, resolved_units=resolved_units
     )
+    suffix_pattern = get_re_pattern_for_all_time_units_and_groupings(
+        time_units=tuple(TIME_UNIT_IDS_TO_LABELS),
+        grouping_levels=grouping_levels,
+    )
     boolean_nodes = {
         qname
         for qname, obj in env.items()
@@ -314,10 +452,13 @@ def fail_if_environment_units_are_inconsistent(
         )
         if base_kwargs is None:
             continue
+        leaf_name = dt.tree_path_from_qname(qname)[-1]
+        suffix_match = suffix_pattern.fullmatch(leaf_name)
         error = _verify_one_body(
             qname=qname,
             function=obj.function,
             declared=declared,
+            suffix_level=_suffix_grouping_level(suffix_match),
             boolean_parameters=boolean_parameters,
             base_kwargs=base_kwargs,
         )
@@ -410,11 +551,24 @@ def _fail_if_param_token_is_agnostic_currency(
 def _resolve_token_unit(
     token: Unit | CurrencyUnitToken,
     reference_period: str | None,
+    reference_level: str | None = None,
 ) -> pint.Unit:
-    """Resolve one axis token; ``reference_period`` only feeds flow tokens."""
+    """Resolve one axis token; ``reference_period`` only feeds flow tokens.
+
+    ``reference_level`` is the grouping-level counterpart of ``reference_period``
+    (GEP 10): a per-person or per-group axis carries its level as a denominator. It
+    is divided onto any token (it has no flow constraint); ``None`` is
+    level-agnostic.
+    """
     if unit_token_is_flow(token):
-        return resolve_param_unit(token=token, reference_period=reference_period)
-    return resolve_param_unit(token=token, reference_period=None)
+        return resolve_param_unit(
+            token=token,
+            reference_period=reference_period,
+            reference_level=reference_level,
+        )
+    return resolve_param_unit(
+        token=token, reference_period=None, reference_level=reference_level
+    )
 
 
 def _resolve_param_mapping_object_units(
@@ -469,13 +623,20 @@ def _resolve_param_mapping_object_units(
             f"{obj.reference_period}` but neither axis token is a `…_FLOW`; "
             f"a dangling reference_period is an error (GEP 10)."
         )
+    reference_level = getattr(obj, "reference_level", None)
     input_token = tokens["input_unit"]
     if input_token is not UNSET_UNIT:
-        _resolve_token_unit(token=input_token, reference_period=obj.reference_period)
+        _resolve_token_unit(
+            token=input_token,
+            reference_period=obj.reference_period,
+            reference_level=reference_level,
+        )
     if output_token is UNSET_UNIT:
         return None
     return _resolve_token_unit(
-        token=output_token, reference_period=obj.reference_period
+        token=output_token,
+        reference_period=obj.reference_period,
+        reference_level=reference_level,
     )
 
 
@@ -527,6 +688,12 @@ def _resolve_param_object_unit(
         )
     if obj.unit is UNSET_UNIT:
         return None
+    # The grouping level the parameter is denominated per (GEP 10): the level
+    # counterpart of ``reference_period``, declared on the parameter and divided
+    # onto its resolved unit. ``None`` (the default, and the value until the field
+    # is added downstream) is level-agnostic. Unlike ``reference_period`` it is
+    # allowed on scalar parameters — they have no aggregation suffix to read it off.
+    reference_level = getattr(obj, "reference_level", None)
     if isinstance(obj.unit, Mapping):
         reference_period = obj.reference_period
         if (
@@ -540,6 +707,7 @@ def _resolve_param_object_unit(
             qname=qname,
             unit_mapping=cast("Mapping[str | int, Any]", obj.unit),
             reference_period=reference_period,
+            reference_level=reference_level,
         )
         if reference_period is not None and not has_flow_leaf:
             raise UnitDefinitionError(
@@ -560,16 +728,25 @@ def _resolve_param_object_unit(
                 f"`reference_period: {obj.reference_period}`; name a flow parameter "
                 f"with a `_y`/`_m`/… suffix."
             )
-        return resolve_scalar_param_unit(token=token, time_unit_id=name_time_unit_id)
+        return resolve_scalar_param_unit(
+            token=token,
+            time_unit_id=name_time_unit_id,
+            reference_level=reference_level,
+        )
     # DictParam with a uniform token, or RawParam: no single name to suffix, so
     # the period (if any) comes from the dict-level reference_period.
-    return resolve_param_unit(token=token, reference_period=obj.reference_period)
+    return resolve_param_unit(
+        token=token,
+        reference_period=obj.reference_period,
+        reference_level=reference_level,
+    )
 
 
 def _resolve_unit_mapping(
     qname: str,
     unit_mapping: Mapping[str | int, Any],
     reference_period: str | None,
+    reference_level: str | None = None,
 ) -> tuple[dict[str | int, Any], bool]:
     """Resolve a per-leaf ``unit:`` mapping to pint units (GEP 10).
 
@@ -583,6 +760,10 @@ def _resolve_unit_mapping(
     - a complete or ``DIMENSIONLESS`` leaf must not carry a suffixed key (a
       suffixed name denotes a flow).
 
+    ``reference_level`` is the dict-level grouping level (GEP 10): a per-person or
+    per-group dict parameter denominates every leaf per that level, so it is
+    divided onto each leaf's resolved unit. ``None`` is level-agnostic.
+
     Returns the resolved mapping and whether any flow leaf was seen (the
     caller rejects a dangling ``reference_period``).
     """
@@ -591,7 +772,10 @@ def _resolve_unit_mapping(
     for key, token in unit_mapping.items():
         if isinstance(token, Mapping):
             resolved[key], sub_flow = _resolve_unit_mapping(
-                qname=qname, unit_mapping=token, reference_period=reference_period
+                qname=qname,
+                unit_mapping=token,
+                reference_period=reference_period,
+                reference_level=reference_level,
             )
             any_flow = any_flow or sub_flow
             continue
@@ -615,7 +799,9 @@ def _resolve_unit_mapping(
                     f"dict-level `reference_period` (GEP 10)."
                 )
             resolved[key] = resolve_param_unit(
-                token=token, reference_period=leaf_reference_period
+                token=token,
+                reference_period=leaf_reference_period,
+                reference_level=reference_level,
             )
         else:
             if suffix_id is not None:
@@ -624,7 +810,9 @@ def _resolve_unit_mapping(
                     f"(_{suffix_id}), which denotes a flow, but the declared "
                     f"token is {_spell_token(token)} (GEP 10)."
                 )
-            resolved[key] = resolve_param_unit(token=token, reference_period=None)
+            resolved[key] = resolve_param_unit(
+                token=token, reference_period=None, reference_level=reference_level
+            )
     return resolved, any_flow
 
 
@@ -1124,6 +1312,7 @@ def _verify_one_body(
     qname: str,
     function: Any,  # noqa: ANN401  (a scalar body, possibly a dags wrapper)
     declared: pint.Unit,
+    suffix_level: str,
     boolean_parameters: tuple[str, ...],
     base_kwargs: dict[str, Any],
 ) -> str | None:
@@ -1184,7 +1373,11 @@ def _verify_one_body(
             )
         detail = " on a conditional branch" if explorer.on_a_branch else ""
         error = _inferred_result_error(
-            qname=qname, inferred=_unwrap(result), declared=declared, detail=detail
+            qname=qname,
+            inferred=_unwrap(result),
+            declared=declared,
+            suffix_level=suffix_level,
+            detail=detail,
         )
         if error is not None:
             return error
@@ -1193,20 +1386,55 @@ def _verify_one_body(
     return None
 
 
+def _unit_without_grouping_levels(unit: pint.Unit) -> pint.Unit:
+    """A unit with every grouping-level component (numerator or denominator) removed.
+
+    The level-free *residual* used to compare an inferred unit against the
+    declaration on its physical content alone (currency, period, area, …) — the
+    grouping level is screened separately under the index-vs-unit rule (GEP 10).
+    Both a denominator level (a ``…/[hh]`` total) and a numerator level (a head
+    count's ``[person]/…``) are divided out.
+    """
+    quantity = UNIT_REGISTRY.Quantity(1.0, unit)
+    for dimension, exponent in dict(quantity.dimensionality).items():
+        if isinstance(exponent, complex):  # pint exponents are real; narrow for ty
+            continue
+        if dimension.startswith(_GROUPING_LEVEL_DIM_PREFIX):
+            level = dimension[len(_GROUPING_LEVEL_DIM_PREFIX) : -1]
+            level_unit = UNIT_REGISTRY.Quantity(1.0, f"{_GROUPING_LEVEL_PREFIX}{level}")
+            # Cancel the level: multiply by its unit raised to the *negated*
+            # exponent (a `…/[hh]` denominator, exponent -1, is multiplied by
+            # `[hh] ** 1`).
+            quantity = quantity * level_unit ** (-exponent)
+    return cast("pint.Unit", quantity.units)
+
+
 def _inferred_result_error(
     qname: str,
     inferred: Any,  # noqa: ANN401
     declared: pint.Unit,
+    suffix_level: str,
     detail: str,
 ) -> str | None:
     """Check one dry-run result against the declaration (GEP 10).
 
     An opaque return — a dataclass, a tuple, … — is neither a checkable quantity
     nor a plain scalar, so it must opt out. A concrete ``Quantity`` must match the
-    declaration. A *dimensionless* inference is deliberately not flagged against a
-    concrete declaration: it is unit-polymorphic — exactly what an identifier, a
-    head count, or a share produces (``p_id * 2.0``), legitimately standing in for
-    the magnitude of a concrete quantity — and separating a genuine cancellation
+    declaration on two axes, checked separately:
+
+    - its **physical content** (currency, period, area, …) — the unit with every
+      grouping level divided out — must equal the declaration's; and
+    - its **grouping level**, under the index-vs-unit rule: *when the inferred unit
+      carries a level denominator it must equal the name's aggregation-suffix
+      level*; a level-less inferred unit is exempt (its index level is the
+      structural system's concern, not the unit check's). So a per-person rent
+      share mis-named ``…_hh`` (inferred ``…/[person]``, suffix ``[hh]``) is caught,
+      while a level-less ``MIN``-of-age at ``_fg`` passes.
+
+    A *dimensionless* inference is deliberately not flagged against a concrete
+    declaration: it is unit-polymorphic — exactly what an identifier, a head count,
+    or a share produces (``p_id * 2.0``), legitimately standing in for the
+    magnitude of a concrete quantity — and separating a genuine cancellation
     (``wealth / income`` declared ``CURRENCY``) from it would need operand
     provenance the dry-run does not track. A bare-literal ``return 0.0`` is not a
     ``Quantity``, so it is a plain scalar and falls through cleanly.
@@ -1219,15 +1447,23 @@ def _inferred_result_error(
             "it returns a value the dry-run cannot unit-check — a dataclass, "
             "a tuple, or another non-scalar",
         )
-    if (
-        isinstance(inferred, pint.Quantity)
-        and not inferred.dimensionless
-        and not units_are_equivalent(
-            left=cast("pint.Unit", inferred.units), right=declared
-        )
+    if not isinstance(inferred, pint.Quantity) or inferred.dimensionless:
+        return None
+    inferred_unit = cast("pint.Unit", inferred.units)
+    if not units_are_equivalent(
+        left=_unit_without_grouping_levels(inferred_unit),
+        right=_unit_without_grouping_levels(declared),
     ):
         return (
             f"{qname}: declares '{declared}' but its body infers "
-            f"'{inferred.units}'{detail}."
+            f"'{inferred_unit}'{detail}."
+        )
+    inferred_level = _unit_level_denominator(inferred_unit)
+    if inferred_level is not None and inferred_level != suffix_level:
+        return (
+            f"{qname}: its body infers a '[{inferred_level}]'-level result "
+            f"('{inferred_unit}'){detail}, but its name's aggregation suffix is "
+            f"'[{suffix_level}]' (it resolves to '{declared}'). A unit's grouping "
+            f"level, when present, must match the name's suffix level (GEP 10)."
         )
     return None
