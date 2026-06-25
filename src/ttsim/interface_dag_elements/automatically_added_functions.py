@@ -397,8 +397,13 @@ def create_agg_by_group_functions(
                 column_functions=column_functions,
                 qname_policy_environment=qname_policy_environment,
             )
-            # Auto-assign the unit: a sum aggregation preserves the source's
-            # unit token (GEP 10, #119).
+            # Auto-assign the unit *token*: a sum aggregation preserves the
+            # source's physical token (GEP 10, #119). The grouping level the
+            # aggregation mints — the source level swapped for this node's target
+            # group level (`SUM` is extensive) — is resolved at build time in
+            # `unit_checks.resolve_environment_units`, which routes auto-aggregation
+            # nodes through the level-aware `resolved_unit_for_aggregation`; the
+            # token stored here cannot carry a `[level]` (it is a `Unit` member).
             source_unit = _resolve_source_unit(
                 source_name=base_name_with_time_unit,
                 column_functions=column_functions,
