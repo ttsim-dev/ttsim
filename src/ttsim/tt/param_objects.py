@@ -56,6 +56,13 @@ class ParamObject:
     reference_period: (
         None | Literal["Year", "Quarter", "Month", "Week", "Day", "Hour"]
     ) = None
+    reference_level: str | None = None
+    """The grouping level a per-person or per-group parameter is denominated
+    per (GEP 10), e.g. ``"person"`` or ``"hh"``; ``None`` for a level-agnostic
+    parameter. Unlike ``reference_period`` it *is* admissible on a scalar
+    parameter — a scalar has no aggregation suffix to read a level from. The
+    value names a grouping level discovered per build from the ``*_id``
+    columns; an unregistered name fails at unit resolution."""
     name: dict[Literal["de", "en"], str] | None = None
     description: dict[Literal["de", "en"], str] | None = None
 
