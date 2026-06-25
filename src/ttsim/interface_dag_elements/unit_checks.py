@@ -70,6 +70,7 @@ from ttsim.tt.units import (
     base_currency,
     divide_by_grouping_level,
     fail_if_units_are_missing,
+    grouping_level_count_unit,
     is_calendar_point_unit,
     parse_unit,
     register_grouping_levels,
@@ -169,7 +170,9 @@ def resolve_environment_units(
             if param_unit is not None:
                 resolved[qname] = param_unit
         elif isinstance(obj, AggByGroupFunction):
-            agg_unit = _resolve_agg_by_group_unit(qname=qname, env=env, pattern=pattern)
+            agg_unit = _resolve_agg_by_group_unit(
+                qname=qname, obj=obj, env=env, pattern=pattern
+            )
             if agg_unit is not None:
                 resolved[qname] = agg_unit
         else:  # ColumnObject | ParamFunction
@@ -207,33 +210,54 @@ def _resolve_leveled_column_unit(
 
 def _resolve_agg_by_group_unit(
     qname: str,
+    obj: AggByGroupFunction,
     env: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
     pattern: re.Pattern[str],
 ) -> pint.Unit | None:
-    """Resolve an auto-aggregation node's unit, level-aware (GEP 10, #119).
+    """Resolve a group-aggregation node's unit, level-aware (GEP 10, #119).
 
-    Auto-aggregations are the orchestration site where a grouping level is minted,
-    swapped, or preserved (GEP 10): this routes through
-    :func:`resolved_unit_for_aggregation`, the level-aware resolver, rather than the
-    plain token+suffix path. The aggregation's *target* level is its own
-    aggregation suffix (an ``_hh`` node aggregates to ``[hh]``); the *source* level
-    is the source column's own level (:data:`PERSON_LEVEL` for an extensive
-    person-level source, ``None`` for a level-less source such as an age).
+    The aggregation is the orchestration site where a grouping level is minted,
+    swapped, or preserved (GEP 10). The *target* level is the node's own
+    aggregation suffix (an ``_hh`` node aggregates to ``[hh]``). The rule depends
+    on :attr:`AggByGroupFunction.agg_type`:
 
-    The stored ``unit`` token already encodes the aggregation rule's effect on the
-    physical token (``SUM`` preserves, ``COUNT`` → ``DIMENSIONLESS``; see
-    :func:`unit_for_aggregation`); here it is combined with the levels. Returns
-    ``None`` if the source carries no resolvable unit — the mandatory-units check
-    reports the source.
+    - a **head count** — ``COUNT``, or a ``SUM`` over a *boolean* source (counting
+      the persons the indicator is true for) — mints ``[person]/[target]``;
+    - ``SUM`` over an extensive value swaps the source level for the target level;
+    - ``MEAN`` / ``MIN`` / ``MAX`` preserve the source unit verbatim;
+    - ``ANY`` / ``ALL`` yield a dimensionless boolean.
+
+    The value source is the function's own summed/averaged argument — read off the
+    signature, not by stripping the name suffix, so a hand-written aggregation
+    (``number_of_adults_fam`` sums ``adult``, not ``number_of_adults``) resolves
+    correctly. Returns ``None`` if a value source carries no resolvable unit — the
+    mandatory-units check reports the source.
     """
-    leaf_name = dt.tree_path_from_qname(qname)[-1]
-    match = pattern.fullmatch(leaf_name)
-    target_level = _suffix_grouping_level(match)
-    source_qname, source_match = _agg_source(qname=qname, pattern=pattern)
+    target_level = _suffix_grouping_level(
+        pattern.fullmatch(dt.tree_path_from_qname(qname)[-1])
+    )
+    agg_type = obj.agg_type
+    if agg_type in (AggType.ANY, AggType.ALL):
+        return UNIT_REGISTRY.dimensionless
+    if agg_type is AggType.COUNT:
+        return grouping_level_count_unit(target_level=target_level)
+    # Value aggregations: the source is the one non-group-id, non-special argument.
+    sources = {
+        p
+        for p in inspect.signature(obj.function).parameters
+        if not p.endswith("_id") and p not in NON_UNIT_ARGUMENTS
+    }
+    if len(sources) != 1:
+        return None
+    source_qname = sources.pop()
     source_obj = env.get(source_qname)
     source_token = getattr(source_obj, "unit", UNSET_UNIT)
     if source_token is UNSET_UNIT:
         return None
+    # A SUM over a boolean is a head count of the persons it is true for.
+    if agg_type is AggType.SUM and node_is_boolean(qname=source_qname, obj=source_obj):
+        return grouping_level_count_unit(target_level=target_level)
+    source_match = pattern.fullmatch(dt.tree_path_from_qname(source_qname)[-1])
     source_unit = _resolve_leveled_column_unit(
         token=cast("Unit", source_token), match=source_match
     )
@@ -244,29 +268,10 @@ def _resolve_agg_by_group_unit(
     )
     return resolved_unit_for_aggregation(
         source_unit=source_unit,
-        agg_type=AggType.SUM,
+        agg_type=agg_type,
         target_level=target_level,
         source_level=source_level,
     )
-
-
-def _agg_source(
-    qname: str,
-    pattern: re.Pattern[str],
-) -> tuple[str, re.Match[str] | None]:
-    """The source qname of an auto-aggregation and its parsed name (GEP 10).
-
-    An auto-aggregation ``…_hh`` sums the same-named individual-level source with
-    the grouping suffix stripped (``betrag_m_hh`` → ``betrag_m``); the source keeps
-    the time-unit suffix, since a flow is summed period-for-period.
-    """
-    leaf_match = pattern.fullmatch(qname)
-    if leaf_match is None or not leaf_match.group("grouping"):
-        return qname, pattern.fullmatch(qname)
-    base = leaf_match.group("base_name")
-    time_unit = leaf_match.group("time_unit")
-    source_qname = f"{base}_{time_unit}" if time_unit else base
-    return source_qname, pattern.fullmatch(source_qname)
 
 
 def _suffix_grouping_level(match: re.Match[str] | None) -> str:
