@@ -85,6 +85,10 @@
           "type": ["string", "null"],
           "enum": ["Year", "Quarter", "Month", "Week", "Day", "Hour", null]
         },
+        "reference_level": {
+          "$comment": "The grouping level a per-person/per-group parameter is denominated per (GEP 10), named by its `*_id` stem (`person`, `hh`, ...). Discovered per build, so not enumerated here; an unregistered name fails at unit resolution. Admissible on `scalar` (unlike `reference_period`).",
+          "type": ["string", "null"]
+        },
         "add_jahresanfang": {"type": "boolean"}
       },
       "patternProperties": {

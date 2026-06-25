@@ -522,6 +522,7 @@ def _clean_one_param_spec(
     )
     out.update(_unit_fields_from_spec(spec))
     out["reference_period"] = spec.get("reference_period", None)
+    out["reference_level"] = spec.get("reference_level", None)
     out["name"] = spec["name"]
     out["description"] = spec["description"]
 
