@@ -20,6 +20,7 @@ cap:
       Größe des berücksichtigten Ackers.
     en: Acre size, from which the tax is capped.
   unit: HECTARES
+  reference_level: person
   type: scalar
   1900-01-01:
     value: 50.0

@@ -51,12 +51,21 @@ def requirement_fulfilled_fam_not_considering_children(
     start_date="2020-01-01",
     leaf_name="requirement_fulfilled_fam",
     unit=Unit.DIMENSIONLESS,
+    verify_units=False,
 )
 def requirement_fulfilled_fam_considering_children(
     housing_benefits__income__amount_m_fam: float,
     number_of_family_members_considered_fam: int,
     subsistence_income_level: dict[str, float],
 ) -> bool:
+    # ``verify_units=False``: the per-family subsistence threshold is the
+    # per-person amount times the (capped) head count of considered family
+    # members. ``number_of_family_members_considered_fam`` is a head count
+    # (``[person] / [fam]``), but a hand-written policy function cannot *declare*
+    # a head-count unit (only aggregations mint it, and there is no head-count
+    # token). So the dry-run cannot see that
+    # ``CURRENCY / [person] * [person] / [fam] = CURRENCY / [fam]`` matches
+    # ``amount_m_fam``; we opt the body out. See GEP 10 (known limitation).
     return housing_benefits__income__amount_m_fam < (
         subsistence_income_level["per_individual"]
         * number_of_family_members_considered_fam
@@ -67,11 +76,19 @@ def requirement_fulfilled_fam_considering_children(
     start_date="2020-01-01",
     vectorization_strategy="vectorize",
     unit=Unit.DIMENSIONLESS,
+    verify_units=False,
 )
 def number_of_family_members_considered_fam(
     number_of_individuals_fam: int,
     max_number_of_family_members: int,
 ) -> int:
+    # ``verify_units=False``: ``number_of_individuals_fam`` is a COUNT
+    # aggregation and so carries the head-count unit ``[person] / [fam]``, while
+    # the cap ``max_number_of_family_members`` is a plain dimensionless scalar.
+    # The capped result is still a head count, but there is no head-count token a
+    # hand-written function can declare, so the ``min`` would trip the dry-run on
+    # mixing ``[person] / [fam]`` with ``dimensionless``. Opt the body out and
+    # keep the declared unit as the edge contract. See GEP 10 (known limitation).
     return min(number_of_individuals_fam, max_number_of_family_members)
 
 

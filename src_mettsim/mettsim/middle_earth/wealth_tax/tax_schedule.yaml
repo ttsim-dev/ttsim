@@ -18,6 +18,7 @@ wealth_above_which_individual_is_exempt:
     de: Vermögensschwelle, ab der die Steuer erhoben wird
     en: Wealth threshold above which the tax is levied
   unit: SILVER_PENNY
+  reference_level: person
   type: scalar
   1900-01-01:
     value: 10000
@@ -29,6 +30,7 @@ wealth_above_which_family_is_exempt:
     de: Vermögensschwelle, ab der die Familie von der Steuer befreit ist
     en: Wealth threshold above which the family is exempt from the tax
   unit: SILVER_PENNY
+  reference_level: fam
   type: scalar
   1900-01-01:
     value: 20000
@@ -40,6 +42,7 @@ wealth_above_which_kin_is_exempt:
     de: Vermögensschwelle, ab der die Sippe von der Steuer befreit ist
     en: Wealth threshold above which the kin is exempt from the tax
   unit: SILVER_PENNY
+  reference_level: kin
   type: scalar
   1900-01-01:
     value: 8000
