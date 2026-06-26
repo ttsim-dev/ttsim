@@ -31,6 +31,7 @@ from ttsim.tt.units import (
     resolve_param_unit,
     resolve_scalar_param_unit,
     resolved_unit_for_aggregation,
+    unit_for_aggregation,
     unit_token_carries_level,
 )
 
@@ -329,3 +330,111 @@ def test_resolved_aggregation_sum_over_level_less_source_is_unchanged():
         source_level=None,
     )
     assert units_are_equivalent(left=result, right=parse_unit("hour / week"))
+
+
+# ----------------------------------------------------------------------------
+# HEADCOUNT: a declarable head count ([person] / [level])
+# ----------------------------------------------------------------------------
+
+
+def test_headcount_carries_level():
+    # The reference level enters as the denominator, like currency and area.
+    assert unit_token_carries_level(Unit.HEADCOUNT)
+
+
+def test_headcount_forbids_a_time_suffix():
+    # HEADCOUNT is complete as written (a stock, not a flow); a time suffix on the
+    # name denotes a flow and is rejected.
+    with pytest.raises(UnitDefinitionError):
+        resolve_column_unit(token=Unit.HEADCOUNT, time_unit_id="m")
+
+
+def test_headcount_column_at_group_level_matches_a_count():
+    # A HEADCOUNT column at a group level resolves to [person]/[hh] — the same unit
+    # a COUNT aggregation to hh mints, so a declaration and an aggregation compose
+    # and compare cleanly (GEP 10).
+    base = resolve_column_unit(token=Unit.HEADCOUNT, time_unit_id=None)
+    at_hh = divide_by_grouping_level(base, "hh")
+    assert units_are_equivalent(
+        left=at_hh, right=grouping_level_count_unit(target_level="hh")
+    )
+
+
+def test_headcount_at_person_level_is_dimensionless():
+    # A head count per individual is [person]/[person] = a plain number.
+    base = resolve_column_unit(token=Unit.HEADCOUNT, time_unit_id=None)
+    at_person = divide_by_grouping_level(base, PERSON_LEVEL)
+    assert units_are_equivalent(left=at_person, right=UNIT_REGISTRY.dimensionless)
+
+
+def test_declared_headcount_bridges_like_a_count():
+    # A *declared* HEADCOUNT/[hh] divides a per-[hh] amount down to a per-person
+    # one, exactly as an aggregated COUNT would: the two are interchangeable.
+    headcount_at_hh = divide_by_grouping_level(
+        resolve_column_unit(token=Unit.HEADCOUNT, time_unit_id=None), "hh"
+    )
+    per_hh = divide_by_grouping_level(parse_unit("CURRENCY / month"), "hh")
+    bridged = (
+        UNIT_REGISTRY.Quantity(1.0, per_hh)
+        / UNIT_REGISTRY.Quantity(1.0, headcount_at_hh)
+    ).units
+    expected = divide_by_grouping_level(parse_unit("CURRENCY / month"), PERSON_LEVEL)
+    assert units_are_equivalent(left=bridged, right=expected)
+
+
+def test_headcount_param_per_group():
+    resolved = resolve_param_unit(
+        token=Unit.HEADCOUNT, reference_period=None, reference_level="hh"
+    )
+    assert units_are_equivalent(
+        left=resolved, right=grouping_level_count_unit(target_level="hh")
+    )
+
+
+def test_headcount_param_per_person_is_dimensionless():
+    resolved = resolve_param_unit(
+        token=Unit.HEADCOUNT, reference_period=None, reference_level=PERSON_LEVEL
+    )
+    assert units_are_equivalent(left=resolved, right=UNIT_REGISTRY.dimensionless)
+
+
+def test_headcount_scalar_param_per_group():
+    resolved = resolve_scalar_param_unit(
+        token=Unit.HEADCOUNT, time_unit_id=None, reference_level="bg"
+    )
+    assert units_are_equivalent(
+        left=resolved, right=grouping_level_count_unit(target_level="bg")
+    )
+
+
+def test_headcount_param_without_reference_level_is_rejected():
+    # A head count is always persons per something; a bare HEADCOUNT param would be
+    # an absolute [person] count per nothing.
+    with pytest.raises(UnitDefinitionError, match="must set `reference_level`"):
+        resolve_param_unit(
+            token=Unit.HEADCOUNT, reference_period=None, reference_level=None
+        )
+
+
+def test_headcount_scalar_param_without_reference_level_is_rejected():
+    with pytest.raises(UnitDefinitionError, match="must set `reference_level`"):
+        resolve_scalar_param_unit(
+            token=Unit.HEADCOUNT, time_unit_id=None, reference_level=None
+        )
+
+
+def test_count_aggregation_token_is_headcount():
+    # COUNT mints the HEADCOUNT placeholder token (group and PID alike); the
+    # level-aware resolved unit is recomputed downstream.
+    assert (
+        unit_for_aggregation(source_unit=Unit.DIMENSIONLESS, agg_type=AggType.COUNT)
+        == Unit.HEADCOUNT
+    )
+
+
+@pytest.mark.parametrize("agg_type", [AggType.ANY, AggType.ALL])
+def test_any_all_aggregation_token_is_dimensionless(agg_type):
+    assert (
+        unit_for_aggregation(source_unit=Unit.DIMENSIONLESS, agg_type=agg_type)
+        == Unit.DIMENSIONLESS
+    )

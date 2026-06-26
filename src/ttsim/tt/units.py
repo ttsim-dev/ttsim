@@ -217,6 +217,23 @@ class Unit(enum.StrEnum):
     CURRENCY_PER_SQUARE_METER_FLOW = "CURRENCY_PER_SQUARE_METER_FLOW"
     """An amount of currency per square meter per period: rent caps."""
 
+    HEADCOUNT = "HEADCOUNT"
+    """A *declarable* head count: a number of persons per reference level
+    (``[person] / [level]``). The count dimension is the ``[person]`` leaf level
+    (:data:`PERSON_LEVEL`); the reference level enters as the denominator exactly
+    as a grouping level does for currency or area, so ``HEADCOUNT`` at ``fam``
+    resolves to ``[person] / [fam]`` — the very unit a ``COUNT`` aggregation mints
+    (GEP 10). It lets a parameter, a hand-written function, or an input column
+    *declare* a head count, which only aggregations could produce before.
+
+    Always per *something*: the reference level is mandatory (a ``HEADCOUNT``
+    parameter must set :attr:`reference_level`; a ``HEADCOUNT`` column takes it
+    from the name position). The leaf reference :data:`PERSON_LEVEL` is allowed
+    and meaningful — a head count per individual (the persons pointing at one, an
+    ``agg_by_p_id`` count) is ``[person] / [person]``, which *is* a plain
+    dimensionless number, exactly as it should be. A reference level of a proper
+    group does not cancel and stays ``[person] / [group]``."""
+
 
 # A frozen dataclass, not a ``NamedTuple``: under ``from __future__ import
 # annotations`` beartype's package claw mis-reads a ``NamedTuple`` field whose
@@ -283,6 +300,16 @@ _TOKEN_BASE_AND_IS_FLOW: dict[Unit, _TokenResolution] = {
     Unit.HECTARES: _TokenResolution(base="hectare", is_flow=False, carries_level=True),
     Unit.CURRENCY_PER_SQUARE_METER_FLOW: _TokenResolution(
         base=f"{CURRENCY_TOKEN} / meter ** 2", is_flow=True, carries_level=False
+    ),
+    # The base is the [person] leaf level (the count dimension). Its pint unit is
+    # registered dynamically by `register_grouping_levels(...)`, so this base only
+    # resolves *after* that has run (it always does before any unit is resolved, in
+    # the orchestration). `carries_level=True`: the reference level enters as the
+    # denominator, so HEADCOUNT + level -> [person] / [level], identical to a COUNT.
+    Unit.HEADCOUNT: _TokenResolution(
+        base=f"{_GROUPING_LEVEL_PREFIX}{PERSON_LEVEL}",
+        is_flow=False,
+        carries_level=True,
     ),
 }
 
@@ -940,6 +967,7 @@ def resolve_scalar_param_unit(
         UnitDefinitionError: If ``reference_level`` names an unregistered level
             (or via the shared suffix ⟺ flow checks).
     """
+    _fail_if_headcount_param_lacks_reference_level(token, reference_level)
     unit = _resolve_token_via_suffix(token=token, time_unit_id=time_unit_id)
     return _apply_reference_level(unit=unit, reference_level=reference_level)
 
@@ -957,6 +985,29 @@ def _apply_reference_level(unit: pint.Unit, reference_level: str | None) -> pint
     if reference_level is None:
         return unit
     return divide_by_grouping_level(unit=unit, level=reference_level)
+
+
+def _fail_if_headcount_param_lacks_reference_level(
+    token: Unit | CurrencyUnitToken,
+    reference_level: str | None,
+) -> None:
+    """A ``HEADCOUNT`` parameter must name the level it counts per (GEP 10).
+
+    A head count is always persons per *something*, and a parameter has no name
+    position to read a level from — so it must declare one. :data:`PERSON_LEVEL`
+    is allowed (a count per individual is ``[person] / [person]`` = dimensionless)
+    but must be stated; a bare ``HEADCOUNT`` would be an absolute ``[person]``
+    count per nothing, which has no meaningful comparison and is almost always an
+    omission. Columns take their reference level from the name position and never
+    reach this check.
+    """
+    if token is Unit.HEADCOUNT and reference_level is None:
+        raise UnitDefinitionError(
+            f"A {Unit.HEADCOUNT} parameter must set `reference_level` to the "
+            f"level it counts per — {PERSON_LEVEL!r} for a per-individual count, "
+            f"or a group level (e.g. 'fam') for persons per group. A head count "
+            f"is always persons per something (GEP 10)."
+        )
 
 
 def resolve_param_unit(
@@ -1007,6 +1058,7 @@ def resolve_param_unit(
             violated, ``reference_period`` is not a recognised label, or
             ``reference_level`` names an unregistered grouping level.
     """
+    _fail_if_headcount_param_lacks_reference_level(token, reference_level)
     if (
         reference_period is not None
         and reference_period not in REFERENCE_PERIOD_TO_PINT_NAME
@@ -1342,8 +1394,12 @@ def unit_for_aggregation(
 
     - ``SUM`` / ``MEAN`` / ``MIN`` / ``MAX`` preserve the source token (a sum
       or average of currency flows is still a currency flow);
-    - ``COUNT`` is a head count — a dimensionless integer, i.e.
-      :attr:`Unit.DIMENSIONLESS` regardless of source;
+    - ``COUNT`` is a head count — :attr:`Unit.HEADCOUNT` regardless of source.
+      For an ``agg_by_group`` node the resolved unit is recomputed level-aware as
+      ``[person] / [target]`` (the token is a placeholder there); for an
+      ``agg_by_p_id`` node the token *is* what resolves, through the column path,
+      to ``[person] / [person]`` = dimensionless — a head count per individual,
+      which is exactly a plain number (GEP 10);
     - ``ANY`` / ``ALL`` yield a boolean, which is a dimensionless quantity
       (GEP 10), i.e. :attr:`Unit.DIMENSIONLESS`.
 
@@ -1354,13 +1410,15 @@ def unit_for_aggregation(
         agg_type: The :class:`ttsim.tt.aggregation.AggType` of the aggregation.
 
     Returns:
-        The auto-assigned unit token. :attr:`Unit.DIMENSIONLESS` for a
-        ``COUNT`` head count or a boolean ``ANY`` / ``ALL`` result; otherwise
-        the preserved source token (:data:`UNSET_UNIT` when ``SUM`` /
+        The auto-assigned unit token. :attr:`Unit.HEADCOUNT` for a ``COUNT`` head
+        count, :attr:`Unit.DIMENSIONLESS` for a boolean ``ANY`` / ``ALL`` result;
+        otherwise the preserved source token (:data:`UNSET_UNIT` when ``SUM`` /
         ``MEAN`` / … preserve a source that itself lacks a declaration, which
         the mandatory-units check then reports against the source).
     """
-    if agg_type in (AggType.COUNT, AggType.ANY, AggType.ALL):
+    if agg_type is AggType.COUNT:
+        return Unit.HEADCOUNT
+    if agg_type in (AggType.ANY, AggType.ALL):
         return Unit.DIMENSIONLESS
     # SUM, MEAN, MIN, MAX preserve the source unit.
     return source_unit
