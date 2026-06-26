@@ -1591,3 +1591,75 @@ def test_same_group_level_addition_in_a_body_passes():
         env={"a_m_fam": a_m_fam, "b_m_fam": b_m_fam, "total_m_fam": total_m_fam},
         grouping_levels=GROUPING_LEVELS,
     )
+
+
+# ----------------------------------------------------------------------------
+# Aggregations: declared unit must match the derived unit (GEP 10)
+# ----------------------------------------------------------------------------
+
+
+def test_sum_over_boolean_declared_dimensionless_is_caught():
+    """A SUM over a boolean is a head count; declaring it DIMENSIONLESS is wrong.
+
+    It derives `[person]/[fam]` (the persons the indicator is true for), so the
+    declaration must be HEADCOUNT, not DIMENSIONLESS (GEP 10).
+    """
+
+    @policy_input(unit=Unit.DIMENSIONLESS)
+    def adult() -> bool: ...
+
+    @agg_by_group_function(agg_type=AggType.SUM, unit=Unit.DIMENSIONLESS)
+    def number_of_adults_fam(adult: bool, fam_id: int) -> int: ...
+
+    with pytest.raises(UnitConsistencyError, match="number_of_adults_fam"):
+        fail_if_environment_units_are_inconsistent(
+            env={"adult": adult, "number_of_adults_fam": number_of_adults_fam},
+            grouping_levels=GROUPING_LEVELS,
+        )
+
+
+def test_sum_over_boolean_declared_headcount_passes():
+    @policy_input(unit=Unit.DIMENSIONLESS)
+    def adult() -> bool: ...
+
+    @agg_by_group_function(agg_type=AggType.SUM, unit=Unit.HEADCOUNT)
+    def number_of_adults_fam(adult: bool, fam_id: int) -> int: ...
+
+    fail_if_environment_units_are_inconsistent(
+        env={"adult": adult, "number_of_adults_fam": number_of_adults_fam},
+        grouping_levels=GROUPING_LEVELS,
+    )
+
+
+def test_sum_of_currency_declared_with_wrong_kind_is_caught():
+    """A SUM of a currency flow derives currency; declaring YEARS is rejected."""
+
+    @policy_input(unit=Unit.CURRENCY_FLOW)
+    def income_m() -> float: ...
+
+    @agg_by_group_function(agg_type=AggType.SUM, unit=Unit.YEARS)
+    def income_m_fam(income_m: float, fam_id: int) -> float: ...
+
+    with pytest.raises(UnitConsistencyError, match="income_m_fam"):
+        fail_if_environment_units_are_inconsistent(
+            env={"income_m": income_m, "income_m_fam": income_m_fam},
+            grouping_levels=GROUPING_LEVELS,
+        )
+
+
+def test_max_with_group_index_but_person_unit_level_passes():
+    """MAX preserves the source's person UNIT level; the `_fam` suffix is only an
+    INDEX level, so a CURRENCY_FLOW declaration is consistent — the level-free
+    kinds match and there is no false positive (GEP 10).
+    """
+
+    @policy_input(unit=Unit.CURRENCY_FLOW)
+    def income_m() -> float: ...
+
+    @agg_by_group_function(agg_type=AggType.MAX, unit=Unit.CURRENCY_FLOW)
+    def income_max_m_fam(income_m: float, fam_id: int) -> float: ...
+
+    fail_if_environment_units_are_inconsistent(
+        env={"income_m": income_m, "income_max_m_fam": income_max_m_fam},
+        grouping_levels=GROUPING_LEVELS,
+    )
