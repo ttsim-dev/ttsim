@@ -683,7 +683,7 @@ def sum_source_by_p_id_someone_else(
     pass
 
 
-@agg_by_p_id_function(agg_type=AggType.SUM, unit=Unit.DIMENSIONLESS)
+@agg_by_p_id_function(agg_type=AggType.SUM, unit=Unit.CURRENCY_FLOW)
 def sum_source_m_by_p_id_someone_else(
     source_m: int,
     p_id: int,

@@ -31,6 +31,7 @@ from typing import Any, cast
 import dags.tree as dt
 import numpy
 import pint
+from pint.util import to_units_container
 
 from ttsim.exceptions import TTSIMError, UnitConsistencyError, UnitDefinitionError
 from ttsim.interface_dag_elements.interface_node_objects import interface_function
@@ -70,6 +71,8 @@ from ttsim.tt.units import (
     CurrencyUnitToken,
     Unit,
     UnsetUnitType,
+    _flow_period_of,
+    _token_base_unit,
     base_currency,
     divide_by_grouping_level,
     fail_if_units_are_missing,
@@ -230,6 +233,18 @@ def _resolve_leveled_column_unit(
     return column_unit
 
 
+def _argument_is_person_pointer(qname: str) -> bool:
+    """Whether an aggregation argument is a ``p_id_*`` person pointer (GEP 2).
+
+    An ``agg_by_p_id`` aggregation becomes an :class:`AggByGroupFunction` once tree
+    logic is removed, carrying its foreign-key pointer (``p_id_recipient``, …) as a
+    plain argument. The pointer is not a value source — it selects *where* the sum
+    lands — so it must be excluded when finding the single source column, exactly
+    as the ``@agg_by_p_id_function`` constructor does (GEP 2 / GEP 10).
+    """
+    return any(e.startswith("p_id_") for e in dt.tree_path_from_qname(qname))
+
+
 def _resolve_agg_by_group_unit(
     qname: str,
     obj: AggByGroupFunction,
@@ -263,11 +278,15 @@ def _resolve_agg_by_group_unit(
         return UNIT_REGISTRY.dimensionless
     if agg_type is AggType.COUNT:
         return grouping_level_count_unit(target_level=target_level)
-    # Value aggregations: the source is the one non-group-id, non-special argument.
+    # Value aggregations: the source is the lone argument that is neither a
+    # grouping id (`*_id`), a person pointer (`p_id_*`, present on aggregations
+    # derived from `agg_by_p_id`), nor a framework argument.
     sources = {
         p
         for p in inspect.signature(obj.function).parameters
-        if not p.endswith("_id") and p not in NON_UNIT_ARGUMENTS
+        if not p.endswith("_id")
+        and not _argument_is_person_pointer(p)
+        and p not in NON_UNIT_ARGUMENTS
     }
     if len(sources) != 1:
         return None
@@ -380,6 +399,93 @@ def fail_if_environment_units_are_missing(
     fail_if_units_are_missing(units_by_qname)
 
 
+def _strip_grouping_level_denominator(unit: pint.Unit) -> pint.Unit:
+    """Divide out grouping-level *denominators*, keeping the count numerator (GEP 10).
+
+    Only grouping levels in the *denominator* (the level a quantity is measured
+    *per*) are removed; the ``[person]`` *count numerator* of a head count is
+    physical content and is kept.
+    """
+    result = unit
+    for name, exponent in to_units_container(unit).items():
+        if isinstance(exponent, complex):  # pint exponents are real; narrow for ty
+            continue
+        if name.startswith(_GROUPING_LEVEL_PREFIX) and exponent < 0:
+            result = result * UNIT_REGISTRY.parse_units(name) ** (-exponent)
+    return result
+
+
+def _physical_kind_of(unit: pint.Unit) -> pint.Unit:
+    """The period-free, level-free physical content of a unit (GEP 10).
+
+    An aggregation *derives* its full unit — physical kind, flow period, and
+    grouping level — from its source. Of these only the **physical kind**
+    (currency, the ``[person]`` count, area, a duration, or dimensionless) is the
+    author's to declare; the flow period comes from the source's suffix and the
+    grouping level from the mint/swap/preserve rule (the name's group suffix may be
+    a mere *index* level — a ``MAX`` over a family is fam-indexed but person-valued).
+    So the declared-vs-derived check compares this residual: the flow period and the
+    grouping-level denominator divided out, the currency / count / area / duration
+    kept.
+    """
+    # `_flow_period_of` returns the *denominator* period (the `month` of
+    # `CURRENCY / month`), so multiplying cancels it, as in
+    # `unit_residual_excluding_currency_and_flow_period`.
+    period = _flow_period_of(unit)
+    without_period = unit * period if period is not None else unit
+    return _strip_grouping_level_denominator(without_period)
+
+
+def _agg_declaration_inconsistency(
+    qname: str,
+    obj: AggByGroupFunction,
+    resolved_units: Mapping[str, pint.Unit | dict[str | int, Any]],
+) -> str | None:
+    """Error message if an aggregation's declared *kind* ≠ what it derives (GEP 10).
+
+    The resolved unit (:func:`_resolve_agg_by_group_unit`) is the *derived* one —
+    minted / swapped / preserved from the source and agg_type. The declared token's
+    physical kind (its period-free, level-free base) must equal the derived unit's;
+    a ``SUM`` over a boolean is a head count and must be declared ``HEADCOUNT``, not
+    ``DIMENSIONLESS``. Returns ``None`` when there is nothing to check: the
+    derivation could not resolve the source, or no token is declared (the
+    mandatory-units check reports either).
+    """
+    derived = resolved_units.get(qname)
+    declared_token = getattr(obj, "unit", UNSET_UNIT)
+    if derived is None or isinstance(derived, dict) or declared_token is UNSET_UNIT:
+        return None
+    declared_kind = _token_base_unit(cast("Unit | CurrencyUnitToken", declared_token))
+    derived_kind = _physical_kind_of(cast("pint.Unit", derived))
+    if units_are_equivalent(left=declared_kind, right=derived_kind):
+        return None
+    return (
+        f"{qname}: declares unit `{declared_token}` (a {declared_kind} quantity), "
+        f"but its {obj.agg_type.name} aggregation derives {derived} (a "
+        f"{derived_kind} quantity) from its source. An aggregation's declared unit "
+        f"must match the kind it derives — e.g. `HEADCOUNT` for a count, the "
+        f"source's currency for a sum of money (GEP 10)."
+    )
+
+
+def _aggregation_declaration_errors(
+    env: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
+    resolved_units: Mapping[str, pint.Unit | dict[str | int, Any]],
+) -> list[str]:
+    """Declared-vs-derived errors for every group aggregation (GEP 10)."""
+    return [
+        error
+        for qname, obj in env.items()
+        if isinstance(obj, AggByGroupFunction)
+        for error in [
+            _agg_declaration_inconsistency(
+                qname=qname, obj=obj, resolved_units=resolved_units
+            )
+        ]
+        if error is not None
+    ]
+
+
 def fail_if_environment_units_are_inconsistent(
     env: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
     grouping_levels: OrderedQNames,
@@ -390,9 +496,11 @@ def fail_if_environment_units_are_inconsistent(
     Each ``@policy_function`` / ``@param_function`` body is dry-run on
     representative values built from its producers' resolved units (the DAG
     edges) — see the module docstring for the conservative rules and the
-    boolean-enumeration strategy. Aggregations, time-conversion variants, and
-    group-creation functions have no scalar body to dry-run; their units are
-    auto-assigned or checked via their consumers.
+    boolean-enumeration strategy. An aggregation has no scalar body, but it
+    *derives* a unit from its source and agg_type; its declared token is checked
+    against that derivation here, the same declared-vs-produced contract a body is
+    held to. Time-conversion variants and group-creation functions are
+    unit-assigned by construction and need no check.
 
     In the interface DAG the resolved units are supplied by the
     :func:`resolved_units` node, so the environment walk runs once per build
@@ -400,9 +508,9 @@ def fail_if_environment_units_are_inconsistent(
     ``None`` purely for direct callers (tests), where it is computed on demand.
 
     Raises:
-        UnitConsistencyError: If any body infers a concrete unit that
-            disagrees with its declaration. All offending nodes are reported
-            together.
+        UnitConsistencyError: If any body infers a concrete unit that disagrees
+            with its declaration, or an aggregation's declared unit disagrees
+            with what it derives. All offending nodes are reported together.
     """
     if resolved_units is None:
         resolved_units = resolve_environment_units(
@@ -421,10 +529,16 @@ def fail_if_environment_units_are_inconsistent(
         if isinstance(obj, ColumnObject | ParamFunction)
         and node_is_boolean(qname=qname, obj=obj)
     }
-    errors: list[str] = []
+    # An aggregation has no scalar body, but it *derives* a unit from its source
+    # and agg_type; its declared token must match that derivation — the same
+    # declared-vs-produced contract a hand-written body is held to (GEP 10).
+    errors: list[str] = _aggregation_declaration_errors(
+        env=env, resolved_units=resolved_units
+    )
     for qname, obj in env.items():
-        # Only these two have a scalar body written by a human; everything
-        # else is generated and unit-assigned by construction.
+        # Only these two have a scalar body written by a human; everything else
+        # (aggregations — validated above — time-conversions, group ids) is
+        # unit-assigned by construction.
         if not isinstance(obj, PolicyFunction | ParamFunction):
             continue
         if qname not in resolved_units:
