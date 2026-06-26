@@ -748,8 +748,9 @@ def test_policy_input_rejects_invalid_unit_at_decoration():
         (AggType.MEAN, Unit.CURRENCY_FLOW, Unit.CURRENCY_FLOW),
         (AggType.MIN, Unit.CURRENCY_FLOW, Unit.CURRENCY_FLOW),
         (AggType.MAX, Unit.CURRENCY_FLOW, Unit.CURRENCY_FLOW),
-        # A COUNT is a head count, i.e. dimensionless (GEP 10).
-        (AggType.COUNT, Unit.CURRENCY_FLOW, Unit.DIMENSIONLESS),
+        # A COUNT is a head count: the HEADCOUNT token, independent of source
+        # (GEP 10). The level-aware resolved unit is [person]/[target].
+        (AggType.COUNT, Unit.CURRENCY_FLOW, Unit.HEADCOUNT),
         # ANY / ALL yield booleans, which are dimensionless quantities (GEP 10),
         # independent of the source.
         (AggType.ANY, Unit.CURRENCY_FLOW, Unit.DIMENSIONLESS),
@@ -764,10 +765,10 @@ def test_unit_for_aggregation_preserves_unannotated_source():
     assert (
         unit_for_aggregation(source_unit=UNSET_UNIT, agg_type=AggType.SUM) is UNSET_UNIT
     )
-    # COUNT/ANY/ALL are independent of the source: dimensionless.
+    # COUNT mints a head count and ANY/ALL a boolean, both independent of source.
     assert (
         unit_for_aggregation(source_unit=UNSET_UNIT, agg_type=AggType.COUNT)
-        is Unit.DIMENSIONLESS
+        is Unit.HEADCOUNT
     )
 
 
