@@ -19,11 +19,9 @@ from ttsim.tt import (
 )
 
 
-@agg_by_group_function(
-    agg_type=AggType.SUM, end_date="2019-12-31", unit=Unit.DIMENSIONLESS
-)
+@agg_by_group_function(agg_type=AggType.SUM, end_date="2019-12-31", unit=Unit.HEADCOUNT)
 def number_of_adults_fam(fam_id: int, adult: bool) -> int:
-    """The number of adults in the family."""
+    """The number of adults in the family — a head count (SUM over a boolean)."""
 
 
 @agg_by_group_function(agg_type=AggType.COUNT)
