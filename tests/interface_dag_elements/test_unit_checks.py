@@ -1495,3 +1495,114 @@ def test_per_capita_division_bridges_via_head_count():
     )
     # The [fam] cancels against the count's [person]/[fam] — no level mismatch.
     fail_if_environment_units_are_inconsistent(env=env, grouping_levels=GROUPING_LEVELS)
+
+
+def test_cross_group_level_subtraction_in_a_body_is_caught():
+    """Subtracting two different group levels is a level mismatch (GEP 10).
+
+    ``income_m_fam`` is ``CURRENCY/month/[fam]`` and ``income_m_kin``
+    ``CURRENCY/month/[kin]``. Broadcast replicates each onto persons but leaves
+    the *unit* level untouched, so the subtraction stays ``[fam] - [kin]`` — the
+    headline cross-level bug the dry-run must reject.
+    """
+
+    @policy_input(unit=Unit.CURRENCY_FLOW)
+    def income_m_fam() -> float: ...
+
+    @policy_input(unit=Unit.CURRENCY_FLOW)
+    def income_m_kin() -> float: ...
+
+    @policy_function(unit=Unit.CURRENCY_FLOW)
+    def difference_m_fam(income_m_fam: float, income_m_kin: float) -> float:
+        return income_m_fam - income_m_kin
+
+    with pytest.raises(UnitConsistencyError, match="difference_m_fam"):
+        fail_if_environment_units_are_inconsistent(
+            env={
+                "income_m_fam": income_m_fam,
+                "income_m_kin": income_m_kin,
+                "difference_m_fam": difference_m_fam,
+            },
+            grouping_levels=GROUPING_LEVELS,
+        )
+
+
+def test_person_versus_group_level_subtraction_in_a_body_is_caught():
+    """A person-level quantity minus a group-level one is a mismatch (GEP 10).
+
+    ``income_m`` carries no group suffix, so it is ``CURRENCY/month/[person]``;
+    ``freibetrag_m_fam`` is ``CURRENCY/month/[fam]``. Combining them needs an
+    explicit per-capita reconciliation, so the bare subtraction is rejected.
+    """
+
+    @policy_input(unit=Unit.CURRENCY_FLOW)
+    def income_m() -> float: ...
+
+    @policy_input(unit=Unit.CURRENCY_FLOW)
+    def freibetrag_m_fam() -> float: ...
+
+    @policy_function(unit=Unit.CURRENCY_FLOW)
+    def difference_m(income_m: float, freibetrag_m_fam: float) -> float:
+        return income_m - freibetrag_m_fam
+
+    with pytest.raises(UnitConsistencyError, match="difference_m"):
+        fail_if_environment_units_are_inconsistent(
+            env={
+                "income_m": income_m,
+                "freibetrag_m_fam": freibetrag_m_fam,
+                "difference_m": difference_m,
+            },
+            grouping_levels=GROUPING_LEVELS,
+        )
+
+
+def test_person_versus_group_level_ordering_comparison_is_caught():
+    """An ordering comparison across levels is a mismatch (GEP 10).
+
+    The canonical "person income below a group threshold" shape: ``income_m``
+    (``[person]``) against ``schwelle_m_fam`` (``[fam]``). Ordering two
+    non-equivalent quantities is rejected — a distinct dry-run path from `<`.
+    """
+
+    @policy_input(unit=Unit.CURRENCY_FLOW)
+    def income_m() -> float: ...
+
+    @policy_input(unit=Unit.CURRENCY_FLOW)
+    def schwelle_m_fam() -> float: ...
+
+    @policy_function(unit=Unit.DIMENSIONLESS)
+    def below_threshold(income_m: float, schwelle_m_fam: float) -> bool:
+        return income_m < schwelle_m_fam
+
+    with pytest.raises(UnitConsistencyError, match="below_threshold"):
+        fail_if_environment_units_are_inconsistent(
+            env={
+                "income_m": income_m,
+                "schwelle_m_fam": schwelle_m_fam,
+                "below_threshold": below_threshold,
+            },
+            grouping_levels=GROUPING_LEVELS,
+        )
+
+
+def test_same_group_level_addition_in_a_body_passes():
+    """Control: combining two quantities at the *same* group level is fine.
+
+    Proves the cross-level checks above reject on the level mismatch, not on
+    merely seeing a group suffix — ``a_m_fam + b_m_fam`` is ``[fam] + [fam]``.
+    """
+
+    @policy_input(unit=Unit.CURRENCY_FLOW)
+    def a_m_fam() -> float: ...
+
+    @policy_input(unit=Unit.CURRENCY_FLOW)
+    def b_m_fam() -> float: ...
+
+    @policy_function(unit=Unit.CURRENCY_FLOW)
+    def total_m_fam(a_m_fam: float, b_m_fam: float) -> float:
+        return a_m_fam + b_m_fam
+
+    fail_if_environment_units_are_inconsistent(
+        env={"a_m_fam": a_m_fam, "b_m_fam": b_m_fam, "total_m_fam": total_m_fam},
+        grouping_levels=GROUPING_LEVELS,
+    )
