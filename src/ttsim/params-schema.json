@@ -11,6 +11,7 @@
         "HOURS_FLOW",
         "SQUARE_METERS",
         "HECTARES",
+        "HEADCOUNT",
         "CASTAR",
         "CASTAR_FLOW",
         "CASTAR_PER_SQUARE_METER_FLOW",

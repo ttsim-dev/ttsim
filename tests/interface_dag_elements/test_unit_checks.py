@@ -1213,12 +1213,12 @@ def test_verify_units_false_still_checks_consumers_against_declared_unit():
 # ----------------------------------------------------------------------------
 
 
-def test_count_aggregation_auto_assigns_dimensionless():
+def test_count_aggregation_auto_assigns_headcount():
     @agg_by_group_function(agg_type=AggType.COUNT)
     def number_of_individuals_fam(fam_id: int) -> int:
-        """A head count per family — dimensionless (GEP 10)."""
+        """A head count per family — the HEADCOUNT token (GEP 10)."""
 
-    assert number_of_individuals_fam.unit is Unit.DIMENSIONLESS
+    assert number_of_individuals_fam.unit is Unit.HEADCOUNT
 
 
 def test_any_aggregation_auto_assigns_dimensionless():
