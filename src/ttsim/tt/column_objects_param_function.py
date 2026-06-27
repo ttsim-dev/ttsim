@@ -778,15 +778,16 @@ def agg_by_group_function(
         group_ids = {p for p in args if p.endswith("_id")}
         _fail_if_group_id_is_invalid(group_ids=group_ids, orig_location=orig_location)
         group_id = group_ids.pop()
-        # Auto-assign the unit when omitted (GEP 10). A COUNT is a head count at
-        # its group level — PERSON_PER_<group> — so the extensive person base
-        # spells the level its name claims; ANY / ALL are dimensionless.
+        # Auto-assign the unit when omitted (GEP 10), via the single source of
+        # truth `unit_for_aggregation`: a COUNT is a head count at its group
+        # level — PERSON_PER_<group> — so the extensive person base spells the
+        # level its name claims; ANY / ALL are dimensionless.
         node_unit = unit
         if node_unit is UNSET_UNIT:
-            node_unit = (
-                Unit.PERSON.PER_LEVEL(group_id.removesuffix("_id"))
-                if agg_type is AggType.COUNT
-                else unit_for_aggregation(source_unit=UNSET_UNIT, agg_type=agg_type)
+            node_unit = unit_for_aggregation(
+                source_unit=UNSET_UNIT,
+                agg_type=agg_type,
+                target_level=group_id.removesuffix("_id"),
             )
         other_args = args - {group_id, "num_segments", "backend"}
         column_name: str | None

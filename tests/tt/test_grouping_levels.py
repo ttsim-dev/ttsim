@@ -279,20 +279,25 @@ def test_resolved_aggregation_count_mints_person_over_target():
     )
 
 
-def test_resolved_aggregation_min_preserves_level_less_source():
-    # MIN of a level-less MONTHS source stays level-less MONTHS.
-    source = parse_unit("month")
+def test_resolved_aggregation_min_levels_a_level_less_source():
+    # MIN of a level-less MONTHS source acquires the target level (GEP 10, T8):
+    # the `_xx` suffix and the unit level are always in sync, so even an intensive
+    # age aggregated to a group carries that group's level — MONTHS / [hh].
+    source = parse_unit("delta_calendar_month")
     result = resolved_unit_for_aggregation(
         source_unit=source,
         agg_type=AggType.MIN,
-        target_level="fg",
+        target_level="hh",
         source_level=None,
     )
-    assert units_are_equivalent(left=result, right=parse_unit("month"))
+    expected = divide_by_grouping_level(parse_unit("delta_calendar_month"), "hh")
+    assert units_are_equivalent(left=result, right=expected)
 
 
-def test_resolved_aggregation_min_preserves_person_level_source():
-    # MIN of a CURRENCY/[person] source stays CURRENCY/[person] (does not swap).
+def test_resolved_aggregation_min_swaps_person_to_target():
+    # MIN of a CURRENCY/[person] source swaps to the target level (GEP 10, T8):
+    # like SUM, it carries the level its `_xx` suffix claims — CURRENCY / [hh],
+    # not the source [person].
     source = divide_by_grouping_level(parse_unit("CURRENCY"), PERSON_LEVEL)
     result = resolved_unit_for_aggregation(
         source_unit=source,
@@ -300,7 +305,8 @@ def test_resolved_aggregation_min_preserves_person_level_source():
         target_level="hh",
         source_level=PERSON_LEVEL,
     )
-    assert units_are_equivalent(left=result, right=source)
+    expected = divide_by_grouping_level(parse_unit("CURRENCY"), "hh")
+    assert units_are_equivalent(left=result, right=expected)
 
 
 @pytest.mark.parametrize("agg_type", [AggType.ANY, AggType.ALL])
@@ -319,8 +325,9 @@ def test_resolved_aggregation_any_all_are_boolean_at_target_level(agg_type):
     )
 
 
-def test_resolved_aggregation_sum_over_level_less_source_is_unchanged():
-    # A level-less source summed has no level to swap.
+def test_resolved_aggregation_sum_over_level_less_source_acquires_target_level():
+    # A level-less source summed to a group acquires the target level (GEP 10,
+    # T8): the total working hours in a household is working_hour / week / [hh].
     source = parse_unit("working_hour / week")
     result = resolved_unit_for_aggregation(
         source_unit=source,
@@ -328,7 +335,8 @@ def test_resolved_aggregation_sum_over_level_less_source_is_unchanged():
         target_level="hh",
         source_level=None,
     )
-    assert units_are_equivalent(left=result, right=parse_unit("working_hour / week"))
+    expected = divide_by_grouping_level(parse_unit("working_hour / week"), "hh")
+    assert units_are_equivalent(left=result, right=expected)
 
 
 # ----------------------------------------------------------------------------

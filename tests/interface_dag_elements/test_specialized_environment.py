@@ -303,9 +303,12 @@ def return_n1__x_kin(n1__x_kin: int) -> int:
                 "kin_id": kin_id,
                 "p_id": p_id,
                 "n1": {
-                    "f": policy_function(leaf_name="f", unit=Unit.DIMENSIONLESS)(
-                        return_n1__x_kin
-                    ),
+                    # `f` reads the `_kin` aggregate at the person level — a
+                    # genuine cross-level read, so it opts out of unit inference
+                    # (GEP 10, T8): a group SUM now carries the `[kin]` level.
+                    "f": policy_function(
+                        leaf_name="f", unit=Unit.DIMENSIONLESS, verify_units=False
+                    )(return_n1__x_kin),
                     "x": x,
                 },
             },
@@ -322,9 +325,11 @@ def return_n1__x_kin(n1__x_kin: int) -> int:
                 "kin_id": kin_id,
                 "p_id": p_id,
                 "n1": {
-                    "f": policy_function(leaf_name="f", unit=Unit.DIMENSIONLESS)(
-                        return_x_kin
-                    ),
+                    # Cross-level read of a `_kin` aggregate at the person level
+                    # (GEP 10, T8) — opt out of unit inference.
+                    "f": policy_function(
+                        leaf_name="f", unit=Unit.DIMENSIONLESS, verify_units=False
+                    )(return_x_kin),
                     "x": x,
                 },
             },
@@ -380,9 +385,11 @@ def return_n1__x_kin(n1__x_kin: int) -> int:
                 "kin_id": kin_id,
                 "p_id": p_id,
                 "n1": {
-                    "f": policy_function(leaf_name="f", unit=Unit.DIMENSIONLESS)(
-                        return_y_kin
-                    ),
+                    # Cross-level read of a `_kin` aggregate at the person level
+                    # (GEP 10, T8) — opt out of unit inference.
+                    "f": policy_function(
+                        leaf_name="f", unit=Unit.DIMENSIONLESS, verify_units=False
+                    )(return_y_kin),
                     "y_kin": y_kin_namespaced_input,
                 },
                 "inputs": {"x": x},

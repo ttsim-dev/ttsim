@@ -245,9 +245,11 @@ def _resolve_agg_by_group_unit(
 
     - a **head count** — ``COUNT``, or a ``SUM`` over a *boolean* source (counting
       the persons the indicator is true for) — mints ``[person]/[target]``;
-    - ``SUM`` over an extensive value swaps the source level for the target level;
-    - ``MEAN`` / ``MIN`` / ``MAX`` preserve the source unit verbatim;
-    - ``ANY`` / ``ALL`` yield a dimensionless boolean.
+    - ``SUM`` / ``MEAN`` / ``MIN`` / ``MAX`` all resolve to the target level
+      (GEP 10, T8): the source level (if any) is swapped for the target level and
+      a level-less source acquires it, so a ``_fg`` aggregate carries ``[fg]``
+      whatever the agg type — they differ only in the numeric worker;
+    - ``ANY`` / ``ALL`` yield a dimensionless boolean at the target level.
 
     The value source is the function's own summed/averaged argument — read off the
     signature, not by stripping the name suffix, so a hand-written aggregation
@@ -478,11 +480,11 @@ def _physical_kind_of(unit: pint.Unit) -> pint.Unit:
     grouping level — from its source. Of these only the **physical kind**
     (currency, the ``[person]`` count, area, a duration, or dimensionless) is the
     author's to declare; the flow period comes from the source's suffix and the
-    grouping level from the mint/swap/preserve rule (the name's group suffix may be
-    a mere *index* level — a ``MAX`` over a family is fam-indexed but person-valued).
-    So the declared-vs-derived check compares this residual: the flow period and the
-    grouping-level denominator divided out, the currency / count / area / duration
-    kept.
+    grouping level from the aggregation rule — every group aggregation resolves to
+    its target level (GEP 10, T8), so the declared token need not (and for a
+    level-less intensive base cannot) spell it. So the declared-vs-derived check
+    compares this residual: the flow period and the grouping-level denominator
+    divided out, the currency / count / area / duration kept.
     """
     # `_flow_period_of` returns the *denominator* period (the `month` of
     # `CURRENCY / month`), so multiplying cancels it, as in
