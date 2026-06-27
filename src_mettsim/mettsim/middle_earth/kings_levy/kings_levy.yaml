@@ -19,8 +19,7 @@ raw_kings_levy_schedule:
       per-axis conversion, scaling the quadratic term by 1 / f_in rather than
       by a single factor.
   input_unit: SILVER_PENNY
-  output_unit: SILVER_PENNY_FLOW
-  reference_period: Year
+  output_unit: SILVER_PENNY_PER_YEAR
   type: require_converter
   1900-01-01:
     bracket_ceiling: 1000

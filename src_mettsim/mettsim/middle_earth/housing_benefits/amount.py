@@ -11,7 +11,9 @@ if TYPE_CHECKING:
 
 
 @policy_function(
-    vectorization_strategy="vectorize", unit=Unit.CURRENCY_FLOW, verify_units=False
+    vectorization_strategy="vectorize",
+    unit=Unit.CURRENCY.PER_MONTH.PER_FAM,
+    verify_units=False,
 )
 def amount_m_fam(
     eligibility__requirement_fulfilled_fam: bool,
@@ -26,7 +28,7 @@ def amount_m_fam(
         return 0
 
 
-@param_function(unit=Unit.CURRENCY_FLOW, verify_units=False)
+@param_function(unit=Unit.CURRENCY.PER_MONTH.PER_FAM, verify_units=False)
 def max_amount_m_fam(
     policy_year: int,
     max_amount_m_fam_by_policy_year: ConsecutiveIntLookupTableParamValue,

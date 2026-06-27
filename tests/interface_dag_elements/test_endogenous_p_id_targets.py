@@ -229,12 +229,12 @@ def test_endogenous_p_id_target_mixed_with_regular_column(
         end_date=_DATE,
         leaf_name="doubled_m",
         vectorization_strategy="vectorize",
-        unit=Unit.CURRENCY_FLOW,
+        unit=Unit.CURRENCY.PER_MONTH,
     )
     def doubled_m(income_m: float) -> float:
         return income_m * 2.0
 
-    @policy_input(unit=Unit.CURRENCY_FLOW)
+    @policy_input(unit=Unit.CURRENCY.PER_MONTH)
     def income_m() -> float:
         pass
 

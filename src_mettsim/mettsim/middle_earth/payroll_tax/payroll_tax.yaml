@@ -6,8 +6,7 @@ wealth_threshold_for_reduced_tax_rate:
   description:
     de: Umgekehrte Bennenung schiene sinnvoll.
     en: The reverse naming would seem more sensible.
-  unit: SILVER_PENNY
-  reference_level: fam
+  unit: SILVER_PENNY_PER_FAM
   type: scalar
   1900-01-01:
     value: 50000
@@ -16,7 +15,7 @@ wealth_threshold_for_reduced_tax_rate:
       Pure redenomination at the currency reform of 2020: the realm's unit of
       account switches from the Shire's silver penny to Gondor's castar
       (1 castar = 4 silver pennies).
-    unit: CASTAR
+    unit: CASTAR_PER_FAM
     value: 12500
 tax_schedule_standard:
   name:
@@ -25,9 +24,8 @@ tax_schedule_standard:
   description:
     de: Für Angehörige von Familien mit niedrigem Vermögen
     en: For member of families with low wealth
-  input_unit: SILVER_PENNY_FLOW
-  output_unit: SILVER_PENNY_FLOW
-  reference_period: Year
+  input_unit: SILVER_PENNY_PER_YEAR
+  output_unit: SILVER_PENNY_PER_YEAR
   type: piecewise_linear
   1900-01-01:
     intervals:
@@ -43,8 +41,8 @@ tax_schedule_standard:
       Pure redenomination at the currency reform of 2020: bracket bounds are
       re-expressed in castar (1 castar = 4 silver pennies); the rates are
       dimensionless and carry over.
-    input_unit: CASTAR_FLOW
-    output_unit: CASTAR_FLOW
+    input_unit: CASTAR_PER_YEAR
+    output_unit: CASTAR_PER_YEAR
     intervals:
       - interval: (-inf, 0)
         slope: 0.0
@@ -60,9 +58,8 @@ tax_schedule_reduced:
   description:
     de: Für Angehörige von Familien mit hohem Vermögen
     en: For member of families with high wealth
-  input_unit: SILVER_PENNY_FLOW
-  output_unit: SILVER_PENNY_FLOW
-  reference_period: Year
+  input_unit: SILVER_PENNY_PER_YEAR
+  output_unit: SILVER_PENNY_PER_YEAR
   type: piecewise_linear
   1900-01-01:
     intervals:

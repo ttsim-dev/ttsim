@@ -61,13 +61,10 @@ from ttsim.tt.type_resolution import (
 from ttsim.tt.units import (
     _GROUPING_LEVEL_PREFIX,
     PERSON_LEVEL,
-    REFERENCE_PERIOD_TO_PINT_NAME,
     TIME_UNIT_ID_TO_PINT_NAME,
     UNIT_REGISTRY,
     UNSET_UNIT,
-    CurrencyUnitToken,
-    Unit,
-    UnsetUnitType,
+    CompositeUnit,
     _flow_period_of,
     _token_base_unit,
     base_currency,
@@ -77,14 +74,12 @@ from ttsim.tt.units import (
     is_calendar_point_unit,
     parse_unit,
     register_grouping_levels,
-    resolve_column_unit,
-    resolve_param_unit,
-    resolve_scalar_param_unit,
+    resolve_compositional_column_unit,
+    resolve_compositional_param_unit,
+    resolve_compositional_unit,
     resolved_unit_for_aggregation,
     token_is_agnostic_currency,
     unit_residual_excluding_currency_and_flow_period,
-    unit_token_carries_level,
-    unit_token_is_flow,
     units_are_equivalent,
 )
 from ttsim.typing import (
@@ -142,10 +137,10 @@ def resolve_environment_units(
 ) -> dict[str, pint.Unit | dict[str | int, Any]]:
     """Resolve the complete unit of every annotated node in the environment.
 
-    Columns and param functions combine their declared non-time ``unit`` with
-    the time-unit suffix of their leaf name (GEP 1 / GEP 10); parameters
-    combine theirs with the functional ``reference_period``. Dict parameters
-    with per-leaf units resolve to nested dicts of pint units. The
+    Columns and param functions resolve their fully-spelled compositional
+    ``unit`` against the time-unit and aggregation suffixes of their leaf name
+    (GEP 1 / GEP 10); parameters spell their period and level in the unit string.
+    Dict parameters with per-leaf units resolve to nested dicts of pint units. The
     framework-injected date nodes resolve via
     :data:`FRAMEWORK_DATE_NODE_UNITS`. A node that declares no unit (still
     :data:`UNSET_UNIT`) is absent from the result; the mandatory-units check
@@ -185,31 +180,42 @@ def resolve_environment_units(
                 leaf_name = dt.tree_path_from_qname(qname)[-1]
                 match = pattern.fullmatch(leaf_name)
                 resolved[qname] = _resolve_leveled_column_unit(
-                    token=cast("Unit", token), match=match
+                    token=cast("CompositeUnit", token),
+                    match=match,
+                    is_boolean=node_is_boolean(qname=qname, obj=obj),
                 )
     return resolved
 
 
 def _resolve_leveled_column_unit(
-    token: Unit,
+    token: CompositeUnit,
     match: re.Match[str] | None,
+    *,
+    is_boolean: bool = False,
 ) -> pint.Unit:
     """Resolve a column/function's full unit, including its grouping level (GEP 10).
 
-    Combines the declared token with the name's time-unit suffix
-    (:func:`resolve_column_unit`) and then, when the token carries a level by
-    default (currency, area, the ``[person]`` count), divides by the name's
-    aggregation-suffix level — an unsuffixed name is at :data:`PERSON_LEVEL`. A
-    level-less token stays level-less regardless of any suffix: the suffix is then
-    a pure *index* level (a ``MIN``-of-age at ``_fg``), not a unit level.
+    A non-boolean column resolves via :func:`resolve_compositional_column_unit`,
+    which validates the spelled period/level against the name suffix and adds the
+    implied person leaf for an extensive base. A **boolean** is ``DIMENSIONLESS``
+    measured per the level it is defined at (``1 / [fam]`` for a fam-level
+    indicator, ``1 / [person]`` for a person-level one); its level comes from the
+    name's aggregation suffix — an unsuffixed name is at :data:`PERSON_LEVEL`. A
+    level-less, non-boolean unit — a share, an age — stays level-less regardless
+    of any suffix: the suffix is then a pure *index* level (a ``MIN``-of-age at
+    ``_fg``), not a unit level.
     """
     time_unit_id = match.group("time_unit") if match else None
-    column_unit = resolve_column_unit(token=token, time_unit_id=time_unit_id)
-    if unit_token_carries_level(token):
-        return divide_by_grouping_level(
-            unit=column_unit, level=_suffix_grouping_level(match)
-        )
-    return column_unit
+    grouping_level = _suffix_grouping_level(match)
+    if is_boolean:
+        boolean_unit = resolve_compositional_unit(token, with_level=False)
+        return divide_by_grouping_level(unit=boolean_unit, level=grouping_level)
+    return resolve_compositional_column_unit(
+        token,
+        time_unit_id=time_unit_id,
+        grouping_level=grouping_level,
+        where="A column/function",
+    )
 
 
 def _argument_is_person_pointer(qname: str) -> bool:
@@ -254,7 +260,12 @@ def _resolve_agg_by_group_unit(
     )
     agg_type = obj.agg_type
     if agg_type in (AggType.ANY, AggType.ALL):
-        return UNIT_REGISTRY.dimensionless
+        # A boolean aggregation mints a boolean at its target level (GEP 10):
+        # ``alle_erwachsen_fam`` is ``1 / [fam]``, so a mis-levelled name is
+        # caught by the declared-vs-derived check.
+        return divide_by_grouping_level(
+            unit=UNIT_REGISTRY.dimensionless, level=target_level
+        )
     if agg_type is AggType.COUNT:
         return grouping_level_count_unit(target_level=target_level)
     # Value aggregations: the source is the lone argument that is neither a
@@ -278,14 +289,17 @@ def _resolve_agg_by_group_unit(
     if agg_type is AggType.SUM and node_is_boolean(qname=source_qname, obj=source_obj):
         return grouping_level_count_unit(target_level=target_level)
     source_match = pattern.fullmatch(dt.tree_path_from_qname(source_qname)[-1])
+    source_is_boolean = node_is_boolean(qname=source_qname, obj=source_obj)
     source_unit = _resolve_leveled_column_unit(
-        token=cast("Unit", source_token), match=source_match
+        token=cast("CompositeUnit", source_token),
+        match=source_match,
+        is_boolean=source_is_boolean,
     )
-    source_level = (
-        _suffix_grouping_level(source_match)
-        if unit_token_carries_level(cast("Unit", source_token))
-        else None
-    )
+    # The source's grouping level, read off its *resolved* unit (GEP 10): a
+    # person-level extensive quantity carries `/[person]` even when its spelling
+    # leaves the leaf level implicit, so the resolved denominator is the robust
+    # source of truth (the declared token's `carries_level` is not).
+    source_level = _unit_level_denominator(source_unit)
     return resolved_unit_for_aggregation(
         source_unit=source_unit,
         agg_type=agg_type,
@@ -330,6 +344,54 @@ def _unit_level_denominator(unit: pint.Unit) -> str | None:
     return None
 
 
+def _has_grouping_level_numerator(unit: pint.Unit) -> bool:
+    """Whether a unit carries a grouping level as a *numerator* — a head count."""
+    for dimension, exponent in UNIT_REGISTRY.Quantity(1.0, unit).dimensionality.items():
+        if isinstance(exponent, complex):  # pint exponents are real; narrow for ty
+            continue
+        if exponent > 0 and dimension.startswith(_GROUPING_LEVEL_DIM_PREFIX):
+            return True
+    return False
+
+
+def _boolean_level(unit: pint.Unit) -> tuple[bool, str | None]:
+    """Classify a unit as a (possibly leveled) boolean and read its level (GEP 10).
+
+    A boolean is a truth value: dimensionless apart from at most a single grouping
+    level it is measured *per* — ``1 / [fam]`` for a fam-level indicator, plain
+    dimensionless for a level-less share/flag. A unit with physical content
+    (currency, area, a duration) or a grouping-level *numerator* (a head count
+    ``[person] / [hh]``) is *not* a boolean. Returns ``(is_boolean, level)``; the
+    level is ``None`` for a level-less boolean.
+    """
+    if _has_grouping_level_numerator(unit):
+        return (False, None)
+    if not UNIT_REGISTRY.Quantity(
+        1.0, _unit_without_grouping_levels(unit)
+    ).dimensionless:
+        return (False, None)
+    return (True, _unit_level_denominator(unit))
+
+
+def _boolean_quantity(level: str | None) -> pint.Quantity:
+    """A representative boolean ``Quantity`` at ``level`` — ``1 / [level]`` (GEP 10)."""
+    truth = UNIT_REGISTRY.Quantity(1.0, "")
+    if level is None:
+        return truth
+    return truth / UNIT_REGISTRY.Quantity(1.0, f"{_GROUPING_LEVEL_PREFIX}{level}")
+
+
+def _combined_boolean_level(left: str | None, right: str | None) -> str | None:
+    """Combine two boolean levels for a logical operator (GEP 10).
+
+    Equal levels are kept; any mismatch downcasts to the individual
+    :data:`PERSON_LEVEL`. The downcast is sound and conservative: grouping levels
+    do not nest, and a cross-level logical combination is evaluated per person
+    (each person sees its groups' indicators), so the result is person-level.
+    """
+    return left if left == right else PERSON_LEVEL
+
+
 def fail_if_environment_units_are_missing(
     env: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
     grouping_levels: OrderedQNames,  # noqa: ARG001  (kept for symmetry of the two checks)
@@ -345,7 +407,7 @@ def fail_if_environment_units_are_missing(
         UnitDefinitionError: If any node (or dict-param leaf) lacks a unit
             declaration.
     """
-    units_by_qname: dict[str, Unit | CurrencyUnitToken | UnsetUnitType] = {}
+    units_by_qname: dict[str, CompositeUnit] = {}
     for qname, obj in env.items():
         if not isinstance(obj, ColumnObject | ParamFunction | ParamObject):
             continue
@@ -353,13 +415,13 @@ def fail_if_environment_units_are_missing(
             continue
         declared_unit = getattr(obj, "unit", UNSET_UNIT)
         if isinstance(obj, ParamMappingObject):
-            # A function between quantities declares one token per axis
-            # (coerced to vocabulary tokens at construction).
+            # A function between quantities declares one unit per axis
+            # (coerced to `CompositeUnit`s at construction).
             units_by_qname[f"{qname} (input_unit)"] = cast(
-                "Unit | CurrencyUnitToken | UnsetUnitType", obj.input_unit
+                "CompositeUnit", obj.input_unit
             )
             units_by_qname[f"{qname} (output_unit)"] = cast(
-                "Unit | CurrencyUnitToken | UnsetUnitType", obj.output_unit
+                "CompositeUnit", obj.output_unit
             )
             continue
         if isinstance(obj, RawParam) and (
@@ -369,25 +431,27 @@ def fail_if_environment_units_are_missing(
             # of a single `unit:`; its converter's typed output is converted
             # per axis (GEP 10).
             units_by_qname[f"{qname} (input_unit)"] = cast(
-                "Unit | CurrencyUnitToken | UnsetUnitType", obj.input_unit
+                "CompositeUnit", obj.input_unit
             )
             units_by_qname[f"{qname} (output_unit)"] = cast(
-                "Unit | CurrencyUnitToken | UnsetUnitType", obj.output_unit
+                "CompositeUnit", obj.output_unit
             )
             continue
         if isinstance(obj, ParamObject) and isinstance(declared_unit, Mapping):
             value = getattr(obj, "value", None)
             value_tree = value if isinstance(value, Mapping) else {}
-            units_by_leaf = dt.flatten_to_qnames(declared_unit)
+            units_by_leaf = dt.flatten_to_qnames(
+                cast("Mapping[str, Any]", declared_unit)
+            )
             for leaf_qname in dt.flatten_to_qnames(value_tree):
-                token = units_by_leaf.get(leaf_qname, UNSET_UNIT)
                 leaf_path = dt.tree_path_from_qname(leaf_qname)
                 display = f"{qname}[{']['.join(leaf_path)}]"
-                units_by_qname[display] = (
-                    token if isinstance(token, str) else UNSET_UNIT
-                )
+                # A coerced leaf is a `CompositeUnit`; a leaf absent from the
+                # mapping defaults to :data:`UNSET_UNIT`, which the
+                # mandatory-units check reports (GEP 10).
+                units_by_qname[display] = units_by_leaf.get(leaf_qname, UNSET_UNIT)
         else:
-            units_by_qname[qname] = declared_unit
+            units_by_qname[qname] = cast("CompositeUnit", declared_unit)
     fail_if_units_are_missing(units_by_qname)
 
 
@@ -436,18 +500,18 @@ def _agg_declaration_inconsistency(
     """Error message if an aggregation's declared *kind* ≠ what it derives (GEP 10).
 
     The resolved unit (:func:`_resolve_agg_by_group_unit`) is the *derived* one —
-    minted / swapped / preserved from the source and agg_type. The declared token's
+    minted / swapped / preserved from the source and agg_type. The declared unit's
     physical kind (its period-free, level-free base) must equal the derived unit's;
-    a ``SUM`` over a boolean is a head count and must be declared ``HEADCOUNT``, not
-    ``DIMENSIONLESS``. Returns ``None`` when there is nothing to check: the
-    derivation could not resolve the source, or no token is declared (the
+    a ``SUM`` over a boolean is a head count and must be declared ``PERSON_PER_…``,
+    not ``DIMENSIONLESS``. Returns ``None`` when there is nothing to check: the
+    derivation could not resolve the source, or no unit is declared (the
     mandatory-units check reports either).
     """
     derived = resolved_units.get(qname)
     declared_token = getattr(obj, "unit", UNSET_UNIT)
     if derived is None or isinstance(derived, dict) or declared_token is UNSET_UNIT:
         return None
-    declared_kind = _token_base_unit(cast("Unit | CurrencyUnitToken", declared_token))
+    declared_kind = _token_base_unit(cast("CompositeUnit", declared_token))
     derived_kind = _physical_kind_of(cast("pint.Unit", derived))
     if units_are_equivalent(left=declared_kind, right=derived_kind):
         return None
@@ -455,8 +519,8 @@ def _agg_declaration_inconsistency(
         f"{qname}: declares unit `{declared_token}` (a {declared_kind} quantity), "
         f"but its {obj.agg_type.name} aggregation derives {derived} (a "
         f"{derived_kind} quantity) from its source. An aggregation's declared unit "
-        f"must match the kind it derives — e.g. `HEADCOUNT` for a count, the "
-        f"source's currency for a sum of money (GEP 10)."
+        f"must match the kind it derives — e.g. `PERSON_PER_<level>` for a count, "
+        f"the source's currency for a sum of money (GEP 10)."
     )
 
 
@@ -554,6 +618,15 @@ def fail_if_environment_units_are_inconsistent(
         )
         if base_kwargs is None:
             continue
+        # Feed each boolean parameter its resolved (possibly leveled) value, so a
+        # leveled boolean carries its level into the body — `1 / [fam]` for a
+        # fam-level indicator — and only its truth value is explorer-controlled
+        # (GEP 10). A boolean whose producer is unresolved falls back to a
+        # level-less truth value.
+        boolean_values = {
+            name: representative_values.get(name, UNIT_REGISTRY.Quantity(1.0, ""))
+            for name in boolean_parameters
+        }
         leaf_name = dt.tree_path_from_qname(qname)[-1]
         suffix_match = suffix_pattern.fullmatch(leaf_name)
         error = _verify_one_body(
@@ -561,7 +634,7 @@ def fail_if_environment_units_are_inconsistent(
             function=obj.function,
             declared=declared,
             suffix_level=_suffix_grouping_level(suffix_match),
-            boolean_parameters=boolean_parameters,
+            boolean_values=boolean_values,
             base_kwargs=base_kwargs,
         )
         if error is not None:
@@ -690,35 +763,17 @@ def _spell_token(token: Any) -> str:  # noqa: ANN401
     return str(token)
 
 
-def _fail_if_period_sources_disagree(
-    where: str,
-    suffix_id: str,
-    reference_period: str | None,
-) -> None:
-    """Reject disagreeing period sources — coincidence, never precedence (GEP 10)."""
-    if (
-        reference_period is not None
-        and REFERENCE_PERIOD_TO_PINT_NAME[reference_period]
-        != TIME_UNIT_ID_TO_PINT_NAME[suffix_id]
-    ):
-        raise UnitDefinitionError(
-            f"{where}: the time-unit suffix (_{suffix_id}) and "
-            f"`reference_period: {reference_period}` disagree; wherever two "
-            f"period sources apply they must coincide (GEP 10)."
-        )
-
-
 def _fail_if_param_token_is_agnostic_currency(
-    token: Unit | Any | None,  # noqa: ANN401
+    token: CompositeUnit | None,
     where: str,
 ) -> None:
-    """Reject an agnostic currency token on a parameter (GEP 10).
+    """Reject an agnostic currency unit on a parameter (GEP 10).
 
     Once a concrete currency is registered, a parameter's numbers are
     written in *some* currency — the declaration must name it
-    (``SILVER_PENNY``, ``DM_FLOW``, …), so the build-time conversion
-    to the run currency knows what to convert from. The agnostic tokens stay
-    legal — and required — on columns and functions, which are
+    (``SILVER_PENNY``, ``DM_PER_YEAR``, …), so the build-time conversion
+    to the run currency knows what to convert from. The agnostic ``CURRENCY``
+    base stays legal — and required — on columns and functions, which are
     currency-agnostic by design.
     """
     base = base_currency()
@@ -726,32 +781,9 @@ def _fail_if_param_token_is_agnostic_currency(
         concrete = f"{base.upper()}{str(token).removeprefix('CURRENCY')}"
         raise UnitDefinitionError(
             f"{where}: parameters must pin down the concrete currency their "
-            f"numbers are written in; the agnostic token {token} is not "
+            f"numbers are written in; the agnostic unit {token} is not "
             f"allowed here. Declare e.g. {concrete} (GEP 10)."
         )
-
-
-def _resolve_token_unit(
-    token: Unit | CurrencyUnitToken,
-    reference_period: str | None,
-    reference_level: str | None = None,
-) -> pint.Unit:
-    """Resolve one axis token; ``reference_period`` only feeds flow tokens.
-
-    ``reference_level`` is the grouping-level counterpart of ``reference_period``
-    (GEP 10): a per-person or per-group axis carries its level as a denominator. It
-    is divided onto any token (it has no flow constraint); ``None`` is
-    level-agnostic.
-    """
-    if unit_token_is_flow(token):
-        return resolve_param_unit(
-            token=token,
-            reference_period=reference_period,
-            reference_level=reference_level,
-        )
-    return resolve_param_unit(
-        token=token, reference_period=None, reference_level=reference_level
-    )
 
 
 def _resolve_param_mapping_object_units(
@@ -762,19 +794,17 @@ def _resolve_param_mapping_object_units(
     """Resolve a mapping parameter's per-axis unit declarations.
 
     A schedule or lookup table is a function between quantities: it declares
-    ``input_unit:`` and ``output_unit:`` instead of ``unit:`` (GEP 10). Both
-    tokens follow the kind rules; a ``…_FLOW`` token on either axis takes its
-    period from the (single) ``reference_period``, and a dangling
-    ``reference_period`` (no flow axis consuming it) is an error. A time
-    suffix on the parameter's *name* describes what it yields, so it must
-    coincide with a flow ``output_unit``.
+    ``input_unit:`` and ``output_unit:`` instead of ``unit:`` (GEP 10). Each axis
+    is a fully-spelled :class:`CompositeUnit`, so its period and level are in the
+    string. A time suffix on the parameter's *name* describes what it yields, so
+    it must coincide with a flow ``output_unit``.
 
     The environment-level resolved unit is the *output* unit (what consumers
     receive); the input unit is validated here and consumed by the build-time
     currency conversion. Returns ``None`` if the output unit is unset — the
     mandatory-units check reports it.
     """
-    tokens = {}
+    tokens: dict[str, CompositeUnit] = {}
     for axis, raw in (("input_unit", obj.input_unit), ("output_unit", obj.output_unit)):
         if raw is UNSET_UNIT:
             tokens[axis] = UNSET_UNIT
@@ -782,64 +812,46 @@ def _resolve_param_mapping_object_units(
         where = f"Parameter {qname!r}, {axis}"
         if isinstance(raw, Mapping):
             raise UnitDefinitionError(
-                f"{where}: per-axis declarations are single tokens, not "
+                f"{where}: per-axis declarations are single units, not "
                 f"mappings (GEP 10)."
             )
-        token = cast("Unit | CurrencyUnitToken", raw)
+        token = cast("CompositeUnit", raw)
         _fail_if_param_token_is_agnostic_currency(token=token, where=where)
         tokens[axis] = token
     output_token = tokens["output_unit"]
     if name_time_unit_id is not None:
         _fail_if_name_suffix_disagrees_with_output_axis(
             qname=qname,
-            obj=obj,
             output_token=output_token,
             name_time_unit_id=name_time_unit_id,
         )
-    any_flow = any(
-        token is not UNSET_UNIT and unit_token_is_flow(token)
-        for token in tokens.values()
-    )
-    if obj.reference_period is not None and not any_flow:
-        raise UnitDefinitionError(
-            f"Parameter {qname!r} declares `reference_period: "
-            f"{obj.reference_period}` but neither axis token is a `…_FLOW`; "
-            f"a dangling reference_period is an error (GEP 10)."
-        )
-    reference_level = getattr(obj, "reference_level", None)
     input_token = tokens["input_unit"]
     if input_token is not UNSET_UNIT:
-        _resolve_token_unit(
-            token=input_token,
-            reference_period=obj.reference_period,
-            reference_level=reference_level,
-        )
+        resolve_compositional_param_unit(input_token, where=f"Parameter {qname!r}")
     if output_token is UNSET_UNIT:
         return None
-    return _resolve_token_unit(
-        token=output_token,
-        reference_period=obj.reference_period,
-        reference_level=reference_level,
-    )
+    return resolve_compositional_param_unit(output_token, where=f"Parameter {qname!r}")
 
 
 def _fail_if_name_suffix_disagrees_with_output_axis(
     qname: str,
-    obj: ParamMappingObject,
     output_token: Any,  # noqa: ANN401
     name_time_unit_id: str,
 ) -> None:
-    """Check the name-suffix ⟺ flow-output coincidence rules (GEP 10)."""
-    if output_token is UNSET_UNIT or not unit_token_is_flow(output_token):
+    """Check the name-suffix ⟺ flow-output coincidence rules (GEP 10).
+
+    A name time suffix denotes a flow, so the ``output_unit`` must be a flow and
+    its spelled period must agree with the suffix (validated by resolving the
+    output unit against the suffix).
+    """
+    if output_token is UNSET_UNIT or not output_token.is_flow:
         raise UnitDefinitionError(
             f"Parameter {qname!r}: the name carries a time-unit suffix "
             f"(_{name_time_unit_id}), which denotes a flow, but "
             f"`output_unit:` is {_spell_token(output_token)} (GEP 10)."
         )
-    _fail_if_period_sources_disagree(
-        where=f"Parameter {qname!r}",
-        suffix_id=name_time_unit_id,
-        reference_period=obj.reference_period,
+    resolve_compositional_param_unit(
+        output_token, time_unit_id=name_time_unit_id, where=f"Parameter {qname!r}"
     )
 
 
@@ -848,21 +860,17 @@ def _resolve_param_object_unit(
     obj: ParamObject,
     name_time_unit_id: str | None = None,
 ) -> pint.Unit | dict[str | int, Any] | None:
-    """Resolve a parameter's declared unit.
+    """Resolve a parameter's declared compositional unit.
 
-    A **scalar** parameter takes its period from a time suffix on its *name*,
-    just like a column (``lump_sum_deduction_y`` → ``CURRENCY / year``);
-    ``reference_period`` is forbidden on it (GEP 10). ``reference_period`` is
-    reserved for the period sources that have no name to suffix: a uniformly
-    typed **dict** parameter, a **raw** parameter, integer-keyed leaves of a
-    per-leaf ``unit:`` mapping, and the axes of a **mapping** parameter.
-    A per-leaf ``unit:`` mapping (dict params) holds one token (``DIMENSIONLESS``
-    for a dimensionless leaf) per leaf; a flow leaf gets its period from the leaf
-    key's time suffix or from the dict-level ``reference_period`` (see
-    :func:`_resolve_unit_mapping`). Mapping parameters (schedules, lookup
-    tables) declare per-axis tokens instead — see
-    :func:`_resolve_param_mapping_object_units`. Resolves to a nested dict of
-    pint units mirroring the value structure. Returns ``None`` for an
+    Every parameter spells its unit fully (GEP 10): a **scalar** additionally
+    takes a time suffix on its *name*, which must agree with the spelled period
+    (``lump_sum_deduction_y`` declaring ``CURRENCY_PER_YEAR``). A **dict**
+    parameter with heterogeneous leaves declares a per-leaf ``unit:`` mapping
+    (see :func:`_resolve_unit_mapping`), resolving to a nested dict of pint units
+    mirroring the value structure; a uniformly typed dict or a raw parameter
+    declares one unit for the whole structure. Mapping parameters (schedules,
+    lookup tables) declare per-axis units instead — see
+    :func:`_resolve_param_mapping_object_units`. Returns ``None`` for an
     unannotated parameter — the mandatory-units check reports it.
     """
     if isinstance(obj, ParamMappingObject):
@@ -871,132 +879,46 @@ def _resolve_param_object_unit(
         )
     if obj.unit is UNSET_UNIT:
         return None
-    # The grouping level the parameter is denominated per (GEP 10): the level
-    # counterpart of ``reference_period``, declared on the parameter and divided
-    # onto its resolved unit. ``None`` (the default, and the value until the field
-    # is added downstream) is level-agnostic. Unlike ``reference_period`` it is
-    # allowed on scalar parameters — they have no aggregation suffix to read it off.
-    reference_level = getattr(obj, "reference_level", None)
     if isinstance(obj.unit, Mapping):
-        reference_period = obj.reference_period
-        if (
-            reference_period is not None
-            and reference_period not in REFERENCE_PERIOD_TO_PINT_NAME
-        ):
-            raise UnitDefinitionError(
-                f"Parameter {qname!r}: unknown reference_period {reference_period!r}."
-            )
-        resolved, has_flow_leaf = _resolve_unit_mapping(
-            qname=qname,
-            unit_mapping=cast("Mapping[str | int, Any]", obj.unit),
-            reference_period=reference_period,
-            reference_level=reference_level,
+        return _resolve_unit_mapping(
+            qname=qname, unit_mapping=cast("Mapping[str | int, Any]", obj.unit)
         )
-        if reference_period is not None and not has_flow_leaf:
-            raise UnitDefinitionError(
-                f"Parameter {qname!r} declares `reference_period: "
-                f"{reference_period}` but no `…_FLOW` leaf consumes it; a "
-                f"dangling reference_period is an error (GEP 10)."
-            )
-        return resolved
-    token = cast("Unit | CurrencyUnitToken", obj.unit)
+    token = cast("CompositeUnit", obj.unit)
     _fail_if_param_token_is_agnostic_currency(token=token, where=f"Parameter {qname!r}")
-    if isinstance(obj, ScalarParam):
-        # A scalar parameter takes its period from a time suffix on its name
-        # (GEP 10); reference_period is reserved for the suffix-impossible cases.
-        if obj.reference_period is not None:
-            raise UnitDefinitionError(
-                f"Parameter {qname!r}: a scalar parameter takes its period from a "
-                f"time suffix on its name, not `reference_period` (GEP 10). Drop "
-                f"`reference_period: {obj.reference_period}`; name a flow parameter "
-                f"with a `_y`/`_m`/… suffix."
-            )
-        return resolve_scalar_param_unit(
-            token=token,
-            time_unit_id=name_time_unit_id,
-            reference_level=reference_level,
-        )
-    # DictParam with a uniform token, or RawParam: no single name to suffix, so
-    # the period (if any) comes from the dict-level reference_period.
-    return resolve_param_unit(
-        token=token,
-        reference_period=obj.reference_period,
-        reference_level=reference_level,
+    # A scalar parameter takes its period from a time suffix on its name; a
+    # dict/raw parameter has no single name to suffix. Either way the unit is
+    # fully spelled — a present scalar name suffix must agree with the period.
+    return resolve_compositional_param_unit(
+        token,
+        time_unit_id=name_time_unit_id if isinstance(obj, ScalarParam) else None,
+        where=f"Parameter {qname!r}",
     )
 
 
 def _resolve_unit_mapping(
     qname: str,
     unit_mapping: Mapping[str | int, Any],
-    reference_period: str | None,
-    reference_level: str | None = None,
-) -> tuple[dict[str | int, Any], bool]:
+) -> dict[str | int, Any]:
     """Resolve a per-leaf ``unit:`` mapping to pint units (GEP 10).
 
-    Period sources for a flow leaf are checked under **strict coincidence** —
-    there is no precedence order:
-
-    - a leaf key with a time suffix must *agree* with a non-null dict-level
-      ``reference_period``; disagreement is an error, the suffix does not win;
-    - a suffix-less flow leaf takes ``reference_period``; if that is null,
-      the leaf has no period source and fails;
-    - a complete or ``DIMENSIONLESS`` leaf must not carry a suffixed key (a
-      suffixed name denotes a flow).
-
-    ``reference_level`` is the dict-level grouping level (GEP 10): a per-person or
-    per-group dict parameter denominates every leaf per that level, so it is
-    divided onto each leaf's resolved unit. ``None`` is level-agnostic.
-
-    Returns the resolved mapping and whether any flow leaf was seen (the
-    caller rejects a dangling ``reference_period``).
+    Each leaf is a fully-spelled :class:`CompositeUnit` (``DIMENSIONLESS`` for a
+    dimensionless leaf), so its period and level are in the string; a leaf-key
+    time suffix, if any, must agree with the spelled period. Nested mappings
+    recurse, mirroring the value structure.
     """
     resolved: dict[str | int, Any] = {}
-    any_flow = False
     for key, token in unit_mapping.items():
         if isinstance(token, Mapping):
-            resolved[key], sub_flow = _resolve_unit_mapping(
-                qname=qname,
-                unit_mapping=token,
-                reference_period=reference_period,
-                reference_level=reference_level,
-            )
-            any_flow = any_flow or sub_flow
+            resolved[key] = _resolve_unit_mapping(qname=qname, unit_mapping=token)
             continue
         where = f"Parameter {qname!r}, unit of leaf {key!r}"
         _fail_if_param_token_is_agnostic_currency(token=token, where=where)
         match = _LEAF_TIME_SUFFIX_PATTERN.search(str(key))
         suffix_id = match.group("time_unit") if match else None
-        if unit_token_is_flow(token):
-            any_flow = True
-            if suffix_id is not None:
-                _fail_if_period_sources_disagree(
-                    where=where, suffix_id=suffix_id, reference_period=reference_period
-                )
-            leaf_reference_period = (
-                TIME_UNIT_IDS_TO_LABELS[suffix_id] if suffix_id else reference_period
-            )
-            if leaf_reference_period is None:
-                raise UnitDefinitionError(
-                    f"{where}: token {token} denotes a flow but has no period "
-                    f"source — give the leaf key a time suffix or declare a "
-                    f"dict-level `reference_period` (GEP 10)."
-                )
-            resolved[key] = resolve_param_unit(
-                token=token,
-                reference_period=leaf_reference_period,
-                reference_level=reference_level,
-            )
-        else:
-            if suffix_id is not None:
-                raise UnitDefinitionError(
-                    f"{where}: the leaf key carries a time suffix "
-                    f"(_{suffix_id}), which denotes a flow, but the declared "
-                    f"token is {_spell_token(token)} (GEP 10)."
-                )
-            resolved[key] = resolve_param_unit(
-                token=token, reference_period=None, reference_level=reference_level
-            )
-    return resolved, any_flow
+        resolved[key] = resolve_compositional_param_unit(
+            cast("CompositeUnit", token), time_unit_id=suffix_id, where=where
+        )
+    return resolved
 
 
 def _representative_value(
@@ -1189,8 +1111,61 @@ class _DryRunQuantity:
         return _DryRunQuantity(q=q, explorer=self._explorer)
 
     def _controlled_bool(self) -> _DryRunQuantity:
-        # A dimensionless, explorer-controlled stand-in for a comparison result.
-        return self._wrap(UNIT_REGISTRY.Quantity(1.0, ""))
+        # A level-less, explorer-controlled stand-in for a comparison result.
+        return self._controlled_bool_at(level=None)
+
+    def _controlled_bool_at(self, level: str | None) -> _DryRunQuantity:
+        # An explorer-controlled boolean stand-in carrying a grouping level
+        # (``1 / [level]``), or level-less when ``level`` is ``None`` (GEP 10).
+        return self._wrap(_boolean_quantity(level))
+
+    def _comparison_level(self, other: Any) -> str | None:  # noqa: ANN401
+        """The grouping level a comparison result carries (GEP 10).
+
+        A comparison of a leveled quantity yields a boolean at that level
+        (``einkommen_m_bg > schwelle`` is a bg-level indicator). The level is
+        read off ``self``, falling back to the other operand — for an ordering
+        comparison the two are equivalent, so they agree.
+        """
+        level = _unit_level_denominator(cast("pint.Unit", self.q.units))
+        if level is not None:
+            return level
+        other_q = _unwrap(other)
+        if isinstance(other_q, pint.Quantity):
+            return _unit_level_denominator(cast("pint.Unit", other_q.units))
+        return None
+
+    def _logical_result(self, other: Any, op: str) -> _DryRunQuantity:  # noqa: ANN401
+        """Combine two booleans under a logical operator ``&``/``|``/``^`` (GEP 10).
+
+        Logical operators combine truth values. Each operand must be a (possibly
+        leveled) boolean — a non-dimensionless operand carrying physical content
+        (``wealth & is_adult``) or a head count is a mistake the run-time arrays
+        would silently swallow. The result is a boolean whose level follows the
+        combine rule (:func:`_combined_boolean_level`): equal levels are kept, a
+        mismatch downcasts to the per-person level. A bare literal carries no unit
+        and stays a lenient, level-less boolean.
+        """
+        self_is_boolean, self_level = _boolean_level(cast("pint.Unit", self.q.units))
+        other_q = _unwrap(other)
+        if isinstance(other_q, pint.Quantity):
+            other_is_boolean, other_level = _boolean_level(
+                cast("pint.Unit", other_q.units)
+            )
+        else:
+            other_is_boolean, other_level = True, None
+        if not self_is_boolean or not other_is_boolean:
+            right = (
+                cast("pint.Unit", other_q.units)
+                if isinstance(other_q, pint.Quantity)
+                else _DIMENSIONLESS_UNIT
+            )
+            raise _UnitMixError(
+                op=op, left=cast("pint.Unit", self.q.units), right=right
+            )
+        return self._controlled_bool_at(
+            _combined_boolean_level(self_level, other_level)
+        )
 
     def _fail_if_other_unit_is_not_equivalent(self, other: Any, op: str) -> None:  # noqa: ANN401
         """Reject a non-equivalent *unit-carrying* operand of ``+``/``-``/comparison.
@@ -1221,30 +1196,6 @@ class _DryRunQuantity:
             right=cast("pint.Unit", other_q.units),
         ):
             raise _UnitMixError(op=op, left=self.q.units, right=other_q.units)
-
-    def _fail_if_logical_operand_carries_unit(self, other: Any, op: str) -> None:  # noqa: ANN401
-        """Reject a unit-carrying operand of a logical operator ``&``/``|``/``^``.
-
-        Logical operators combine truth values, which are dimensionless. A
-        non-dimensionless operand — ``wealth & is_adult`` where ``wealth`` is a
-        currency stock — is a mistake, and unit-blind at run time where the bare
-        arrays are combined with no check. Both operands are screened (the
-        wrapper may sit on either side via the reflected dunders); a bare literal
-        carries no unit and stays lenient.
-        """
-        other_q = _unwrap(other)
-        other_has_unit = (
-            isinstance(other_q, pint.Quantity) and not other_q.dimensionless
-        )
-        if not self.q.dimensionless or other_has_unit:
-            right = (
-                cast("pint.Unit", other_q.units)
-                if isinstance(other_q, pint.Quantity)
-                else _DIMENSIONLESS_UNIT
-            )
-            raise _UnitMixError(
-                op=op, left=cast("pint.Unit", self.q.units), right=right
-            )
 
     def _fail_if_ordering_operand_is_invalid(self, other: Any, op: str) -> None:  # noqa: ANN401
         """Screen an operand of an ordering comparison (``<``/``<=``/``>``/``>=``).
@@ -1282,29 +1233,30 @@ class _DryRunQuantity:
     # the unit check only screens the operands first.
     def __lt__(self, other: Any) -> _DryRunQuantity:  # noqa: ANN401
         self._fail_if_ordering_operand_is_invalid(other=other, op="<")
-        return self._controlled_bool()
+        return self._controlled_bool_at(self._comparison_level(other))
 
     def __le__(self, other: Any) -> _DryRunQuantity:  # noqa: ANN401
         self._fail_if_ordering_operand_is_invalid(other=other, op="<=")
-        return self._controlled_bool()
+        return self._controlled_bool_at(self._comparison_level(other))
 
     def __gt__(self, other: Any) -> _DryRunQuantity:  # noqa: ANN401
         self._fail_if_ordering_operand_is_invalid(other=other, op=">")
-        return self._controlled_bool()
+        return self._controlled_bool_at(self._comparison_level(other))
 
     def __ge__(self, other: Any) -> _DryRunQuantity:  # noqa: ANN401
         self._fail_if_ordering_operand_is_invalid(other=other, op=">=")
-        return self._controlled_bool()
+        return self._controlled_bool_at(self._comparison_level(other))
 
     # ``==``/``!=`` are deliberately *not* unit-screened: they are routinely used
     # polymorphically (sentinels, ``x == 0``) and are not magnitude comparisons.
     # Returning a (non-bool) controlled stand-in is the standard proxy pattern
-    # (cf. NumPy arrays); the explorer forces the branch.
+    # (cf. NumPy arrays); the explorer forces the branch. The result still carries
+    # the operand's grouping level, so an equality-defined indicator is leveled.
     def __eq__(self, other: object) -> _DryRunQuantity:  # ty: ignore[invalid-method-override]
-        return self._controlled_bool()
+        return self._controlled_bool_at(self._comparison_level(other))
 
     def __ne__(self, other: object) -> _DryRunQuantity:  # ty: ignore[invalid-method-override]
-        return self._controlled_bool()
+        return self._controlled_bool_at(self._comparison_level(other))
 
     # Logical operators (``&`` ``|`` ``^`` ``~``) combine truth values, which are
     # dimensionless. They yield an explorer-controlled boolean stand-in, screening
@@ -1312,35 +1264,30 @@ class _DryRunQuantity:
     # a real quantity into a logical combination is a bug the run-time arrays would
     # silently swallow (GEP 10).
     def __and__(self, other: Any) -> _DryRunQuantity:  # noqa: ANN401
-        self._fail_if_logical_operand_carries_unit(other=other, op="&")
-        return self._controlled_bool()
+        return self._logical_result(other=other, op="&")
 
     def __rand__(self, other: Any) -> _DryRunQuantity:  # noqa: ANN401
-        self._fail_if_logical_operand_carries_unit(other=other, op="&")
-        return self._controlled_bool()
+        return self._logical_result(other=other, op="&")
 
     def __or__(self, other: Any) -> _DryRunQuantity:  # noqa: ANN401
-        self._fail_if_logical_operand_carries_unit(other=other, op="|")
-        return self._controlled_bool()
+        return self._logical_result(other=other, op="|")
 
     def __ror__(self, other: Any) -> _DryRunQuantity:  # noqa: ANN401
-        self._fail_if_logical_operand_carries_unit(other=other, op="|")
-        return self._controlled_bool()
+        return self._logical_result(other=other, op="|")
 
     def __xor__(self, other: Any) -> _DryRunQuantity:  # noqa: ANN401
-        self._fail_if_logical_operand_carries_unit(other=other, op="^")
-        return self._controlled_bool()
+        return self._logical_result(other=other, op="^")
 
     def __rxor__(self, other: Any) -> _DryRunQuantity:  # noqa: ANN401
-        self._fail_if_logical_operand_carries_unit(other=other, op="^")
-        return self._controlled_bool()
+        return self._logical_result(other=other, op="^")
 
     def __invert__(self) -> _DryRunQuantity:
-        if not self.q.dimensionless:
+        is_boolean, level = _boolean_level(cast("pint.Unit", self.q.units))
+        if not is_boolean:
             raise _UnitMixError(
                 op="~", left=cast("pint.Unit", self.q.units), right=_DIMENSIONLESS_UNIT
             )
-        return self._controlled_bool()
+        return self._controlled_bool_at(level)
 
     # Arithmetic propagates real units through the wrapped quantity. Addition and
     # subtraction additionally require equivalent units (see ``_UnitMixError``);
@@ -1496,7 +1443,7 @@ def _verify_one_body(
     function: Any,  # noqa: ANN401  (a scalar body, possibly a dags wrapper)
     declared: pint.Unit,
     suffix_level: str,
-    boolean_parameters: tuple[str, ...],
+    boolean_values: Mapping[str, Any],
     base_kwargs: dict[str, Any],
 ) -> str | None:
     """Dry-run one body on every reachable branch path; return an error or ``None``.
@@ -1530,10 +1477,8 @@ def _verify_one_body(
             name: _wrap_for_dry_run(value=value, explorer=explorer)
             for name, value in base_kwargs.items()
         }
-        for name in boolean_parameters:
-            kwargs[name] = _DryRunQuantity(
-                q=UNIT_REGISTRY.Quantity(1.0, ""), explorer=explorer
-            )
+        for name, value in boolean_values.items():
+            kwargs[name] = _wrap_for_dry_run(value=value, explorer=explorer)
         try:
             result: Any = function(**kwargs)
         except _PathBudgetExceededError:

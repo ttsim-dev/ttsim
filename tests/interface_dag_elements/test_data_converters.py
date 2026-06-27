@@ -29,7 +29,6 @@ _GENERIC_PARAM_SPEC = {
     "start_date": datetime.date(2024, 1, 1),
     "end_date": datetime.date(2024, 12, 31),
     "unit": "DIMENSIONLESS",
-    "reference_period": None,
     "name": {
         "de": "generic_param",
         "en": "generic_param",

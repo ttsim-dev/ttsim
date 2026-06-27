@@ -3,27 +3,9 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "definitions": {
     "unitToken": {
+      "$comment": "A fully-spelled compositional unit (GEP 10): a base optionally divided by an area, a period, and a grouping level, joined by `_PER_` (e.g. DIMENSIONLESS, CURRENCY_PER_MONTH_PER_BG, SILVER_PENNY_PER_FAM, PERSON_PER_HH). Bases and grouping levels are open (per-package currencies, per-build levels), so this is a coarse pattern; `parse_compositional_unit` validates the grammar at load time.",
       "type": "string",
-      "enum": [
-        "DIMENSIONLESS",
-        "DIMENSIONLESS_FLOW",
-        "YEARS",
-        "MONTHS",
-        "DAYS",
-        "CALENDAR_YEAR",
-        "CALENDAR_MONTH",
-        "CALENDAR_DAY",
-        "HOURS_FLOW",
-        "SQUARE_METERS",
-        "HECTARES",
-        "HEADCOUNT",
-        "CASTAR",
-        "CASTAR_FLOW",
-        "CASTAR_PER_SQUARE_METER_FLOW",
-        "SILVER_PENNY",
-        "SILVER_PENNY_FLOW",
-        "SILVER_PENNY_PER_SQUARE_METER_FLOW"
-      ]
+      "pattern": "^[A-Z][A-Z0-9_]*$"
     },
     "unitDeclaration": {
       "oneOf": [
@@ -85,14 +67,6 @@
             "year_based_phase_inout_of_age_thresholds",
             "require_converter"
           ]
-        },
-        "reference_period": {
-          "type": ["string", "null"],
-          "enum": ["Year", "Quarter", "Month", "Week", "Day", "Hour", null]
-        },
-        "reference_level": {
-          "$comment": "The grouping level a per-person/per-group parameter is denominated per (GEP 10), named by its `*_id` stem (`person`, `hh`, ...). Discovered per build, so not enumerated here; an unregistered name fails at unit resolution. Admissible on `scalar` (unlike `reference_period`).",
-          "type": ["string", "null"]
         },
         "add_jahresanfang": {"type": "boolean"}
       },
@@ -192,13 +166,12 @@
           }
         },
         {
-          "$comment": "A scalar parameter takes its period from a time suffix on its name, never `reference_period` (GEP 10), and declares a single `unit:` token, not a per-leaf mapping (which only a dict parameter may use).",
+          "$comment": "A scalar parameter takes its period from a time suffix on its name and declares a single fully-spelled `unit:` token, not a per-leaf mapping (which only a dict parameter may use).",
           "if": {
             "properties": { "type": { "const": "scalar" } },
             "required": ["type"]
           },
           "then": {
-            "not": { "required": ["reference_period"] },
             "properties": {
               "unit": { "$ref": "#/definitions/unitToken" }
             }

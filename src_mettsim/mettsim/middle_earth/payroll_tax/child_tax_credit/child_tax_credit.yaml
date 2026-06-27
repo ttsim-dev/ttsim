@@ -7,7 +7,7 @@ schedule:
     de: In Mittelerde passiert nichts.
     en: In Middle Earth nothing happens.
   unit:
-    child_amount_y: SILVER_PENNY_FLOW
+    child_amount_y: SILVER_PENNY_PER_YEAR
     max_age: YEARS
   type: dict
   1900-01-01:

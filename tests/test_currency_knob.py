@@ -18,7 +18,7 @@ from ttsim.interface_dag_elements.policy_environment import (
 from ttsim.interface_dag_elements.specialized_environment import (
     _convert_function_like_converter_outputs,
 )
-from ttsim.tt import param_function
+from ttsim.tt import Unit, param_function
 from ttsim.tt.param_objects import PiecewisePolynomialParamValue, RawParam
 from ttsim.tt.units import UNSET_UNIT
 
@@ -120,7 +120,6 @@ def _scalar_spec(**header):
     return {
         **_HEADER,
         "unit": "SILVER_PENNY",
-        "reference_period": None,
         "type": "scalar",
         datetime.date(1900, 1, 1): {"value": 100.0},
         **header,
@@ -163,7 +162,6 @@ def test_entry_level_override_writes_a_changeover():
     spec = {
         **_HEADER,
         "unit": "SILVER_PENNY",
-        "reference_period": None,
         "type": "scalar",
         datetime.date(1900, 1, 1): {"value": 100.0},
         datetime.date(2020, 1, 1): {"value": 25.0, "unit": "CASTAR"},
@@ -189,7 +187,6 @@ def test_updates_previous_cannot_cross_a_changeover():
     spec = {
         **_HEADER,
         "unit": "SILVER_PENNY",
-        "reference_period": None,
         "type": "dict",
         datetime.date(1900, 1, 1): {"a": 100.0, "b": 8.0},
         datetime.date(2020, 1, 1): {
@@ -211,9 +208,8 @@ def test_piecewise_conversion_currency_input_axis():
     """An income schedule: bounds and intercepts scale, slopes are invariant."""
     spec = {
         **_HEADER,
-        "input_unit": "SILVER_PENNY_FLOW",
-        "output_unit": "SILVER_PENNY_FLOW",
-        "reference_period": "Year",
+        "input_unit": "SILVER_PENNY_PER_YEAR",
+        "output_unit": "SILVER_PENNY_PER_YEAR",
         "type": "piecewise_linear",
         datetime.date(1900, 1, 1): {
             "intervals": [
@@ -243,9 +239,8 @@ def test_piecewise_conversion_non_currency_input_axis():
     """An area schedule: bounds stay, intercepts and slopes scale."""
     spec = {
         **_HEADER,
-        "input_unit": "HECTARES",
-        "output_unit": "SILVER_PENNY_FLOW",
-        "reference_period": "Year",
+        "input_unit": "HECTARE",
+        "output_unit": "SILVER_PENNY_PER_YEAR",
         "type": "piecewise_linear",
         datetime.date(1900, 1, 1): {
             "intervals": [
@@ -270,8 +265,7 @@ def test_lookup_table_conversion_scales_values_only():
     spec = {
         **_HEADER,
         "input_unit": "YEARS",
-        "output_unit": "SILVER_PENNY_FLOW",
-        "reference_period": "Month",
+        "output_unit": "SILVER_PENNY_PER_MONTH",
         "type": "sparse_to_consecutive_int_lookup_table",
         datetime.date(1900, 1, 1): {
             1950: 2000.0,
@@ -292,8 +286,7 @@ def test_lookup_table_rejects_currency_input_axis():
     spec = {
         **_HEADER,
         "input_unit": "SILVER_PENNY",
-        "output_unit": "SILVER_PENNY_FLOW",
-        "reference_period": "Month",
+        "output_unit": "SILVER_PENNY_PER_MONTH",
         "type": "sparse_to_consecutive_int_lookup_table",
         datetime.date(1900, 1, 1): {
             0: 1.0,
@@ -313,8 +306,7 @@ def test_lookup_table_rejects_currency_input_axis():
 def test_dict_param_converts_currency_leaves_only():
     spec = {
         **_HEADER,
-        "unit": {"child_amount_y": "SILVER_PENNY_FLOW", "max_age": "YEARS"},
-        "reference_period": "Year",
+        "unit": {"child_amount_y": "SILVER_PENNY_PER_YEAR", "max_age": "YEARS"},
         "type": "dict",
         datetime.date(1900, 1, 1): {"child_amount_y": 100.0, "max_age": 18},
     }
@@ -342,8 +334,8 @@ def test_function_like_converter_output_converts_polynomial_per_order():
     )
     converted = function_like_converter_output_in_run_currency(
         value=schedule,
-        input_unit="SILVER_PENNY_FLOW",
-        output_unit="SILVER_PENNY_FLOW",
+        input_unit="SILVER_PENNY_PER_YEAR",
+        output_unit="SILVER_PENNY_PER_YEAR",
         run_currency="CASTAR",
         xnp=np,
         leaf_name="tax_schedule",
@@ -365,8 +357,7 @@ def test_require_converter_with_axes_is_left_raw_for_its_converter():
     spec = {
         **_HEADER,
         "input_unit": "SILVER_PENNY",
-        "output_unit": "SILVER_PENNY_FLOW",
-        "reference_period": "Year",
+        "output_unit": "SILVER_PENNY_PER_YEAR",
         "type": "require_converter",
         datetime.date(1900, 1, 1): {"top_rate": 0.2, "ceiling": 100},
     }
@@ -381,7 +372,7 @@ def test_require_converter_with_axes_is_left_raw_for_its_converter():
 def test_homogeneous_require_converter_producing_a_schedule_is_rejected():
     """Uniform-scaling a structured schedule is rejected; declare axes (GEP 10 S3)."""
 
-    @param_function()
+    @param_function(unit=Unit.DIMENSIONLESS)
     def schedule(raw_schedule: Any) -> Any:
         return raw_schedule
 
@@ -417,7 +408,7 @@ def test_unknown_annotation_is_rejected_at_load():
     # An annotation the vocabulary does not know fails loudly at load time
     # (issue #121) — nothing is ever silently scaled or left unconverted.
     spec = _scalar_spec(unit="Euros")
-    with pytest.raises(UnitDefinitionError, match="invalid unit token"):
+    with pytest.raises(UnitDefinitionError, match="invalid unit declaration"):
         _load(
             leaf_name="threshold",
             spec=spec,

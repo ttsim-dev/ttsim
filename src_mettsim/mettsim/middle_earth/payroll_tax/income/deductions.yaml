@@ -6,8 +6,7 @@ lump_sum_deduction_y:
   description:
     de: Lohnsteuerpauschalabzug
     en: Lump sum deduction for payroll tax
-  unit: SILVER_PENNY_FLOW
-  reference_level: person
+  unit: SILVER_PENNY_PER_YEAR_PER_PERSON
   type: scalar
   1900-01-01:
     value: 100.0

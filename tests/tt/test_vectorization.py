@@ -23,6 +23,7 @@ from ttsim.interface_dag_elements.policy_environment import (
 from ttsim.tt import (
     GroupCreationFunction,
     PolicyInput,
+    Unit,
     policy_function,
 )
 from ttsim.tt.column_objects_param_function import (
@@ -685,7 +686,7 @@ def test_lambda_functions_disallowed_make_vectorizable_source(xnp):
 
 
 def test_make_vectorizable_policy_func(backend, xnp):
-    @policy_function()
+    @policy_function(unit=Unit.DIMENSIONLESS)
     def alter_bis_24(alter: int) -> bool:
         return alter <= 24
 
@@ -717,7 +718,7 @@ def test_make_vectorizable_nested_func():
     assert_array_equal(got, exp)
 
 
-@policy_function()
+@policy_function(unit=Unit.DIMENSIONLESS)
 def scalar_func(x: int) -> int:
     if x < 0:
         return 0
@@ -725,7 +726,7 @@ def scalar_func(x: int) -> int:
         return x * 2
 
 
-@policy_function(vectorization_strategy="not_required")
+@policy_function(vectorization_strategy="not_required", unit=Unit.DIMENSIONLESS)
 def already_vectorized_func(x: IntColumn, xnp: ModuleType) -> IntColumn:
     return xnp.where(x < 0, 0, x * 2)
 

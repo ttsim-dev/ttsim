@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from ttsim.typing import BoolColumn, IntColumn
 
 
-@agg_by_p_id_function(agg_type=AggType.SUM, unit=Unit.CURRENCY_FLOW)
+@agg_by_p_id_function(agg_type=AggType.SUM, unit=Unit.CURRENCY.PER_YEAR)
 def amount_y(
     p_id: int,
     p_id_recipient: int,
@@ -25,7 +25,7 @@ def amount_y(
     """The amount of child tax credit at the recipient level."""
 
 
-@policy_function(unit=Unit.CURRENCY_FLOW)
+@policy_function(unit=Unit.CURRENCY.PER_YEAR)
 def claim_of_child_y(
     child_eligible: bool,
     schedule: dict[str, float],

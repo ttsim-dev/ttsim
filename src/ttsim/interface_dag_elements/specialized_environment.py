@@ -46,7 +46,7 @@ from ttsim.tt.param_objects import (
     RawParam,
 )
 from ttsim.tt.type_resolution import is_column_annotation
-from ttsim.tt.units import UNSET_UNIT, CurrencyUnitToken
+from ttsim.tt.units import UNSET_UNIT, CompositeUnit, token_source_currency
 from ttsim.typing import (
     OrderedQNames,
     PolicyEnvironment,
@@ -211,9 +211,13 @@ def _convert_function_like_converter_outputs(
                     xnp=xnp,
                     leaf_name=raw_qname,
                 )
-            elif isinstance(raw.unit, CurrencyUnitToken) and isinstance(
-                outputs[pf_name],
-                PiecewisePolynomialParamValue | ConsecutiveIntLookupTableParamValue,
+            elif (
+                isinstance(raw.unit, CompositeUnit)
+                and token_source_currency(raw.unit) is not None
+                and isinstance(
+                    outputs[pf_name],
+                    PiecewisePolynomialParamValue | ConsecutiveIntLookupTableParamValue,
+                )
             ):
                 raise UnitDefinitionError(
                     f"require_converter {raw_qname!r} declares a homogeneous "

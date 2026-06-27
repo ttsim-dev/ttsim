@@ -22,13 +22,13 @@ from ttsim.tt import (
 )
 
 
-@policy_input(unit=Unit.HECTARES)
+@policy_input(unit=Unit.HECTARE)
 def acre_size() -> float:
     """The size of the acre in hectares."""
 
 
 @policy_function(
-    vectorization_strategy="vectorize", unit=Unit.CURRENCY_FLOW, verify_units=False
+    vectorization_strategy="vectorize", unit=Unit.CURRENCY.PER_YEAR, verify_units=False
 )
 def amount_y(
     acre_size_after_cap: float,
@@ -43,7 +43,7 @@ def amount_y(
     )
 
 
-@policy_function(unit=Unit.HECTARES)
+@policy_function(unit=Unit.HECTARE)
 def acre_size_after_cap(
     acre_size: float,
     cap: float,

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from ttsim.tt import register_currency
+from ttsim.tt import register_currency, register_unit_builder_levels
 
 ROOT_PATH = Path(__file__).parent
 
@@ -14,6 +14,11 @@ ROOT_PATH = Path(__file__).parent
 # quarter-castar.
 register_currency("CASTAR", base=True)
 register_currency("SILVER_PENNY", definition="CASTAR / 4")
+
+# Middle Earth's grouping levels. Registered on import so the fluent unit
+# builder offers `Unit.X.PER_FAM` / `per_kin` / `per_sp` before the policy
+# modules (whose decorators use them) are loaded (GEP 10 compositional units).
+register_unit_builder_levels(["sp", "fam", "kin"])
 
 COLORMAP: dict[tuple[str, ...] | str, str] = {
     ("housing_benefits",): "red",

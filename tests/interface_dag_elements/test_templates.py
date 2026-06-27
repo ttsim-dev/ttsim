@@ -20,7 +20,6 @@ par1 = ScalarParam(
     name={"de": "Ein int param", "en": "Some int param"},
     description={"de": "Ein int param", "en": "Some int param"},
     unit=Unit.DIMENSIONLESS,
-    reference_period=None,
     note=None,
     reference=None,
 )
@@ -32,38 +31,37 @@ par2 = DictParam(
     name={"de": "Ein dict param", "en": "Some dict param"},
     description={"de": "Ein dict param", "en": "Some dict param"},
     unit=Unit.DIMENSIONLESS,
-    reference_period=None,
     note=None,
     reference=None,
 )
 
 
-@policy_input()
+@policy_input(unit=Unit.DIMENSIONLESS)
 def kin_id() -> int:
     pass
 
 
-@policy_input()
+@policy_input(unit=Unit.DIMENSIONLESS)
 def inp1() -> int:
     pass
 
 
-@policy_input()
+@policy_input(unit=Unit.DIMENSIONLESS)
 def inp2() -> float:
     pass
 
 
-@policy_function()
+@policy_function(unit=Unit.DIMENSIONLESS)
 def x(inp1_kin: int, par1: int, par2: dict[str, int]) -> int:
     return inp1_kin + par1 + par2["a"] + par2["b"]
 
 
-@policy_function()
+@policy_function(unit=Unit.DIMENSIONLESS)
 def y(inp2: float, par2: dict[str, int]) -> float:
     return inp2 + par2["b"]
 
 
-@policy_function()
+@policy_function(unit=Unit.DIMENSIONLESS)
 def z(a__x: int, a__y: float) -> float:
     return a__x + a__y
 

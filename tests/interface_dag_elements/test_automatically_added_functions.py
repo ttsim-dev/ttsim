@@ -9,7 +9,7 @@ from ttsim.interface_dag_elements.automatically_added_functions import (
     create_agg_by_group_functions,
     create_time_conversion_functions,
 )
-from ttsim.tt import policy_function, policy_input
+from ttsim.tt import Unit, policy_function, policy_input
 from ttsim.unit_converters import (
     per_d_to_per_m,
     per_d_to_per_w,
@@ -58,7 +58,7 @@ def test_should_create_functions_for_other_time_units(
 ) -> None:
     time_conversion_functions = create_time_conversion_functions(
         qname_policy_environment={
-            name: policy_function(leaf_name=name)(return_one),
+            name: policy_function(leaf_name=name, unit=Unit.DIMENSIONLESS)(return_one),
         },
         input_columns=set(),
         grouping_levels=("sn", "kin"),
@@ -71,7 +71,9 @@ def test_should_create_functions_for_other_time_units(
 def test_should_not_create_functions_automatically_that_exist_already() -> None:
     time_conversion_functions = create_time_conversion_functions(
         qname_policy_environment={
-            "test1_d": policy_function(leaf_name="test1_d")(return_one),
+            "test1_d": policy_function(leaf_name="test1_d", unit=Unit.DIMENSIONLESS)(
+                return_one
+            ),
         },
         input_columns={"test2_y"},
         grouping_levels=("sn", "kin"),
@@ -84,7 +86,9 @@ def test_should_not_create_functions_automatically_that_exist_already() -> None:
 def test_should_overwrite_with_data_cols_differing_only_in_time_period() -> None:
     time_conversion_functions = create_time_conversion_functions(
         qname_policy_environment={
-            "test_d": policy_function(leaf_name="test_d")(return_one),
+            "test_d": policy_function(leaf_name="test_d", unit=Unit.DIMENSIONLESS)(
+                return_one
+            ),
         },
         input_columns={"test_y"},
         grouping_levels=("sn", "kin"),
@@ -119,7 +123,9 @@ def test_time_conversions_should_not_create_cycle():
         return test_m
 
     time_conversion_functions = create_time_conversion_functions(
-        qname_policy_environment={"test_d": policy_function(leaf_name="test_d")(x)},
+        qname_policy_environment={
+            "test_d": policy_function(leaf_name="test_d", unit=Unit.DIMENSIONLESS)(x)
+        },
         input_columns=set(),
         grouping_levels=(),
     )
@@ -128,11 +134,11 @@ def test_time_conversions_should_not_create_cycle():
 
 
 def test_grouping_functions_should_not_create_cycle():
-    @policy_function()
+    @policy_function(unit=Unit.DIMENSIONLESS)
     def x(x_hh: int) -> int:
         return x_hh
 
-    @policy_function()
+    @policy_function(unit=Unit.DIMENSIONLESS)
     def some_other_function_requiring_x_hh(x_hh: int) -> int:
         return x_hh
 
@@ -160,22 +166,30 @@ def test_grouping_functions_should_not_create_cycle():
     ),
     [
         (
-            {"foo": policy_function(leaf_name="foo")(return_x_kin)},
-            {"x": policy_input()(return_one)},
+            {
+                "foo": policy_function(leaf_name="foo", unit=Unit.DIMENSIONLESS)(
+                    return_x_kin
+                )
+            },
+            {"x": policy_input(unit=Unit.DIMENSIONLESS)(return_one)},
             {},
             {"x"},
             ("x_kin"),
         ),
         (
-            {"n2__foo": policy_function(leaf_name="foo")(return_n1__x_kin)},
-            {"n1__x": policy_input()(return_one)},
+            {
+                "n2__foo": policy_function(leaf_name="foo", unit=Unit.DIMENSIONLESS)(
+                    return_n1__x_kin
+                )
+            },
+            {"n1__x": policy_input(unit=Unit.DIMENSIONLESS)(return_one)},
             {},
             {"n1__x"},
             ("n1__x_kin"),
         ),
         (
             {},
-            {"x": policy_input()(return_one)},
+            {"x": policy_input(unit=Unit.DIMENSIONLESS)(return_one)},
             {"x_kin": None},
             {"x"},
             ("x_kin"),
@@ -216,7 +230,9 @@ def test_agg_by_group_resolves_source_dtype_from_sibling_time_unit() -> None:
     """
     result = create_agg_by_group_functions(
         column_functions={},
-        qname_policy_environment={"bonus_m": policy_input()(return_one_float)},
+        qname_policy_environment={
+            "bonus_m": policy_input(unit=Unit.DIMENSIONLESS)(return_one_float)
+        },
         input_columns={"bonus_y"},
         tt_targets={"bonus_y_kin": None},
         grouping_levels=("kin",),

@@ -295,9 +295,10 @@ def _bare_payroll_tree(factor: float = 1.0) -> dict[str, Any]:
 def _annotated_payroll_tree(currency: str, factor: float = 1.0) -> dict[str, Any]:
     """`_bare_payroll_tree` with every leaf wrapped in its pint unit tag (GEP 10).
 
-    Ids, the boolean, and the (dimensionless) head-style columns are tagged
-    ``dimensionless``; the birth year as a calendar year; wealth as a currency
-    stock; the wage as a currency flow per year.
+    Ids and the (dimensionless) head-style columns are tagged ``dimensionless``;
+    the person-level boolean as ``1 / grouping_level_person`` (a boolean carries
+    the level it is defined at, GEP 10); the birth year as a calendar year; wealth
+    as a currency stock; the wage as a currency flow per year.
     """
     q = UNIT_REGISTRY.Quantity
     return {
@@ -307,7 +308,7 @@ def _annotated_payroll_tree(currency: str, factor: float = 1.0) -> dict[str, Any
         "p_id_parent_1": q(numpy.array([-1, -1]), "dimensionless"),
         "p_id_parent_2": q(numpy.array([-1, -1]), "dimensionless"),
         "geburtsjahr": q(numpy.array([1995, 1995]), "calendar_year"),  # age 30
-        "parent_is_noble": q(numpy.array([False, False]), "dimensionless"),
+        "parent_is_noble": q(numpy.array([False, False]), "1 / grouping_level_person"),
         "wealth": q(
             numpy.array([100.0, 200.0]) * factor,
             f"{currency} / grouping_level_person",

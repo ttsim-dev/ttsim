@@ -19,7 +19,9 @@ from ttsim.tt import (
 )
 
 
-@agg_by_group_function(agg_type=AggType.SUM, end_date="2019-12-31", unit=Unit.HEADCOUNT)
+@agg_by_group_function(
+    agg_type=AggType.SUM, end_date="2019-12-31", unit=Unit.PERSON.PER_FAM
+)
 def number_of_adults_fam(fam_id: int, adult: bool) -> int:
     """The number of adults in the family — a head count (SUM over a boolean)."""
 
@@ -58,7 +60,7 @@ def requirement_fulfilled_fam_considering_children(
     # The per-family subsistence threshold is the per-person amount times the
     # (capped) head count of considered family members:
     # ``CURRENCY / [person] * [person] / [fam] = CURRENCY / [fam]``, matching
-    # ``amount_m_fam``. The head count now carries a declared ``HEADCOUNT`` unit,
+    # ``amount_m_fam``. The head count carries a declared ``PERSON_PER_FAM`` unit,
     # so the dry-run sees the cancellation (GEP 10).
     return housing_benefits__income__amount_m_fam < (
         subsistence_income_level["per_individual"]
@@ -69,7 +71,7 @@ def requirement_fulfilled_fam_considering_children(
 @policy_function(
     start_date="2020-01-01",
     vectorization_strategy="vectorize",
-    unit=Unit.HEADCOUNT,
+    unit=Unit.PERSON.PER_FAM,
 )
 def number_of_family_members_considered_fam(
     number_of_individuals_fam: int,
@@ -77,9 +79,8 @@ def number_of_family_members_considered_fam(
 ) -> int:
     # A head count capped at a head count is still a head count: both
     # ``number_of_individuals_fam`` (a COUNT) and the ``max_number_of_family_members``
-    # cap (declared ``HEADCOUNT`` / ``reference_level: fam``) are ``[person] / [fam]``,
-    # so the ``min`` and the declared ``HEADCOUNT`` of this ``_fam`` function all
-    # agree (GEP 10).
+    # cap (declared ``PERSON_PER_FAM``) are ``[person] / [fam]``, so the ``min`` and
+    # the declared ``PERSON_PER_FAM`` of this ``_fam`` function all agree (GEP 10).
     return min(number_of_individuals_fam, max_number_of_family_members)
 
 

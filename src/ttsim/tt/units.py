@@ -15,37 +15,30 @@ array**. A :class:`pint.Quantity` is not a JAX pytree and does not trace under
 
 The numeric runtime path stays pure arrays, single currency, JAX-safe.
 
-A declaration is one token of the vocabulary — ``unit=Unit.CURRENCY_FLOW``
-in code, ``unit: CURRENCY_FLOW`` in YAML. The vocabulary has two parts: the
-core :class:`Unit` enumeration, which grows only by GEP amendment plus TTSIM
-PR, and per-package :class:`CurrencyUnitToken`\\ s, which
-:func:`register_currency` derives from each registered concrete currency
-(``DM``, ``DM_FLOW``, …). The agnostic currency tokens
-(:attr:`Unit.CURRENCY` / :attr:`Unit.CURRENCY_FLOW`) denote the
-*union* of the registered currencies: for dimensionality checks a concrete
-currency token means exactly what its agnostic counterpart means, and in
-addition names the currency a parameter's numbers are denominated in, which
-the build-time conversion to the run currency reads off the declaration.
-Each package's JSON schema for the parameter YAMLs stays enumerable by
-listing the core tokens plus that package's own currency tokens.
+Compositional units (GEP 10)
+----------------------------
 
-Tokens come in two kinds: *flow* tokens (named ``…_FLOW``) denote a
-per-period quantity and are completed by a period supplied by the name
-suffix (columns/functions) or ``reference_period`` (parameters); all other
-tokens are *complete* as written and admit no period source. Declarations
-never contain pint syntax; internally each token resolves to a pint unit.
-A dimensionless quantity (a share, a rate, a head count) declares
-:attr:`Unit.DIMENSIONLESS` (``unit: DIMENSIONLESS``) and never combines with a
-period source; the per-period dimensionless quantity is its own flow token
-(:attr:`Unit.DIMENSIONLESS_FLOW`).
+Every declaration is a fully-spelled *compositional* unit
+(:class:`CompositeUnit`): a base optionally divided by an area, a period, and a
+grouping level, in that canonical order. Code authors build one fluently off
+the :class:`Unit` namespace (``Unit.CURRENCY.PER_MONTH.PER_BG``); YAML spells
+the flat canonical string (``CURRENCY_PER_MONTH_PER_BG``), and the two
+round-trip through :func:`parse_compositional_unit` and :func:`str`. A bare base
+is a complete unit in its own right (``Unit.CURRENCY`` ==
+``CompositeUnit(base="CURRENCY")``, ``unit: DIMENSIONLESS``).
 
-The :data:`CURRENCY_TOKEN` (the literal string ``"CURRENCY"``) is a real
-unit anchoring the ``[currency]`` dimension, so the currency tokens resolve
-regardless of whether a concrete currency has been registered yet — checks
-compare at the dimensionality level and the concrete currency is resolved
-separately (issue #120). Columns and functions must declare the agnostic
-tokens (they are currency-agnostic by design); parameters must pin down the
-concrete currency their numbers are written in.
+The base is currency-agnostic ``CURRENCY`` on columns and functions — they are
+currency-agnostic by design — and a registered *concrete* currency
+(``SILVER_PENNY``, ``DM``, …) on parameters, which additionally names the
+currency the numbers are written in so the build-time conversion to the run
+currency can read it off. For dimensionality a concrete currency means exactly
+what ``CURRENCY`` means.
+
+The :data:`CURRENCY_TOKEN` (the literal string ``"CURRENCY"``) is a real unit
+anchoring the ``[currency]`` dimension, so a currency unit resolves regardless
+of whether a concrete currency has been registered yet — checks compare at the
+dimensionality level and the concrete currency is resolved separately
+(issue #120).
 
 Literals (GEP 10)
 -----------------
@@ -64,13 +57,12 @@ function body opt out of inference with ``@policy_function(verify_units=False)``
 
 from __future__ import annotations
 
-import enum
 import inspect
 import math
 import re
 from collections.abc import Callable, Iterable, Mapping
-from dataclasses import dataclass
-from typing import Any, Self
+from dataclasses import dataclass, replace
+from typing import TYPE_CHECKING, Any
 
 import pint
 from pint.util import to_units_container
@@ -100,22 +92,11 @@ _QNAME_TIME_SUFFIX_PATTERN = re.compile(
     rf"_(?P<time_unit>[{''.join(TIME_UNIT_ID_TO_PINT_NAME)}])$"
 )
 
-#: Maps a ``reference_period`` label (the functional flow period of a parameter)
-#: to the pint unit naming its period.
-REFERENCE_PERIOD_TO_PINT_NAME = {
-    "Year": "year",
-    "Quarter": "quarter_year",
-    "Month": "month",
-    "Week": "week",
-    "Day": "day",
-    "Hour": "hour",
-}
-
 
 #: The pint unit anchoring the ``[currency]`` dimension, used internally to
-#: resolve the currency tokens (``CURRENCY_FLOW``, ``CURRENCY``, …)
-#: before any concrete currency is registered. Checks compare at the
-#: dimensionality level; the concrete currency is resolved separately.
+#: resolve a currency unit before any concrete currency is registered. Checks
+#: compare at the dimensionality level; the concrete currency is resolved
+#: separately.
 CURRENCY_TOKEN = "CURRENCY"  # noqa: S105 (a unit token, not a secret)
 
 #: The internal pint-unit-name prefix for a grouping-level dimension (GEP 10).
@@ -132,343 +113,590 @@ _GROUPING_LEVEL_PREFIX = "grouping_level_"
 PERSON_LEVEL = "person"
 
 
-class Unit(enum.StrEnum):
-    """The core vocabulary of unit tokens (GEP 10).
+# ===========================================================================
+# Compositional units (GEP 10)
+# ===========================================================================
+#
+# A unit is ``base (_PER_ <denominator>)*`` with denominators in a fixed
+# canonical order ``base _PER_ <area> _PER_ <period> _PER_ <level>``. The flat
+# string (``CURRENCY_PER_MONTH_PER_BG``) is what YAML declares and what
+# :func:`str` of a built unit produces, so the fluent ``.py`` builder
+# (``Unit.CURRENCY.PER_MONTH.PER_BG``) and the YAML spelling round-trip through
+# the same parser and formatter. Every compositional unit resolves to a pint
+# unit: a period divides by its pint period, an area by ``meter ** 2``, a level
+# by its grouping-level dimension.
 
-    One token = one meaning, independent of any other field. A bare token is
-    *complete* as written; a ``…_FLOW`` token *needs a period*, supplied by
-    the name suffix (columns/functions) or ``reference_period`` (parameters).
-    Where both a stock and a flow of a quantity exist, the flow is marked
-    ``…_FLOW`` and the stock is the bare token (:attr:`CURRENCY` /
-    :attr:`CURRENCY_FLOW`).
+#: The separator joining a base and its denominators in the flat spelling.
+_PER = "_PER_"
 
-    The full vocabulary is this enumeration plus the
-    :class:`CurrencyUnitToken` declaration tokens that
-    :func:`register_currency` derives from each registered concrete currency.
-    The agnostic currency tokens here denote the *union* of the registered
-    currencies; they are the only currency tokens columns and functions may
-    declare — functions are currency-agnostic by design.
-
-    YAML spells the identical strings (``unit: CURRENCY_FLOW``); Python code
-    must use the members themselves (``unit=Unit.CURRENCY_FLOW``).
-    """
-
-    CURRENCY_FLOW = "CURRENCY_FLOW"
-    """An amount of currency per period: wages, claims, benefits."""
-
-    CURRENCY = "CURRENCY"
-    """An amount of currency, full stop: wealth, asset thresholds. The complete
-    (non-period) counterpart of :attr:`CURRENCY_FLOW` — a currency *stock* is this
-    bare token, a currency *flow* is :attr:`CURRENCY_FLOW`. There is no
-    ``CURRENCY_STOCK`` spelling: the ``…_FLOW`` suffix is the only flow marker."""
-
-    DIMENSIONLESS = "DIMENSIONLESS"
-    """A plain dimensionless number: a share (a Steuersatz), a rate, a head
-    count. The complete (non-period) counterpart of :attr:`DIMENSIONLESS_FLOW`.
-    There is no ``DIMENSIONLESS_STOCK`` — a dimensionless level is the bare
-    token. Replaces the former ``unit=None`` / ``unit: null`` spelling."""
-
-    DIMENSIONLESS_FLOW = "DIMENSIONLESS_FLOW"
-    """A dimensionless quantity *per period* (``1/period``): a count or a
-    share per unit time — births per year, or the per-year change of a
-    dimensionless factor (the pension Zugangsfaktor). The complete,
-    non-period counterpart is :attr:`DIMENSIONLESS`."""
-
-    YEARS = "YEARS"
-    """A *duration* in years: an age, an age threshold, a number of years. A
-    duration is the difference between two calendar points and is fully
-    multiplicative (``YEARS * 2`` scales, ``YEARS`` converts to ``MONTHS``). The
-    calendar *point* counterpart — a specific year on the calendar — is
-    :attr:`CALENDAR_YEAR` (GEP 10)."""
-
-    MONTHS = "MONTHS"
-    """A *duration* in months: the span between two calendar months. The
-    multiplicative duration counterpart of the :attr:`CALENDAR_MONTH` point."""
-
-    DAYS = "DAYS"
-    """A *duration* in days: the span between two calendar days. The
-    multiplicative duration counterpart of the :attr:`CALENDAR_DAY` point."""
-
-    CALENDAR_YEAR = "CALENDAR_YEAR"
-    """A *point* on the calendar measured in years: a birth year, the policy
-    year. An affine point, not a duration (GEP 10): two calendar years
-    *subtract* to a :attr:`YEARS` duration (``policy_year - geburtsjahr``) and a
-    :attr:`YEARS` duration *adds* to a calendar year, but two calendar years
-    cannot be added and a calendar year cannot be scaled."""
-
-    CALENDAR_MONTH = "CALENDAR_MONTH"
-    """A *point* on the calendar measured in months. The month-axis counterpart
-    of :attr:`CALENDAR_YEAR`; two subtract to a :attr:`MONTHS` duration. A
-    *cyclic* month-of-year ordinal (``geburtsmonat`` 1-12) is not a calendar
-    point but :attr:`DIMENSIONLESS` (GEP 10)."""
-
-    CALENDAR_DAY = "CALENDAR_DAY"
-    """A *point* on the calendar measured in days. The day-axis counterpart of
-    :attr:`CALENDAR_YEAR`; two subtract to a :attr:`DAYS` duration."""
-
-    HOURS_FLOW = "HOURS_FLOW"
-    """Hours per period: working hours."""
-
-    SQUARE_METERS = "SQUARE_METERS"
-    """An area in square meters: dwelling size."""
-
-    HECTARES = "HECTARES"
-    """An area in hectares: land."""
-
-    CURRENCY_PER_SQUARE_METER_FLOW = "CURRENCY_PER_SQUARE_METER_FLOW"
-    """An amount of currency per square meter per period: rent caps."""
-
-    HEADCOUNT = "HEADCOUNT"
-    """A *declarable* head count: a number of persons per reference level
-    (``[person] / [level]``). The count dimension is the ``[person]`` leaf level
-    (:data:`PERSON_LEVEL`); the reference level enters as the denominator exactly
-    as a grouping level does for currency or area, so ``HEADCOUNT`` at ``fam``
-    resolves to ``[person] / [fam]`` — the very unit a ``COUNT`` aggregation mints
-    (GEP 10). It lets a parameter, a hand-written function, or an input column
-    *declare* a head count, which only aggregations could produce before.
-
-    Always per *something*: the reference level is mandatory (a ``HEADCOUNT``
-    parameter must set :attr:`reference_level`; a ``HEADCOUNT`` column takes it
-    from the name position). The leaf reference :data:`PERSON_LEVEL` is allowed
-    and meaningful — a head count per individual (the persons pointing at one, an
-    ``agg_by_p_id`` count) is ``[person] / [person]``, which *is* a plain
-    dimensionless number, exactly as it should be. A reference level of a proper
-    group does not cancel and stays ``[person] / [group]``."""
-
-
-# A frozen dataclass, not a ``NamedTuple``: under ``from __future__ import
-# annotations`` beartype's package claw mis-reads a ``NamedTuple`` field whose
-# stringified annotation is not a bare identifier (here ``str | None``) as a
-# forward reference and raises at import. A dataclass with the same fields is
-# fine, and the type is only ever accessed by attribute, never as a tuple.
-@dataclass(frozen=True, slots=True)
-class _TokenResolution:
-    """How a token resolves internally: pint base expression and kind."""
-
-    base: str | None
-    """The pint expression of the token's non-period part (``None`` for a
-    dimensionless base)."""
-    is_flow: bool
-    """Whether a period must be supplied."""
-    carries_level: bool
-    """Whether the token carries a grouping level by default (GEP 10).
-
-    The *extensive/intensive* distinction: a token carries a ``/[level]``
-    denominator exactly when summing the level's members sums it meaningfully —
-    currency and area are extensive (a household income is the sum of its
-    members'), durations / calendar points / rates / dimensionless quantities are
-    intensive. A token whose physical part is already dimensionless
-    (``HOURS_FLOW``, ``DIMENSIONLESS``) must stay level-less: a level on a
-    dimensionless base would be a bare inverse-level and break comparisons
-    against plain numbers (``arbeitsstunden_w > 15``)."""
-
-
-#: Maps each token to its resolution. Internal — declarations never contain
-#: pint syntax.
-_TOKEN_BASE_AND_IS_FLOW: dict[Unit, _TokenResolution] = {
-    Unit.CURRENCY_FLOW: _TokenResolution(
-        base=CURRENCY_TOKEN, is_flow=True, carries_level=True
-    ),
-    Unit.CURRENCY: _TokenResolution(
-        base=CURRENCY_TOKEN, is_flow=False, carries_level=True
-    ),
-    Unit.DIMENSIONLESS: _TokenResolution(base=None, is_flow=False, carries_level=False),
-    Unit.DIMENSIONLESS_FLOW: _TokenResolution(
-        base=None, is_flow=True, carries_level=False
-    ),
-    Unit.YEARS: _TokenResolution(
-        base="delta_calendar_year", is_flow=False, carries_level=False
-    ),
-    Unit.MONTHS: _TokenResolution(
-        base="delta_calendar_month", is_flow=False, carries_level=False
-    ),
-    Unit.DAYS: _TokenResolution(
-        base="delta_calendar_day", is_flow=False, carries_level=False
-    ),
-    Unit.CALENDAR_YEAR: _TokenResolution(
-        base="calendar_year", is_flow=False, carries_level=False
-    ),
-    Unit.CALENDAR_MONTH: _TokenResolution(
-        base="calendar_month", is_flow=False, carries_level=False
-    ),
-    Unit.CALENDAR_DAY: _TokenResolution(
-        base="calendar_day", is_flow=False, carries_level=False
-    ),
-    Unit.HOURS_FLOW: _TokenResolution(base="hour", is_flow=True, carries_level=False),
-    Unit.SQUARE_METERS: _TokenResolution(
-        base="meter ** 2", is_flow=False, carries_level=True
-    ),
-    Unit.HECTARES: _TokenResolution(base="hectare", is_flow=False, carries_level=True),
-    Unit.CURRENCY_PER_SQUARE_METER_FLOW: _TokenResolution(
-        base=f"{CURRENCY_TOKEN} / meter ** 2", is_flow=True, carries_level=False
-    ),
-    # The base is the [person] leaf level (the count dimension). Its pint unit is
-    # registered dynamically by `register_grouping_levels(...)`, so this base only
-    # resolves *after* that has run (it always does before any unit is resolved, in
-    # the orchestration). `carries_level=True`: the reference level enters as the
-    # denominator, so HEADCOUNT + level -> [person] / [level], identical to a COUNT.
-    Unit.HEADCOUNT: _TokenResolution(
-        base=f"{_GROUPING_LEVEL_PREFIX}{PERSON_LEVEL}",
-        is_flow=False,
-        carries_level=True,
-    ),
+#: The closed *period* denominators and the pint unit each names. Having a
+#: period denominator is what makes a unit a *flow* (GEP 10).
+_PERIOD_TOKEN_TO_PINT: dict[str, str] = {
+    "MONTH": "month",
+    "YEAR": "year",
+    "QUARTER": "quarter_year",
+    "WEEK": "week",
+    "DAY": "day",
 }
 
+#: The closed *area* denominators (physical) and the pint unit each names.
+_AREA_TOKEN_TO_PINT: dict[str, str] = {
+    "SQUARE_METER": "meter ** 2",
+}
 
-#: The agnostic (currency-dimensioned) tokens of the core vocabulary. Each
-#: gets a concrete per-currency variant on :func:`register_currency`;
-#: parameters must declare the concrete variant (GEP 10).
-_AGNOSTIC_CURRENCY_TOKENS: frozenset[Unit] = frozenset(
-    token
-    for token, resolution in _TOKEN_BASE_AND_IS_FLOW.items()
-    if resolution.base is not None and CURRENCY_TOKEN in resolution.base
+#: The non-currency compositional *bases* and the pint base each resolves to
+#: (``None`` is the dimensionless base). The currency bases — agnostic
+#: :data:`CURRENCY_TOKEN` and the registered concrete currencies — are handled
+#: separately because they share the ``[currency]`` dimension. ``PERSON``
+#: resolves to the ``[person]`` leaf level (registered with the grouping levels),
+#: so it is also handled separately in :func:`resolve_compositional_unit`.
+_COMPOSITIONAL_BASE_TO_PINT: dict[str, str | None] = {
+    "DIMENSIONLESS": None,
+    "PERSON": f"{_GROUPING_LEVEL_PREFIX}{PERSON_LEVEL}",
+    "HOURS": "working_hour",
+    "SQUARE_METER": "meter ** 2",
+    "HECTARE": "hectare",
+    "YEARS": "delta_calendar_year",
+    "MONTHS": "delta_calendar_month",
+    "DAYS": "delta_calendar_day",
+    "CALENDAR_YEAR": "calendar_year",
+    "CALENDAR_MONTH": "calendar_month",
+    "CALENDAR_DAY": "calendar_day",
+}
+
+#: The grouping levels the fluent builder offers a ``per_<level>`` attribute for
+#: (e.g. ``per_bg``). Populated per package by
+#: :func:`register_unit_builder_levels`; the generic :meth:`CompositeUnit.PER_LEVEL`
+#: works for any level regardless.
+_unit_builder_levels: set[str] = set()
+
+
+@dataclass(frozen=True)
+class CompositeUnit:
+    """A fully-spelled compositional unit (GEP 10).
+
+    Built fluently off a base (``Unit.CURRENCY.PER_MONTH.PER_BG``) or parsed
+    from the flat canonical string (``parse_compositional_unit`` of
+    ``"CURRENCY_PER_MONTH_PER_BG"``); the two round-trip through :func:`str`.
+    The denominators are held in canonical order — at most one *area*, one
+    *period*, one *level* — and the builder methods enforce that order, so a
+    non-canonical chain (``.PER_BG.PER_MONTH``) is a definition error.
+
+    A :class:`CompositeUnit` is *the* declaration type; it resolves to a pint
+    unit via :func:`resolve_compositional_unit`.
+    """
+
+    base: str
+    area: str | None = None
+    period: str | None = None
+    level: str | None = None
+
+    if TYPE_CHECKING:
+        # The per-level builder steps (``per_bg``, ``per_fam``, …) are added at
+        # runtime by :func:`register_unit_builder_levels` for each grouping level
+        # the build discovers (the level vocabulary is open, GEP 10). They cannot
+        # be hard-declared, so this tells ``ty`` and editors that any builder
+        # attribute yields a :class:`CompositeUnit`. Runtime keeps strict
+        # lookup — an unregistered ``per_<level>`` (or a typo) raises
+        # ``AttributeError`` — because the block is type-checking only.
+        def __getattr__(self, name: str) -> CompositeUnit: ...
+
+    def __str__(self) -> str:
+        parts = [self.base, self.area, self.period, self.level]
+        return _PER.join(part for part in parts if part is not None)
+
+    def __repr__(self) -> str:
+        return f"CompositeUnit({self})"
+
+    @property
+    def is_flow(self) -> bool:
+        """Whether this unit is a flow — i.e. has a period denominator."""
+        return self.period is not None
+
+    @property
+    def carries_level(self) -> bool:
+        """Whether this unit carries a grouping-level denominator."""
+        return self.level is not None
+
+    # ---- fluent builder steps (canonical order enforced) ----
+
+    def _with_area(self, area: str) -> CompositeUnit:
+        if self.area is not None or self.period is not None or self.level is not None:
+            raise UnitDefinitionError(
+                f"Cannot add area '{area}' to '{self}': the canonical order is "
+                f"base _PER_ <area> _PER_ <period> _PER_ <level> (GEP 10)."
+            )
+        return replace(self, area=area)
+
+    def _with_period(self, period: str) -> CompositeUnit:
+        if self.period is not None or self.level is not None:
+            raise UnitDefinitionError(
+                f"Cannot add period '{period}' to '{self}': a period must precede "
+                f"the level and there is at most one period (GEP 10)."
+            )
+        return replace(self, period=period)
+
+    def _with_level(self, level: str) -> CompositeUnit:
+        if self.level is not None:
+            raise UnitDefinitionError(
+                f"Cannot add level '{level}' to '{self}': a unit carries at most "
+                f"one grouping level (GEP 10)."
+            )
+        return replace(self, level=level.upper())
+
+    @property
+    def PER_SQUARE_METER(self) -> CompositeUnit:  # noqa: N802 (DSL: mirrors the token)
+        """This unit per square meter (the area denominator)."""
+        return self._with_area("SQUARE_METER")
+
+    @property
+    def PER_MONTH(self) -> CompositeUnit:  # noqa: N802 (DSL: mirrors the token)
+        """This unit per month."""
+        return self._with_period("MONTH")
+
+    @property
+    def PER_YEAR(self) -> CompositeUnit:  # noqa: N802 (DSL: mirrors the token)
+        """This unit per year."""
+        return self._with_period("YEAR")
+
+    @property
+    def PER_QUARTER(self) -> CompositeUnit:  # noqa: N802 (DSL: mirrors the token)
+        """This unit per quarter."""
+        return self._with_period("QUARTER")
+
+    @property
+    def PER_WEEK(self) -> CompositeUnit:  # noqa: N802 (DSL: mirrors the token)
+        """This unit per week."""
+        return self._with_period("WEEK")
+
+    @property
+    def PER_DAY(self) -> CompositeUnit:  # noqa: N802 (DSL: mirrors the token)
+        """This unit per day."""
+        return self._with_period("DAY")
+
+    def PER_LEVEL(self, name: str) -> CompositeUnit:  # noqa: N802 (DSL: mirrors token)
+        """This unit per grouping level ``name`` (e.g. ``"bg"``)."""
+        return self._with_level(name)
+
+
+def _classify_denominator(token: str) -> str:
+    """Classify a denominator token as ``"area"``, ``"period"``, or ``"level"``.
+
+    Area and period are closed vocabularies; everything else is taken to be a
+    grouping level, validated against the registered levels at resolution time
+    (the level vocabulary is open and discovered per build, GEP 10).
+    """
+    if token in _AREA_TOKEN_TO_PINT:
+        return "area"
+    if token in _PERIOD_TOKEN_TO_PINT:
+        return "period"
+    return "level"
+
+
+def _is_currency_base(base: str) -> bool:
+    """Whether a base token denotes a currency (agnostic or concrete)."""
+    if base == CURRENCY_TOKEN:
+        return True
+    return any(base == name.upper() for name in _registered_currency_names())
+
+
+def _registered_currency_names() -> set[str]:
+    """The concrete currencies registered so far (their pint unit names)."""
+    return set(_registered_currencies)
+
+
+def parse_compositional_unit(spelling: str) -> CompositeUnit:
+    """Parse a flat canonical compositional spelling (GEP 10).
+
+    ``"CURRENCY_PER_MONTH_PER_BG"`` → ``CompositeUnit(base="CURRENCY",
+    period="MONTH", level="BG")``. The denominators must appear in canonical
+    order (``base _PER_ <area> _PER_ <period> _PER_ <level>``) with at most one
+    per kind; a non-canonical or repeated denominator is rejected, so there is
+    exactly one spelling per unit. The base may be the agnostic
+    :data:`CURRENCY_TOKEN`, a registered concrete currency, or any non-currency
+    compositional base. A bare base (``DIMENSIONLESS``, ``SILVER_PENNY``) is a
+    complete unit with no denominators.
+
+    Raises:
+        UnitDefinitionError: If the spelling is empty, names an unknown base, or
+            violates the canonical order / one-per-kind rules.
+    """
+    if not spelling:
+        raise UnitDefinitionError("Empty compositional unit spelling (GEP 10).")
+    base, *denominators = spelling.split(_PER)
+    if base not in _COMPOSITIONAL_BASE_TO_PINT and not _is_currency_base(base):
+        raise UnitDefinitionError(
+            f"Unknown compositional base {base!r} in {spelling!r}. A base is the "
+            f"agnostic '{CURRENCY_TOKEN}', a registered currency, or one of "
+            f"{', '.join(sorted(_COMPOSITIONAL_BASE_TO_PINT))} (GEP 10)."
+        )
+    unit = CompositeUnit(base=base)
+    for token in denominators:
+        kind = _classify_denominator(token)
+        if kind == "area":
+            unit = unit._with_area(token)  # noqa: SLF001
+        elif kind == "period":
+            unit = unit._with_period(token)  # noqa: SLF001
+        else:
+            unit = unit._with_level(token)  # noqa: SLF001
+    return unit
+
+
+#: Maps a GEP-1 time-unit suffix id to the compositional *period* token, so a
+#: column's spelled period can be checked against its name suffix (GEP 10).
+TIME_UNIT_ID_TO_PERIOD_TOKEN: dict[str, str] = {
+    "y": "YEAR",
+    "q": "QUARTER",
+    "m": "MONTH",
+    "w": "WEEK",
+    "d": "DAY",
+}
+
+#: The compositional bases that are *extensive* — they carry a grouping level by
+#: default (summing a level's members sums them): currency, area, and the
+#: ``[person]`` count. An unsuffixed extensive column is at :data:`PERSON_LEVEL`;
+#: an intensive base (duration, calendar point, dimensionless) carries no level.
+_EXTENSIVE_COMPOSITIONAL_BASES: frozenset[str] = frozenset(
+    {"PERSON", "SQUARE_METER", "HECTARE"}
 )
 
 
-class CurrencyUnitToken(str):
-    """A declaration token pinning down a concrete currency (GEP 10).
+def composite_base_is_extensive(base: str) -> bool:
+    """Whether a compositional base carries a grouping level by default (GEP 10)."""
+    return _is_currency_base(base) or base in _EXTENSIVE_COMPOSITIONAL_BASES
 
-    Created by :func:`register_currency`, never directly:
-    ``register_currency("DM", ...)`` derives one concrete variant per
-    currency-dimensioned core token — ``DM``, ``DM_FLOW``,
-    ``DM_PER_SQUARE_METER_FLOW``. For all dimensionality checks the token
-    means exactly what its agnostic counterpart means — a registered
-    currency *is a* ``CURRENCY``. In addition it names the concrete currency
-    a parameter's numbers are denominated in, which the build-time conversion
-    to the run currency reads off the declaration.
 
-    Only *parameters* may declare these tokens. Columns and functions take
-    :class:`Unit` members and thereby stay currency-agnostic.
+def resolve_compositional_unit(
+    unit: CompositeUnit, *, with_level: bool = True
+) -> pint.Unit:
+    """Resolve a compositional unit to its pint unit (GEP 10).
+
+    The denominators divide the base in turn: a period divides by its pint
+    period, an area by ``meter ** 2``, a level by its grouping-level dimension.
+
+    A currency base resolves to the agnostic :data:`CURRENCY_TOKEN` dimension —
+    for dimensionality a concrete currency means exactly what ``CURRENCY`` means
+    (the concrete currency drives the build-time conversion, not the check).
+
+    Raises:
+        UnitDefinitionError: If a level denominator names an unregistered
+            grouping level.
+    """
+    if _is_currency_base(unit.base):
+        resolved = UNIT_REGISTRY.parse_units(CURRENCY_TOKEN)
+    elif unit.base == "PERSON":
+        # The `[person]` leaf count dimension, registered with the grouping
+        # levels — go through the helper so an un-built registry fails loudly.
+        resolved = _grouping_level_unit(PERSON_LEVEL)
+    else:
+        base = _COMPOSITIONAL_BASE_TO_PINT[unit.base]
+        resolved = (
+            UNIT_REGISTRY.dimensionless
+            if base is None
+            else UNIT_REGISTRY.parse_units(base)
+        )
+    if unit.area is not None:
+        resolved = _divide_by_period(
+            resolved, period_pint_name=_AREA_TOKEN_TO_PINT[unit.area]
+        )
+    if unit.period is not None:
+        resolved = _divide_by_period(
+            resolved, period_pint_name=_PERIOD_TOKEN_TO_PINT[unit.period]
+        )
+    if with_level and unit.level is not None:
+        resolved = divide_by_grouping_level(unit=resolved, level=unit.level.lower())
+    return resolved
+
+
+def resolve_compositional_column_unit(
+    unit: CompositeUnit,
+    *,
+    time_unit_id: str | None,
+    grouping_level: str,
+    where: str,
+) -> pint.Unit:
+    """Resolve a column/function's compositional unit, validating the name suffix.
+
+    Convention A (GEP 10): a column spells its period and any *group* level, which
+    must match the name's suffix; the *person* leaf level is implied (not spelled)
+    and added here for an extensive base. So ``betrag_m`` declares
+    ``CURRENCY_PER_MONTH`` (resolved ``CURRENCY / month / [person]``), ``betrag_m_hh``
+    declares ``CURRENCY_PER_MONTH_PER_HH``, and a level-less ``MIN``-of-age at
+    ``_fg`` declares ``YEARS`` (the ``fg`` suffix is a mere index level).
+
+    Columns are currency-agnostic, so a concrete-currency base is rejected.
+
+    Raises:
+        UnitDefinitionError: If the base pins a concrete currency, the spelled
+            period/level disagrees with the name suffix, or an extensive group
+            column fails to spell its level.
+    """
+    if token_source_currency(unit) is not None:
+        raise UnitDefinitionError(
+            f"{where}: a column/function pins the concrete currency {unit.base!r}; "
+            f"columns are currency-agnostic and must use {CURRENCY_TOKEN} (GEP 10)."
+        )
+    expected_period = (
+        TIME_UNIT_ID_TO_PERIOD_TOKEN[time_unit_id] if time_unit_id is not None else None
+    )
+    if unit.period != expected_period:
+        raise UnitDefinitionError(
+            f"{where}: the unit spells period {unit.period!r} but the name's time "
+            f"suffix implies {expected_period!r}; they must agree (GEP 10)."
+        )
+    is_group_level = grouping_level != PERSON_LEVEL
+    if unit.level is not None and unit.level != grouping_level.upper():
+        raise UnitDefinitionError(
+            f"{where}: the unit spells level {unit.level!r} but the name's "
+            f"aggregation suffix implies {grouping_level.upper()!r} (GEP 10)."
+        )
+    if unit.level is None and is_group_level and composite_base_is_extensive(unit.base):
+        raise UnitDefinitionError(
+            f"{where}: an extensive quantity at the {grouping_level!r} level must "
+            f"spell that level (e.g. ..._PER_{grouping_level.upper()}); the person "
+            f"leaf is the only implied level (GEP 10)."
+        )
+    resolved = resolve_compositional_unit(unit, with_level=True)
+    # Add the implied person leaf level for an extensive base with no spelled
+    # level — the unsuffixed-name case (group columns spell their level above).
+    if unit.level is None and composite_base_is_extensive(unit.base):
+        resolved = divide_by_grouping_level(unit=resolved, level=grouping_level)
+    return resolved
+
+
+def composite_with_rebased_period(
+    unit: CompositeUnit, time_unit_id: str
+) -> CompositeUnit:
+    """Re-base a flow compositional unit to a new period (GEP 10).
+
+    A time-conversion variant of a flow (``betrag_m`` → ``betrag_y``) carries the
+    same quantity per a *different* period, so only the period denominator
+    changes: ``CURRENCY_PER_MONTH`` → ``CURRENCY_PER_YEAR``. A non-flow unit (no
+    period) is returned unchanged — there is nothing to re-base.
+    """
+    if unit.period is None:
+        return unit
+    return replace(unit, period=TIME_UNIT_ID_TO_PERIOD_TOKEN[time_unit_id])
+
+
+def resolve_compositional_param_unit(
+    unit: CompositeUnit,
+    *,
+    time_unit_id: str | None = None,
+    where: str,
+) -> pint.Unit:
+    """Resolve a parameter's compositional unit (GEP 10).
+
+    A parameter spells its unit *fully* — period and level both in the string —
+    because (unlike a column) it has no name suffix to imply a level from: there
+    is no person default, a parameter is level-agnostic unless it spells a level
+    (``SILVER_PENNY_PER_PERSON`` for a per-person threshold,
+    ``SILVER_PENNY_PER_FAM`` for a per-family one, ``SILVER_PENNY`` for a
+    level-agnostic amount). A concrete-currency base is allowed — parameters pin
+    the currency their numbers are written in. A scalar parameter additionally
+    takes a time suffix on its *name*; where one is present the spelled period
+    must agree with it.
+
+    Raises:
+        UnitDefinitionError: If a present name time suffix disagrees with the
+            spelled period.
+    """
+    if time_unit_id is not None:
+        expected_period = TIME_UNIT_ID_TO_PERIOD_TOKEN[time_unit_id]
+        if unit.period != expected_period:
+            raise UnitDefinitionError(
+                f"{where}: the unit spells period {unit.period!r} but the name's "
+                f"time suffix implies {expected_period!r}; they must agree (GEP 10)."
+            )
+    return resolve_compositional_unit(unit, with_level=True)
+
+
+def register_unit_builder_levels(names: Iterable[str]) -> None:
+    """Give the fluent builder a ``per_<level>`` attribute for each level (GEP 10).
+
+    The level vocabulary is open and discovered per build, so the builder cannot
+    hard-wire the level step the way it does the closed area/period steps. Each
+    package registers its levels (at import, before its declarations run) and
+    thereby earns the sugar ``Unit.PERSON.PER_BG`` / ``…\u200b.PER_MONTH.PER_BG``
+    alongside the always-available generic :meth:`CompositeUnit.PER_LEVEL`. The
+    person leaf is always registered. Idempotent.
+
+    The bases on the :class:`Unit` namespace are themselves
+    :class:`CompositeUnit`\\ s, so adding the ``per_<level>`` property to
+    :class:`CompositeUnit` makes ``Unit.PERSON.PER_BG`` work too — there is one
+    place to extend. ``ty`` and editors see the sugar through
+    :class:`CompositeUnit`'s type-checking-only ``__getattr__``.
+    """
+    for name in (PERSON_LEVEL, *names):
+        if name in _unit_builder_levels:
+            continue
+        _unit_builder_levels.add(name)
+        setattr(
+            CompositeUnit,
+            f"PER_{name.upper()}",
+            property(lambda self, level=name: self.PER_LEVEL(level)),
+        )
+
+
+class Unit:
+    """The builder namespace of unit *bases* (GEP 10).
+
+    Each attribute is a bare :class:`CompositeUnit` — ``Unit.CURRENCY`` *is*
+    ``CompositeUnit(base="CURRENCY")`` — that heads a ``.per_*`` builder chain
+    enforcing the canonical order ``base _PER_ <area> _PER_ <period> _PER_
+    <level>`` (``Unit.CURRENCY.PER_MONTH.PER_BG``). The area and period steps are
+    closed sets and so are real, autocompleting properties on
+    :class:`CompositeUnit`; the per-level step is discovered per build, so
+    :func:`register_unit_builder_levels` adds a ``per_<level>`` attribute for each
+    registered level alongside the always-available generic
+    :meth:`CompositeUnit.PER_LEVEL`.
+
+    Only the agnostic currency base ``CURRENCY`` lives here; concrete currency
+    bases (``SILVER_PENNY``, ``DM``) are spelled directly in parameter YAML and
+    reached via :func:`parse_compositional_unit`, never off this namespace.
     """
 
-    __slots__ = ("agnostic", "currency")
+    CURRENCY = CompositeUnit(base=CURRENCY_TOKEN)
+    """An amount of currency (agnostic): wages, claims, benefits, wealth. A
+    period denominator makes it a flow (``Unit.CURRENCY.PER_MONTH``)."""
 
-    currency: str
-    agnostic: Unit
+    DIMENSIONLESS = CompositeUnit(base="DIMENSIONLESS")
+    """A plain dimensionless number: a share, a rate. A boolean declares
+    ``DIMENSIONLESS`` too and takes its level from the name suffix (GEP 10)."""
 
-    def __new__(cls, spelling: str, *, currency: str, agnostic: Unit) -> Self:
-        self = super().__new__(cls, spelling)
-        self.currency = currency
-        self.agnostic = agnostic
-        return self
+    PERSON = CompositeUnit(base="PERSON")
+    """The individual (leaf) count base — the numerator of a head count
+    (``[person]``). With a level denominator it is a head count per group:
+    ``Unit.PERSON.PER_BG`` resolves to ``[person] / [bg]``."""
+
+    HOURS = CompositeUnit(base="HOURS")
+    """Working hours (the isolated ``[hours]`` dimension). A period denominator
+    re-bases them (``Unit.HOURS.PER_WEEK``)."""
+
+    SQUARE_METER = CompositeUnit(base="SQUARE_METER")
+    """An area in square meters; also the lone *area* denominator
+    (``Unit.CURRENCY.PER_SQUARE_METER``)."""
+
+    HECTARE = CompositeUnit(base="HECTARE")
+    """An area in hectares: land."""
+
+    YEARS = CompositeUnit(base="YEARS")
+    """A *duration* in years: an age, an age threshold. The calendar *point*
+    counterpart is :attr:`CALENDAR_YEAR`."""
+
+    MONTHS = CompositeUnit(base="MONTHS")
+    """A *duration* in months. The point counterpart is :attr:`CALENDAR_MONTH`."""
+
+    DAYS = CompositeUnit(base="DAYS")
+    """A *duration* in days. The point counterpart is :attr:`CALENDAR_DAY`."""
+
+    CALENDAR_YEAR = CompositeUnit(base="CALENDAR_YEAR")
+    """A *point* on the calendar measured in years: a birth year, the policy
+    year. Two calendar years subtract to a :attr:`YEARS` duration."""
+
+    CALENDAR_MONTH = CompositeUnit(base="CALENDAR_MONTH")
+    """A *point* on the calendar measured in months."""
+
+    CALENDAR_DAY = CompositeUnit(base="CALENDAR_DAY")
+    """A *point* on the calendar measured in days."""
 
 
-def token_is_agnostic_currency(token: Unit | CurrencyUnitToken | None) -> bool:
-    """Whether a token is a currency-dimensioned member of the core vocabulary.
+#: Sentinel distinguishing an *omitted* unit declaration from an explicit one
+#: (GEP 10). Units are mandatory in the public decorators, so this is
+#: unreachable through them; it survives only as a dataclass field default (the
+#: ``unit`` field needs one for field-ordering) that the mandatory-units check
+#: reports. A :class:`CompositeUnit` so the field type is cleanly
+#: :class:`CompositeUnit`; its base never resolves and it is only ever compared
+#: by identity.
+UNSET_UNIT: CompositeUnit = CompositeUnit(base="__UNSET__")
 
-    Parameters must not declare these once a concrete currency is registered
-    (GEP 10): the declaration names the currency the numbers are written in,
-    so it must be one of the concrete per-currency variants.
+
+def token_is_agnostic_currency(token: CompositeUnit | None) -> bool:
+    """Whether a unit is a currency-dimensioned *agnostic* declaration (GEP 10).
+
+    Parameters must not declare these once a concrete currency is registered:
+    the declaration names the currency the numbers are written in, so it must
+    pin down a concrete currency. A compositional unit is agnostic when its base
+    is the agnostic :data:`CURRENCY_TOKEN`.
     """
-    return isinstance(token, Unit) and token in _AGNOSTIC_CURRENCY_TOKENS
+    return isinstance(token, CompositeUnit) and token.base == CURRENCY_TOKEN
 
 
-#: One declaration token per (registered currency, kind): ``DM``,
-#: ``DM_FLOW``, … — populated by :func:`register_currency`, keyed by spelling.
-_CURRENCY_UNIT_TOKENS: dict[str, CurrencyUnitToken] = {}
+def token_source_currency(token: CompositeUnit | None) -> str | None:
+    """The concrete currency a declaration pins down, if any (GEP 10).
 
-
-#: Any member of the full token vocabulary: the core enumeration or a
-#: currency token derived from a registered currency.
-UnitToken = Unit | CurrencyUnitToken
-
-
-def unit_token_is_flow(token: Unit | CurrencyUnitToken) -> bool:
-    """Whether a token denotes a per-period quantity (needs a period source)."""
-    if isinstance(token, CurrencyUnitToken):
-        token = token.agnostic
-    return _TOKEN_BASE_AND_IS_FLOW[token].is_flow
-
-
-def unit_token_carries_level(token: Unit | CurrencyUnitToken) -> bool:
-    """Whether a token carries a grouping level by default (GEP 10).
-
-    The per-token *extensive/intensive* default: an extensive token (currency,
-    area, the ``[person]`` count) carries a ``/[level]`` denominator; an intensive
-    one (durations, calendar points, rates, dimensionless) does not. A concrete
-    currency token inherits its agnostic counterpart's default.
+    ``None`` for the agnostic base, for non-currency declarations, and for
+    dimensionless ones. A compositional unit pins down a currency when its base
+    is a registered concrete currency.
     """
-    if isinstance(token, CurrencyUnitToken):
-        token = token.agnostic
-    return _TOKEN_BASE_AND_IS_FLOW[token].carries_level
+    if not isinstance(token, CompositeUnit):
+        return None
+    return next(
+        (name for name in _registered_currency_names() if name.upper() == token.base),
+        None,
+    )
 
 
-def token_source_currency(token: Unit | CurrencyUnitToken | None) -> str | None:
-    """The concrete currency a declaration token pins down, if any (GEP 10).
-
-    ``None`` for the agnostic tokens, for non-currency tokens, and for
-    dimensionless declarations.
-    """
-    return token.currency if isinstance(token, CurrencyUnitToken) else None
+def unit_token_is_flow(token: CompositeUnit) -> bool:
+    """Whether a unit denotes a per-period quantity (a flow)."""
+    return token.is_flow
 
 
-def unit_for_derived_node(
-    token: Unit | CurrencyUnitToken | UnsetUnitType,
-) -> Unit | UnsetUnitType:
-    """The unit token a node *derived* from a source with this token carries.
+def unit_token_carries_level(token: CompositeUnit) -> bool:
+    """Whether a unit carries a grouping-level denominator (GEP 10)."""
+    return token.carries_level
+
+
+def unit_for_derived_node(token: CompositeUnit) -> CompositeUnit:
+    """The unit a node *derived* from a source with this unit carries (GEP 10).
 
     Derived nodes — time-conversion variants and aggregations — are functions,
-    and a function is currency-agnostic by design (GEP 10): it computes on
-    values already converted to the run currency. So a source that pins down a
-    concrete currency (a parameter) hands on the agnostic counterpart of its
-    currency token; every other token — a time, an area, dimensionless, an
-    already-agnostic currency, or no declaration — passes through unchanged.
+    and a function is currency-agnostic by design: it computes on values already
+    converted to the run currency. So a source that pins down a concrete currency
+    (a parameter) hands on the agnostic counterpart of its declaration; every
+    other unit passes through unchanged.
     """
-    return token.agnostic if isinstance(token, CurrencyUnitToken) else token
+    return (
+        replace(token, base=CURRENCY_TOKEN)
+        if token_source_currency(token) is not None
+        else token
+    )
 
 
 def coerce_unit_token(
-    value: str | Unit | CurrencyUnitToken,
+    value: str | CompositeUnit,
     *,
     where: str,
-) -> Unit | CurrencyUnitToken:
-    """Coerce a YAML ``unit:`` value to a vocabulary token (GEP 10).
+) -> CompositeUnit:
+    """Coerce a YAML ``unit:`` value to a :class:`CompositeUnit` (GEP 10).
 
-    A dimensionless quantity (a share, a rate, a head count) declares
-    :attr:`Unit.DIMENSIONLESS` (``unit: DIMENSIONLESS``) like any other token;
-    ``None`` is no longer a unit declaration (GEP 10) and reaching here with it
-    is an internal bug. Any string must spell a member of the core enumeration
-    or a currency token derived from a registered currency exactly; everything
-    else — including pint syntax like ``"CURRENCY"`` or ``"CURRENCY / year"``,
-    and the former ``"null"`` spelling — is rejected.
+    A string is a *compositional* spelling (``CURRENCY_PER_MONTH_PER_BG``,
+    ``PERSON_PER_BG``, ``SILVER_PENNY_PER_YEAR``, or a bare base ``DIMENSIONLESS``)
+    parsed into a :class:`CompositeUnit`; an already-coerced
+    :class:`CompositeUnit` passes through. Everything else — pint syntax like
+    ``"CURRENCY / year"`` or the former ``"null"`` spelling — is rejected.
 
     Args:
         value: The raw declaration — a string from YAML or an already-coerced
-            token.
+            unit.
         where: Identifier for error messages (e.g. the parameter's name).
 
     Raises:
         UnitDefinitionError: If the value is not part of the vocabulary.
     """
-    if isinstance(value, Unit | CurrencyUnitToken):
+    if isinstance(value, CompositeUnit):
         return value
-    if value in _CURRENCY_UNIT_TOKENS:
-        return _CURRENCY_UNIT_TOKENS[value]
-    try:
-        return Unit(value)
-    except ValueError:
-        raise UnitDefinitionError(
-            f"{where}: invalid unit token {value!r}. A unit declaration must be "
-            f"one of {', '.join([*Unit, *_CURRENCY_UNIT_TOKENS])} (GEP 10); use "
-            f"DIMENSIONLESS for a dimensionless quantity."
-        ) from None
-
-
-class UnsetUnitType(enum.Enum):
-    """The type of :data:`UNSET_UNIT`; a single-member enum so it type-checks."""
-
-    TOKEN = enum.auto()
-
-    def __repr__(self) -> str:
-        return "UNSET_UNIT"
-
-
-#: Sentinel distinguishing an *omitted* unit declaration from an explicit
-#: dimensionless one (GEP 10): :attr:`Unit.DIMENSIONLESS` declares a
-#: dimensionless quantity (a share, a rate, a head count); :data:`UNSET_UNIT`
-#: means no declaration was made, which the mandatory-units check reports as an
-#: error.
-UNSET_UNIT = UnsetUnitType.TOKEN
+    if isinstance(value, str):
+        try:
+            return parse_compositional_unit(value)
+        except UnitDefinitionError:
+            pass
+    raise UnitDefinitionError(
+        f"{where}: invalid unit declaration {value!r}. A unit must be a "
+        f"compositional spelling (e.g. CURRENCY_PER_MONTH_PER_BG, PERSON_PER_BG), "
+        f"a bare base (e.g. CURRENCY, SILVER_PENNY), or DIMENSIONLESS for a "
+        f"dimensionless quantity (GEP 10)."
+    )
 
 
 def _build_registry() -> pint.UnitRegistry:
@@ -479,6 +707,13 @@ def _build_registry() -> pint.UnitRegistry:
     365.25) and ``[length]``/``[area]`` units (``meter``, ``hectare``). We add:
 
     - ``CURRENCY`` as the reference unit of a new ``[currency]`` dimension;
+    - ``working_hour`` as the reference unit of a new ``[hours]`` dimension,
+      isolated from pint's ``[time]`` ``hour`` (GEP 10): ``working_hour / week``
+      is then ``[hours] / [time]`` rather than the bare number ``[time] /
+      [time]``, so working hours can no longer be confused with — or added to —
+      a share, and the only conversion possible is re-basing the *period*
+      denominator. pint's ``hour`` is left untouched (``day = 24 · hour``) but
+      is not an admissible token;
     - ``quarter_year`` for the ``_q`` suffix (pint's built-in ``quarter`` is a
       unit of mass);
     - ``calendar_year`` / ``calendar_month`` / ``calendar_day`` as affine
@@ -491,8 +726,7 @@ def _build_registry() -> pint.UnitRegistry:
       pick the 1900-01-01 epoch, aligned across the three axes. Subtracting two
       points yields pint's companion ``delta_calendar_*`` *duration* unit, which
       :attr:`Unit.YEARS` / :attr:`Unit.MONTHS` / :attr:`Unit.DAYS` resolve to
-      (each is ratio 1 against ``year`` / ``month`` / ``day``, so existing
-      duration declarations are unchanged).
+      (each is ratio 1 against ``year`` / ``month`` / ``day``).
 
     pint's remaining built-ins parse, but :func:`parse_unit` rejects every
     token outside :data:`_ALLOWED_UNIT_TOKENS`, so they cannot appear in a
@@ -500,6 +734,7 @@ def _build_registry() -> pint.UnitRegistry:
     """
     ureg = pint.UnitRegistry()
     ureg.define(f"{CURRENCY_TOKEN} = [currency]")
+    ureg.define("working_hour = [hours]")
     ureg.define("quarter_year = year / 4 = quarter_of_year")
     ureg.define("calendar_year = year; offset: 1900")
     ureg.define("calendar_month = month; offset: 22800")  # 1900 * 12
@@ -521,7 +756,7 @@ _ALLOWED_UNIT_TOKENS: set[str] = {
     "month",
     "week",
     "day",
-    "hour",
+    "working_hour",
     "meter",
     "hectare",
     # Calendar-point (affine) units and their companion durations (GEP 10).
@@ -532,6 +767,11 @@ _ALLOWED_UNIT_TOKENS: set[str] = {
     "delta_calendar_month",
     "delta_calendar_day",
 }
+
+#: The concrete currencies registered so far (their pint unit names). A currency
+#: is a valid compositional *base* (its upper-cased name); on a parameter the
+#: base also names the currency the numbers are written in (GEP 10).
+_registered_currencies: set[str] = set()
 
 #: The name of the registered base currency, set by ``register_currency(...,
 #: base=True)``. ``None`` until a downstream package registers one.
@@ -559,11 +799,10 @@ def register_currency(
     reference); every other currency is defined relative to an already-known
     currency.
 
-    Registration also derives the currency's *declaration tokens*
-    (:class:`CurrencyUnitToken`): ``register_currency("DM", ...)`` makes
-    ``DM``, ``DM_FLOW``, and ``DM_PER_SQUARE_METER_FLOW`` part of the
-    unit vocabulary, so parameters can pin down the concrete currency their
-    numbers are written in.
+    The registered currency becomes a valid compositional *base* — its
+    upper-cased name (``register_currency("DM", ...)`` makes ``DM``,
+    ``DM_PER_MONTH``, … parseable) — so parameters can pin down the concrete
+    currency their numbers are written in.
 
     Args:
         name: The currency's unit name (e.g. ``"euro"``, ``"DM"``).
@@ -574,9 +813,8 @@ def register_currency(
 
     Raises:
         UnitDefinitionError: If the arguments are inconsistent, if a second base
-            currency is registered, if the definition does not resolve to the
-            ``[currency]`` dimension, or if a derived declaration token would
-            collide with the core vocabulary.
+            currency is registered, or if the definition does not resolve to the
+            ``[currency]`` dimension.
     """
     global _base_currency  # noqa: PLW0603
 
@@ -585,7 +823,6 @@ def register_currency(
             "register_currency requires exactly one of `base=True` or "
             f"`definition=...`; got base={base!r}, definition={definition!r}."
         )
-    _fail_if_currency_token_collides(name)
     if base and _base_currency not in (None, name):
         raise UnitDefinitionError(
             f"Cannot register {name!r} as the base currency: "
@@ -634,40 +871,7 @@ def register_currency(
     if base:
         _base_currency = name
     _ALLOWED_UNIT_TOKENS.add(name)
-    _register_currency_unit_tokens(name)
-
-
-def _currency_token_spelling(name: str, agnostic: Unit) -> str:
-    """The spelling of a currency's concrete variant of an agnostic token."""
-    return f"{name.upper()}{str(agnostic).removeprefix(CURRENCY_TOKEN)}"
-
-
-def _fail_if_currency_token_collides(name: str) -> None:
-    """Reject a currency whose declaration tokens would collide (GEP 10)."""
-    for agnostic in _AGNOSTIC_CURRENCY_TOKENS:
-        spelling = _currency_token_spelling(name=name, agnostic=agnostic)
-        if spelling in Unit.__members__:
-            raise UnitDefinitionError(
-                f"Cannot register currency {name!r}: its declaration token "
-                f"{spelling!r} collides with the core unit vocabulary."
-            )
-
-
-def _register_currency_unit_tokens(name: str) -> None:
-    """Derive a registered currency's declaration tokens (GEP 10).
-
-    One concrete variant per currency-dimensioned core token, spelled by
-    replacing the agnostic ``CURRENCY`` prefix with the upper-cased currency
-    name: ``"SILVER_PENNY"`` yields ``SILVER_PENNY``,
-    ``SILVER_PENNY_FLOW``, and ``SILVER_PENNY_PER_SQUARE_METER_FLOW``.
-    Idempotent, mirroring :func:`register_currency`.
-    """
-    for agnostic in _AGNOSTIC_CURRENCY_TOKENS:
-        spelling = _currency_token_spelling(name=name, agnostic=agnostic)
-        if spelling not in _CURRENCY_UNIT_TOKENS:
-            _CURRENCY_UNIT_TOKENS[spelling] = CurrencyUnitToken(
-                spelling, currency=name, agnostic=agnostic
-            )
+    _registered_currencies.add(name)
 
 
 #: The grouping levels registered so far (the bare names, e.g. ``"person"``,
@@ -717,6 +921,11 @@ def register_grouping_levels(names: Iterable[str]) -> None:
         UNIT_REGISTRY.define(f"{unit_name} = [{unit_name}]")
         _ALLOWED_UNIT_TOKENS.add(unit_name)
         _registered_grouping_levels.add(name)
+    # Give the fluent builder a `per_<level>` attribute for each level too, so
+    # `Unit.PERSON.PER_BG` works once the build has discovered `bg` (GEP 10).
+    # Packages that use the builder at import time call
+    # `register_unit_builder_levels` directly, before their declarations run.
+    register_unit_builder_levels(names)
 
 
 def _fail_if_grouping_level_is_unknown(name: str) -> None:
@@ -776,7 +985,7 @@ def grouping_level_count_unit(target_level: str) -> pint.Unit:
 def parse_unit(unit_str: str) -> pint.Unit:
     """Parse a pint unit string, enforcing the closed pint-token vocabulary.
 
-    Internal (GEP 10): declarations are :class:`Unit` members, never pint
+    Internal (GEP 10): declarations are :class:`CompositeUnit`\\ s, never pint
     syntax. This parser serves the *internal* pint surfaces — Layer-2 input
     tags, the framework date nodes, and the resolution machinery.
 
@@ -840,246 +1049,16 @@ def _divide_by_period(non_time_unit: pint.Unit, period_pint_name: str) -> pint.U
     return (UNIT_REGISTRY.Quantity(1.0, non_time_unit) / period).units
 
 
-def _token_base_unit(token: Unit | CurrencyUnitToken) -> pint.Unit:
-    """The pint unit of a token's non-period part.
+def _token_base_unit(token: CompositeUnit) -> pint.Unit:
+    """The pint unit of a unit's physical kind — its period and grouping level
+    stripped (its area kept).
 
-    A currency token resolves to the agnostic :data:`CURRENCY_TOKEN` unit:
-    for dimensionality checks a registered currency means exactly what its
-    agnostic counterpart means (the union semantics of GEP 10) — the concrete
-    currency only drives the build-time conversion of the numbers.
+    A currency base resolves to the agnostic :data:`CURRENCY_TOKEN` unit: for
+    dimensionality a registered currency means exactly what its agnostic
+    counterpart means (the union semantics of GEP 10) — the concrete currency
+    only drives the build-time conversion of the numbers.
     """
-    if isinstance(token, CurrencyUnitToken):
-        token = token.agnostic
-    base = _TOKEN_BASE_AND_IS_FLOW[token].base
-    return (
-        UNIT_REGISTRY.dimensionless if base is None else UNIT_REGISTRY.parse_units(base)
-    )
-
-
-def resolve_column_unit(
-    token: Unit | CurrencyUnitToken,
-    time_unit_id: str | None,
-) -> pint.Unit:
-    """Resolve a column/function's full unit from its ``unit=`` token and suffix.
-
-    The suffix ⟺ flow rule is checked in both directions (GEP 10): a time
-    suffix (``_y``/``_q``/``_m``/``_w``/``_d``) requires a ``…_FLOW`` token
-    and supplies its period, so ``betrag_m`` declared
-    ``unit=Unit.CURRENCY_FLOW`` resolves to ``CURRENCY / month`` and the
-    auto-generated ``betrag_y`` to ``CURRENCY / year``. A complete token
-    (``CURRENCY``, ``YEARS``, ``DIMENSIONLESS``, …) forbids a suffix; a
-    dimensionless quantity therefore declares :attr:`Unit.DIMENSIONLESS` and a
-    dimensionless flow :attr:`Unit.DIMENSIONLESS_FLOW`.
-
-    Columns and functions are currency-agnostic by design (GEP 10), so a
-    concrete currency token (``SILVER_PENNY_FLOW``, ``DM``, …) is
-    rejected here — only parameters pin down the currency their numbers are
-    written in.
-
-    Args:
-        token: The ``unit=`` declaration — a :class:`Unit` member
-            (:attr:`Unit.DIMENSIONLESS` for a share, a head count).
-        time_unit_id: The GEP-1 time-unit suffix id, or ``None`` for a node
-            without one.
-
-    Returns:
-        The resolved pint unit.
-
-    Raises:
-        UnitDefinitionError: If the suffix ⟺ flow rule is violated,
-            ``time_unit_id`` is not a recognised suffix id, or the token
-            pins down a concrete currency.
-    """
-    if isinstance(token, CurrencyUnitToken):
-        raise UnitDefinitionError(
-            f"Unit token {token} pins down a concrete currency, which only "
-            f"parameters may do. Columns and functions are currency-agnostic "
-            f"and declare {Unit.CURRENCY_FLOW} / {Unit.CURRENCY} "
-            f"(GEP 10)."
-        )
-    return _resolve_token_via_suffix(token=token, time_unit_id=time_unit_id)
-
-
-def _resolve_token_via_suffix(
-    token: Unit | CurrencyUnitToken,
-    time_unit_id: str | None,
-) -> pint.Unit:
-    """Resolve a token whose period (if any) comes from a name suffix (GEP 10).
-
-    Shared by columns/functions (:func:`resolve_column_unit`) and scalar
-    parameters (:func:`resolve_scalar_param_unit`): a ``…_FLOW`` token requires
-    a time suffix on the name and is divided by its period; a complete token
-    forbids one.
-    """
-    if time_unit_id is not None and time_unit_id not in TIME_UNIT_ID_TO_PINT_NAME:
-        raise UnitDefinitionError(
-            f"Unknown time-unit suffix id {time_unit_id!r}; expected one of "
-            f"{', '.join(TIME_UNIT_ID_TO_PINT_NAME)}."
-        )
-    if unit_token_is_flow(token):
-        if time_unit_id is None:
-            raise UnitDefinitionError(
-                f"Unit token {token} denotes a flow and requires a time-unit "
-                f"suffix (_y/_q/_m/_w/_d) on the name to supply its period "
-                f"(GEP 10)."
-            )
-        return _divide_by_period(
-            non_time_unit=_token_base_unit(token),
-            period_pint_name=TIME_UNIT_ID_TO_PINT_NAME[time_unit_id],
-        )
-    if time_unit_id is not None:
-        raise UnitDefinitionError(
-            f"Unit token {token} is complete as written, but the name carries "
-            f"a time-unit suffix (_{time_unit_id}). A suffixed name denotes a "
-            f"flow and requires a `…_FLOW` token (GEP 10)."
-        )
-    return _token_base_unit(token)
-
-
-def resolve_scalar_param_unit(
-    token: Unit | CurrencyUnitToken,
-    time_unit_id: str | None,
-    reference_level: str | None = None,
-) -> pint.Unit:
-    """Resolve a scalar parameter's unit from its token, name suffix, and level.
-
-    A scalar parameter takes its period from a time suffix on its *name*, just
-    like a column (GEP 1): ``lump_sum_deduction_y`` resolves a
-    :attr:`Unit.CURRENCY_FLOW` declaration to ``CURRENCY / year``.
-    ``reference_period`` plays no part — it is reserved for the period sources
-    with no name to suffix (integer-keyed dict leaves, mapping parameter
-    axes), and the caller rejects a scalar parameter that sets one. Unlike
-    :func:`resolve_column_unit`, a concrete currency token is allowed:
-    parameters pin down the currency their numbers are written in.
-
-    ``reference_level`` *is* allowed here (GEP 10): a scalar parameter has no
-    aggregation suffix and no body to infer a level from, so a per-person or
-    per-group amount declares it directly. The resolved unit is divided by that
-    level's unit; the default ``None`` is level-agnostic.
-
-    Raises:
-        UnitDefinitionError: If ``reference_level`` names an unregistered level
-            (or via the shared suffix ⟺ flow checks).
-    """
-    _fail_if_headcount_param_lacks_reference_level(token, reference_level)
-    unit = _resolve_token_via_suffix(token=token, time_unit_id=time_unit_id)
-    return _apply_reference_level(unit=unit, reference_level=reference_level)
-
-
-def _apply_reference_level(unit: pint.Unit, reference_level: str | None) -> pint.Unit:
-    """Divide a resolved unit by a declared ``reference_level``, if any (GEP 10).
-
-    The grouping-level counterpart of a flow's ``reference_period``: a per-person
-    or per-group parameter (``reference_level: Person``) carries its level as a
-    denominator. The default ``None`` is *level-agnostic* — no level denominator.
-
-    Raises:
-        UnitDefinitionError: If ``reference_level`` names an unregistered level.
-    """
-    if reference_level is None:
-        return unit
-    return divide_by_grouping_level(unit=unit, level=reference_level)
-
-
-def _fail_if_headcount_param_lacks_reference_level(
-    token: Unit | CurrencyUnitToken,
-    reference_level: str | None,
-) -> None:
-    """A ``HEADCOUNT`` parameter must name the level it counts per (GEP 10).
-
-    A head count is always persons per *something*, and a parameter has no name
-    position to read a level from — so it must declare one. :data:`PERSON_LEVEL`
-    is allowed (a count per individual is ``[person] / [person]`` = dimensionless)
-    but must be stated; a bare ``HEADCOUNT`` would be an absolute ``[person]``
-    count per nothing, which has no meaningful comparison and is almost always an
-    omission. Columns take their reference level from the name position and never
-    reach this check.
-    """
-    if token is Unit.HEADCOUNT and reference_level is None:
-        raise UnitDefinitionError(
-            f"A {Unit.HEADCOUNT} parameter must set `reference_level` to the "
-            f"level it counts per — {PERSON_LEVEL!r} for a per-individual count, "
-            f"or a group level (e.g. 'fam') for persons per group. A head count "
-            f"is always persons per something (GEP 10)."
-        )
-
-
-def resolve_param_unit(
-    token: Unit | CurrencyUnitToken,
-    reference_period: str | None,
-    reference_level: str | None = None,
-) -> pint.Unit:
-    """Resolve a unit from its ``unit:`` token, ``reference_period``, and level.
-
-    Used for the period sources that have no name to carry a suffix (GEP 10):
-    integer-keyed dict leaves, uniformly-typed dict parameters, raw parameters,
-    and mapping parameter axes. Scalar parameters take their period from a
-    name suffix instead — see :func:`resolve_scalar_param_unit`.
-
-    ``reference_period`` is *functional*: it is required by a ``…_FLOW`` token,
-    whose period it supplies, and forbidden otherwise. In particular
-    ``DIMENSIONLESS`` with a non-null ``reference_period`` is an error:
-    ``DIMENSIONLESS`` is complete as written, and the per-period dimensionless
-    quantity is :attr:`Unit.DIMENSIONLESS_FLOW`.
-
-    ``reference_level`` is the grouping-level counterpart of ``reference_period``
-    (GEP 10): a per-person or per-group parameter declares the level it is
-    denominated per, and the resolved unit is divided by that level's unit (so a
-    ``CURRENCY_FLOW`` / ``Year`` / ``Person`` parameter resolves to
-    ``CURRENCY / year / [person]``). Its default ``None`` is *level-agnostic* — no
-    level denominator. Unlike ``reference_period`` it carries no flow constraint:
-    any token may declare it.
-
-    Parameters may pin down a concrete currency (``SILVER_PENNY``,
-    ``DM_FLOW``, …); such a token resolves exactly like its agnostic
-    counterpart — the concrete currency drives the build-time conversion,
-    not the dimensionality check.
-
-    Args:
-        token: The ``unit:`` declaration — a :class:`Unit` member
-            (:attr:`Unit.DIMENSIONLESS` for a dimensionless parameter) or a
-            :class:`CurrencyUnitToken`.
-        reference_period: The ``reference_period`` label (``"Year"``,
-            ``"Month"``, …), or ``None``.
-        reference_level: The grouping level the parameter is denominated per
-            (e.g. ``"person"``), or ``None`` for level-agnostic.
-
-    Returns:
-        The resolved pint unit.
-
-    Raises:
-        UnitDefinitionError: If the flow ⟺ ``reference_period`` rule is
-            violated, ``reference_period`` is not a recognised label, or
-            ``reference_level`` names an unregistered grouping level.
-    """
-    _fail_if_headcount_param_lacks_reference_level(token, reference_level)
-    if (
-        reference_period is not None
-        and reference_period not in REFERENCE_PERIOD_TO_PINT_NAME
-    ):
-        raise UnitDefinitionError(
-            f"Unknown reference_period {reference_period!r}; expected one of "
-            f"{', '.join(REFERENCE_PERIOD_TO_PINT_NAME)}."
-        )
-    if unit_token_is_flow(token):
-        if reference_period is None:
-            raise UnitDefinitionError(
-                f"Unit token {token} denotes a flow and requires a non-null "
-                f"`reference_period` to supply its period (GEP 10)."
-            )
-        unit = _divide_by_period(
-            non_time_unit=_token_base_unit(token),
-            period_pint_name=REFERENCE_PERIOD_TO_PINT_NAME[reference_period],
-        )
-        return _apply_reference_level(unit=unit, reference_level=reference_level)
-    if reference_period is not None:
-        raise UnitDefinitionError(
-            f"Unit token {token} is complete as written and cannot be "
-            f"combined with `reference_period: {reference_period}` (GEP 10)."
-        )
-    return _apply_reference_level(
-        unit=_token_base_unit(token), reference_level=reference_level
-    )
+    return resolve_compositional_unit(replace(token, period=None, level=None))
 
 
 def _function_name(function: Callable[..., Any]) -> str:
@@ -1220,7 +1199,8 @@ def output_unit_in_run_currency(
 def _flow_period_of(units: pint.Unit) -> pint.Unit | None:
     """Return a unit's flow period — its time component in the *denominator*.
 
-    The ``month`` of ``CURRENCY / month``, the ``week`` of ``hour / week``. A
+    The ``month`` of ``CURRENCY / month``, the ``week`` of ``working_hour /
+    week``. A
     *numerator* time unit (the ``year`` of an age, ``Unit.YEARS``) is not a flow
     period and is ignored, so an intrinsically-temporal column is not mistaken
     for a flow. Returns ``None`` for a unit with no per-period part.
@@ -1248,7 +1228,7 @@ def unit_residual_excluding_currency_and_flow_period(units: pint.Unit) -> pint.U
     numerator scale (area, intrinsic time, plain counts) — must match the
     declared unit *exactly*, so the input check compares the residuals of a tag
     and its declared unit for equivalence rather than mere dimensionality
-    (a ``HECTARES`` column tagged ``m²`` shares the area dimension but is a
+    (a ``HECTARE`` column tagged ``m²`` shares the area dimension but is a
     10,000-fold level error).
     """
     currency = _currency_component_of(units)
@@ -1492,40 +1472,40 @@ def fail_if_function_unit_is_inconsistent(
 
 
 def unit_for_aggregation(
-    source_unit: Unit | UnsetUnitType,
+    source_unit: CompositeUnit,
     agg_type: AggType,
-) -> Unit | UnsetUnitType:
-    """Auto-assign the unit token of an aggregation node (GEP 10, #119).
+) -> CompositeUnit:
+    """Auto-assign the unit of an aggregation node (GEP 10, #119).
 
     Parallels how GEP 4 resolves an aggregation's *type* from the source and the
     aggregation rule:
 
-    - ``SUM`` / ``MEAN`` / ``MIN`` / ``MAX`` preserve the source token (a sum
+    - ``SUM`` / ``MEAN`` / ``MIN`` / ``MAX`` preserve the source unit (a sum
       or average of currency flows is still a currency flow);
-    - ``COUNT`` is a head count — :attr:`Unit.HEADCOUNT` regardless of source.
-      For an ``agg_by_group`` node the resolved unit is recomputed level-aware as
-      ``[person] / [target]`` (the token is a placeholder there); for an
-      ``agg_by_p_id`` node the token *is* what resolves, through the column path,
-      to ``[person] / [person]`` = dimensionless — a head count per individual,
-      which is exactly a plain number (GEP 10);
+    - ``COUNT`` is a head count — :attr:`Unit.PERSON` (the ``[person]`` count
+      base) regardless of source. For an ``agg_by_group`` node the resolved unit
+      is recomputed level-aware as ``[person] / [target]`` (the token is a
+      placeholder there); for an ``agg_by_p_id`` node the token *is* what
+      resolves, through the column path, to ``[person] / [person]`` =
+      dimensionless — a head count per individual, which is exactly a plain
+      number (GEP 10);
     - ``ANY`` / ``ALL`` yield a boolean, which is a dimensionless quantity
       (GEP 10), i.e. :attr:`Unit.DIMENSIONLESS`.
 
     Args:
-        source_unit: The source column's ``unit`` token — a :class:`Unit`
-            member (:attr:`Unit.DIMENSIONLESS` for a dimensionless source) or
-            :data:`UNSET_UNIT` if the source does not declare a unit.
+        source_unit: The source column's ``unit`` — a :class:`CompositeUnit`
+            (:data:`UNSET_UNIT` if the source does not declare one).
         agg_type: The :class:`ttsim.tt.aggregation.AggType` of the aggregation.
 
     Returns:
-        The auto-assigned unit token. :attr:`Unit.HEADCOUNT` for a ``COUNT`` head
-        count, :attr:`Unit.DIMENSIONLESS` for a boolean ``ANY`` / ``ALL`` result;
-        otherwise the preserved source token (:data:`UNSET_UNIT` when ``SUM`` /
-        ``MEAN`` / … preserve a source that itself lacks a declaration, which
-        the mandatory-units check then reports against the source).
+        The auto-assigned unit. :attr:`Unit.PERSON` for a ``COUNT`` head count,
+        :attr:`Unit.DIMENSIONLESS` for a boolean ``ANY`` / ``ALL`` result;
+        otherwise the preserved source unit (:data:`UNSET_UNIT` when ``SUM`` /
+        ``MEAN`` / … preserve a source that itself lacks a declaration, which the
+        mandatory-units check then reports against the source).
     """
     if agg_type is AggType.COUNT:
-        return Unit.HEADCOUNT
+        return Unit.PERSON
     if agg_type in (AggType.ANY, AggType.ALL):
         return Unit.DIMENSIONLESS
     # SUM, MEAN, MIN, MAX preserve the source unit.
@@ -1561,7 +1541,9 @@ def resolved_unit_for_aggregation(
       level-ness and all: the min of person incomes stays ``CURRENCY/[person]``,
       the min of a level-less age stays ``MONTHS``. They do *not* swap to the
       target level.
-    - ``ANY`` / ``ALL`` yield a boolean — the dimensionless, level-less unit.
+    - ``ANY`` / ``ALL`` yield a boolean *at the target level* — ``1 / [target]``
+      (a ``DIMENSIONLESS_PER_<target>`` quantity, GEP 10) — so a group-level
+      indicator carries the level its name claims.
 
     Args:
         source_unit: The source column's resolved pint unit.
@@ -1578,7 +1560,13 @@ def resolved_unit_for_aggregation(
             unregistered grouping level.
     """
     if agg_type in (AggType.ANY, AggType.ALL):
-        return UNIT_REGISTRY.dimensionless
+        # A boolean aggregation mints a boolean *at its target level* (GEP 10):
+        # ``alle_erwachsen_fam`` is a fam-level truth value, ``1 / [fam]``, the
+        # same shape as a ``DIMENSIONLESS_PER_FAM`` declaration. The level lets
+        # the result check catch a fam-named predicate computed at another level.
+        return divide_by_grouping_level(
+            unit=UNIT_REGISTRY.dimensionless, level=target_level
+        )
     if agg_type is AggType.COUNT:
         return grouping_level_count_unit(target_level=target_level)
     if agg_type is AggType.SUM:
@@ -1593,7 +1581,7 @@ def resolved_unit_for_aggregation(
 
 
 def fail_if_units_are_missing(
-    units_by_qname: Mapping[str, Unit | CurrencyUnitToken | UnsetUnitType],
+    units_by_qname: Mapping[str, CompositeUnit],
 ) -> None:
     """Data-independent check that every node declares a unit (GEP 10).
 

@@ -7,8 +7,7 @@ max_amount_m_fam_by_policy_year:
     de: Maximalbetrag der Wohnungsbeihilfe pro Monat
     en: Maximum amount of housing benefits per month
   input_unit: YEARS
-  output_unit: SILVER_PENNY_FLOW
-  reference_period: Month
+  output_unit: SILVER_PENNY_PER_MONTH
   type: sparse_to_consecutive_int_lookup_table
   1900-01-01:
     1950: 2000.0

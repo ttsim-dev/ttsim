@@ -9,7 +9,7 @@ from ttsim.tt import RoundingSpec, Unit, policy_function
         direction="down",
         reference="§ 4 Gondorian Housing Benefit Law",
     ),
-    unit=Unit.CURRENCY_FLOW,
+    unit=Unit.CURRENCY.PER_MONTH,
 )
 def amount_m(
     payroll_tax__income__gross_wage_m: float,

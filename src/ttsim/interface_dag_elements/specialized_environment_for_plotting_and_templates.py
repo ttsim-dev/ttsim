@@ -39,6 +39,7 @@ from ttsim.tt.column_objects_param_function import (
     policy_function,
 )
 from ttsim.tt.param_objects import ParamObject
+from ttsim.tt.units import Unit
 from ttsim.typing import (
     OrderedQNames,
     PolicyEnvironment,
@@ -261,6 +262,7 @@ def dummy_callable(
             start_date=obj.start_date,
             end_date=obj.end_date,
             foreign_key_type=obj.foreign_key_type,
+            unit=obj.unit,
         )(dummy)
     if isinstance(obj, ParamObject):
         # Use description["en"] for ParamObjects
@@ -279,6 +281,10 @@ def dummy_callable(
             leaf_name=leaf_name,
             start_date=obj.start_date,
             end_date=obj.end_date,
+            # A dummy node for plotting / DAG-completeness only; its unit is never
+            # checked, and a ParamObject's unit may be a per-leaf mapping that the
+            # decorator's single-unit contract would reject — so use a placeholder.
+            unit=Unit.DIMENSIONLESS,
         )(dummy)
     if isinstance(obj, InterfaceInput):
         original_docstring = obj.docstring

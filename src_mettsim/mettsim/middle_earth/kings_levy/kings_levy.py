@@ -57,7 +57,7 @@ def kings_levy_schedule(
 
 # Evaluates a schedule (a structured parameter), so the dry-run cannot infer
 # this body; opt out of inference (GEP 10).
-@policy_function(unit=Unit.CURRENCY_FLOW, verify_units=False)
+@policy_function(unit=Unit.CURRENCY.PER_YEAR, verify_units=False)
 def amount_y(
     wealth: float,
     kings_levy_schedule: PiecewisePolynomialParamValue,

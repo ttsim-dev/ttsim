@@ -51,17 +51,17 @@ def fam_id() -> int:
     pass
 
 
-@policy_input(unit=Unit.CURRENCY_FLOW)
+@policy_input(unit=Unit.CURRENCY.PER_MONTH)
 def betrag_m() -> float:
     pass
 
 
-@policy_input(unit=Unit.CURRENCY_FLOW)
+@policy_input(unit=Unit.CURRENCY.PER_MONTH)
 def income_m() -> float:
     pass
 
 
-@policy_function(vectorization_strategy="vectorize", unit=Unit.CURRENCY_FLOW)
+@policy_function(vectorization_strategy="vectorize", unit=Unit.CURRENCY.PER_MONTH)
 def benefit_m(income_m: float) -> float:
     return income_m * 0.5
 
@@ -104,7 +104,7 @@ class ConvertedParam:
     some_bool_param: bool
 
 
-@param_function()
+@param_function(unit=Unit.DIMENSIONLESS)
 def some_converting_params_func(raw_param_spec: RawParamValue) -> ConvertedParam:
     return ConvertedParam(
         some_float_param=raw_param_spec["some_float_param"],
@@ -112,7 +112,7 @@ def some_converting_params_func(raw_param_spec: RawParamValue) -> ConvertedParam
     )
 
 
-@param_function()
+@param_function(unit=Unit.DIMENSIONLESS)
 def some_param_function_taking_scalar(
     some_int_scalar: int,
     some_float_scalar: float,
@@ -121,7 +121,7 @@ def some_param_function_taking_scalar(
     return some_int_scalar + some_float_scalar + int(some_bool_scalar)
 
 
-@policy_function(vectorization_strategy="vectorize")
+@policy_function(vectorization_strategy="vectorize", unit=Unit.DIMENSIONLESS)
 def some_policy_function_taking_int_param(some_int_param: int) -> float:
     return some_int_param
 
@@ -136,7 +136,6 @@ SOME_RAW_PARAM = RawParam(
     name={"de": "Ein raw param spec", "en": "Some raw param spec"},
     description={"de": "Ein raw param spec", "en": "Some raw param spec"},
     unit=Unit.DIMENSIONLESS,
-    reference_period=None,
     note=None,
     reference=None,
 )
@@ -149,7 +148,6 @@ SOME_INT_PARAM = ScalarParam(
     name={"de": "Ein int param", "en": "Some int param"},
     description={"de": "Ein int param", "en": "Some int param"},
     unit=Unit.DIMENSIONLESS,
-    reference_period=None,
     note=None,
     reference=None,
 )
@@ -162,7 +160,6 @@ SOME_DICT_PARAM = DictParam(
     name={"de": "Ein dict param", "en": "Some dict param"},
     description={"de": "Ein dict param", "en": "Some dict param"},
     unit=Unit.DIMENSIONLESS,
-    reference_period=None,
     note=None,
     reference=None,
 )
@@ -188,7 +185,6 @@ def some_piecewise_polynomial_param(xnp):
         },
         input_unit=Unit.DIMENSIONLESS,
         output_unit=Unit.DIMENSIONLESS,
-        reference_period=None,
         note=None,
         reference=None,
     )
@@ -263,13 +259,17 @@ def y_kin_namespaced_input(kin_id: int, inputs__x: int) -> int:
 
 
 @pytest.fixture
-@policy_function(leaf_name="bar", vectorization_strategy="vectorize")
+@policy_function(
+    leaf_name="bar", vectorization_strategy="vectorize", unit=Unit.DIMENSIONLESS
+)
 def function_with_int_return(x: int) -> int:
     return x
 
 
 @pytest.fixture
-@policy_function(leaf_name="baz", vectorization_strategy="vectorize")
+@policy_function(
+    leaf_name="baz", vectorization_strategy="vectorize", unit=Unit.DIMENSIONLESS
+)
 def function_with_float_return(x: int) -> float:
     return x
 
@@ -587,11 +587,11 @@ def test_user_provided_aggregation(backend):
     # Double up, then take max fam_id
     expected = pd.Series([400, 400, 200], index=pd.Index(data["p_id"], name="p_id"))
 
-    @policy_function(vectorization_strategy="vectorize", unit=Unit.CURRENCY_FLOW)
+    @policy_function(vectorization_strategy="vectorize", unit=Unit.CURRENCY.PER_MONTH)
     def betrag_double_m(betrag_m: float) -> float:
         return 2 * betrag_m
 
-    @agg_by_group_function(agg_type=AggType.MAX, unit=Unit.CURRENCY_FLOW)
+    @agg_by_group_function(agg_type=AggType.MAX, unit=Unit.CURRENCY.PER_MONTH.PER_FAM)
     def betrag_double_m_fam(betrag_double_m: float, fam_id: int) -> float:
         pass
 
@@ -637,11 +637,11 @@ def test_user_provided_aggregation_with_time_conversion(backend):
         index=pd.Index(data["p_id"], name="p_id"),
     )
 
-    @policy_function(vectorization_strategy="vectorize", unit=Unit.CURRENCY_FLOW)
+    @policy_function(vectorization_strategy="vectorize", unit=Unit.CURRENCY.PER_MONTH)
     def betrag_double_m(betrag_m: float) -> float:
         return 2 * betrag_m
 
-    @agg_by_group_function(agg_type=AggType.MAX, unit=Unit.CURRENCY_FLOW)
+    @agg_by_group_function(agg_type=AggType.MAX, unit=Unit.CURRENCY.PER_MONTH.PER_FAM)
     def max_betrag_double_m_fam(betrag_double_m: float, fam_id: int) -> float:
         pass
 
@@ -683,7 +683,7 @@ def sum_source_by_p_id_someone_else(
     pass
 
 
-@agg_by_p_id_function(agg_type=AggType.SUM, unit=Unit.CURRENCY_FLOW)
+@agg_by_p_id_function(agg_type=AggType.SUM, unit=Unit.CURRENCY.PER_MONTH)
 def sum_source_m_by_p_id_someone_else(
     source_m: int,
     p_id: int,
@@ -716,7 +716,7 @@ def sum_source_m_by_p_id_someone_else(
             },
             "source_m",
             # The _m suffix denotes a flow, so a flow token is required.
-            Unit.CURRENCY_FLOW,
+            Unit.CURRENCY.PER_MONTH,
             {"module": {"sum_source_m_by_p_id_someone_else": None}},
             pd.Series([200, 100, 0], index=pd.Index([0, 1, 2], name="p_id")),
         ),

@@ -48,7 +48,7 @@ from ttsim.tt.param_objects import (
     PLACEHOLDER_VALUE,
     ParamObject,
 )
-from ttsim.tt.units import UNSET_UNIT, UnsetUnitType
+from ttsim.tt.units import UNSET_UNIT, CompositeUnit
 from ttsim.typing import (
     FlatColumnObjectsParamFunctions,
     FlatData,
@@ -932,12 +932,8 @@ def _param_with_active_periods(
         param_spec.get("description", None),
     )
     p_s_unit = cast(
-        "str | dict[str | int, Any] | UnsetUnitType",
+        "str | dict[str | int, Any] | CompositeUnit",
         param_spec.get("unit", UNSET_UNIT),
-    )
-    p_s_reference_period = cast(
-        "Literal['Year', 'Quarter', 'Month', 'Week', 'Day'] | None",
-        param_spec.get("reference_period", None),
     )
 
     out = []
@@ -956,7 +952,6 @@ def _param_with_active_periods(
                         name=p_s_name,
                         description=p_s_description,
                         unit=p_s_unit,
-                        reference_period=p_s_reference_period,
                     ),
                 )
             start_date = None
@@ -970,7 +965,6 @@ def _param_with_active_periods(
                 name=p_s_name,
                 description=p_s_description,
                 unit=p_s_unit,
-                reference_period=p_s_reference_period,
             ),
         )
 

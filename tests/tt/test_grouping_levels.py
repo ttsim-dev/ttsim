@@ -16,20 +16,19 @@ from ttsim.tt import (
     UNIT_REGISTRY,
     AggType,
     Unit,
-    coerce_unit_token,
     parse_unit,
     units_are_equivalent,
 )
 from ttsim.tt.units import (
     CURRENCY_TOKEN,
     PERSON_LEVEL,
+    composite_base_is_extensive,
     divide_by_grouping_level,
     grouping_level_count_unit,
     register_currency,
     register_grouping_levels,
-    resolve_column_unit,
-    resolve_param_unit,
-    resolve_scalar_param_unit,
+    resolve_compositional_param_unit,
+    resolve_compositional_unit,
     resolved_unit_for_aggregation,
     unit_for_aggregation,
     unit_token_carries_level,
@@ -85,35 +84,40 @@ def test_unregistered_grouping_level_is_rejected():
 
 
 @pytest.mark.parametrize(
-    ("token", "carries"),
+    ("base", "extensive"),
     [
-        (Unit.CURRENCY, True),
-        (Unit.CURRENCY_FLOW, True),
-        (Unit.SQUARE_METERS, True),
-        (Unit.HECTARES, True),
-        (Unit.YEARS, False),
-        (Unit.MONTHS, False),
-        (Unit.DAYS, False),
-        (Unit.CALENDAR_YEAR, False),
-        (Unit.CALENDAR_MONTH, False),
-        (Unit.CALENDAR_DAY, False),
-        (Unit.DIMENSIONLESS, False),
-        (Unit.DIMENSIONLESS_FLOW, False),
-        (Unit.HOURS_FLOW, False),
-        (Unit.CURRENCY_PER_SQUARE_METER_FLOW, False),
+        ("CURRENCY", True),
+        ("PERSON", True),
+        ("SQUARE_METER", True),
+        ("HECTARE", True),
+        ("YEARS", False),
+        ("MONTHS", False),
+        ("DAYS", False),
+        ("CALENDAR_YEAR", False),
+        ("CALENDAR_MONTH", False),
+        ("CALENDAR_DAY", False),
+        ("DIMENSIONLESS", False),
+        ("HOURS", False),
     ],
 )
-def test_unit_token_carries_level_defaults(token, carries):
-    assert unit_token_carries_level(token) is carries
+def test_composite_base_is_extensive_defaults(base, extensive):
+    # The extensive/intensive default: an extensive base gets the implied person
+    # leaf level (and must spell a group level); an intensive one carries none.
+    assert composite_base_is_extensive(base) is extensive
 
 
-def test_concrete_currency_token_inherits_level_default():
-    # A registered currency inherits its agnostic counterpart's level default.
+def test_spelled_level_carries_level():
+    # `carries_level` now reports whether a level denominator is *spelled*.
+    assert unit_token_carries_level(Unit.CURRENCY.PER_HH)
+    assert not unit_token_carries_level(Unit.CURRENCY)
+
+
+def test_concrete_currency_base_is_extensive():
+    # A registered currency is an extensive base, like the agnostic CURRENCY.
     # Defined relative to the always-present CURRENCY reference unit so the test
     # is independent of which base currency the suite has registered.
     register_currency("LEVEL_TEST_COIN", definition=f"{CURRENCY_TOKEN} / 2")
-    flow = coerce_unit_token("LEVEL_TEST_COIN_FLOW", where="test")
-    assert unit_token_carries_level(flow)
+    assert composite_base_is_extensive("LEVEL_TEST_COIN")
 
 
 # ----------------------------------------------------------------------------
@@ -122,7 +126,7 @@ def test_concrete_currency_token_inherits_level_default():
 
 
 def test_currency_flow_resolves_with_hh_denominator_at_level_hh():
-    base = resolve_column_unit(token=Unit.CURRENCY_FLOW, time_unit_id="m")
+    base = resolve_compositional_unit(Unit.CURRENCY.PER_MONTH)
     at_hh = divide_by_grouping_level(base, "hh")
     assert units_are_equivalent(
         left=at_hh,
@@ -131,7 +135,7 @@ def test_currency_flow_resolves_with_hh_denominator_at_level_hh():
 
 
 def test_currency_flow_resolves_with_person_denominator_at_individual_level():
-    base = resolve_column_unit(token=Unit.CURRENCY_FLOW, time_unit_id="m")
+    base = resolve_compositional_unit(Unit.CURRENCY.PER_MONTH)
     at_person = divide_by_grouping_level(base, PERSON_LEVEL)
     assert units_are_equivalent(
         left=at_person,
@@ -144,17 +148,17 @@ def test_currency_flow_resolves_with_person_denominator_at_individual_level():
 
 
 @pytest.mark.parametrize(
-    ("token", "time_unit_id"),
+    "token",
     [
-        (Unit.YEARS, None),
-        (Unit.HOURS_FLOW, "w"),
-        (Unit.DIMENSIONLESS, None),
+        Unit.YEARS,
+        Unit.HOURS.PER_WEEK,
+        Unit.DIMENSIONLESS,
     ],
 )
-def test_level_less_tokens_resolve_without_a_level(token, time_unit_id):
-    # A level-less token carries no grouping denominator: the resolved unit is
+def test_level_less_tokens_resolve_without_a_level(token):
+    # A level-less unit carries no grouping denominator: the resolved unit is
     # the plain physical unit, unchanged by any level.
-    resolved = resolve_column_unit(token=token, time_unit_id=time_unit_id)
+    resolved = resolve_compositional_unit(token)
     person_division = divide_by_grouping_level(parse_unit("CURRENCY"), PERSON_LEVEL)
     # It has no [person] denominator: dividing CURRENCY by person is a different
     # dimension, and the level-less unit shares no level dimension with it.
@@ -204,49 +208,40 @@ def test_cross_level_addition_is_not_equivalent():
 # ----------------------------------------------------------------------------
 
 
-def test_reference_level_person_yields_per_person_unit():
-    # sparerfreibetrag: EUR_FLOW, reference_period Year, reference_level Person.
-    resolved = resolve_param_unit(
-        token=Unit.CURRENCY_FLOW,
-        reference_period="Year",
-        reference_level=PERSON_LEVEL,
+def test_spelled_person_level_yields_per_person_unit():
+    # sparerfreibetrag: a per-person yearly amount, fully spelled.
+    resolved = resolve_compositional_param_unit(
+        Unit.CURRENCY.PER_YEAR.PER_PERSON, where="test"
     )
     expected = divide_by_grouping_level(parse_unit("CURRENCY / year"), PERSON_LEVEL)
     assert units_are_equivalent(left=resolved, right=expected)
 
 
-def test_absent_reference_level_yields_no_level():
-    resolved = resolve_param_unit(
-        token=Unit.CURRENCY_FLOW, reference_period="Year", reference_level=None
-    )
+def test_absent_level_yields_no_level():
+    resolved = resolve_compositional_param_unit(Unit.CURRENCY.PER_YEAR, where="test")
     per_person = divide_by_grouping_level(parse_unit("CURRENCY / year"), PERSON_LEVEL)
     assert units_are_equivalent(left=resolved, right=parse_unit("CURRENCY / year"))
     assert not units_are_equivalent(left=resolved, right=per_person)
 
 
-def test_reference_level_on_stock_param():
+def test_spelled_level_on_stock_param():
     # A non-flow per-group amount: CURRENCY at level hh.
-    resolved = resolve_param_unit(
-        token=Unit.CURRENCY, reference_period=None, reference_level="hh"
-    )
+    resolved = resolve_compositional_param_unit(Unit.CURRENCY.PER_HH, where="test")
     expected = divide_by_grouping_level(parse_unit("CURRENCY"), "hh")
     assert units_are_equivalent(left=resolved, right=expected)
 
 
-def test_reference_level_unknown_level_is_rejected():
+def test_unknown_level_is_rejected():
     with pytest.raises(UnitDefinitionError, match="Unknown grouping level"):
-        resolve_param_unit(
-            token=Unit.CURRENCY_FLOW,
-            reference_period="Year",
-            reference_level="not_a_level",
+        resolve_compositional_param_unit(
+            Unit.CURRENCY.PER_YEAR.PER_LEVEL("not_a_level"), where="test"
         )
 
 
-def test_reference_level_allowed_on_scalar_param():
-    # Scalar params forbid reference_period but DO allow reference_level (they
-    # have no aggregation suffix to read a level from).
-    resolved = resolve_scalar_param_unit(
-        token=Unit.CURRENCY_FLOW, time_unit_id="y", reference_level=PERSON_LEVEL
+def test_spelled_level_on_scalar_param_with_name_suffix():
+    # A scalar param spells its level and agrees with its name time suffix.
+    resolved = resolve_compositional_param_unit(
+        Unit.CURRENCY.PER_YEAR.PER_PERSON, time_unit_id="y", where="test"
     )
     expected = divide_by_grouping_level(parse_unit("CURRENCY / year"), PERSON_LEVEL)
     assert units_are_equivalent(left=resolved, right=expected)
@@ -309,7 +304,9 @@ def test_resolved_aggregation_min_preserves_person_level_source():
 
 
 @pytest.mark.parametrize("agg_type", [AggType.ANY, AggType.ALL])
-def test_resolved_aggregation_any_all_are_dimensionless(agg_type):
+def test_resolved_aggregation_any_all_are_boolean_at_target_level(agg_type):
+    # A boolean aggregation mints a boolean at its *target* level (GEP 10):
+    # `1 / [hh]`, not a level-less dimensionless.
     source = divide_by_grouping_level(parse_unit("CURRENCY"), PERSON_LEVEL)
     result = resolved_unit_for_aggregation(
         source_unit=source,
@@ -317,62 +314,55 @@ def test_resolved_aggregation_any_all_are_dimensionless(agg_type):
         target_level="hh",
         source_level=PERSON_LEVEL,
     )
-    assert units_are_equivalent(left=result, right=UNIT_REGISTRY.dimensionless)
+    assert units_are_equivalent(
+        left=result, right=divide_by_grouping_level(UNIT_REGISTRY.dimensionless, "hh")
+    )
 
 
 def test_resolved_aggregation_sum_over_level_less_source_is_unchanged():
     # A level-less source summed has no level to swap.
-    source = parse_unit("hour / week")
+    source = parse_unit("working_hour / week")
     result = resolved_unit_for_aggregation(
         source_unit=source,
         agg_type=AggType.SUM,
         target_level="hh",
         source_level=None,
     )
-    assert units_are_equivalent(left=result, right=parse_unit("hour / week"))
+    assert units_are_equivalent(left=result, right=parse_unit("working_hour / week"))
 
 
 # ----------------------------------------------------------------------------
-# HEADCOUNT: a declarable head count ([person] / [level])
+# PERSON: a declarable head count ([person] / [level])
 # ----------------------------------------------------------------------------
 
 
-def test_headcount_carries_level():
+def test_person_per_group_carries_level():
     # The reference level enters as the denominator, like currency and area.
-    assert unit_token_carries_level(Unit.HEADCOUNT)
+    assert unit_token_carries_level(Unit.PERSON.PER_HH)
 
 
-def test_headcount_forbids_a_time_suffix():
-    # HEADCOUNT is complete as written (a stock, not a flow); a time suffix on the
-    # name denotes a flow and is rejected.
-    with pytest.raises(UnitDefinitionError):
-        resolve_column_unit(token=Unit.HEADCOUNT, time_unit_id="m")
-
-
-def test_headcount_column_at_group_level_matches_a_count():
-    # A HEADCOUNT column at a group level resolves to [person]/[hh] — the same unit
-    # a COUNT aggregation to hh mints, so a declaration and an aggregation compose
-    # and compare cleanly (GEP 10).
-    base = resolve_column_unit(token=Unit.HEADCOUNT, time_unit_id=None)
-    at_hh = divide_by_grouping_level(base, "hh")
+def test_person_column_at_group_level_matches_a_count():
+    # A PERSON_PER_HH column resolves to [person]/[hh] — the same unit a COUNT
+    # aggregation to hh mints, so a declaration and an aggregation compose and
+    # compare cleanly (GEP 10).
+    at_hh = resolve_compositional_param_unit(Unit.PERSON.PER_HH, where="test")
     assert units_are_equivalent(
         left=at_hh, right=grouping_level_count_unit(target_level="hh")
     )
 
 
-def test_headcount_at_person_level_is_dimensionless():
+def test_person_at_person_level_is_dimensionless():
     # A head count per individual is [person]/[person] = a plain number.
-    base = resolve_column_unit(token=Unit.HEADCOUNT, time_unit_id=None)
-    at_person = divide_by_grouping_level(base, PERSON_LEVEL)
+    at_person = resolve_compositional_param_unit(
+        Unit.PERSON.PER_LEVEL(PERSON_LEVEL), where="test"
+    )
     assert units_are_equivalent(left=at_person, right=UNIT_REGISTRY.dimensionless)
 
 
-def test_declared_headcount_bridges_like_a_count():
-    # A *declared* HEADCOUNT/[hh] divides a per-[hh] amount down to a per-person
+def test_declared_person_per_group_bridges_like_a_count():
+    # A *declared* PERSON_PER_HH divides a per-[hh] amount down to a per-person
     # one, exactly as an aggregated COUNT would: the two are interchangeable.
-    headcount_at_hh = divide_by_grouping_level(
-        resolve_column_unit(token=Unit.HEADCOUNT, time_unit_id=None), "hh"
-    )
+    headcount_at_hh = resolve_compositional_param_unit(Unit.PERSON.PER_HH, where="test")
     per_hh = divide_by_grouping_level(parse_unit("CURRENCY / month"), "hh")
     bridged = (
         UNIT_REGISTRY.Quantity(1.0, per_hh)
@@ -382,53 +372,12 @@ def test_declared_headcount_bridges_like_a_count():
     assert units_are_equivalent(left=bridged, right=expected)
 
 
-def test_headcount_param_per_group():
-    resolved = resolve_param_unit(
-        token=Unit.HEADCOUNT, reference_period=None, reference_level="hh"
-    )
-    assert units_are_equivalent(
-        left=resolved, right=grouping_level_count_unit(target_level="hh")
-    )
-
-
-def test_headcount_param_per_person_is_dimensionless():
-    resolved = resolve_param_unit(
-        token=Unit.HEADCOUNT, reference_period=None, reference_level=PERSON_LEVEL
-    )
-    assert units_are_equivalent(left=resolved, right=UNIT_REGISTRY.dimensionless)
-
-
-def test_headcount_scalar_param_per_group():
-    resolved = resolve_scalar_param_unit(
-        token=Unit.HEADCOUNT, time_unit_id=None, reference_level="bg"
-    )
-    assert units_are_equivalent(
-        left=resolved, right=grouping_level_count_unit(target_level="bg")
-    )
-
-
-def test_headcount_param_without_reference_level_is_rejected():
-    # A head count is always persons per something; a bare HEADCOUNT param would be
-    # an absolute [person] count per nothing.
-    with pytest.raises(UnitDefinitionError, match="must set `reference_level`"):
-        resolve_param_unit(
-            token=Unit.HEADCOUNT, reference_period=None, reference_level=None
-        )
-
-
-def test_headcount_scalar_param_without_reference_level_is_rejected():
-    with pytest.raises(UnitDefinitionError, match="must set `reference_level`"):
-        resolve_scalar_param_unit(
-            token=Unit.HEADCOUNT, time_unit_id=None, reference_level=None
-        )
-
-
-def test_count_aggregation_token_is_headcount():
-    # COUNT mints the HEADCOUNT placeholder token (group and PID alike); the
+def test_count_aggregation_token_is_person():
+    # COUNT mints the PERSON placeholder unit (group and PID alike); the
     # level-aware resolved unit is recomputed downstream.
     assert (
         unit_for_aggregation(source_unit=Unit.DIMENSIONLESS, agg_type=AggType.COUNT)
-        == Unit.HEADCOUNT
+        == Unit.PERSON
     )
 
 
