@@ -46,6 +46,10 @@ from ttsim.tt.param_objects import (
     PiecewisePolynomialParamValue,
     ScalarParam,
 )
+from ttsim.tt.units import (
+    PERSON_LEVEL,
+    divide_by_grouping_level,
+)
 from ttsim.typing import IntColumn
 
 GROUPING_LEVELS = ("fam", "kin")
@@ -1730,19 +1734,30 @@ def test_sum_of_currency_declared_with_wrong_kind_is_caught():
         )
 
 
-def test_max_with_group_index_but_person_unit_level_passes():
-    """MAX preserves the source's person UNIT level; the `_fam` suffix is only an
-    INDEX level, so a CURRENCY_PER_MONTH declaration is consistent — the level-free
-    kinds match and there is no false positive (GEP 10).
+def test_max_resolves_to_the_target_group_level():
+    """A MAX aggregation resolves to its *target* group level, like SUM (GEP 10,
+    T8): the `_xx` suffix and the unit's grouping level are always in sync, so a
+    `_fam` MAX of a person income is CURRENCY/month/[fam] — not the source
+    [person] level. The correct declaration spells `..._PER_FAM`.
     """
 
     @policy_input(unit=Unit.CURRENCY.PER_MONTH)
     def income_m() -> float: ...
 
-    @agg_by_group_function(agg_type=AggType.MAX, unit=Unit.CURRENCY.PER_MONTH)
+    @agg_by_group_function(agg_type=AggType.MAX, unit=Unit.CURRENCY.PER_MONTH.PER_FAM)
     def income_max_m_fam(income_m: float, fam_id: int) -> float: ...
 
-    fail_if_environment_units_are_inconsistent(
-        env={"income_m": income_m, "income_max_m_fam": income_max_m_fam},
-        grouping_levels=GROUPING_LEVELS,
+    env = {"income_m": income_m, "income_max_m_fam": income_max_m_fam}
+    resolved = resolve_environment_units(env=env, grouping_levels=GROUPING_LEVELS)
+    max_unit = _scalar_unit(resolved=resolved, qname="income_max_m_fam")
+    # The MAX carries the target [fam] level, not the source [person] level.
+    assert units_are_equivalent(
+        left=max_unit,
+        right=divide_by_grouping_level(parse_unit("CURRENCY / month"), "fam"),
     )
+    assert not units_are_equivalent(
+        left=max_unit,
+        right=divide_by_grouping_level(parse_unit("CURRENCY / month"), PERSON_LEVEL),
+    )
+    # The `_PER_FAM` declaration is consistent with what it derives.
+    fail_if_environment_units_are_inconsistent(env=env, grouping_levels=GROUPING_LEVELS)

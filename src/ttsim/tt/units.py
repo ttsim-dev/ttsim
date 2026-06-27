@@ -418,10 +418,19 @@ def resolve_compositional_column_unit(
 
     Convention A (GEP 10): a column spells its period and any *group* level, which
     must match the name's suffix; the *person* leaf level is implied (not spelled)
-    and added here for an extensive base. So ``betrag_m`` declares
+    and added here for an *extensive* base. So ``betrag_m`` declares
     ``CURRENCY_PER_MONTH`` (resolved ``CURRENCY / month / [person]``), ``betrag_m_hh``
-    declares ``CURRENCY_PER_MONTH_PER_HH``, and a level-less ``MIN``-of-age at
-    ``_fg`` declares ``YEARS`` (the ``fg`` suffix is a mere index level).
+    declares ``CURRENCY_PER_MONTH_PER_HH``, and a level-less ``share`` at ``_fg``
+    declares ``DIMENSIONLESS`` (the ``fg`` suffix is a mere index level).
+
+    Intensive bases (durations, shares, calendar points) stay level-less even at a
+    group suffix: a calendar point is a pint offset unit that cannot be divided by
+    a level, and an intensive quantity is the multiplicative scalar that scales a
+    leveled amount, so it carries no level of its own. The grouping-level *sync*
+    that T8 enforces (a ``_fg`` aggregate carries ``[fg]`` even for an intensive
+    base, e.g. a ``MIN``-of-age) is minted on the **aggregation** path
+    (:func:`resolved_unit_for_aggregation`), where the level is dimensionally a
+    denominator on the *result*, not on the source column resolved here.
 
     Columns are currency-agnostic, so a concrete-currency base is rejected.
 
@@ -458,6 +467,10 @@ def resolve_compositional_column_unit(
     resolved = resolve_compositional_unit(unit, with_level=True)
     # Add the implied person leaf level for an extensive base with no spelled
     # level — the unsuffixed-name case (group columns spell their level above).
+    # Intensive bases (durations, calendar points, shares) stay level-less: a
+    # calendar point is a pint offset unit that cannot be divided by a level at
+    # all, and an intensive quantity is the multiplicative scalar that scales a
+    # leveled amount (`amount * share`), so it must carry no level (GEP 10).
     if unit.level is None and composite_base_is_extensive(unit.base):
         resolved = divide_by_grouping_level(unit=resolved, level=grouping_level)
     return resolved
@@ -1385,21 +1398,27 @@ def infer_function_unit(
 def unit_for_aggregation(
     source_unit: CompositeUnit,
     agg_type: AggType,
+    target_level: str = PERSON_LEVEL,
 ) -> CompositeUnit:
-    """Auto-assign the unit of an aggregation node (GEP 10, #119).
+    """Auto-assign the *declared* unit of an aggregation node (GEP 10, #119).
 
-    Parallels how GEP 4 resolves an aggregation's *type* from the source and the
+    The single source of truth for an aggregation node's auto-assigned token,
+    consumed by both ``agg_by_group_function`` and ``agg_by_p_id_function``. It
+    parallels how GEP 4 resolves an aggregation's *type* from the source and the
     aggregation rule:
 
-    - ``SUM`` / ``MEAN`` / ``MIN`` / ``MAX`` preserve the source unit (a sum
-      or average of currency flows is still a currency flow);
-    - ``COUNT`` is a head count — :attr:`Unit.PERSON` (the ``[person]`` count
-      base) regardless of source. For an ``agg_by_group`` node the resolved unit
-      is recomputed level-aware as ``[person] / [target]`` (the token is a
-      placeholder there); for an ``agg_by_p_id`` node the token *is* what
-      resolves, through the column path, to ``[person] / [person]`` =
-      dimensionless — a head count per individual, which is exactly a plain
-      number (GEP 10);
+    - ``SUM`` / ``MEAN`` / ``MIN`` / ``MAX`` preserve the source's physical token
+      (a sum or average of currency flows is still a currency flow); the node's
+      grouping level is minted level-aware at build time by
+      :func:`resolved_unit_for_aggregation`, so the token carries no spelled
+      ``[level]`` here;
+    - ``COUNT`` is a head count — the ``[person]`` count base at its target group
+      level: :attr:`Unit.PERSON` per ``target_level`` (``PERSON_PER_HH`` for an
+      ``_hh`` node). For an ``agg_by_p_id`` node ``target_level`` is the
+      individual :data:`PERSON_LEVEL`, so the token is the bare
+      :attr:`Unit.PERSON`, which resolves through the column path to
+      ``[person] / [person]`` = dimensionless — a head count per individual,
+      exactly a plain number (GEP 10);
     - ``ANY`` / ``ALL`` yield a boolean, which is a dimensionless quantity
       (GEP 10), i.e. :attr:`Unit.DIMENSIONLESS`.
 
@@ -1407,16 +1426,23 @@ def unit_for_aggregation(
         source_unit: The source column's ``unit`` — a :class:`CompositeUnit`
             (:data:`UNSET_UNIT` if the source does not declare one).
         agg_type: The :class:`ttsim.tt.aggregation.AggType` of the aggregation.
+        target_level: The group level the node aggregates to (read off its name
+            suffix); :data:`PERSON_LEVEL` for an individual-level result.
 
     Returns:
-        The auto-assigned unit. :attr:`Unit.PERSON` for a ``COUNT`` head count,
+        The auto-assigned unit. ``PERSON_PER_<target_level>`` for a ``COUNT`` head
+        count (the bare :attr:`Unit.PERSON` at the individual level),
         :attr:`Unit.DIMENSIONLESS` for a boolean ``ANY`` / ``ALL`` result;
         otherwise the preserved source unit (:data:`UNSET_UNIT` when ``SUM`` /
         ``MEAN`` / … preserve a source that itself lacks a declaration, which the
         mandatory-units check then reports against the source).
     """
     if agg_type is AggType.COUNT:
-        return Unit.PERSON
+        return (
+            Unit.PERSON
+            if target_level == PERSON_LEVEL
+            else Unit.PERSON.PER_LEVEL(target_level)
+        )
     if agg_type in (AggType.ANY, AggType.ALL):
         return Unit.DIMENSIONLESS
     # SUM, MEAN, MIN, MAX preserve the source unit.
@@ -1425,10 +1451,10 @@ def unit_for_aggregation(
 
 def resolved_unit_for_aggregation(
     *,
-    source_unit: pint.Unit,
     agg_type: AggType,
     target_level: str,
-    source_level: str | None,
+    source_unit: pint.Unit | None = None,
+    source_level: str | None = None,
 ) -> pint.Unit:
     """The resolved unit of an aggregation node, level-aware (GEP 10, #119).
 
@@ -1440,28 +1466,39 @@ def resolved_unit_for_aggregation(
     ``source_level`` (the source column's own level, ``None`` for a level-less
     source such as an age).
 
-    - ``SUM`` is the extensive aggregation: it preserves the physical token and
-      *swaps* the source level for the target level in the denominator — summing
-      per-person amounts to the household gives ``CURRENCY/month/[hh]``. A
-      level-less source (``source_level=None``) is summed as-is.
+    - ``SUM`` / ``MEAN`` / ``MIN`` / ``MAX`` all resolve to the **target**
+      level (GEP 10, T8): a column's name suffix and its unit's grouping level
+      are always in sync, so every group aggregation carries the level its
+      ``_xx`` suffix claims — ``CURRENCY/month/[hh]`` for an ``_hh`` node. They
+      differ only in the numeric worker and the physical base they keep, **not**
+      in the level: the source level (if any) is swapped for the target level,
+      and a level-less source (``source_level=None`` — an age, a duration)
+      *acquires* the target level. So a ``MIN`` over a person income gives
+      ``CURRENCY/[hh]`` (not the source ``[person]``), and a ``MIN`` over a
+      level-less age gives ``MONTHS/[fg]`` (not level-less ``MONTHS``). The
+      genuine cross-level cases that this no longer special-cases — comparing a
+      group ``MAX`` back against a person value — opt out locally with
+      ``@policy_function(verify_units=False)``.
     - ``COUNT`` mints a head count ``[person] / [target]`` — persons per target
       group, the ``[person]`` count dimension over the target level — independent
       of the source.
-    - ``MEAN`` / ``MIN`` / ``MAX`` pick a representative member's value, the same
-      kind of quantity as the source, so they *preserve* the source unit verbatim,
-      level-ness and all: the min of person incomes stays ``CURRENCY/[person]``,
-      the min of a level-less age stays ``MONTHS``. They do *not* swap to the
-      target level.
     - ``ANY`` / ``ALL`` yield a boolean *at the target level* — ``1 / [target]``
       (a ``DIMENSIONLESS_PER_<target>`` quantity, GEP 10) — so a group-level
       indicator carries the level its name claims.
 
+    ``COUNT`` and ``ANY`` / ``ALL`` are independent of the source, so their
+    ``source_unit`` / ``source_level`` default to ``None`` and are ignored — a
+    caller resolving one of those need not (and, for a source that declares no
+    unit, cannot) resolve the source first.
+
     Args:
-        source_unit: The source column's resolved pint unit.
         agg_type: The :class:`ttsim.tt.aggregation.AggType` of the aggregation.
         target_level: The group level being aggregated to (e.g. ``"hh"``).
+        source_unit: The source column's resolved pint unit. Required for the
+            value aggregations ``SUM`` / ``MEAN`` / ``MIN`` / ``MAX``; ignored
+            (and ``None``) for ``COUNT`` / ``ANY`` / ``ALL``.
         source_level: The source column's grouping level (e.g. ``"person"``), or
-            ``None`` if the source carries no level.
+            ``None`` if the source carries no level (or is ignored, as above).
 
     Returns:
         The aggregation node's resolved pint unit.
@@ -1469,6 +1506,7 @@ def resolved_unit_for_aggregation(
     Raises:
         UnitDefinitionError: If ``target_level`` or ``source_level`` names an
             unregistered grouping level.
+        ValueError: If a value aggregation is requested without a ``source_unit``.
     """
     if agg_type in (AggType.ANY, AggType.ALL):
         # A boolean aggregation mints a boolean *at its target level* (GEP 10):
@@ -1480,15 +1518,23 @@ def resolved_unit_for_aggregation(
         )
     if agg_type is AggType.COUNT:
         return grouping_level_count_unit(target_level=target_level)
-    if agg_type is AggType.SUM:
-        if source_level is None:
-            return source_unit
-        numerator = UNIT_REGISTRY.Quantity(1.0, source_unit) * UNIT_REGISTRY.Quantity(
-            1.0, _grouping_level_unit(source_level)
+    # SUM, MEAN, MIN, MAX all resolve to the target level (GEP 10, T8): the
+    # source level (if any) is swapped for the target level, and a level-less
+    # source acquires it. Multiplying by the source level cancels its `/[level]`
+    # denominator, leaving the bare physical base to be divided by the target.
+    if source_unit is None:
+        msg = (
+            f"A value aggregation ({agg_type}) needs a source_unit; only "
+            f"COUNT / ANY / ALL are source-independent."
         )
-        return divide_by_grouping_level(unit=numerator.units, level=target_level)
-    # MEAN, MIN, MAX preserve the source unit verbatim (level-ness and all).
-    return source_unit
+        raise ValueError(msg)
+    base_unit = source_unit
+    if source_level is not None:
+        base_unit = (
+            UNIT_REGISTRY.Quantity(1.0, source_unit)
+            * UNIT_REGISTRY.Quantity(1.0, _grouping_level_unit(source_level))
+        ).units
+    return divide_by_grouping_level(unit=base_unit, level=target_level)
 
 
 def fail_if_units_are_missing(

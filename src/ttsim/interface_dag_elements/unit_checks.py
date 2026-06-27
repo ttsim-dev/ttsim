@@ -71,7 +71,6 @@ from ttsim.tt.units import (
     base_currency,
     divide_by_grouping_level,
     fail_if_units_are_missing,
-    grouping_level_count_unit,
     is_calendar_point_unit,
     parse_unit,
     register_grouping_levels,
@@ -266,9 +265,11 @@ def _resolve_agg_by_group_unit(
 
     - a **head count** — ``COUNT``, or a ``SUM`` over a *boolean* source (counting
       the persons the indicator is true for) — mints ``[person]/[target]``;
-    - ``SUM`` over an extensive value swaps the source level for the target level;
-    - ``MEAN`` / ``MIN`` / ``MAX`` preserve the source unit verbatim;
-    - ``ANY`` / ``ALL`` yield a dimensionless boolean.
+    - ``SUM`` / ``MEAN`` / ``MIN`` / ``MAX`` all resolve to the target level
+      (GEP 10, T8): the source level (if any) is swapped for the target level and
+      a level-less source acquires it, so a ``_fg`` aggregate carries ``[fg]``
+      whatever the agg type — they differ only in the numeric worker;
+    - ``ANY`` / ``ALL`` yield a dimensionless boolean at the target level.
 
     The value source is the function's own summed/averaged argument — read off the
     signature, not by stripping the name suffix, so a hand-written aggregation
@@ -280,15 +281,14 @@ def _resolve_agg_by_group_unit(
         pattern.fullmatch(dt.tree_path_from_qname(qname)[-1])
     )
     agg_type = obj.agg_type
-    if agg_type in (AggType.ANY, AggType.ALL):
-        # A boolean aggregation mints a boolean at its target level (GEP 10):
-        # ``alle_erwachsen_fam`` is ``1 / [fam]``, so a mis-levelled name is
-        # caught by the declared-vs-derived check.
-        return divide_by_grouping_level(
-            unit=UNIT_REGISTRY.dimensionless, level=target_level
+    # COUNT and ANY/ALL are independent of the source's unit, so resolve them
+    # before touching the source: a head count or a boolean is well-defined even
+    # when the source column declares no unit (GEP 10). `resolved_unit_for_aggregation`
+    # is the single source of truth for the agg-type → unit mapping.
+    if agg_type in (AggType.COUNT, AggType.ANY, AggType.ALL):
+        return resolved_unit_for_aggregation(
+            agg_type=agg_type, target_level=target_level
         )
-    if agg_type is AggType.COUNT:
-        return grouping_level_count_unit(target_level=target_level)
     # Value aggregations: the source is the lone argument that is neither a
     # grouping id (`*_id`), a person pointer (`p_id_*`, present on aggregations
     # derived from `agg_by_p_id`), nor a framework argument.
@@ -306,9 +306,12 @@ def _resolve_agg_by_group_unit(
     source_token = getattr(source_obj, "unit", UNSET_UNIT)
     if source_token is UNSET_UNIT:
         return None
-    # A SUM over a boolean is a head count of the persons it is true for.
+    # A SUM over a boolean is a head count of the persons it is true for — the
+    # same unit a COUNT mints, so resolve it as one.
     if agg_type is AggType.SUM and node_is_boolean(qname=source_qname, obj=source_obj):
-        return grouping_level_count_unit(target_level=target_level)
+        return resolved_unit_for_aggregation(
+            agg_type=AggType.COUNT, target_level=target_level
+        )
     source_match = pattern.fullmatch(dt.tree_path_from_qname(source_qname)[-1])
     source_is_boolean = node_is_boolean(qname=source_qname, obj=source_obj)
     source_unit = _resolve_leveled_column_unit(
@@ -522,11 +525,11 @@ def _physical_kind_of(unit: pint.Unit) -> pint.Unit:
     grouping level — from its source. Of these only the **physical kind**
     (currency, the ``[person]`` count, area, a duration, or dimensionless) is the
     author's to declare; the flow period comes from the source's suffix and the
-    grouping level from the mint/swap/preserve rule (the name's group suffix may be
-    a mere *index* level — a ``MAX`` over a family is fam-indexed but person-valued).
-    So the declared-vs-derived check compares this residual: the flow period and the
-    grouping-level denominator divided out, the currency / count / area / duration
-    kept.
+    grouping level from the aggregation rule — every group aggregation resolves to
+    its target level (GEP 10, T8), so the declared token need not (and for a
+    level-less intensive base cannot) spell it. So the declared-vs-derived check
+    compares this residual: the flow period and the grouping-level denominator
+    divided out, the currency / count / area / duration kept.
     """
     # `_flow_period_of` returns the *denominator* period (the `month` of
     # `CURRENCY / month`), so multiplying cancels it, as in
