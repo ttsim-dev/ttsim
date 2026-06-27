@@ -86,7 +86,7 @@ def test_unregistered_grouping_level_is_rejected():
     ("base", "extensive"),
     [
         ("CURRENCY", True),
-        ("PERSON", True),
+        ("PERSON_COUNT", True),
         ("SQUARE_METER", True),
         ("HECTARE", True),
         ("YEARS", False),
@@ -203,24 +203,23 @@ def test_cross_level_addition_is_not_equivalent():
 
 
 # ----------------------------------------------------------------------------
-# reference_level on parameters
+# The person leaf is implied, group levels are spelled, on parameters
 # ----------------------------------------------------------------------------
 
 
-def test_spelled_person_level_yields_per_person_unit():
-    # sparerfreibetrag: a per-person yearly amount, fully spelled.
-    resolved = resolve_compositional_param_unit(
-        Unit.CURRENCY.PER_YEAR.PER_PERSON, where="test"
-    )
-    expected = divide_by_grouping_level(parse_unit("CURRENCY / year"), PERSON_LEVEL)
-    assert units_are_equivalent(left=resolved, right=expected)
+def test_spelled_person_level_is_rejected():
+    # The person leaf is implied, never spelled (GEP 10): _PER_PERSON is rejected
+    # so there is exactly one canonical spelling for a per-person quantity.
+    with pytest.raises(UnitDefinitionError, match="implied, never spelled"):
+        _ = Unit.CURRENCY.PER_YEAR.PER_PERSON
 
 
-def test_absent_level_yields_no_level():
+def test_absent_level_yields_person_leaf():
+    # sparerfreibetrag: a per-person yearly amount — the person leaf is implied,
+    # so the bare CURRENCY_PER_YEAR resolves to CURRENCY / year / [person].
     resolved = resolve_compositional_param_unit(Unit.CURRENCY.PER_YEAR, where="test")
     per_person = divide_by_grouping_level(parse_unit("CURRENCY / year"), PERSON_LEVEL)
-    assert units_are_equivalent(left=resolved, right=parse_unit("CURRENCY / year"))
-    assert not units_are_equivalent(left=resolved, right=per_person)
+    assert units_are_equivalent(left=resolved, right=per_person)
 
 
 def test_spelled_level_on_stock_param():
@@ -237,10 +236,11 @@ def test_unknown_level_is_rejected():
         )
 
 
-def test_spelled_level_on_scalar_param_with_name_suffix():
-    # A scalar param spells its level and agrees with its name time suffix.
+def test_person_implied_on_scalar_param_with_name_suffix():
+    # A per-person scalar param: the person leaf is implied (not spelled) and the
+    # spelled period agrees with the name's time suffix.
     resolved = resolve_compositional_param_unit(
-        Unit.CURRENCY.PER_YEAR.PER_PERSON, time_unit_id="y", where="test"
+        Unit.CURRENCY.PER_YEAR, time_unit_id="y", where="test"
     )
     expected = divide_by_grouping_level(parse_unit("CURRENCY / year"), PERSON_LEVEL)
     assert units_are_equivalent(left=resolved, right=expected)
@@ -339,37 +339,38 @@ def test_resolved_aggregation_sum_over_level_less_source_acquires_target_level()
 
 
 # ----------------------------------------------------------------------------
-# PERSON: a declarable head count ([person] / [level])
+# PERSON_COUNT: a declarable head count ([person] / [level])
 # ----------------------------------------------------------------------------
 
 
 def test_person_per_group_carries_level():
     # The reference level enters as the denominator, like currency and area.
-    assert Unit.PERSON.PER_HH.carries_level
+    assert Unit.PERSON_COUNT.PER_HH.carries_level
 
 
 def test_person_column_at_group_level_matches_a_count():
-    # A PERSON_PER_HH column resolves to [person]/[hh] — the same unit a COUNT
+    # A PERSON_COUNT_PER_HH column resolves to [person]/[hh] — the same unit a COUNT
     # aggregation to hh mints, so a declaration and an aggregation compose and
     # compare cleanly (GEP 10).
-    at_hh = resolve_compositional_param_unit(Unit.PERSON.PER_HH, where="test")
+    at_hh = resolve_compositional_param_unit(Unit.PERSON_COUNT.PER_HH, where="test")
     assert units_are_equivalent(
         left=at_hh, right=grouping_level_count_unit(target_level="hh")
     )
 
 
 def test_person_at_person_level_is_dimensionless():
-    # A head count per individual is [person]/[person] = a plain number.
-    at_person = resolve_compositional_param_unit(
-        Unit.PERSON.PER_LEVEL(PERSON_LEVEL), where="test"
-    )
+    # A head count per individual is [person]/[person] = a plain number. The
+    # person leaf is implied, so the bare Unit.PERSON_COUNT count resolves there.
+    at_person = resolve_compositional_param_unit(Unit.PERSON_COUNT, where="test")
     assert units_are_equivalent(left=at_person, right=UNIT_REGISTRY.dimensionless)
 
 
 def test_declared_person_per_group_bridges_like_a_count():
-    # A *declared* PERSON_PER_HH divides a per-[hh] amount down to a per-person
+    # A *declared* PERSON_COUNT_PER_HH divides a per-[hh] amount down to a per-person
     # one, exactly as an aggregated COUNT would: the two are interchangeable.
-    headcount_at_hh = resolve_compositional_param_unit(Unit.PERSON.PER_HH, where="test")
+    headcount_at_hh = resolve_compositional_param_unit(
+        Unit.PERSON_COUNT.PER_HH, where="test"
+    )
     per_hh = divide_by_grouping_level(parse_unit("CURRENCY / month"), "hh")
     bridged = (
         UNIT_REGISTRY.Quantity(1.0, per_hh)
@@ -380,11 +381,11 @@ def test_declared_person_per_group_bridges_like_a_count():
 
 
 def test_count_aggregation_token_is_person():
-    # COUNT mints the PERSON placeholder unit (group and PID alike); the
+    # COUNT mints the PERSON_COUNT placeholder unit (group and PID alike); the
     # level-aware resolved unit is recomputed downstream.
     assert (
         unit_for_aggregation(source_unit=Unit.DIMENSIONLESS, agg_type=AggType.COUNT)
-        == Unit.PERSON
+        == Unit.PERSON_COUNT
     )
 
 

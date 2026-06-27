@@ -100,7 +100,7 @@ def test_hectare_is_an_area():
 _BASE_SPELLINGS = [
     "CURRENCY",
     "DIMENSIONLESS",
-    "PERSON",
+    "PERSON_COUNT",
     "HOURS",
     "SQUARE_METER",
     "HECTARE",
@@ -125,7 +125,7 @@ def test_coerce_unit_token_round_trips_base_spellings(spelling):
     [
         "CURRENCY_PER_MONTH",
         "CURRENCY_PER_MONTH_PER_BG",
-        "PERSON_PER_BG",
+        "PERSON_COUNT_PER_BG",
         "DIMENSIONLESS_PER_YEAR",
         "HOURS_PER_WEEK",
     ],
@@ -629,9 +629,9 @@ def test_policy_input_rejects_invalid_unit_at_decoration():
         (AggType.MEAN, Unit.CURRENCY.PER_MONTH, Unit.CURRENCY.PER_MONTH),
         (AggType.MIN, Unit.CURRENCY.PER_MONTH, Unit.CURRENCY.PER_MONTH),
         (AggType.MAX, Unit.CURRENCY.PER_MONTH, Unit.CURRENCY.PER_MONTH),
-        # A COUNT is a head count: the PERSON count base, independent of source
+        # A COUNT is a head count: the PERSON_COUNT base, independent of source
         # (GEP 10). The level-aware resolved unit is [person]/[target].
-        (AggType.COUNT, Unit.CURRENCY.PER_MONTH, Unit.PERSON),
+        (AggType.COUNT, Unit.CURRENCY.PER_MONTH, Unit.PERSON_COUNT),
         # ANY / ALL yield booleans, which are dimensionless quantities (GEP 10),
         # independent of the source.
         (AggType.ANY, Unit.CURRENCY.PER_MONTH, Unit.DIMENSIONLESS),
@@ -649,7 +649,7 @@ def test_unit_for_aggregation_preserves_unannotated_source():
     # COUNT mints a head count and ANY/ALL a boolean, both independent of source.
     assert (
         unit_for_aggregation(source_unit=UNSET_UNIT, agg_type=AggType.COUNT)
-        is Unit.PERSON
+        is Unit.PERSON_COUNT
     )
 
 
@@ -881,9 +881,9 @@ def test_builder_round_trips_with_level():
 
 def test_builder_generic_per_level_matches_attribute():
     assert (
-        Unit.PERSON.PER_LEVEL("bg")
-        == Unit.PERSON.PER_BG
-        == parse_compositional_unit("PERSON_PER_BG")
+        Unit.PERSON_COUNT.PER_LEVEL("bg")
+        == Unit.PERSON_COUNT.PER_BG
+        == parse_compositional_unit("PERSON_COUNT_PER_BG")
     )
 
 
@@ -893,7 +893,7 @@ def test_builder_generic_per_level_matches_attribute():
         ("CURRENCY", "CURRENCY", None, None, None),
         ("CURRENCY_PER_MONTH", "CURRENCY", None, "MONTH", None),
         ("CURRENCY_PER_SQUARE_METER", "CURRENCY", "SQUARE_METER", None, None),
-        ("PERSON_PER_BG", "PERSON", None, None, "BG"),
+        ("PERSON_COUNT_PER_BG", "PERSON_COUNT", None, None, "BG"),
         ("DIMENSIONLESS_PER_YEAR", "DIMENSIONLESS", None, "YEAR", None),
         ("DIMENSIONLESS_PER_BG", "DIMENSIONLESS", None, None, "BG"),
         ("HOURS_PER_WEEK", "HOURS", None, "WEEK", None),
@@ -975,10 +975,10 @@ def test_compositional_unit_resolves_to_expected_pint_unit(spelling, expected):
 
 
 def test_person_per_level_resolves_to_head_count():
-    # PERSON_PER_BG is the old HEADCOUNT at bg: [person] / [bg], the unit a COUNT
+    # PERSON_COUNT_PER_BG is the old HEADCOUNT at bg: [person] / [bg], the unit a COUNT
     # aggregation to bg mints.
     compositional = resolve_compositional_unit(
-        parse_compositional_unit("PERSON_PER_BG")
+        parse_compositional_unit("PERSON_COUNT_PER_BG")
     )
     assert units_are_equivalent(
         left=compositional, right=grouping_level_count_unit(target_level="bg")

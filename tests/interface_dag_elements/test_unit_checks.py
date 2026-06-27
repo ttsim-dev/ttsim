@@ -314,7 +314,8 @@ def test_dict_param_with_per_leaf_units_resolves_to_unit_tree():
     )
     unit_tree = _unit_tree(resolved=resolved, qname="schedule")
     assert units_are_equivalent(
-        left=unit_tree["child_amount_y"], right=parse_unit("CURRENCY / year")
+        left=unit_tree["child_amount_y"],
+        right=parse_unit("CURRENCY / year / grouping_level_person"),
     )
     assert units_are_equivalent(left=unit_tree["max_age"], right=parse_unit("year"))
 
@@ -348,7 +349,7 @@ def test_dict_param_integer_keyed_flow_leaf_spells_its_period():
     )
     assert units_are_equivalent(
         left=_unit_tree(resolved=resolved, qname="amount_by_rank")[1],
-        right=parse_unit("CURRENCY / month"),
+        right=parse_unit("CURRENCY / month / grouping_level_person"),
     )
 
 
@@ -378,10 +379,12 @@ def test_dict_param_mixed_periods_via_spelled_units_are_allowed():
     )
     unit_tree = _unit_tree(resolved=resolved, qname="schedule")
     assert units_are_equivalent(
-        left=unit_tree["base_amount_m"], right=parse_unit("CURRENCY / month")
+        left=unit_tree["base_amount_m"],
+        right=parse_unit("CURRENCY / month / grouping_level_person"),
     )
     assert units_are_equivalent(
-        left=unit_tree["annual_bonus_y"], right=parse_unit("CURRENCY / year")
+        left=unit_tree["annual_bonus_y"],
+        right=parse_unit("CURRENCY / year / grouping_level_person"),
     )
 
 
@@ -411,7 +414,7 @@ def test_scalar_flow_param_resolves_via_name_suffix():
     )
     assert units_are_equivalent(
         left=_scalar_unit(resolved=resolved, qname="lump_sum_deduction_y"),
-        right=parse_unit("CURRENCY / year"),
+        right=parse_unit("CURRENCY / year / grouping_level_person"),
     )
 
 
@@ -783,7 +786,9 @@ def test_boolean_body_at_correct_group_level_passes():
     def threshold_m_fam() -> float:
         """Family subsistence threshold."""
 
-    @policy_function(leaf_name="requirement_fulfilled_fam", unit=Unit.DIMENSIONLESS)
+    @policy_function(
+        leaf_name="requirement_fulfilled_fam", unit=Unit.DIMENSIONLESS.PER_FAM
+    )
     def requirement_fulfilled_fam(income_m_fam: float, threshold_m_fam: float) -> bool:
         return income_m_fam < threshold_m_fam
 
@@ -798,13 +803,16 @@ def test_boolean_body_at_correct_group_level_passes():
 
 
 def test_boolean_body_at_wrong_group_level_is_caught():
-    """A ``_fam``-named predicate that actually compares *person*-level quantities
-    infers ``1 / [person]`` and is caught (GEP 10) — the bug leveled booleans fix.
+    """A ``DIMENSIONLESS_PER_FAM`` predicate that actually compares *person*-level
+    quantities infers ``1 / [person]`` and is caught (GEP 10) — the bug leveled
+    booleans fix.
 
     Before, the boolean result was level-less and bypassed the suffix-level check.
     """
 
-    @policy_function(leaf_name="requirement_fulfilled_fam", unit=Unit.DIMENSIONLESS)
+    @policy_function(
+        leaf_name="requirement_fulfilled_fam", unit=Unit.DIMENSIONLESS.PER_FAM
+    )
     def requirement_fulfilled_fam(income_m: float, other_income_m: float) -> bool:
         return income_m < other_income_m  # person-level operands, but a _fam name
 
@@ -1307,19 +1315,19 @@ def test_verify_units_false_still_checks_consumers_against_declared_unit():
 def test_count_aggregation_auto_assigns_person_per_group():
     @agg_by_group_function(agg_type=AggType.COUNT)
     def number_of_individuals_fam(fam_id: int) -> int:
-        """A head count per family — PERSON_PER_FAM (GEP 10)."""
+        """A head count per family — PERSON_COUNT_PER_FAM (GEP 10)."""
 
-    assert number_of_individuals_fam.unit == Unit.PERSON.PER_FAM
+    assert number_of_individuals_fam.unit == Unit.PERSON_COUNT.PER_FAM
 
 
-def test_any_aggregation_auto_assigns_dimensionless():
-    # ANY/ALL yield a boolean, which is a dimensionless quantity (GEP 10): the
-    # aggregation auto-assigns Unit.DIMENSIONLESS.
+def test_any_aggregation_auto_assigns_dimensionless_at_target_level():
+    # ANY/ALL yield a boolean at the target level (GEP 10): a group aggregation
+    # auto-assigns DIMENSIONLESS_PER_<target>, the person leaf being implied.
     @agg_by_group_function(agg_type=AggType.ANY)
     def any_exempt_fam(is_exempt: bool, fam_id: int) -> bool:
         """Any member exempt."""
 
-    assert any_exempt_fam.unit is Unit.DIMENSIONLESS
+    assert any_exempt_fam.unit == Unit.DIMENSIONLESS.PER_FAM
 
 
 def test_sum_aggregation_requires_explicit_unit():
@@ -1431,7 +1439,7 @@ def test_concrete_currency_token_resolves_like_agnostic_counterpart():
     )
     assert units_are_equivalent(
         left=_scalar_unit(resolved=resolved, qname="threshold"),
-        right=parse_unit("CURRENCY"),
+        right=parse_unit("CURRENCY / grouping_level_person"),
     )
 
 
@@ -1469,7 +1477,7 @@ def test_param_mapping_object_resolves_output_axis():
     )
     assert units_are_equivalent(
         left=_scalar_unit(resolved=resolved, qname="schedule"),
-        right=parse_unit("CURRENCY / year"),
+        right=parse_unit("CURRENCY / year / grouping_level_person"),
     )
 
 
@@ -1484,7 +1492,7 @@ def test_param_mapping_object_complete_input_axis_with_flow_output():
     )
     assert units_are_equivalent(
         left=_scalar_unit(resolved=resolved, qname="schedule"),
-        right=parse_unit("CURRENCY / year"),
+        right=parse_unit("CURRENCY / year / grouping_level_person"),
     )
 
 
@@ -1689,7 +1697,7 @@ def test_sum_over_boolean_declared_dimensionless_is_caught():
     """A SUM over a boolean is a head count; declaring it DIMENSIONLESS is wrong.
 
     It derives `[person]/[fam]` (the persons the indicator is true for), so the
-    declaration must be PERSON_PER_FAM, not DIMENSIONLESS (GEP 10).
+    declaration must be PERSON_COUNT_PER_FAM, not DIMENSIONLESS (GEP 10).
     """
 
     @policy_input(unit=Unit.DIMENSIONLESS)
@@ -1709,7 +1717,7 @@ def test_sum_over_boolean_declared_person_per_group_passes():
     @policy_input(unit=Unit.DIMENSIONLESS)
     def adult() -> bool: ...
 
-    @agg_by_group_function(agg_type=AggType.SUM, unit=Unit.PERSON.PER_FAM)
+    @agg_by_group_function(agg_type=AggType.SUM, unit=Unit.PERSON_COUNT.PER_FAM)
     def number_of_adults_fam(adult: bool, fam_id: int) -> int: ...
 
     fail_if_environment_units_are_inconsistent(

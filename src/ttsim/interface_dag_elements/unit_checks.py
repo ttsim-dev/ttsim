@@ -69,14 +69,12 @@ from ttsim.tt.units import (
     _flow_period_of,
     _token_base_unit,
     base_currency,
-    divide_by_grouping_level,
     fail_if_units_are_missing,
     is_calendar_point_unit,
     parse_unit,
     register_grouping_levels,
     resolve_compositional_column_unit,
     resolve_compositional_param_unit,
-    resolve_compositional_unit,
     resolved_unit_for_aggregation,
     token_is_agnostic_currency,
     unit_residual_excluding_currency_and_flow_period,
@@ -215,26 +213,25 @@ def _resolve_leveled_column_unit(
 ) -> pint.Unit:
     """Resolve a column/function's full unit, including its grouping level (GEP 10).
 
-    A non-boolean column resolves via :func:`resolve_compositional_column_unit`,
-    which validates the spelled period/level against the name suffix and adds the
-    implied person leaf for an extensive base. A **boolean** is ``DIMENSIONLESS``
-    measured per the level it is defined at (``1 / [fam]`` for a fam-level
-    indicator, ``1 / [person]`` for a person-level one); its level comes from the
-    name's aggregation suffix — an unsuffixed name is at :data:`PERSON_LEVEL`. A
-    level-less, non-boolean unit — a share, an age — stays level-less regardless
-    of any suffix: the suffix is then a pure *index* level (a ``MIN``-of-age at
-    ``_fg``), not a unit level.
+    Both booleans and ordinary columns resolve via
+    :func:`resolve_compositional_column_unit`, which validates the spelled
+    period/level against the name suffix and adds the implied person leaf for a
+    *leveled* base. A **boolean** is leveled (``is_boolean``): it is
+    ``DIMENSIONLESS`` per the level it is defined at — ``1 / [fam]`` for a
+    fam-level indicator (spelled ``DIMENSIONLESS_PER_FAM``), ``1 / [person]`` for
+    a person-level one (bare ``DIMENSIONLESS``, person implied). A level-less,
+    non-boolean unit — a share, an age — stays level-less regardless of any
+    suffix: the suffix is then a pure *index* level (a ``MIN``-of-age at ``_fg``),
+    not a unit level.
     """
     time_unit_id = match.group("time_unit") if match else None
     grouping_level = _suffix_grouping_level(match)
-    if is_boolean:
-        boolean_unit = resolve_compositional_unit(token, with_level=False)
-        return divide_by_grouping_level(unit=boolean_unit, level=grouping_level)
     return resolve_compositional_column_unit(
         token,
         time_unit_id=time_unit_id,
         grouping_level=grouping_level,
         where="A column/function",
+        is_boolean=is_boolean,
     )
 
 
@@ -549,8 +546,9 @@ def _agg_declaration_inconsistency(
     The resolved unit (:func:`_resolve_agg_by_group_unit`) is the *derived* one —
     minted / swapped / preserved from the source and agg_type. The declared unit's
     physical kind (its period-free, level-free base) must equal the derived unit's;
-    a ``SUM`` over a boolean is a head count and must be declared ``PERSON_PER_…``,
-    not ``DIMENSIONLESS``. Returns ``None`` when there is nothing to check: the
+    a ``SUM`` over a boolean is a head count and must be declared
+    ``PERSON_COUNT_PER_…``, not ``DIMENSIONLESS``. Returns ``None`` when there is
+    nothing to check: the
     derivation could not resolve the source, or no unit is declared (the
     mandatory-units check reports either).
     """
@@ -566,8 +564,8 @@ def _agg_declaration_inconsistency(
         f"{qname}: declares unit `{declared_token}` (a {declared_kind} quantity), "
         f"but its {obj.agg_type.name} aggregation derives {derived} (a "
         f"{derived_kind} quantity) from its source. An aggregation's declared unit "
-        f"must match the kind it derives — e.g. `PERSON_PER_<level>` for a count, "
-        f"the source's currency for a sum of money (GEP 10)."
+        f"must match the kind it derives — e.g. `PERSON_COUNT_PER_<level>` for a "
+        f"count, the source's currency for a sum of money (GEP 10)."
     )
 
 

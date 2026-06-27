@@ -751,7 +751,7 @@ def agg_by_group_function(
         start_date=start_date, end_date=end_date
     )
     # COUNT / ANY / ALL determine their unit irrespective of the source
-    # (GEP 10): a COUNT is a head count at its group level (PERSON_PER_<group>,
+    # (GEP 10): a COUNT is a head count at its group level (PERSON_COUNT_PER_<group>,
     # spelled below where the group id is known), ANY / ALL are dimensionless.
     # SUM / MEAN / MIN / MAX preserve the source's and need an explicit
     # declaration (`unit=Unit.DIMENSIONLESS` if the source is dimensionless,
@@ -780,7 +780,7 @@ def agg_by_group_function(
         group_id = group_ids.pop()
         # Auto-assign the unit when omitted (GEP 10), via the single source of
         # truth `unit_for_aggregation`: a COUNT is a head count at its group
-        # level — PERSON_PER_<group> — so the extensive person base spells the
+        # level — PERSON_COUNT_PER_<group> — so the extensive person base spells the
         # level its name claims; ANY / ALL are dimensionless.
         node_unit = unit
         if node_unit is UNSET_UNIT:
