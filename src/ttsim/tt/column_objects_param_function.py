@@ -62,8 +62,8 @@ from ttsim.tt.type_resolution import (
 )
 from ttsim.tt.units import (
     UNSET_UNIT,
+    CompositeUnit,
     Unit,
-    UnsetUnitType,
     unit_for_aggregation,
 )
 from ttsim.tt.vectorization import vectorize_function
@@ -149,11 +149,11 @@ class PolicyInput(ColumnObject):
     warn_msg_if_included: str | None = None
     fail_msg_if_included: str | None = None
     docstring: str | None = ""
-    unit: Unit | UnsetUnitType = UNSET_UNIT
-    """The input's unit token (GEP 10), e.g. :attr:`Unit.CURRENCY`; a
-    ``…_FLOW`` token gets its period from the name suffix. ``DIMENSIONLESS`` declares
-    a dimensionless input; :data:`UNSET_UNIT` until annotated (mandatory from
-    issue #119)."""
+    unit: CompositeUnit = UNSET_UNIT
+    """The input's compositional unit (GEP 10), e.g. ``Unit.CURRENCY.PER_MONTH``;
+    a flow's period comes from the spelled denominator. ``Unit.DIMENSIONLESS``
+    declares a dimensionless input. Mandatory: the decorator requires it, so
+    :data:`UNSET_UNIT` is only the unreachable field default."""
 
     def remove_tree_logic(
         self,
@@ -171,7 +171,7 @@ def policy_input(
     foreign_key_type: FKType = FKType.IRRELEVANT,
     warn_msg_if_included: str | None = None,
     fail_msg_if_included: str | None = None,
-    unit: Unit | UnsetUnitType = UNSET_UNIT,
+    unit: CompositeUnit,
 ) -> Callable[[Callable[..., Any]], PolicyInput]:
     """Decorate a (dummy) function to make it a `PolicyInput`.
 
@@ -262,11 +262,11 @@ class ColumnFunction(ColumnObject, Generic[FunArgTypes, ReturnType]):
     foreign_key_type: FKType = FKType.IRRELEVANT
     warn_msg_if_included: str | None = None
     fail_msg_if_included: str | None = None
-    unit: Unit | UnsetUnitType = UNSET_UNIT
-    """The column's unit token (GEP 10), e.g. :attr:`Unit.CURRENCY_FLOW` (the
-    period comes from the name suffix) or :attr:`Unit.SQUARE_METERS`;
-    ``DIMENSIONLESS`` declares a dimensionless column. :data:`UNSET_UNIT` until
-    annotated (mandatory from issue #119)."""
+    unit: CompositeUnit = UNSET_UNIT
+    """The column's compositional unit (GEP 10), e.g.
+    ``Unit.CURRENCY.PER_MONTH`` or ``Unit.SQUARE_METER``; ``Unit.DIMENSIONLESS``
+    declares a dimensionless column. Mandatory: the decorator requires it, so
+    :data:`UNSET_UNIT` is only the unreachable field default."""
     verify_units: bool = True
     """Whether the build-time unit check dry-runs this function's body (GEP 10).
     ``False`` opts the body out of unit *inference* — the declared :attr:`unit`
@@ -407,7 +407,7 @@ def policy_function(
     foreign_key_type: FKType = FKType.IRRELEVANT,
     warn_msg_if_included: str | None = None,
     fail_msg_if_included: str | None = None,
-    unit: Unit | UnsetUnitType = UNSET_UNIT,
+    unit: CompositeUnit,
     verify_units: bool = True,
 ) -> Callable[[Callable[..., Any]], PolicyFunction]:
     """Decorate a function to make it a `PolicyFunction`.
@@ -745,17 +745,17 @@ def agg_by_group_function(
     agg_type: AggType,
     warn_msg_if_included: str | None = None,
     fail_msg_if_included: str | None = None,
-    unit: Unit | UnsetUnitType = UNSET_UNIT,
+    unit: CompositeUnit = UNSET_UNIT,
 ) -> Callable[[Callable[..., Any]], AggByGroupFunction]:
     start_date, end_date = _convert_and_validate_dates(
         start_date=start_date, end_date=end_date
     )
     # COUNT / ANY / ALL determine their unit irrespective of the source
-    # (GEP 10): they are dimensionless. SUM / MEAN / MIN / MAX preserve the
-    # source's and need an explicit declaration (`unit=Unit.DIMENSIONLESS` if
-    # the source is dimensionless, e.g. a sum over a boolean column).
-    if unit is UNSET_UNIT:
-        unit = unit_for_aggregation(source_unit=UNSET_UNIT, agg_type=agg_type)
+    # (GEP 10): a COUNT is a head count at its group level (PERSON_PER_<group>,
+    # spelled below where the group id is known), ANY / ALL are dimensionless.
+    # SUM / MEAN / MIN / MAX preserve the source's and need an explicit
+    # declaration (`unit=Unit.DIMENSIONLESS` if the source is dimensionless,
+    # e.g. a sum over a boolean column).
 
     agg_registry: dict[AggType, Callable[..., Any]] = {
         AggType.SUM: grouped_sum,
@@ -778,6 +778,16 @@ def agg_by_group_function(
         group_ids = {p for p in args if p.endswith("_id")}
         _fail_if_group_id_is_invalid(group_ids=group_ids, orig_location=orig_location)
         group_id = group_ids.pop()
+        # Auto-assign the unit when omitted (GEP 10). A COUNT is a head count at
+        # its group level — PERSON_PER_<group> — so the extensive person base
+        # spells the level its name claims; ANY / ALL are dimensionless.
+        node_unit = unit
+        if node_unit is UNSET_UNIT:
+            node_unit = (
+                Unit.PERSON.PER_LEVEL(group_id.removesuffix("_id"))
+                if agg_type is AggType.COUNT
+                else unit_for_aggregation(source_unit=UNSET_UNIT, agg_type=agg_type)
+            )
         other_args = args - {group_id, "num_segments", "backend"}
         column_name: str | None
         if agg_type == AggType.COUNT:
@@ -810,7 +820,7 @@ def agg_by_group_function(
             orig_location=f"{func.__module__}.{func.__name__}",  # ty: ignore[unresolved-attribute]
             warn_msg_if_included=warn_msg_if_included,
             fail_msg_if_included=fail_msg_if_included,
-            unit=unit,
+            unit=node_unit,
             agg_type=agg_type,
         )
 
@@ -971,7 +981,7 @@ def agg_by_p_id_function(
     agg_type: AggType,
     warn_msg_if_included: str | None = None,
     fail_msg_if_included: str | None = None,
-    unit: Unit | UnsetUnitType = UNSET_UNIT,
+    unit: CompositeUnit = UNSET_UNIT,
 ) -> Callable[[Callable[..., Any]], AggByPIDFunction]:
     start_date, end_date = _convert_and_validate_dates(
         start_date=start_date, end_date=end_date
@@ -1172,11 +1182,11 @@ class ParamFunction(Generic[FunArgTypes, ReturnType]):
     description: str
     warn_msg_if_included: str | None = None
     fail_msg_if_included: str | None = None
-    unit: Unit | UnsetUnitType = UNSET_UNIT
-    """The parameter function's unit token (GEP 10); a ``…_FLOW`` token gets
-    its period from the name suffix. ``DIMENSIONLESS`` declares a dimensionless
-    parameter function; :data:`UNSET_UNIT` until annotated (mandatory from
-    issue #119)."""
+    unit: CompositeUnit = UNSET_UNIT
+    """The parameter function's compositional unit (GEP 10), e.g.
+    ``Unit.CURRENCY.PER_YEAR``. ``Unit.DIMENSIONLESS`` declares a dimensionless
+    parameter function. Mandatory: the decorator requires it, so
+    :data:`UNSET_UNIT` is only the unreachable field default."""
     verify_units: bool = True
     """Whether the build-time unit check dry-runs this function's body (GEP 10).
     ``False`` opts the body out of unit *inference*; the declared :attr:`unit`
@@ -1239,7 +1249,7 @@ def param_function(
     end_date: str | datetime.date = DEFAULT_END_DATE,
     warn_msg_if_included: str | None = None,
     fail_msg_if_included: str | None = None,
-    unit: Unit | UnsetUnitType = UNSET_UNIT,
+    unit: CompositeUnit,
     verify_units: bool = True,
 ) -> Callable[[Callable[..., Any]], ParamFunction[..., Any]]:
     """Decorate a function to make it a `ParamFunction`.

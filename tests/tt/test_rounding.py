@@ -14,18 +14,19 @@ from ttsim import InputData, TTTargets, main
 from ttsim.exceptions import PolicyFunctionDefinitionError, RoundingSpecError
 from ttsim.tt import (
     RoundingSpec,
+    Unit,
     policy_function,
     policy_input,
 )
 from ttsim.typing import FloatColumn, IntColumn
 
 
-@policy_input()
+@policy_input(unit=Unit.DIMENSIONLESS)
 def x() -> int:
     pass
 
 
-@policy_input()
+@policy_input(unit=Unit.DIMENSIONLESS)
 def p_id() -> int:
     pass
 
@@ -82,7 +83,7 @@ rounding_specs_and_exp_results = [
 def test_decorator():
     rs = RoundingSpec(base=1, direction="up")
 
-    @policy_function(rounding_spec=rs)
+    @policy_function(rounding_spec=rs, unit=Unit.DIMENSIONLESS)
     def test_func() -> int:
         return 0
 
@@ -92,7 +93,10 @@ def test_decorator():
 def test_malformed_rounding_specs():
     with pytest.raises(PolicyFunctionDefinitionError):
 
-        @policy_function(rounding_spec={"base": 1, "direction": "updsf"})  # ty: ignore[invalid-argument-type]
+        @policy_function(
+            rounding_spec=cast("RoundingSpec", {"base": 1, "direction": "updsf"}),
+            unit=Unit.DIMENSIONLESS,
+        )
         def test_func() -> int:
             return 0
 
@@ -105,7 +109,7 @@ def test_rounding(rounding_spec, input_values, exp_output, backend):
     """Check if rounding is correct."""
 
     # Define function that should be rounded
-    @policy_function(rounding_spec=rounding_spec)
+    @policy_function(rounding_spec=rounding_spec, unit=Unit.DIMENSIONLESS)
     def test_func(x: float) -> float:
         return x
 
@@ -138,7 +142,9 @@ def test_rounding_with_time_conversion(backend, xnp):
     """Check if rounding is correct for time-converted functions."""
 
     # Define function that should be rounded
-    @policy_function(rounding_spec=RoundingSpec(base=1, direction="down"))
+    @policy_function(
+        rounding_spec=RoundingSpec(base=1, direction="down"), unit=Unit.DIMENSIONLESS
+    )
     def test_func_m(x: float) -> float:
         return x
 
@@ -183,7 +189,7 @@ def test_no_rounding(
     backend,
 ):
     # Define function that should be rounded
-    @policy_function(rounding_spec=rounding_spec)
+    @policy_function(rounding_spec=rounding_spec, unit=Unit.DIMENSIONLESS)
     def test_func(x: float) -> float:
         return x
 

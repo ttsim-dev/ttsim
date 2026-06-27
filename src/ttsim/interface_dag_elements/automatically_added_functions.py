@@ -36,8 +36,8 @@ from ttsim.tt.type_resolution import (
 )
 from ttsim.tt.units import (
     UNSET_UNIT,
-    Unit,
-    UnsetUnitType,
+    CompositeUnit,
+    composite_with_rebased_period,
     unit_for_aggregation,
     unit_for_derived_node,
 )
@@ -285,14 +285,34 @@ def _create_one_set_of_time_conversion_functions(
                 f"Time conversion of {dt.tree_path_from_qname(qname_source)} "
                 f"from per {time_unit} to per {target_time_unit}"
             ),
-            # One flow token covers every time-unit variant: it carries no
-            # period of its own, so the same token serves the _y/_q/_m/_w/_d
-            # columns while each variant's concrete period is read off its
-            # suffix (GEP 10, #119). `UNSET_UNIT` until the source is annotated.
-            unit=unit_for_derived_node(getattr(element, "unit", UNSET_UNIT)),
+            # The variant carries the same quantity per a different period
+            # (GEP 10): a compositional flow unit is re-based to the target
+            # period (``CURRENCY_PER_MONTH`` → ``CURRENCY_PER_YEAR``); a legacy
+            # flow token carries no period and serves every variant unchanged.
+            # `UNSET_UNIT` until the source is annotated.
+            unit=_derived_variant_unit(
+                getattr(element, "unit", UNSET_UNIT), time_unit_id=target_time_unit
+            ),
         )
 
     return result
+
+
+def _derived_variant_unit(
+    source_unit: CompositeUnit,
+    *,
+    time_unit_id: str,
+) -> CompositeUnit:
+    """The unit of a time-conversion variant: agnostic, period re-based (GEP 10).
+
+    A flow's period is re-based to the target period
+    (``CURRENCY_PER_MONTH`` → ``CURRENCY_PER_YEAR``); a non-flow unit (including
+    the :data:`UNSET_UNIT` sentinel of an unannotated source) has no period and
+    is returned unchanged.
+    """
+    return composite_with_rebased_period(
+        unit_for_derived_node(source_unit), time_unit_id
+    )
 
 
 def _create_function_for_time_unit(
@@ -403,7 +423,7 @@ def create_agg_by_group_functions(
             # group level (`SUM` is extensive) — is resolved at build time in
             # `unit_checks.resolve_environment_units`, which routes auto-aggregation
             # nodes through the level-aware `resolved_unit_for_aggregation`; the
-            # token stored here cannot carry a `[level]` (it is a `Unit` member).
+            # source unit stored here carries no spelled `[level]`.
             source_unit = _resolve_source_unit(
                 source_name=base_name_with_time_unit,
                 column_functions=column_functions,
@@ -442,8 +462,8 @@ def _resolve_source_unit(
     source_name: str,
     column_functions: dict[str, ColumnFunction],
     qname_policy_environment: PolicyEnvironment,
-) -> Unit | UnsetUnitType:
-    """Resolve the unit token of an auto-aggregation source column (GEP 10).
+) -> CompositeUnit:
+    """Resolve the unit of an auto-aggregation source column (GEP 10).
 
     Mirrors `_resolve_source_column_kind`: the source is a column function, a
     `PolicyInput` declared at `source_name`, or a user-supplied input at a

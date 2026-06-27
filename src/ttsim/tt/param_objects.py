@@ -10,9 +10,7 @@ from jaxtyping import Bool, Float, Int
 from ttsim.exceptions import UnitDefinitionError
 from ttsim.tt.units import (
     UNSET_UNIT,
-    CurrencyUnitToken,
-    Unit,
-    UnsetUnitType,
+    CompositeUnit,
     coerce_unit_token,
 )
 from ttsim.typing import DictParamValue, NestedLookupDict
@@ -45,24 +43,15 @@ class ParamObject:
 
     start_date: datetime.date | None = None
     end_date: datetime.date | None = None
-    unit: Unit | str | dict[str | int, Any] | UnsetUnitType = UNSET_UNIT
-    """The parameter's unit token (GEP 10), e.g. ``CURRENCY_FLOW`` or
-    ``DIMENSIONLESS``. A dict parameter with heterogeneous leaves declares a
-    mapping from leaf names to tokens instead. A concrete currency token
-    (``SILVER_PENNY``, ``DM_FLOW``, …) also names the currency the numbers are
-    written in, which the build-time currency conversion reads off. YAML
-    strings are coerced to tokens at construction; :data:`UNSET_UNIT` until
-    annotated."""
-    reference_period: (
-        None | Literal["Year", "Quarter", "Month", "Week", "Day", "Hour"]
-    ) = None
-    reference_level: str | None = None
-    """The grouping level a per-person or per-group parameter is denominated
-    per (GEP 10), e.g. ``"person"`` or ``"hh"``; ``None`` for a level-agnostic
-    parameter. Unlike ``reference_period`` it *is* admissible on a scalar
-    parameter — a scalar has no aggregation suffix to read a level from. The
-    value names a grouping level discovered per build from the ``*_id``
-    columns; an unregistered name fails at unit resolution."""
+    unit: CompositeUnit | str | dict[str | int, Any] = UNSET_UNIT
+    """The parameter's compositional unit (GEP 10), e.g. ``CURRENCY_PER_MONTH``,
+    ``SILVER_PENNY_PER_FAM``, or a bare base ``DIMENSIONLESS``. A parameter
+    spells period *and* level fully — it has no name suffix to imply a level
+    from. A dict parameter with heterogeneous leaves declares a mapping from leaf
+    names to units instead. A concrete currency base (``SILVER_PENNY``, ``DM``,
+    …) also names the currency the numbers are written in, which the build-time
+    currency conversion reads off. YAML strings are coerced to
+    :class:`CompositeUnit` at construction; :data:`UNSET_UNIT` until annotated."""
     name: dict[Literal["de", "en"], str] | None = None
     description: dict[Literal["de", "en"], str] | None = None
 
@@ -71,9 +60,9 @@ class ParamObject:
             raise ValueError(
                 "'value' field must be specified for any type of 'ParamObject'"
             )
-        # Coerce the YAML `unit:` declaration (plain strings) to members of
-        # the closed `Unit` enumeration (GEP 10); unknown tokens fail at load
-        # time. The frozen-dataclass workaround mirrors PLACEHOLDER handling.
+        # Coerce the YAML `unit:` declaration (plain compositional strings) to
+        # `CompositeUnit`s (GEP 10); unknown spellings fail at load time. The
+        # frozen-dataclass workaround mirrors PLACEHOLDER handling.
         object.__setattr__(
             self, "unit", _coerce_declared_unit(declared=self.unit, obj=self)
         )
@@ -82,8 +71,9 @@ class ParamObject:
 def _coerce_declared_unit(
     declared: Any,  # noqa: ANN401 (raw YAML value)
     obj: ParamObject,
-) -> Unit | CurrencyUnitToken | dict[str | int, Any] | UnsetUnitType:
-    """Coerce a raw ``unit:`` declaration to tokens, recursing into mappings."""
+) -> CompositeUnit | dict[str | int, Any]:
+    """Coerce a raw ``unit:`` declaration to a CompositeUnit, recursing into
+    mappings."""
     name_en = (obj.name or {}).get("en")
     where = f"Parameter {name_en}" if name_en else "Parameter"
     if declared is UNSET_UNIT:
@@ -140,11 +130,11 @@ class ParamMappingObject(ParamObject):
     bounds on the input axis and intercepts on the output axis.
     """
 
-    input_unit: Unit | str | UnsetUnitType = UNSET_UNIT
-    """The token of the input axis (what the parameter is evaluated at), e.g.
-    ``CURRENCY_FLOW`` or ``HECTARES``. :data:`UNSET_UNIT` until annotated."""
-    output_unit: Unit | str | UnsetUnitType = UNSET_UNIT
-    """The token of the output axis (what the parameter yields).
+    input_unit: CompositeUnit | str = UNSET_UNIT
+    """The unit of the input axis (what the parameter is evaluated at), e.g.
+    ``CURRENCY_PER_YEAR`` or ``HECTARE``. :data:`UNSET_UNIT` until annotated."""
+    output_unit: CompositeUnit | str = UNSET_UNIT
+    """The unit of the output axis (what the parameter yields).
     :data:`UNSET_UNIT` until annotated."""
 
     def __post_init__(self) -> None:
@@ -284,11 +274,11 @@ class RawParam(ParamObject):
     value: dict[str | int, Any] = PLACEHOLDER_FIELD
     note: str | None = None
     reference: str | None = None
-    input_unit: Unit | str | UnsetUnitType = UNSET_UNIT
-    """The input-axis token of a function-like converter's output (GEP 10);
+    input_unit: CompositeUnit | str = UNSET_UNIT
+    """The input-axis unit of a function-like converter's output (GEP 10);
     mutually exclusive with :attr:`unit`. :data:`UNSET_UNIT` until annotated."""
-    output_unit: Unit | str | UnsetUnitType = UNSET_UNIT
-    """The output-axis token of a function-like converter's output (GEP 10);
+    output_unit: CompositeUnit | str = UNSET_UNIT
+    """The output-axis unit of a function-like converter's output (GEP 10);
     mutually exclusive with :attr:`unit`. :data:`UNSET_UNIT` until annotated."""
 
     def __post_init__(self) -> None:

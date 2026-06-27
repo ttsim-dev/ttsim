@@ -75,7 +75,6 @@ SOME_PARAM_OBJECT = ScalarParam(
     start_date=datetime.date(2025, 1, 1),
     end_date=datetime.date(2025, 12, 31),
     unit=Unit.DIMENSIONLESS,
-    reference_period=None,
     name={"de": ""},
     description={"de": ""},
 )
@@ -84,6 +83,7 @@ SOME_PARAM_OBJECT = ScalarParam(
 @param_function(
     start_date="2025-01-01",
     end_date="2025-12-31",
+    unit=Unit.DIMENSIONLESS,
 )
 def some_param_function() -> int:
     return 1
@@ -92,6 +92,7 @@ def some_param_function() -> int:
 @policy_function(
     start_date="2025-01-01",
     end_date="2025-12-31",
+    unit=Unit.DIMENSIONLESS,
 )
 def some_policy_function() -> int:
     return 1
@@ -100,6 +101,7 @@ def some_policy_function() -> int:
 @policy_function(
     start_date="2025-01-01",
     end_date="2025-12-31",
+    unit=Unit.DIMENSIONLESS,
 )
 def some_policy_function_depending_on_derived_param(some_param_y: float) -> float:
     return some_param_y + 1

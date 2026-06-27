@@ -179,6 +179,74 @@ def make_vectorizable_source(
     return ast.unparse(tree)
 
 
+class _BoolOpToBitwiseTransformer(ast.NodeTransformer):
+    """Rewrite ``and``/``or`` (a short-circuiting ``BoolOp``) to bitwise ``&``/``|``.
+
+    Python's ``and``/``or`` short-circuit through ``__bool__`` and return one operand
+    whole, so they cannot combine two custom objects — which is why the array
+    vectorizer rewrites them (to ``logical_and``/``logical_or``) and why the
+    unit-check dry-run needs them as ``&``/``|`` to combine *leveled* booleans
+    (GEP 10). Building the bitwise tree from the operand structure preserves
+    grouping, so the differing ``&``/``|`` precedence never matters.
+    """
+
+    def visit_BoolOp(self, node: ast.BoolOp) -> ast.AST:
+        self.generic_visit(node)
+        op: ast.operator = ast.BitAnd() if isinstance(node.op, ast.And) else ast.BitOr()
+        combined = node.values[0]
+        for value in node.values[1:]:
+            combined = ast.BinOp(left=combined, op=op, right=value)
+        return combined
+
+
+def recompile_with_logical_ops_as_bitwise(
+    func: Callable[..., Any],
+) -> Callable[..., Any]:
+    """Return a copy of ``func`` with ``and``/``or`` rewritten to ``&``/``|``.
+
+    For the build-time unit-check dry-run (GEP 10): a ``_DryRunQuantity`` combines
+    leveled booleans under ``&``/``|`` (via ``__and__``/``__or__``) but not under
+    Python ``and``/``or``, which short-circuit through ``__bool__`` and return a
+    single, uncombined operand. Rewriting mirrors what the array vectorizer already
+    does for execution, so author-written ``and``/``or`` are checked the same way
+    they run. The runtime is untouched — this copy is only ever dry-run.
+
+    A function with no ``and``/``or`` is returned unchanged (no recompile). Falls
+    back to the original when source is unavailable (a builtin, a C function, a REPL
+    definition) or unparseable: the dry-run then sees the original body and, if it
+    cannot evaluate it, asks for an explicit opt-out.
+    """
+    if _is_lambda_function(func):
+        return func
+    try:
+        tree = _func_to_ast(func)
+    except (OSError, TypeError):
+        return func
+    if not any(isinstance(node, ast.BoolOp) for node in ast.walk(tree)):
+        return func
+    _BoolOpToBitwiseTransformer().visit(tree)
+    ast.fix_missing_locations(tree)
+    scope = dict(func.__globals__)  # ty: ignore[unresolved-attribute]
+    if func.__closure__:  # ty: ignore[unresolved-attribute]
+        closure_vars = func.__code__.co_freevars  # ty: ignore[unresolved-attribute]
+        closure_cells = [c.cell_contents for c in func.__closure__]  # ty: ignore[unresolved-attribute]
+        scope.update(dict(zip(closure_vars, closure_cells, strict=False)))
+    exec(compile(tree, "<unit-check-logical-ops>", "exec"), scope)  # noqa: S102
+    rewritten = functools.wraps(func, assigned=_WRAPPER_ASSIGNMENTS_NO_ANNOTATIONS)(
+        scope[func.__name__]  # ty: ignore[unresolved-attribute]
+    )
+    # The AST carries the original argument names; match any renamed dynamically
+    # after definition, exactly as `_make_vectorizable` does.
+    args_name_mapper = dict(
+        zip(
+            _args_from_func_ast(_func_to_ast(func)),
+            list(inspect.signature(func).parameters),
+            strict=False,
+        )
+    )
+    return rename_arguments(rewritten, mapper=args_name_mapper)
+
+
 def _make_vectorizable_ast(
     func: Callable[..., Any],
     module: str,

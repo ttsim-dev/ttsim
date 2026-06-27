@@ -162,12 +162,12 @@ def p_id() -> int:
     pass
 
 
-@policy_input(unit=Unit.CURRENCY_FLOW)
+@policy_input(unit=Unit.CURRENCY.PER_MONTH)
 def income_m() -> float:
     pass
 
 
-@policy_function(vectorization_strategy="vectorize", unit=Unit.CURRENCY_FLOW)
+@policy_function(vectorization_strategy="vectorize", unit=Unit.CURRENCY.PER_MONTH)
 def benefit_m(income_m: float) -> float:
     return income_m * 0.5
 
@@ -428,11 +428,13 @@ def test_cloudpickle_round_trip_with_inline_policy_environment(tmp_path):
         def p_id() -> int: ...
 
 
-        @policy_input(unit=Unit.CURRENCY_FLOW)
+        @policy_input(unit=Unit.CURRENCY.PER_MONTH)
         def income_m() -> float: ...
 
 
-        @policy_function(vectorization_strategy="vectorize", unit=Unit.CURRENCY_FLOW)
+        @policy_function(
+            vectorization_strategy="vectorize", unit=Unit.CURRENCY.PER_MONTH
+        )
         def benefit_m(income_m: float) -> float:
             return income_m * 0.5
 
@@ -725,12 +727,14 @@ def test_scalar_input_to_not_required_function_is_baked_in(xnp, backend):
     assert root_nodes == set()
 
 
-@policy_input(unit=Unit.CURRENCY_FLOW)
+@policy_input(unit=Unit.CURRENCY.PER_MONTH)
 def bonus_m() -> float:
     pass
 
 
-@policy_function(vectorization_strategy="vectorize", unit=Unit.CURRENCY_FLOW)
+@policy_function(
+    vectorization_strategy="vectorize", unit=Unit.CURRENCY.PER_YEAR.PER_FAM
+)
 def doubled_y_fam(bonus_y_fam: float) -> float:
     return 2.0 * bonus_y_fam
 
