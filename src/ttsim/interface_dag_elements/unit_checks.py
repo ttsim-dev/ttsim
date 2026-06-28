@@ -319,14 +319,14 @@ def _resolve_agg_by_group_unit(
     source_token = getattr(source_obj, "unit", UNSET_UNIT)
     if source_token is UNSET_UNIT:
         return None
+    source_is_boolean = node_is_boolean(qname=source_qname, obj=source_obj)
     # A SUM over a boolean is a head count of the persons it is true for — the
     # same unit a COUNT mints, so resolve it as one.
-    if agg_type is AggType.SUM and node_is_boolean(qname=source_qname, obj=source_obj):
+    if agg_type is AggType.SUM and source_is_boolean:
         return resolved_unit_for_aggregation(
             agg_type=AggType.COUNT, target_level=target_level
         )
     source_match = pattern.fullmatch(dt.tree_path_from_qname(source_qname)[-1])
-    source_is_boolean = node_is_boolean(qname=source_qname, obj=source_obj)
     source_unit = _resolve_leveled_column_unit(
         token=cast("CompositeUnit", source_token),
         match=source_match,
@@ -1156,9 +1156,6 @@ class _DryRunQuantity:
 
     def _wrap(self, q: Any) -> _DryRunQuantity:  # noqa: ANN401
         return _DryRunQuantity(q=q, explorer=self._explorer)
-
-    def _controlled_bool(self) -> _DryRunQuantity:
-        return self._controlled_bool_at(level=None)
 
     def _controlled_bool_at(self, level: str | None) -> _DryRunQuantity:
         return self._wrap(_boolean_quantity(level))

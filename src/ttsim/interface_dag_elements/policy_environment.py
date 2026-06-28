@@ -239,6 +239,21 @@ def _currency_conversion_factor_for_token(
     return currency_conversion_factor(source_currency=source, run_currency=run_currency)
 
 
+def _axis_factors(
+    cleaned_spec: dict[str, Any],
+    run_currency: str | None,
+) -> tuple[float, float]:
+    """The (input, output) currency conversion factors for a per-axis spec."""
+    return (
+        _currency_conversion_factor_for_token(
+            raw_token=cleaned_spec.get("input_unit"), run_currency=run_currency
+        ),
+        _currency_conversion_factor_for_token(
+            raw_token=cleaned_spec.get("output_unit"), run_currency=run_currency
+        ),
+    )
+
+
 def _scale_numeric_leaves(
     value: Any,  # noqa: ANN401
     factor: float,
@@ -455,6 +470,7 @@ def _get_one_param(
             )
         return RawParam(**cleaned_spec)
     if param_type in PIECEWISE_TYPES:
+        input_factor, output_factor = _axis_factors(cleaned_spec, currency)
         cleaned_spec["value"] = _piecewise_param_value_in_run_currency(
             value=get_piecewise_parameters(
                 leaf_name=leaf_name,
@@ -462,25 +478,18 @@ def _get_one_param(
                 parameter_list=cleaned_spec["value"],
                 xnp=xnp,
             ),
-            input_factor=_currency_conversion_factor_for_token(
-                raw_token=cleaned_spec.get("input_unit"), run_currency=currency
-            ),
-            output_factor=_currency_conversion_factor_for_token(
-                raw_token=cleaned_spec.get("output_unit"), run_currency=currency
-            ),
+            input_factor=input_factor,
+            output_factor=output_factor,
             xnp=xnp,
         )
         return PiecewisePolynomialParam(**cleaned_spec)
     if param_type in LOOKUP_TABLE_CONVERTERS:
         converter = LOOKUP_TABLE_CONVERTERS[param_type]
+        input_factor, output_factor = _axis_factors(cleaned_spec, currency)
         cleaned_spec["value"] = _lookup_table_value_in_run_currency(
             value=converter(raw=cleaned_spec["value"], xnp=xnp),
-            input_factor=_currency_conversion_factor_for_token(
-                raw_token=cleaned_spec.get("input_unit"), run_currency=currency
-            ),
-            output_factor=_currency_conversion_factor_for_token(
-                raw_token=cleaned_spec.get("output_unit"), run_currency=currency
-            ),
+            input_factor=input_factor,
+            output_factor=output_factor,
             leaf_name=leaf_name,
         )
         return ConsecutiveIntLookupTableParam(**cleaned_spec)
@@ -620,8 +629,7 @@ def _clean_one_param_spec(
     out["reference"] = current_spec.pop("reference", None)
     # Strip the (already forward-filled) units so a dated entry that only
     # restates the unit is not mistaken for substantive content.
-    for unit_key in _UNIT_DECLARATION_KEYS:
-        current_spec.pop(unit_key, None)
+    _strip_unit_overrides(current=current_spec)
 
     if not param_has_substantive_content(current_spec):
         return None

@@ -224,10 +224,11 @@ def recompile_with_logical_ops_as_calls(
         scope[func.__name__]  # ty: ignore[unresolved-attribute]
     )
     # The AST carries the original argument names; match any renamed dynamically
-    # after definition, exactly as `_make_vectorizable` does.
+    # after definition, exactly as `_make_vectorizable` does. The rewrite only
+    # touches `BoolOp` nodes, so `tree`'s argument list is the original one.
     args_name_mapper = dict(
         zip(
-            _args_from_func_ast(_func_to_ast(func)),
+            _args_from_func_ast(tree),
             list(inspect.signature(func).parameters),
             strict=False,
         )
