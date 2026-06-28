@@ -34,6 +34,13 @@ from ttsim.tt.type_resolution import (
     synthesize_typed_aggregation_wrapper,
     vectorized_column_kind,
 )
+from ttsim.tt.units import (
+    UNSET_UNIT,
+    CompositeUnit,
+    composite_with_rebased_period,
+    unit_for_aggregation,
+    unit_for_derived_node,
+)
 from ttsim.typing import (
     OrderedQNames,
     PolicyEnvironment,
@@ -278,9 +285,29 @@ def _create_one_set_of_time_conversion_functions(
                 f"Time conversion of {dt.tree_path_from_qname(qname_source)} "
                 f"from per {time_unit} to per {target_time_unit}"
             ),
+            unit=_derived_variant_unit(
+                getattr(element, "unit", UNSET_UNIT), time_unit_id=target_time_unit
+            ),
         )
 
     return result
+
+
+def _derived_variant_unit(
+    source_unit: CompositeUnit,
+    *,
+    time_unit_id: str,
+) -> CompositeUnit:
+    """The unit of a time-conversion variant: agnostic, period re-based.
+
+    A flow's period is re-based to the target period
+    (``CURRENCY_PER_MONTH`` → ``CURRENCY_PER_YEAR``); a non-flow unit (including
+    the :data:`UNSET_UNIT` sentinel of an unannotated source) has no period and
+    is returned unchanged.
+    """
+    return composite_with_rebased_period(
+        unit_for_derived_node(source_unit), time_unit_id
+    )
 
 
 def _create_function_for_time_unit(
@@ -353,7 +380,6 @@ def create_agg_by_group_functions(
         qn: o for qn, o in all_functions_and_data.items() if not gp.match(qn)
     }
     # Exclude objects that have been explicitly provided.
-
     agg_by_group_function_names = {
         t
         for t in potential_agg_by_group_function_names
@@ -385,6 +411,14 @@ def create_agg_by_group_functions(
                 column_functions=column_functions,
                 qname_policy_environment=qname_policy_environment,
             )
+            # A sum aggregation preserves the source's physical token; the
+            # target group level is resolved later at build time, so the unit
+            # stored here carries no spelled level.
+            source_unit = _resolve_source_unit(
+                source_name=base_name_with_time_unit,
+                column_functions=column_functions,
+                qname_policy_environment=qname_policy_environment,
+            )
             # Stamp concrete column-type annotations onto the `grouped_sum`
             # wrapper. Its runtime implementation signature widens to
             # `FloatColumn | IntColumn`; left untouched, that union becomes
@@ -407,8 +441,45 @@ def create_agg_by_group_functions(
                     f"{dt.tree_path_from_qname(base_name_with_time_unit)} by "
                     f"{group_id} ID."
                 ),
+                unit=unit_for_aggregation(
+                    source_unit=source_unit, agg_type=AggType.SUM
+                ),
             )
     return out
+
+
+def _resolve_source_unit(
+    source_name: str,
+    column_functions: dict[str, ColumnFunction],
+    qname_policy_environment: PolicyEnvironment,
+) -> CompositeUnit:
+    """Resolve the unit of an auto-aggregation source column.
+
+    Mirrors `_resolve_source_column_kind`: the source is a column function, a
+    `PolicyInput` declared at `source_name`, or a user-supplied input at a
+    different time unit than its declared `PolicyInput` sibling (e.g. caller
+    passes `bonus_y` against a `bonus_m` declaration). A flow token is
+    period-invariant, so a sibling's token applies verbatim — only the
+    period (taken from the name suffix) differs.
+
+    A boolean source declares ``DIMENSIONLESS`` like any other node, so its
+    token flows through unchanged. Returns ``UNSET_UNIT`` if the source is
+    unannotated; the environment-level mandatory-units check reports the
+    source itself in that case.
+    """
+    source = column_functions.get(source_name) or qname_policy_environment.get(
+        source_name
+    )
+    if source is not None:
+        declared = getattr(source, "unit", UNSET_UNIT)
+        # A derived function computes on already-converted values, so a
+        # concrete currency token passes its agnostic counterpart on.
+        return unit_for_derived_node(declared)
+    sibling = _find_sibling_policy_input_at_other_time_unit(
+        source_name=source_name,
+        qname_policy_environment=qname_policy_environment,
+    )
+    return sibling.unit if sibling is not None else UNSET_UNIT
 
 
 def _resolve_source_column_kind(

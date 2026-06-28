@@ -60,6 +60,12 @@ from ttsim.tt.type_resolution import (
     synthesize_typed_aggregation_wrapper,
     vectorized_column_kind,
 )
+from ttsim.tt.units import (
+    UNSET_UNIT,
+    CompositeUnit,
+    Unit,
+    unit_for_aggregation,
+)
 from ttsim.tt.vectorization import vectorize_function
 from ttsim.typing import DashedISOString, IntColumn, UnorderedQNames
 
@@ -143,6 +149,11 @@ class PolicyInput(ColumnObject):
     warn_msg_if_included: str | None = None
     fail_msg_if_included: str | None = None
     docstring: str | None = ""
+    unit: CompositeUnit = UNSET_UNIT
+    """The input's compositional unit, e.g. ``Unit.CURRENCY.PER_MONTH``; a flow's
+    period comes from the spelled denominator. ``Unit.DIMENSIONLESS`` declares a
+    dimensionless input. Mandatory: the decorator requires it, so :data:`UNSET_UNIT`
+    is only the unreachable field default."""
 
     def remove_tree_logic(
         self,
@@ -160,6 +171,7 @@ def policy_input(
     foreign_key_type: FKType = FKType.IRRELEVANT,
     warn_msg_if_included: str | None = None,
     fail_msg_if_included: str | None = None,
+    unit: CompositeUnit,
 ) -> Callable[[Callable[..., Any]], PolicyInput]:
     """Decorate a (dummy) function to make it a `PolicyInput`.
 
@@ -196,6 +208,7 @@ def policy_input(
             docstring=inspect.getdoc(func),
             warn_msg_if_included=warn_msg_if_included,
             fail_msg_if_included=fail_msg_if_included,
+            unit=unit,
         )
 
     return inner
@@ -249,6 +262,17 @@ class ColumnFunction(ColumnObject, Generic[FunArgTypes, ReturnType]):
     foreign_key_type: FKType = FKType.IRRELEVANT
     warn_msg_if_included: str | None = None
     fail_msg_if_included: str | None = None
+    unit: CompositeUnit = UNSET_UNIT
+    """The column's compositional unit, e.g. ``Unit.CURRENCY.PER_MONTH`` or
+    ``Unit.SQUARE_METER``; ``Unit.DIMENSIONLESS`` declares a dimensionless column.
+    Mandatory: the decorator requires it, so :data:`UNSET_UNIT` is only the
+    unreachable field default."""
+    verify_units: bool = True
+    """Whether the build-time unit check dry-runs this function's body. ``False``
+    opts the body out of unit *inference* — the declared :attr:`unit` still stands
+    as the contract for consumers, so ancestors and descendants stay checked — for
+    the rare body carrying a genuine code-level literal of a real dimension that a
+    parameter would only obscure."""
 
     def __post_init__(self) -> None:
         _fail_if_rounding_has_wrong_type(self.rounding_spec)
@@ -339,6 +363,8 @@ class PolicyFunction(ColumnFunction):
             vectorization_strategy=self.vectorization_strategy,
             warn_msg_if_included=self.warn_msg_if_included,
             fail_msg_if_included=self.fail_msg_if_included,
+            unit=self.unit,
+            verify_units=self.verify_units,
         )
 
     def vectorize(
@@ -365,6 +391,8 @@ class PolicyFunction(ColumnFunction):
             vectorization_strategy="not_required",
             warn_msg_if_included=self.warn_msg_if_included,
             fail_msg_if_included=self.fail_msg_if_included,
+            unit=self.unit,
+            verify_units=self.verify_units,
         )
 
 
@@ -379,6 +407,8 @@ def policy_function(
     foreign_key_type: FKType = FKType.IRRELEVANT,
     warn_msg_if_included: str | None = None,
     fail_msg_if_included: str | None = None,
+    unit: CompositeUnit,
+    verify_units: bool = True,
 ) -> Callable[[Callable[..., Any]], PolicyFunction]:
     """Decorate a function to make it a `PolicyFunction`.
 
@@ -432,6 +462,8 @@ def policy_function(
             vectorization_strategy=vectorization_strategy,
             warn_msg_if_included=warn_msg_if_included,
             fail_msg_if_included=fail_msg_if_included,
+            unit=unit,
+            verify_units=verify_units,
         )
 
     return inner
@@ -595,6 +627,7 @@ class GroupCreationFunction(ColumnFunction):
             foreign_key_type=self.foreign_key_type,
             warn_msg_if_included=self.warn_msg_if_included,
             fail_msg_if_included=self.fail_msg_if_included,
+            unit=self.unit,
         )
 
 
@@ -643,6 +676,9 @@ def group_creation_function(
             description=str(inspect.getdoc(func)),
             warn_msg_if_included=warn_msg_if_included,
             fail_msg_if_included=fail_msg_if_included,
+            # A group id is a dimensionless identifier; the decorator exposes no
+            # `unit=`, so it is set here.
+            unit=Unit.DIMENSIONLESS,
         )
 
     return decorator
@@ -667,6 +703,9 @@ class AggByGroupFunction(ColumnFunction):
 
     # Default value is necessary because we have defaults in the superclass.
     orig_location: str = "automatically generated"
+    agg_type: AggType = AggType.SUM
+    """The aggregation kind. Always set by `agg_by_group_function`; the default is
+    a dataclass placeholder."""
 
     def remove_tree_logic(
         self,
@@ -689,6 +728,8 @@ class AggByGroupFunction(ColumnFunction):
             orig_location=self.orig_location,
             warn_msg_if_included=self.warn_msg_if_included,
             fail_msg_if_included=self.fail_msg_if_included,
+            unit=self.unit,
+            agg_type=self.agg_type,
         )
 
 
@@ -701,6 +742,7 @@ def agg_by_group_function(
     agg_type: AggType,
     warn_msg_if_included: str | None = None,
     fail_msg_if_included: str | None = None,
+    unit: CompositeUnit = UNSET_UNIT,
 ) -> Callable[[Callable[..., Any]], AggByGroupFunction]:
     start_date, end_date = _convert_and_validate_dates(
         start_date=start_date, end_date=end_date
@@ -727,6 +769,15 @@ def agg_by_group_function(
         group_ids = {p for p in args if p.endswith("_id")}
         _fail_if_group_id_is_invalid(group_ids=group_ids, orig_location=orig_location)
         group_id = group_ids.pop()
+        # An aggregation's unit follows from its type, so when the decorator leaves
+        # it UNSET it is derived here via `unit_for_aggregation`.
+        node_unit = unit
+        if node_unit is UNSET_UNIT:
+            node_unit = unit_for_aggregation(
+                source_unit=UNSET_UNIT,
+                agg_type=agg_type,
+                target_level=group_id.removesuffix("_id"),
+            )
         other_args = args - {group_id, "num_segments", "backend"}
         column_name: str | None
         if agg_type == AggType.COUNT:
@@ -759,6 +810,8 @@ def agg_by_group_function(
             orig_location=f"{func.__module__}.{func.__name__}",  # ty: ignore[unresolved-attribute]
             warn_msg_if_included=warn_msg_if_included,
             fail_msg_if_included=fail_msg_if_included,
+            unit=node_unit,
+            agg_type=agg_type,
         )
 
     return inner
@@ -905,6 +958,7 @@ class AggByPIDFunction(ColumnFunction):
             orig_location=self.orig_location,
             warn_msg_if_included=self.warn_msg_if_included,
             fail_msg_if_included=self.fail_msg_if_included,
+            unit=self.unit,
         )
 
 
@@ -917,10 +971,15 @@ def agg_by_p_id_function(
     agg_type: AggType,
     warn_msg_if_included: str | None = None,
     fail_msg_if_included: str | None = None,
+    unit: CompositeUnit = UNSET_UNIT,
 ) -> Callable[[Callable[..., Any]], AggByPIDFunction]:
     start_date, end_date = _convert_and_validate_dates(
         start_date=start_date, end_date=end_date
     )
+    # When the decorator leaves the unit UNSET it is derived from the aggregation
+    # type via `unit_for_aggregation`.
+    if unit is UNSET_UNIT:
+        unit = unit_for_aggregation(source_unit=UNSET_UNIT, agg_type=agg_type)
 
     agg_registry: dict[AggType, Callable[..., Any]] = {
         AggType.SUM: sum_by_p_id,
@@ -992,6 +1051,7 @@ def agg_by_p_id_function(
             orig_location=f"{func.__module__}.{func.__name__}",  # ty: ignore[unresolved-attribute]
             warn_msg_if_included=warn_msg_if_included,
             fail_msg_if_included=fail_msg_if_included,
+            unit=unit,
         )
 
     return inner
@@ -1058,6 +1118,7 @@ class TimeConversionFunction(ColumnFunction):
             foreign_key_type=self.foreign_key_type,
             warn_msg_if_included=self.warn_msg_if_included,
             fail_msg_if_included=self.fail_msg_if_included,
+            unit=self.unit,
         )
 
 
@@ -1109,6 +1170,15 @@ class ParamFunction(Generic[FunArgTypes, ReturnType]):
     description: str
     warn_msg_if_included: str | None = None
     fail_msg_if_included: str | None = None
+    unit: CompositeUnit = UNSET_UNIT
+    """The parameter function's compositional unit, e.g. ``Unit.CURRENCY.PER_YEAR``.
+    ``Unit.DIMENSIONLESS`` declares a dimensionless parameter function. Mandatory:
+    the decorator requires it, so :data:`UNSET_UNIT` is only the unreachable field
+    default."""
+    verify_units: bool = True
+    """Whether the build-time unit check dry-runs this function's body. ``False``
+    opts the body out of unit *inference*; the declared :attr:`unit` still stands as
+    the contract, so ancestors and descendants stay checked."""
 
     def __post_init__(self) -> None:
         # Expose the signature of the wrapped function for dependency resolution
@@ -1154,6 +1224,8 @@ class ParamFunction(Generic[FunArgTypes, ReturnType]):
             description=self.description,
             warn_msg_if_included=self.warn_msg_if_included,
             fail_msg_if_included=self.fail_msg_if_included,
+            unit=self.unit,
+            verify_units=self.verify_units,
         )
 
 
@@ -1165,6 +1237,8 @@ def param_function(
     end_date: str | datetime.date = DEFAULT_END_DATE,
     warn_msg_if_included: str | None = None,
     fail_msg_if_included: str | None = None,
+    unit: CompositeUnit,
+    verify_units: bool = True,
 ) -> Callable[[Callable[..., Any]], ParamFunction[..., Any]]:
     """Decorate a function to make it a `ParamFunction`.
 
@@ -1208,6 +1282,8 @@ def param_function(
             description=str(inspect.getdoc(func)),
             warn_msg_if_included=warn_msg_if_included,
             fail_msg_if_included=fail_msg_if_included,
+            unit=unit,
+            verify_units=verify_units,
         )
 
     return inner

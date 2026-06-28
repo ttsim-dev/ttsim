@@ -17,6 +17,7 @@ import networkx as nx
 import numpy
 import optree
 import pandas as pd
+import pint
 from dags import get_free_arguments
 from dags.tree.validation import fail_if_paths_are_invalid
 
@@ -26,6 +27,12 @@ from ttsim.interface_dag_elements.interface_node_objects import fail_function
 from ttsim.interface_dag_elements.shared import (
     get_name_of_group_by_id,
     param_has_substantive_content,
+)
+from ttsim.interface_dag_elements.unit_checks import (
+    fail_if_environment_units_are_inconsistent,
+    fail_if_environment_units_are_missing,
+    fail_if_input_units_are_inconsistent,
+    fail_if_not_all_leaves_are_quantities,
 )
 from ttsim.tt.column_objects_param_function import (
     DEFAULT_END_DATE,
@@ -40,6 +47,7 @@ from ttsim.tt.param_objects import (
     PLACEHOLDER_VALUE,
     ParamObject,
 )
+from ttsim.tt.units import UNSET_UNIT, CompositeUnit
 from ttsim.typing import (
     FlatColumnObjectsParamFunctions,
     FlatData,
@@ -799,7 +807,6 @@ def tt_root_nodes_are_missing(
     labels__grouping_levels: OrderedQNames,
 ) -> None:
     """Fail if root nodes are missing."""
-
     # Obtain root nodes
     root_nodes = nx.subgraph_view(
         specialized_environment__tt_dag,
@@ -923,12 +930,8 @@ def _param_with_active_periods(
         param_spec.get("description", None),
     )
     p_s_unit = cast(
-        "Literal['Euros', 'DM', 'Share', 'Percent', 'Years', 'Months', 'Hours', 'Square Meters', 'Euros / Square Meter'] | None",
-        param_spec.get("unit", None),
-    )
-    p_s_reference_period = cast(
-        "Literal['Year', 'Quarter', 'Month', 'Week', 'Day'] | None",
-        param_spec.get("reference_period", None),
+        "str | dict[str | int, Any] | CompositeUnit",
+        param_spec.get("unit", UNSET_UNIT),
     )
 
     out = []
@@ -947,7 +950,6 @@ def _param_with_active_periods(
                         name=p_s_name,
                         description=p_s_description,
                         unit=p_s_unit,
-                        reference_period=p_s_reference_period,
                     ),
                 )
             start_date = None
@@ -961,11 +963,99 @@ def _param_with_active_periods(
                 name=p_s_name,
                 description=p_s_description,
                 unit=p_s_unit,
-                reference_period=p_s_reference_period,
             ),
         )
 
     return out
+
+
+@fail_function()
+def tt_units_are_missing(
+    specialized_environment__without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
+    labels__grouping_levels: OrderedQNames,
+) -> None:
+    """Fail if any active node lacks a mandatory `unit=` declaration.
+
+    Raises:
+        UnitDefinitionError: If any node (or dict-parameter leaf) lacks a
+            unit declaration.
+    """
+    fail_if_environment_units_are_missing(
+        env=specialized_environment__without_tree_logic_and_with_derived_functions,
+        grouping_levels=labels__grouping_levels,
+    )
+
+
+@fail_function(
+    # Gate on the always-present args, not on `unit_checks__resolved_units`: that
+    # node is not pulled by a plain run, so a no-condition gate would silently drop
+    # the check. Gating here pulls the node whenever the check runs.
+    include_if_all_elements_present=[
+        "specialized_environment__without_tree_logic_and_with_derived_functions",
+        "labels__grouping_levels",
+    ],
+)
+def tt_units_are_inconsistent(
+    specialized_environment__without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
+    labels__grouping_levels: OrderedQNames,
+    unit_checks__resolved_units: dict[str, pint.Unit | dict[str | int, Any]],
+) -> None:
+    """Fail if a function body infers a unit that contradicts its declaration.
+
+    Each body is dry-run on representative values built from its producers'
+    resolved units, across every reachable branch path, without any user data. A
+    mismatch is flagged when the inferred unit is concrete (non-dimensionless) and
+    disagrees with the declaration; a dimensionless inference (e.g. an early
+    `return 0.0`) falls back to the declaration.
+
+    Raises:
+        UnitConsistencyError: If any body infers a concrete unit that
+            disagrees with its declaration, or cannot be dry-run and has not
+            opted out via `verify_units=False`.
+    """
+    fail_if_environment_units_are_inconsistent(
+        env=specialized_environment__without_tree_logic_and_with_derived_functions,
+        grouping_levels=labels__grouping_levels,
+        resolved_units=unit_checks__resolved_units,
+    )
+
+
+@fail_function(
+    include_if_any_element_present=["input_data__tree_with_unit_annotations"]
+)
+def not_all_input_leaves_are_quantities(
+    input_data__tree_with_unit_annotations: NestedData,
+) -> None:
+    """Reject a unit-annotated input tree with any bare (untagged) leaf.
+
+    Raises:
+        UnitConsistencyError: If any leaf is not a ``pint.Quantity``.
+    """
+    fail_if_not_all_leaves_are_quantities(
+        flat=dt.flatten_to_tree_paths(input_data__tree_with_unit_annotations)
+    )
+
+
+@fail_function(
+    include_if_any_element_present=["input_data__tree_with_unit_annotations"]
+)
+def input_units_are_inconsistent(
+    input_data__units: dict[str, pint.Unit],
+    unit_checks__resolved_units: dict[str, pint.Unit | dict[str | int, Any]],
+) -> None:
+    """Fail if a tagged input column's dimension contradicts its declared unit.
+
+    Each tagged input column's pint tag must share the *dimension* of its
+    declared (resolved) DAG unit.
+
+    Raises:
+        UnitConsistencyError: If any tagged column is dimensionally incompatible
+            with its declared unit.
+    """
+    fail_if_input_units_are_inconsistent(
+        input_units=input_data__units,
+        resolved_units=unit_checks__resolved_units,
+    )
 
 
 @fail_function()

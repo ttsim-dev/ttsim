@@ -9,6 +9,7 @@ from ttsim.interface_dag_elements.processed_data import (
     _canonicalize_input_dtype,
     processed_data,
 )
+from ttsim.tt import UNIT_REGISTRY
 
 
 @pytest.fixture
@@ -34,6 +35,7 @@ def test_processed_data(input_data__flat, xnp):
                     input_data__flat=input_data__flat, xnp=xnp
                 ),
                 xnp=xnp,
+                currency=None,
             )
         ),
         pd.DataFrame(expected),
@@ -61,6 +63,7 @@ def test_processed_data_foreign_key_out_of_bounds(xnp):
                 input_data__flat=input_data__flat,
                 input_data__sort_indices=input_data__sort_indices,
                 xnp=xnp,
+                currency=None,
             )
         ),
         pd.DataFrame(expected),
@@ -88,6 +91,7 @@ def test_processed_data_foreign_key_inside_bounds(xnp):
                 input_data__flat=input_data__flat,
                 input_data__sort_indices=input_data__sort_indices,
                 xnp=xnp,
+                currency=None,
             )
         ),
         pd.DataFrame(expected),
@@ -111,6 +115,7 @@ def test_processed_data_single_column(xnp):
                 input_data__flat=input_data__flat,
                 input_data__sort_indices=input_data__sort_indices,
                 xnp=xnp,
+                currency=None,
             )
         ),
         pd.DataFrame(expected),
@@ -175,6 +180,7 @@ def test_processed_data_coerces_uint_columns_to_signed(xnp):
             input_data__flat=input_data__flat, xnp=xnp
         ),
         xnp=xnp,
+        currency=None,
     )
     assert result["wage"].dtype.kind == "i"
     # Subtraction stays signed instead of underflowing into uint wraparound.
@@ -202,7 +208,33 @@ def test_processed_data_single_row(xnp):
                 input_data__flat=input_data__flat,
                 input_data__sort_indices=input_data__sort_indices,
                 xnp=xnp,
+                currency=None,
             )
         ),
         pd.DataFrame(expected),
     )
+
+
+def test_processed_data_converts_pint_tagged_currency_input(xnp):
+    """Layer-2 boundary (GEP 10): a tagged input is converted to the run currency.
+
+    End-to-end through the ``processed_data`` interface node: a wealth column
+    handed in as silver pennies feeds a castar run and is rescaled at the
+    boundary (4 silver pennies = 1 castar).
+    """
+    from mettsim import middle_earth  # noqa: F401, PLC0415 (registers the currencies)
+
+    input_data__flat = {
+        ("p_id",): numpy.array([0, 1]),
+        ("wealth",): UNIT_REGISTRY.Quantity(numpy.array([4.0, 8.0]), "SILVER_PENNY"),
+    }
+    out = processed_data(
+        input_data__flat=input_data__flat,
+        input_data__sort_indices=sort_indices(
+            input_data__flat=input_data__flat, xnp=xnp
+        ),
+        xnp=xnp,
+        currency="CASTAR",
+    )
+    assert not isinstance(out["wealth"], UNIT_REGISTRY.Quantity)
+    assert list(numpy.asarray(out["wealth"])) == pytest.approx([1.0, 2.0])

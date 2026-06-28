@@ -16,14 +16,14 @@ from ttsim.interface_dag_elements.labels import (
     root_nodes,
     top_level_namespace,
 )
-from ttsim.tt import param_function, policy_function, policy_input
+from ttsim.tt import Unit, param_function, policy_function, policy_input
 
 
 def identity(x: int) -> int:
     return x
 
 
-@policy_input()
+@policy_input(unit=Unit.DIMENSIONLESS)
 def fam_id() -> int:
     pass
 
@@ -36,14 +36,18 @@ def fam_id() -> int:
     [
         (
             {
-                "foo_m": policy_function(leaf_name="foo_m")(identity),
+                "foo_m": policy_function(leaf_name="foo_m", unit=Unit.DIMENSIONLESS)(
+                    identity
+                ),
                 "fam_id": fam_id,
             },
             {"foo_m", "foo_y", "foo_m_fam", "foo_y_fam"},
         ),
         (
             {
-                "foo": policy_function(leaf_name="foo")(identity),
+                "foo": policy_function(leaf_name="foo", unit=Unit.DIMENSIONLESS)(
+                    identity
+                ),
                 "fam_id": fam_id,
             },
             {"foo", "foo_fam"},
@@ -62,15 +66,15 @@ def test_get_top_level_namespace(policy_environment, expected):
 # grouping_levels tests
 # =============================================================================
 def test_grouping_levels_extracts_id_columns():
-    @policy_input()
+    @policy_input(unit=Unit.DIMENSIONLESS)
     def p_id() -> int:
         pass
 
-    @policy_input()
+    @policy_input(unit=Unit.DIMENSIONLESS)
     def hh_id() -> int:
         pass
 
-    @policy_input()
+    @policy_input(unit=Unit.DIMENSIONLESS)
     def fam_id() -> int:
         pass
 
@@ -90,7 +94,7 @@ def test_grouping_levels_extracts_id_columns():
 
 
 def test_grouping_levels_excludes_p_id():
-    @policy_input()
+    @policy_input(unit=Unit.DIMENSIONLESS)
     def p_id() -> int:
         pass
 
@@ -137,11 +141,11 @@ def test_input_columns_is_empty_set_returns_empty():
 # all_qnames_in_policy_environment tests
 # =============================================================================
 def test_all_qnames_in_policy_environment_flat():
-    @policy_function()
+    @policy_function(unit=Unit.DIMENSIONLESS)
     def col_a(x: int) -> int:
         return x
 
-    @policy_input()
+    @policy_input(unit=Unit.DIMENSIONLESS)
     def col_b() -> int:
         pass
 
@@ -153,7 +157,7 @@ def test_all_qnames_in_policy_environment_flat():
 
 
 def test_all_qnames_in_policy_environment_nested():
-    @policy_function()
+    @policy_function(unit=Unit.DIMENSIONLESS)
     def nested_col(x: int) -> int:
         return x
 
@@ -167,15 +171,15 @@ def test_all_qnames_in_policy_environment_nested():
 # policy_inputs tests
 # =============================================================================
 def test_policy_inputs_returns_only_policy_input_qnames():
-    @policy_function()
+    @policy_function(unit=Unit.DIMENSIONLESS)
     def col_func(x: int) -> int:
         return x
 
-    @policy_input()
+    @policy_input(unit=Unit.DIMENSIONLESS)
     def input_col() -> int:
         pass
 
-    @param_function()
+    @param_function(unit=Unit.DIMENSIONLESS)
     def param_func() -> int:
         return 42
 
@@ -193,7 +197,7 @@ def test_policy_inputs_returns_only_policy_input_qnames():
 
 
 def test_policy_inputs_handles_nested():
-    @policy_input()
+    @policy_input(unit=Unit.DIMENSIONLESS)
     def nested_input() -> int:
         pass
 

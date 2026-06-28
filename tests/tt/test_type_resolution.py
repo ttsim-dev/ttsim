@@ -18,7 +18,7 @@ from ttsim.exceptions import TTSIMError
 from ttsim.interface_dag_elements.automatically_added_functions import (
     create_agg_by_group_functions,
 )
-from ttsim.tt import ColumnFunction, policy_function
+from ttsim.tt import ColumnFunction, Unit, policy_function
 from ttsim.tt.aggregation import (
     AggType,
     grouped_all,
@@ -227,7 +227,7 @@ def test_type_resolution_error_is_ttsim_error() -> None:
 def _auto_agg_wrapper_from_int_source() -> typing.Callable[..., object]:
     """Build the synthesized `x_hh` aggregation wrapper for an int source `x`."""
 
-    @policy_function()
+    @policy_function(unit=Unit.DIMENSIONLESS)
     def x(p_id: int) -> int:
         return p_id
 

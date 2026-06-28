@@ -55,6 +55,10 @@ class FailIf(MainTargetABC):
     input_data_uint64_values_overflow_int64: str = (
         "fail_if__input_data_uint64_values_overflow_int64"
     )
+    input_units_are_inconsistent: str = "fail_if__input_units_are_inconsistent"
+    not_all_input_leaves_are_quantities: str = (
+        "fail_if__not_all_input_leaves_are_quantities"
+    )
     input_df_has_bool_or_numeric_column_names: str = (
         "fail_if__input_df_has_bool_or_numeric_column_names"
     )
@@ -82,6 +86,8 @@ class FailIf(MainTargetABC):
     tt_dag_includes_function_with_fail_msg_if_included_set: str = (
         "fail_if__tt_dag_includes_function_with_fail_msg_if_included_set"
     )
+    tt_units_are_inconsistent: str = "fail_if__tt_units_are_inconsistent"
+    tt_units_are_missing: str = "fail_if__tt_units_are_missing"
 
 
 @dataclass(frozen=True)
@@ -92,6 +98,7 @@ class Results(MainTargetABC):
     flat: str = "results__flat"
     qname: str = "results__qname"
     tree: str = "results__tree"
+    tree_with_unit_annotations: str = "results__tree_with_unit_annotations"
 
 
 @dataclass(frozen=True)
@@ -162,6 +169,8 @@ class InputData(MainTargetABC):
     qname: str = "input_data__qname"
     sort_indices: str = "input_data__sort_indices"
     tree: str = "input_data__tree"
+    tree_with_unit_annotations: str = "input_data__tree_with_unit_annotations"
+    units: str = "input_data__units"
 
 
 @dataclass(frozen=True)
@@ -185,6 +194,11 @@ class Templates(MainTargetABC):
 
 
 @dataclass(frozen=True)
+class UnitChecks(MainTargetABC):
+    resolved_units: str = "unit_checks__resolved_units"
+
+
+@dataclass(frozen=True)
 class MainTarget(MainTargetABC):
     results: type[Results] = field(default=Results)
     templates: type[Templates] = field(default=Templates)
@@ -201,10 +215,12 @@ class MainTarget(MainTargetABC):
     processed_data: str = "processed_data"
     raw_results: type[RawResults] = field(default=RawResults)
     labels: type[Labels] = field(default=Labels)
+    unit_checks: type[UnitChecks] = field(default=UnitChecks)
     input_data: type[InputData] = field(default=InputData)
     tt_targets: type[Targets] = field(default=Targets)
     len_p_id: str = "len_p_id"
     backend: str = "backend"
+    currency: str = "currency"
     evaluation_date_str: str = "evaluation_date_str"
     evaluation_date: str = "evaluation_date"
     policy_date_str: str = "policy_date_str"

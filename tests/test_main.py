@@ -44,6 +44,7 @@ from ttsim.interface_dag_elements.specialized_environment_for_plotting_and_templ
     dummy_callable,
 )
 from ttsim.main_target import MainTarget
+from ttsim.tt import Unit
 from ttsim.tt.column_objects_param_function import policy_function
 
 if TYPE_CHECKING:
@@ -107,7 +108,7 @@ def a() -> int:
     return 1
 
 
-@policy_function()
+@policy_function(unit=Unit.DIMENSIONLESS)
 def e(c: int, d: float) -> float:
     return c + d
 

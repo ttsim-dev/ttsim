@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Literal
 import dags.tree as dt
 import numpy
 import pandas as pd
+import pint
 
 from ttsim.interface_dag_elements.data_converters import (
     df_with_mapped_columns_to_flat_data,
@@ -19,6 +20,7 @@ from ttsim.interface_dag_elements.interface_node_objects import (
 from ttsim.interface_dag_elements.processed_data import (
     _canonicalize_input_dtype,
 )
+from ttsim.tt.units import strip_input_quantity_at_boundary
 
 if TYPE_CHECKING:
     from types import ModuleType
@@ -62,6 +64,21 @@ def tree() -> NestedData:
 @interface_input()
 def qname() -> QNameData:
     """The input data as a flat dictionary keyed by qualified names."""
+
+
+@interface_input()
+def tree_with_unit_annotations() -> NestedData:
+    """The input data as a nested dict of pint-tagged arrays.
+
+    Like :func:`tree`, but every leaf must be a pint ``Quantity`` carrying the
+    column's unit (a dimensionless column — an id, a head count — is tagged
+    ``Quantity(arr, "dimensionless")``). Selecting this node opts into
+    full-coverage boundary unit validation: each tag's currency is converted to
+    the run currency and its period is checked against the column's time suffix,
+    and ``fail_if__input_units_are_inconsistent`` rejects any tag whose dimension
+    disagrees with the column's declared unit. Use bare :func:`tree` for untagged
+    data.
+    """
 
 
 @input_dependent_interface_function(
@@ -166,6 +183,45 @@ def flat_from_qname(
         )
         for q, value in qname.items()
     }
+
+
+@input_dependent_interface_function(
+    include_if_all_inputs_present=["input_data__tree_with_unit_annotations"],
+    leaf_name="flat",
+)
+def flat_from_tree_with_unit_annotations(
+    tree_with_unit_annotations: NestedData,
+    currency: str | None,
+) -> FlatData:
+    """The input data as a flat dictionary of arrays."""
+    # Every leaf is assumed to be a pint Quantity:
+    # fail_if__not_all_input_leaves_are_quantities runs first and rejects bare leaves.
+    flat = dt.flatten_to_tree_paths(tree_with_unit_annotations)
+    return {
+        path: strip_input_quantity_at_boundary(
+            value,
+            run_currency=currency,
+            column_label=dt.qname_from_tree_path(path),
+        )
+        for path, value in flat.items()
+    }
+
+
+@input_dependent_interface_function(
+    include_if_all_inputs_present=["input_data__tree_with_unit_annotations"],
+    leaf_name="units",
+)
+def units_from_tree_with_unit_annotations(
+    tree_with_unit_annotations: NestedData,
+) -> dict[str, pint.Unit]:
+    """The unit tag of every input column, keyed by qualified name.
+
+    Read off the raw tags before they are stripped, so
+    ``fail_if__input_units_are_inconsistent`` can compare each tag's dimension
+    against the column's declared unit.
+    """
+    flat = dt.flatten_to_tree_paths(tree_with_unit_annotations)
+    return {dt.qname_from_tree_path(path): value.units for path, value in flat.items()}
 
 
 @interface_function()

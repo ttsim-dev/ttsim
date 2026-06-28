@@ -4,7 +4,7 @@ import datetime
 import functools
 from collections.abc import Callable
 from types import ModuleType
-from typing import Literal, cast
+from typing import Any, Literal, cast
 
 import dags.tree as dt
 import networkx as nx
@@ -16,6 +16,7 @@ from dags import (
     with_signature,
 )
 
+from ttsim.exceptions import UnitDefinitionError
 from ttsim.interface_dag_elements.automatically_added_functions import (
     create_agg_by_group_functions,
     create_time_conversion_functions,
@@ -24,7 +25,13 @@ from ttsim.interface_dag_elements.interface_node_objects import (
     interface_function,
     interface_input,
 )
-from ttsim.interface_dag_elements.shared import merge_trees
+from ttsim.interface_dag_elements.policy_environment import (
+    function_like_converter_output_in_run_currency,
+)
+from ttsim.interface_dag_elements.shared import (
+    FRAMEWORK_PARTIAL_ARGUMENTS,
+    merge_trees,
+)
 from ttsim.tt.column_objects_param_function import (
     AggByGroupFunction,
     AggByPIDFunction,
@@ -35,8 +42,14 @@ from ttsim.tt.column_objects_param_function import (
     PolicyFunction,
     PolicyInput,
 )
-from ttsim.tt.param_objects import ParamObject, RawParam
+from ttsim.tt.param_objects import (
+    ConsecutiveIntLookupTableParamValue,
+    ParamObject,
+    PiecewisePolynomialParamValue,
+    RawParam,
+)
 from ttsim.tt.type_resolution import is_column_annotation
+from ttsim.tt.units import UNSET_UNIT, CompositeUnit, token_source_currency
 from ttsim.typing import (
     OrderedQNames,
     PolicyEnvironment,
@@ -63,13 +76,7 @@ def without_tree_logic_and_with_derived_functions(
     labels__top_level_namespace: UnorderedQNames,
     labels__grouping_levels: OrderedQNames,
 ) -> SpecEnvWithoutTreeLogicAndWithDerivedFunctions:
-    """Return a flat policy environment which includes derived functions.
-
-    Two steps:
-    1. Remove all tree logic from the policy environment.
-    2. Add derived functions to the policy environment.
-
-    """
+    """Return a flat policy environment which includes derived functions."""
     qname_env_without_tree_logic = _remove_tree_logic_from_policy_environment(
         qname_env=dt.flatten_to_qnames(policy_environment),
         labels__top_level_namespace=labels__top_level_namespace,
@@ -108,26 +115,8 @@ def _add_derived_functions(
     """Return a mapping of qualified names to functions operating on columns.
 
     Anything that is not a ColumnFunction is filtered out (e.g., ParamFunctions,
-    PolicyInputs).
-
-    Derived functions are time converted functions and aggregation functions (aggregate
-    by p_id or by group).
-
-    Check that all targets have a corresponding function in the functions tree or can
-    be taken from the data.
-
-    Args:
-        column_objects_param_functions: Dict with qualified function names as keys
-            and functions with qualified arguments as values.
-        tt_targets: The list of targets with qualified names.
-        data: Dict with qualified data names as keys and arrays as values.
-        labels__top_level_namespace: Set of top-level namespaces.
-
-    Returns:
-        The specialized environment with derived functions (aggregations and time
-            conversions), and without tree logic, i.e. absolute qualified names in
-            all keys and function arguments.
-
+    PolicyInputs). Derived functions are time-converted functions and aggregation
+    functions (aggregate by p_id or by group).
     """
     # Create functions for different time units
     time_conversion_functions = create_time_conversion_functions(
@@ -159,6 +148,67 @@ def _add_derived_functions(
     }
 
 
+def _convert_function_like_converter_outputs(
+    *,
+    outputs: dict[str, Any],
+    params: dict[str, ParamObject],
+    param_functions: dict[str, ParamFunction],
+    run_currency: str | None,
+    xnp: ModuleType,
+) -> None:
+    """Restate function-like ``require_converter`` outputs in the run currency.
+
+    A ``require_converter`` declaring ``input_unit:`` / ``output_unit:`` is left
+    raw at build time; once its converter has produced the typed value (a
+    schedule or lookup table), that *output* is converted per axis here — the
+    only place that knows both the converted structure and the run currency.
+
+    A *homogeneous* ``require_converter`` (one currency ``unit:``) that
+    nonetheless produces such a function-like value was scaled uniformly, leaf
+    by leaf — which silently mis-states polynomial coefficients (the order-``j``
+    term must scale by ``f_out / f_in**j``, not by a single factor). That is
+    rejected, pointing the author at the per-axis declaration.
+    """
+    for raw_qname, raw in params.items():
+        if not isinstance(raw, RawParam):
+            continue
+        declares_axes = (
+            raw.input_unit is not UNSET_UNIT or raw.output_unit is not UNSET_UNIT
+        )
+        consumers = [
+            pf_name
+            for pf_name, pf in param_functions.items()
+            if raw_qname in pf.dependencies
+        ]
+        for pf_name in consumers:
+            if declares_axes:
+                outputs[pf_name] = function_like_converter_output_in_run_currency(
+                    value=outputs[pf_name],
+                    input_unit=raw.input_unit,
+                    output_unit=raw.output_unit,
+                    run_currency=run_currency,
+                    xnp=xnp,
+                    leaf_name=raw_qname,
+                )
+            elif (
+                isinstance(raw.unit, CompositeUnit)
+                and token_source_currency(raw.unit) is not None
+                and isinstance(
+                    outputs[pf_name],
+                    PiecewisePolynomialParamValue | ConsecutiveIntLookupTableParamValue,
+                )
+            ):
+                raise UnitDefinitionError(
+                    f"require_converter {raw_qname!r} declares a homogeneous "
+                    f"currency `unit:` ({raw.unit}), but its converter "
+                    f"{pf_name!r} produces a {type(outputs[pf_name]).__name__} "
+                    f"— a function whose coefficients do not all scale by one "
+                    f"factor. Scaling them uniformly silently mis-states the "
+                    f"schedule; declare `input_unit:` / `output_unit:` on the "
+                    f"require_converter so each axis converts correctly (GEP 10)."
+                )
+
+
 @interface_function()
 def with_processed_params_and_scalars(
     without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
@@ -167,6 +217,7 @@ def with_processed_params_and_scalars(
     xnp: ModuleType,
     dnp: ModuleType,
     evaluation_date: datetime.date | None,
+    currency: str | None = None,
 ) -> SpecEnvWithProcessedParamsAndScalars:
     """
     The policy environment where all parameters and param functions have been processed.
@@ -241,6 +292,13 @@ def with_processed_params_and_scalars(
         dnp=dnp,
         backend=backend,
     )
+    _convert_function_like_converter_outputs(
+        outputs=processed_param_functions,
+        params=params,
+        param_functions=param_functions,
+        run_currency=currency,
+        xnp=xnp,
+    )
     processed_params = merge_trees(
         left={k: v.value for k, v in params.items() if not isinstance(v, RawParam)},
         right=processed_param_functions,
@@ -270,12 +328,10 @@ def with_partialled_params_and_scalars(
         for k, v in with_processed_params_and_scalars.items()
         if isinstance(v, ColumnFunction)
     }
-    all_partial_params = {
-        **{
-            k: v
-            for k, v in with_processed_params_and_scalars.items()
-            if not isinstance(v, ColumnObject)
-        },
+    # Names live in `FRAMEWORK_PARTIAL_ARGUMENTS` (shared with the unit checks);
+    # iterating that constant below keeps the two in sync — a new argument added
+    # there without a value here fails loudly.
+    framework_argument_values = {
         "len_p_id": len_p_id,
         # Aggregation functions take a jax `num_segments` argument; the number of
         # distinct groups is at most `len_p_id`, so feed it that safe upper bound.
@@ -283,6 +339,17 @@ def with_partialled_params_and_scalars(
         "backend": backend,
         "xnp": xnp,
         "dnp": dnp,
+    }
+    all_partial_params = {
+        **{
+            k: v
+            for k, v in with_processed_params_and_scalars.items()
+            if not isinstance(v, ColumnObject)
+        },
+        **{
+            name: framework_argument_values[name]
+            for name in FRAMEWORK_PARTIAL_ARGUMENTS
+        },
     }
 
     processed_functions = {}
@@ -375,9 +442,7 @@ def _broadcast_scalar_columns_at_call_time(
     The wrapper carries the same signature and annotations as `func` (so dependency
     resolution and the DAG annotation-consistency check see no change) plus `len_p_id`
     when `func` does not already require it. `len_p_id` is the population length
-    ``n_obs`` (see `len_p_id.len_p_id`) and is partialled in as a scalar, so the wrapper
-    introduces no DAG dependency. This is a lazy partial: the scalar value is fixed at
-    build time (partialled in), but its shape is resolved at call time.
+    ``n_obs``, partialled in as a scalar so the wrapper introduces no DAG dependency.
 
     At call time, every argument bound to a `Column`-typed parameter that arrives as a
     scalar is broadcast to ``(n_obs,)`` before `func` runs. The extra `len_p_id` value

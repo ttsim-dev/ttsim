@@ -6,7 +6,7 @@ repos:
       - id: check-useless-excludes
       # - id: identity  # Prints all files passed to pre-commits. Debugging.
   - repo: https://github.com/tox-dev/pyproject-fmt
-    rev: v2.23.0
+    rev: v2.25.0
     hooks:
       - id: pyproject-fmt
   - repo: https://github.com/lyz-code/yamlfix
@@ -14,7 +14,7 @@ repos:
     hooks:
       - id: yamlfix
   - repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.37.2
+    rev: 0.37.3
     hooks:
       - id: check-github-workflows
       - id: check-jsonschema
@@ -59,7 +59,7 @@ repos:
     hooks:
       - id: yamllint
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.15.15
+    rev: v0.15.19
     hooks:
       - id: ruff-check
         args:
@@ -73,6 +73,33 @@ repos:
           - jupyter
           - pyi
           - python
+  - repo: https://github.com/astral-sh/ty-pre-commit
+    rev: v0.0.52
+    hooks:
+      - id: ty
+        name: ty (numpy backend)
+        # `--no-project` keeps uv from creating a `.venv`/`uv.lock` in this
+        # pixi-managed repo; ty resolves third-party imports from the pixi
+        # environment configured via `tool.ty.environment.python` in
+        # pyproject.toml (requires `pixi install -e py314` once).
+        args:
+          - --no-project
+  - repo: local
+    hooks:
+      - id: ty-jax
+        name: ty (jax backend)
+        # Same `tool.ty` configuration from pyproject.toml; only the
+        # environment ty resolves third-party imports from is overridden
+        # (requires `pixi install -e py314-jax` once). A local hook because
+        # the official hook's `uv check` does not forward `--python` to ty.
+        # Keep the ty pin in sync with the `ty-pre-commit` rev above.
+        language: python
+        additional_dependencies:
+          - ty==0.0.49
+        entry: ty check --python .pixi/envs/py314-jax
+        pass_filenames: false
+        always_run: true
+        require_serial: true
   - repo: https://github.com/kynan/nbstripout
     rev: 0.9.1
     hooks:
@@ -94,3 +121,8 @@ repos:
         files: (AGENTS\.md|CLAUDE\.md|README\.md|CHANGES\.md|CODE_OF_CONDUCT\.md|modules/.*\.md|profiles/.*\.md)
 ci:
   autoupdate_schedule: monthly
+  # pre-commit.ci blocks network access at hook runtime and has no pixi
+  # environments; the `run-ty` job in GitHub Actions covers type checking.
+  skip:
+    - ty
+    - ty-jax

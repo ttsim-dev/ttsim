@@ -14,6 +14,7 @@ from ttsim.tt import (
     AggType,
     PolicyFunction,
     PolicyInput,
+    Unit,
     agg_by_group_function,
     agg_by_p_id_function,
     policy_function,
@@ -31,17 +32,19 @@ from ttsim.typing import FloatColumn
 # ======================================================================================
 
 
-@policy_function()
+@policy_function(unit=Unit.DIMENSIONLESS)
 def simple_policy_function(x: int) -> int:
     return x
 
 
-@policy_function(leaf_name="simple_policy_function")
+@policy_function(leaf_name="simple_policy_function", unit=Unit.DIMENSIONLESS)
 def policy_function_with_different_leaf_name(x: int) -> int:
     return x
 
 
-@policy_function(start_date="2007-01-01", end_date="2011-12-31")
+@policy_function(
+    start_date="2007-01-01", end_date="2011-12-31", unit=Unit.DIMENSIONLESS
+)
 def policy_function_with_dates(x: int) -> int:
     return x
 
@@ -78,17 +81,17 @@ def test_policy_function_with_dates():
 # ======================================================================================
 
 
-@param_function()
+@param_function(unit=Unit.DIMENSIONLESS)
 def simple_param_function(x: int) -> int:
     return x
 
 
-@param_function(leaf_name="simple_param_function")
+@param_function(leaf_name="simple_param_function", unit=Unit.DIMENSIONLESS)
 def param_function_with_different_leaf_name(x: int) -> int:
     return x
 
 
-@param_function(start_date="2007-01-01", end_date="2011-12-31")
+@param_function(start_date="2007-01-01", end_date="2011-12-31", unit=Unit.DIMENSIONLESS)
 def param_function_with_dates(x: int) -> int:
     return x
 
@@ -125,12 +128,12 @@ def test_param_function_with_dates():
 # ======================================================================================
 
 
-@policy_input()
+@policy_input(unit=Unit.DIMENSIONLESS)
 def simple_policy_input() -> float:
     pass
 
 
-@policy_input(start_date="2007-01-01", end_date="2011-12-31")
+@policy_input(start_date="2007-01-01", end_date="2011-12-31", unit=Unit.DIMENSIONLESS)
 def policy_input_with_dates() -> float:
     pass
 
@@ -323,7 +326,7 @@ def test_agg_by_p_id_sum_with_all_missing_p_ids(backend, xnp):
 def test_policy_function_rejects_missing_return_annotation() -> None:
     with pytest.raises(PolicyFunctionDefinitionError, match="missing: return"):
 
-        @policy_function()
+        @policy_function(unit=Unit.DIMENSIONLESS)
         def unannotated_return(x: int):
             return x
 
@@ -331,7 +334,7 @@ def test_policy_function_rejects_missing_return_annotation() -> None:
 def test_policy_function_rejects_missing_param_annotation() -> None:
     with pytest.raises(PolicyFunctionDefinitionError, match="param 'x'"):
 
-        @policy_function()
+        @policy_function(unit=Unit.DIMENSIONLESS)
         def unannotated_param(x) -> int:
             return x
 
@@ -339,7 +342,7 @@ def test_policy_function_rejects_missing_param_annotation() -> None:
 def test_param_function_rejects_missing_annotation() -> None:
     with pytest.raises(ParamFunctionDefinitionError, match="missing: return"):
 
-        @param_function()
+        @param_function(unit=Unit.DIMENSIONLESS)
         def unannotated_param_function(x: int):
             return x
 
@@ -375,7 +378,7 @@ def test_policy_function_dual_mode_check_resolves_stringified_annotations() -> N
     """
     with pytest.raises(PolicyFunctionDefinitionError, match="scalar annotations"):
 
-        @policy_function(vectorization_strategy="vectorize")
+        @policy_function(vectorization_strategy="vectorize", unit=Unit.DIMENSIONLESS)
         def column_arg_on_vectorized(x: FloatColumn) -> FloatColumn:
             return x
 
@@ -384,6 +387,6 @@ def test_policy_function_dual_mode_check_resolves_strings_not_required() -> None
     """Mirror of the above for `not_required`: a scalar annotation must raise."""
     with pytest.raises(PolicyFunctionDefinitionError, match="column annotations"):
 
-        @policy_function(vectorization_strategy="not_required")
+        @policy_function(vectorization_strategy="not_required", unit=Unit.DIMENSIONLESS)
         def scalar_arg_on_not_required(x: int) -> int:
             return x

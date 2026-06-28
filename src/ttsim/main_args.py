@@ -101,6 +101,7 @@ class InputData(MainArg):
     # and plain sequences alongside backend arrays. Canonicalization to the
     # narrow `NestedData` / `FlatData` / `QNameData` forms happens downstream.
     tree: UserNestedData | None
+    tree_with_unit_annotations: UserNestedData | None
     flat: UserFlatData | None
     qname: UserQNameData | None
 
@@ -145,6 +146,26 @@ class InputData(MainArg):
     def tree(cls, tree: UserNestedData) -> InputData:
         """A nested dictionary mapping expected input names to vectors of data."""
         return _set_single_field(cls=cls, field_name="tree", field_value=tree)
+
+    @classmethod
+    @beartype(conf=INPUT_DATA_CONF)
+    def tree_with_unit_annotations(
+        cls, tree_with_unit_annotations: UserNestedData
+    ) -> InputData:
+        """A nested dict whose every leaf is a pint ``Quantity`` carrying the
+        column's unit (GEP 10).
+
+        Opts into full-coverage boundary unit validation: each tag's currency is
+        converted to the run currency, its period is checked against the column's
+        time suffix, and its dimension is checked against the column's declared
+        unit. Tag a dimensionless column (an id, a head count) with
+        ``Quantity(arr, "dimensionless")``; use :meth:`tree` for untagged data.
+        """
+        return _set_single_field(
+            cls=cls,
+            field_name="tree_with_unit_annotations",
+            field_value=tree_with_unit_annotations,
+        )
 
     @classmethod
     @beartype(conf=INPUT_DATA_CONF)

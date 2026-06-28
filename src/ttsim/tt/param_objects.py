@@ -7,6 +7,12 @@ from typing import TYPE_CHECKING, Any, Literal, cast
 import numpy as np
 from jaxtyping import Bool, Float, Int
 
+from ttsim.exceptions import UnitDefinitionError
+from ttsim.tt.units import (
+    UNSET_UNIT,
+    CompositeUnit,
+    coerce_unit_token,
+)
 from ttsim.typing import DictParamValue, NestedLookupDict
 
 # Backend-agnostic array type: union the (optional) JAX `Array` with
@@ -37,23 +43,15 @@ class ParamObject:
 
     start_date: datetime.date | None = None
     end_date: datetime.date | None = None
-    unit: (
-        None
-        | Literal[
-            "Euros",
-            "DM",
-            "Share",
-            "Percent",
-            "Years",
-            "Months",
-            "Hours",
-            "Square Meters",
-            "Euros / Square Meter",
-        ]
-    ) = None
-    reference_period: (
-        None | Literal["Year", "Quarter", "Month", "Week", "Day", "Hour"]
-    ) = None
+    unit: CompositeUnit | str | dict[str | int, Any] = UNSET_UNIT
+    """The parameter's compositional unit, e.g. ``CURRENCY_PER_MONTH``,
+    ``SILVER_PENNY_PER_FAM``, or a bare base ``DIMENSIONLESS``. A parameter
+    spells period *and* level fully. A dict parameter with heterogeneous leaves
+    declares a mapping from leaf names to units instead. A concrete currency base
+    (``SILVER_PENNY``, ``DM``, …) also names the currency the numbers are written
+    in, which the build-time currency conversion reads off. YAML strings are
+    coerced to :class:`CompositeUnit` at construction; :data:`UNSET_UNIT` until
+    annotated."""
     name: dict[Literal["de", "en"], str] | None = None
     description: dict[Literal["de", "en"], str] | None = None
 
@@ -62,6 +60,31 @@ class ParamObject:
             raise ValueError(
                 "'value' field must be specified for any type of 'ParamObject'"
             )
+        # object.__setattr__ because the dataclass is frozen.
+        object.__setattr__(
+            self, "unit", _coerce_declared_unit(declared=self.unit, obj=self)
+        )
+
+
+def _coerce_declared_unit(
+    declared: Any,  # noqa: ANN401 (raw YAML value)
+    obj: ParamObject,
+) -> CompositeUnit | dict[str | int, Any]:
+    """Coerce a raw ``unit:`` declaration to a CompositeUnit, recursing into
+    mappings."""
+    name_en = (obj.name or {}).get("en")
+    where = f"Parameter {name_en}" if name_en else "Parameter"
+    if declared is UNSET_UNIT:
+        return UNSET_UNIT
+    if isinstance(declared, dict):
+        return {
+            key: _coerce_declared_unit(declared=sub, obj=obj)
+            if isinstance(sub, dict)
+            # Present leaves are tokens (``DIMENSIONLESS`` for a dimensionless leaf).
+            else coerce_unit_token(sub, where=f"{where} (unit of leaf {key!r})")
+            for key, sub in declared.items()
+        }
+    return coerce_unit_token(declared, where=where)
 
 
 @dataclass(frozen=True)
@@ -95,7 +118,44 @@ class DictParam(ParamObject):
 
 
 @dataclass(frozen=True)
-class PiecewisePolynomialParam(ParamObject):
+class ParamMappingObject(ParamObject):
+    """Base class for parameters that are functions between quantities.
+
+    A schedule or lookup table has a domain and a codomain, so it declares
+    ``input_unit:`` and ``output_unit:`` (one token per axis) instead of
+    ``unit:``. The build-time currency conversion rescales interval bounds on
+    the input axis and intercepts on the output axis.
+    """
+
+    input_unit: CompositeUnit | str = UNSET_UNIT
+    """The unit of the input axis (what the parameter is evaluated at), e.g.
+    ``CURRENCY_PER_YEAR`` or ``HECTARE``. :data:`UNSET_UNIT` until annotated."""
+    output_unit: CompositeUnit | str = UNSET_UNIT
+    """The unit of the output axis (what the parameter yields).
+    :data:`UNSET_UNIT` until annotated."""
+
+    def __post_init__(self) -> None:
+        super().__post_init__()
+        if self.unit is not UNSET_UNIT:
+            raise UnitDefinitionError(
+                f"{type(self).__name__} is a function between quantities and "
+                f"declares `input_unit:` / `output_unit:` instead of `unit:` "
+                f"(GEP 10); got unit={self.unit!r}."
+            )
+        for axis in ("input_unit", "output_unit"):
+            raw = getattr(self, axis)
+            if isinstance(raw, dict):
+                raise UnitDefinitionError(
+                    f"{type(self).__name__}: per-axis declarations are single "
+                    f"tokens, not mappings (GEP 10); got {axis}={raw!r}."
+                )
+            object.__setattr__(
+                self, axis, _coerce_declared_unit(declared=raw, obj=self)
+            )
+
+
+@dataclass(frozen=True)
+class PiecewisePolynomialParam(ParamMappingObject):
     """A parameter with its contents read and converted from a YAML file.
 
     Its value is a PiecewisePolynomialParamValue object, i.e., it contains the
@@ -108,7 +168,7 @@ class PiecewisePolynomialParam(ParamObject):
 
 
 @dataclass(frozen=True)
-class ConsecutiveIntLookupTableParam(ParamObject):
+class ConsecutiveIntLookupTableParam(ParamMappingObject):
     """A parameter with its contents read and converted from a YAML file.
 
     Its value is a ConsecutiveIntLookupTableParamValue object, i.e., it contains the
@@ -195,17 +255,48 @@ class RawParam(ParamObject):
     """
     A parameter directly read from a YAML file that is an arbitrarily nested
     dictionary.
+
+    A ``require_converter`` is handed to a ``param_function`` that knows its
+    structure. For currency conversion it declares one of two shapes: a single
+    ``unit:`` token if the whole structure is homogeneously one currency (scaled
+    uniformly), or ``input_unit:`` / ``output_unit:`` axes if its converter
+    produces a function-like value (a piecewise schedule or lookup table) whose
+    output is converted per-axis. A structure mixing currency with non-currency
+    numbers (ages, shares) must be split into separate homogeneous parameters.
     """
 
     value: dict[str | int, Any] = PLACEHOLDER_FIELD
     note: str | None = None
     reference: str | None = None
+    input_unit: CompositeUnit | str = UNSET_UNIT
+    """The input-axis unit of a function-like converter's output; mutually
+    exclusive with :attr:`unit`. :data:`UNSET_UNIT` until annotated."""
+    output_unit: CompositeUnit | str = UNSET_UNIT
+    """The output-axis unit of a function-like converter's output; mutually
+    exclusive with :attr:`unit`. :data:`UNSET_UNIT` until annotated."""
 
     def __post_init__(self) -> None:
         super().__post_init__()
         if any(x in self.value for x in ["note", "reference"]):
             raise ValueError(
                 "'note' and 'reference' cannot be keys in the value dictionary"
+            )
+        declares_axes = (
+            self.input_unit is not UNSET_UNIT or self.output_unit is not UNSET_UNIT
+        )
+        if declares_axes and self.unit is not UNSET_UNIT:
+            raise UnitDefinitionError(
+                "A require_converter declares either a single `unit:` (a "
+                "homogeneous structure, scaled uniformly) or `input_unit:` / "
+                "`output_unit:` axes (a function-like output, converted "
+                f"per-axis), not both (GEP 10); got unit={self.unit!r}, "
+                f"input_unit={self.input_unit!r}, output_unit={self.output_unit!r}."
+            )
+        for axis in ("input_unit", "output_unit"):
+            object.__setattr__(
+                self,
+                axis,
+                _coerce_declared_unit(declared=getattr(self, axis), obj=self),
             )
 
 

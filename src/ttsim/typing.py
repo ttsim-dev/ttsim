@@ -235,6 +235,8 @@ if TYPE_CHECKING:
     import datetime
     from collections.abc import Iterator
 
+    from ttsim.tt.units import CompositeUnit
+
     class OrigParamSpec(Protocol):
         """A dictionary with patterns for header and parameters at one point in time."""
 
@@ -267,9 +269,15 @@ if TYPE_CHECKING:
 
         @overload
         def get(
-            self, key: str, default: str | bool | float
+            self, key: str, default: str | bool | float | CompositeUnit
         ) -> (
-            str | None | dict[Literal["de", "en"], str | None] | bool | int | float
+            str
+            | None
+            | dict[Literal["de", "en"], str | None]
+            | bool
+            | int
+            | float
+            | CompositeUnit
         ): ...
 
         def get(
@@ -279,9 +287,16 @@ if TYPE_CHECKING:
             | None
             | bool
             | float
+            | CompositeUnit
             | dict[Literal["de", "en"], str | None] = None,
         ) -> (
-            str | None | dict[Literal["de", "en"], str | None] | bool | int | float
+            str
+            | None
+            | dict[Literal["de", "en"], str | None]
+            | bool
+            | int
+            | float
+            | CompositeUnit
         ): ...
 
         def __contains__(self, key: str | datetime.date) -> bool: ...

@@ -179,6 +179,62 @@ def make_vectorizable_source(
     return ast.unparse(tree)
 
 
+def recompile_with_logical_ops_as_calls(
+    func: Callable[..., Any],
+    module: str,
+    module_obj: Any,  # noqa: ANN401
+) -> Callable[..., Any]:
+    """Return a copy of ``func`` with ``and``/``or`` as ``{module}.logical_*`` calls.
+
+    Python ``and``/``or`` short-circuit through ``__bool__`` and yield one operand
+    whole, so they cannot combine two custom objects. The unit-check dry-run reuses
+    the array vectorizer's :func:`_boolop_to_call` rewrite, binding ``module`` to
+    ``module_obj`` (an ``xnp`` shim whose ``logical_*`` route through the
+    leveled-boolean combine) so author-written ``and``/``or`` are checked the way
+    they run. The numeric runtime is untouched.
+
+    A function with no ``and``/``or`` is returned unchanged. Falls back to the
+    original when source is unavailable (a builtin, a C function, a REPL
+    definition) or unparseable, so the dry-run sees the original body.
+    """
+    if _is_lambda_function(func):
+        return func
+    try:
+        tree = _func_to_ast(func)
+    except (OSError, TypeError):
+        return func
+    if not any(isinstance(node, ast.BoolOp) for node in ast.walk(tree)):
+        return func
+
+    class _BoolOpRewriter(ast.NodeTransformer):
+        def visit_BoolOp(self, node: ast.BoolOp) -> ast.Call:
+            self.generic_visit(node)
+            return _boolop_to_call(node, module=module)
+
+    _BoolOpRewriter().visit(tree)
+    ast.fix_missing_locations(tree)
+    scope = dict(func.__globals__)  # ty: ignore[unresolved-attribute]
+    if func.__closure__:  # ty: ignore[unresolved-attribute]
+        closure_vars = func.__code__.co_freevars  # ty: ignore[unresolved-attribute]
+        closure_cells = [c.cell_contents for c in func.__closure__]  # ty: ignore[unresolved-attribute]
+        scope.update(dict(zip(closure_vars, closure_cells, strict=False)))
+    scope[module] = module_obj
+    exec(compile(tree, "<unit-check-logical-ops>", "exec"), scope)  # noqa: S102
+    rewritten = functools.wraps(func, assigned=_WRAPPER_ASSIGNMENTS_NO_ANNOTATIONS)(
+        scope[func.__name__]  # ty: ignore[unresolved-attribute]
+    )
+    # The AST carries the original argument names; match any renamed dynamically
+    # after definition, exactly as `_make_vectorizable` does.
+    args_name_mapper = dict(
+        zip(
+            _args_from_func_ast(_func_to_ast(func)),
+            list(inspect.signature(func).parameters),
+            strict=False,
+        )
+    )
+    return rename_arguments(rewritten, mapper=args_name_mapper)
+
+
 def _make_vectorizable_ast(
     func: Callable[..., Any],
     module: str,
@@ -312,7 +368,7 @@ def _not_to_call(node: ast.UnaryOp, module: str) -> ast.Call:
 
 def _if_to_call(node: ast.If, module: str, func_loc: str) -> ast.Call:
     """Transform If statement to Call."""
-    args = [node.test, node.body[0].value]  # ty: ignore[unresolved-attribute]
+    args: list[ast.expr] = [node.test, node.body[0].value]  # ty: ignore[unresolved-attribute]
 
     if len(node.orelse) > 1 or len(node.body) > 1:
         msg = _too_many_operations_error_message(node, func_loc=func_loc)
@@ -327,7 +383,7 @@ def _if_to_call(node: ast.If, module: str, func_loc: str) -> ast.Call:
             name = ast.Name(id=node.body[0].target.id, ctx=ast.Load())  # ty: ignore[unresolved-attribute]
         args.append(name)
     elif isinstance(node.orelse[0], ast.Return):
-        args.append(node.orelse[0].value)
+        args.append(cast("ast.expr", node.orelse[0].value))
     elif isinstance(node.orelse[0], ast.If):
         call_if = _if_to_call(node.orelse[0], module=module, func_loc=func_loc)
         args.append(call_if)
