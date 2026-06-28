@@ -183,7 +183,95 @@ def test_entry_level_override_writes_a_changeover():
     assert after.value == pytest.approx(25.0)
 
 
-def test_updates_previous_cannot_cross_a_changeover():
+def test_unit_forward_fills_across_a_gap():
+    """A dated entry without ``unit:`` inherits the most recent earlier unit.
+
+    The reproducer from the GEP-10 design discussion: the 1990 entry omits
+    ``unit:`` and there is no top-level fallback, yet it resolves — to the
+    silver penny declared at 1900, forward-filled.
+    """
+    spec = {
+        **_HEADER,
+        "type": "scalar",
+        datetime.date(1900, 1, 1): {"value": 100.0, "unit": "SILVER_PENNY"},
+        datetime.date(1990, 1, 1): {"value": 130.0},
+        datetime.date(2000, 1, 1): {"value": 25.0, "unit": "CASTAR"},
+    }
+    # Active at 1995 is the 1990 entry; its unit forward-fills to silver penny.
+    same = _load(
+        leaf_name="threshold",
+        spec=spec,
+        policy_date=datetime.date(1995, 6, 1),
+        currency="SILVER_PENNY",
+    )
+    assert same.value == pytest.approx(130.0)
+    # 130 silver pennies = 32.5 castar (silver_penny = castar / 4).
+    converted = _load(
+        leaf_name="threshold",
+        spec=spec,
+        policy_date=datetime.date(1995, 6, 1),
+        currency="CASTAR",
+    )
+    assert converted.value == pytest.approx(32.5)
+
+
+def test_unit_forward_fill_carries_a_changeover_onward():
+    """A date-specific unit becomes the new seed: later unit-less entries inherit
+    it, not the top-level/original declaration."""
+    spec = {
+        **_HEADER,
+        "unit": "SILVER_PENNY",
+        "type": "scalar",
+        datetime.date(1900, 1, 1): {"value": 100.0},
+        datetime.date(2000, 1, 1): {"value": 25.0, "unit": "CASTAR"},
+        datetime.date(2010, 1, 1): {"value": 30.0},
+    }
+    # Active at 2015 is the 2010 entry; it inherits castar (from 2000), not the
+    # top-level silver penny — so a castar run is a no-op.
+    no_op = _load(
+        leaf_name="threshold",
+        spec=spec,
+        policy_date=datetime.date(2015, 1, 1),
+        currency="CASTAR",
+    )
+    assert no_op.value == pytest.approx(30.0)
+    # 30 castar = 120 silver pennies; had it wrongly reverted to the seed, this
+    # would read 30.
+    converted = _load(
+        leaf_name="threshold",
+        spec=spec,
+        policy_date=datetime.date(2015, 1, 1),
+        currency="SILVER_PENNY",
+    )
+    assert converted.value == pytest.approx(120.0)
+
+
+def test_unit_resolution_never_backfills_from_a_later_entry():
+    """Resolution only ever looks backward. A gap with no earlier declaration and
+    no top-level stays unset (the mandatory-unit gate fires downstream); it does
+    not borrow a unit from a future entry."""
+    spec = {
+        **_HEADER,
+        "type": "scalar",
+        datetime.date(1900, 1, 1): {"value": 100.0},
+        datetime.date(2000, 1, 1): {"value": 25.0, "unit": "CASTAR"},
+    }
+    param = _load(
+        leaf_name="threshold",
+        spec=spec,
+        policy_date=datetime.date(1950, 1, 1),
+        currency="CASTAR",
+    )
+    assert param.unit is UNSET_UNIT
+
+
+def test_updates_previous_may_cross_a_unit_change_at_the_authors_risk():
+    """The changeover guard is gone (GEP 10): ``updates_previous`` (a value merge)
+    and a unit restatement are independent mechanisms. Combining them merges
+    old-currency leaves forward under the new unit — silently wrong by the
+    conversion factor and invisible to dimensional checks (same dimension, only
+    the scale differs). A documented sharp edge, the author's responsibility: a
+    unit-change entry should restate its values in full."""
     spec = {
         **_HEADER,
         "unit": "SILVER_PENNY",
@@ -195,9 +283,38 @@ def test_updates_previous_cannot_cross_a_changeover():
             "updates_previous": True,
         },
     }
-    with pytest.raises(UnitDefinitionError, match="cannot cross"):
+    param = _load(
+        leaf_name="amounts",
+        spec=spec,
+        policy_date=POLICY_DATE,
+        currency="CASTAR",
+    )
+    # `a` was restated in castar; `b` is silently carried from the silver-penny
+    # era yet now labelled castar — the sharp edge, no longer an error.
+    assert param.value == {"a": pytest.approx(25.0), "b": pytest.approx(8.0)}
+
+
+def test_mapping_unit_restatement_must_be_complete():
+    """A dated restatement of a per-leaf ``unit:`` mapping must cover every leaf:
+    ttsim replaces the mapping wholesale rather than merging, so a partial
+    restatement would silently leave some leaves on the old currency."""
+    spec = {
+        **_HEADER,
+        "type": "dict",
+        datetime.date(1900, 1, 1): {
+            "child_amount_y": 100.0,
+            "max_age": 18,
+            "unit": {"child_amount_y": "SILVER_PENNY_PER_YEAR", "max_age": "YEARS"},
+        },
+        datetime.date(2000, 1, 1): {
+            "child_amount_y": 25.0,
+            "max_age": 18,
+            "unit": {"child_amount_y": "CASTAR_PER_YEAR"},
+        },
+    }
+    with pytest.raises(UnitDefinitionError, match="every leaf"):
         _load(
-            leaf_name="amounts",
+            leaf_name="schedule",
             spec=spec,
             policy_date=POLICY_DATE,
             currency="CASTAR",

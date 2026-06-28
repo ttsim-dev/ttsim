@@ -77,6 +77,11 @@ PARAM_MAPPING_OBJECT_TYPES: frozenset[str] = PIECEWISE_TYPES | frozenset(
     LOOKUP_TABLE_CONVERTERS
 )
 
+#: The unit-declaration keys a parameter spec may carry (GEP 10): a single
+#: ``unit:`` (scalar/dict/homogeneous converter) or the per-axis
+#: ``input_unit:``/``output_unit:`` of a function-like parameter.
+_UNIT_DECLARATION_KEYS = ("unit", "input_unit", "output_unit")
+
 if TYPE_CHECKING:
     from types import ModuleType
 
@@ -392,7 +397,9 @@ def _get_one_param(
     currency: str | None = None,
 ) -> ParamObject | None:
     """Parse the original specification found in the yaml tree to a ParamObject."""
-    cleaned_spec = _clean_one_param_spec(spec=spec, policy_date=policy_date)
+    cleaned_spec = _clean_one_param_spec(
+        leaf_name=leaf_name, spec=spec, policy_date=policy_date
+    )
 
     if cleaned_spec is None:
         return None
@@ -494,7 +501,75 @@ def _unit_fields_from_spec(spec: OrigParamSpec) -> dict[str, Any]:
     return {"unit": spec.get("unit", UNSET_UNIT)}
 
 
+def _forward_filled_unit_fields(
+    leaf_name: str,
+    spec: OrigParamSpec,
+    active_dates: list[datetime.date],
+) -> dict[str, Any]:
+    """Resolve a parameter's unit(s) at the active date by forward-fill (GEP 10).
+
+    A parameter's unit is constant within a currency regime and changes only at
+    a changeover (e.g. DM→EUR), so rather than repeating it on every dated entry
+    each entry inherits the most recent *earlier* declaration. The top-level
+    ``unit:`` is the seed; a dated entry that restates the unit becomes the new
+    seed from its date onward. Resolution only ever looks backward — a gap with
+    no earlier declaration and no top-level stays unset, and the mandatory-unit
+    gate fires downstream.
+
+    A dated restatement replaces the previous declaration wholesale; it never
+    merges. For a per-leaf ``unit:`` mapping that means the restatement must
+    cover every leaf (:func:`_fail_if_partial_mapping_restatement`), so a
+    changeover cannot silently leave some leaves on the old currency.
+
+    ``active_dates`` are the parameter's date keys up to and including the active
+    entry, in ascending order.
+    """
+    resolved = _unit_fields_from_spec(spec)
+    for date in active_dates:
+        entry = spec[date]
+        for unit_key in _UNIT_DECLARATION_KEYS:
+            if unit_key not in entry:
+                continue
+            _fail_if_partial_mapping_restatement(
+                leaf_name=leaf_name,
+                previous=resolved.get(unit_key, UNSET_UNIT),
+                restated=entry[unit_key],
+                unit_key=unit_key,
+                date=date,
+            )
+            resolved[unit_key] = entry[unit_key]
+    return resolved
+
+
+def _fail_if_partial_mapping_restatement(
+    leaf_name: str,
+    previous: Any,  # noqa: ANN401
+    restated: Any,  # noqa: ANN401
+    unit_key: str,
+    date: datetime.date,
+) -> None:
+    """Reject a dated restatement of a per-leaf unit mapping that drops leaves.
+
+    Units are replaced wholesale, not merged, so an incomplete mapping would
+    silently leave the omitted leaves denominated in the previous currency
+    (GEP 10).
+    """
+    if (
+        isinstance(previous, Mapping)
+        and isinstance(restated, Mapping)
+        and set(restated) != set(previous)
+    ):
+        raise UnitDefinitionError(
+            f"Parameter {leaf_name!r}: the dated `{unit_key}:` mapping at {date} "
+            f"must restate every leaf of the unit it replaces "
+            f"(got {sorted(restated)}, expected {sorted(previous)}). ttsim "
+            f"replaces a unit declaration wholesale and never merges it across "
+            f"a changeover (GEP 10)."
+        )
+
+
 def _clean_one_param_spec(
+    leaf_name: str,
     spec: OrigParamSpec,
     policy_date: datetime.date,
 ) -> dict[str, Any] | None:
@@ -520,21 +595,23 @@ def _clean_one_param_spec(
         if len(policy_dates) > idx
         else DEFAULT_END_DATE
     )
-    out.update(_unit_fields_from_spec(spec))
+    out.update(
+        _forward_filled_unit_fields(
+            leaf_name=leaf_name, spec=spec, active_dates=policy_dates[:idx]
+        )
+    )
     out["name"] = spec["name"]
     out["description"] = spec["description"]
 
     current_spec: dict[str | int, Any] = copy.deepcopy(spec[policy_dates[idx - 1]])
     out["note"] = current_spec.pop("note", None)
     out["reference"] = current_spec.pop("reference", None)
-    # A dated entry may restate the unit field(s), overriding the top-level
-    # declaration for that entry's numbers — this is how a currency
-    # changeover within one parameter's history is written (GEP 10): old
-    # entries denominated in the legacy currency, entries from the reform
-    # date in the new one.
-    for unit_key in ("unit", "input_unit", "output_unit"):
-        if unit_key in current_spec:
-            out[unit_key] = current_spec.pop(unit_key)
+    # The unit field(s) are resolved by forward-fill above; strip them from the
+    # active entry's value dict so they neither leak into the value nor count as
+    # substantive content (a dated entry that only restates the unit is a
+    # changeover marker, not a value).
+    for unit_key in _UNIT_DECLARATION_KEYS:
+        current_spec.pop(unit_key, None)
 
     if not param_has_substantive_content(current_spec):
         return None
@@ -559,30 +636,18 @@ def _clean_one_param_spec(
     return out
 
 
-def _pop_unit_overrides(
-    current: dict[str | int, Any],
-    updates_previous: bool,
-) -> None:
+def _strip_unit_overrides(current: dict[str | int, Any]) -> None:
     """Strip a dated entry's unit override keys from its value dict (GEP 10).
 
-    The override itself is consumed in :func:`_clean_one_param_spec`; here it
-    must not leak into the assembled value. Combining an override with
-    ``updates_previous`` is rejected: the merged value would mix numbers
-    denominated in different currencies.
+    The override is resolved by forward-fill in :func:`_forward_filled_unit_fields`;
+    here it must not leak into the assembled value. ``updates_previous`` (a value
+    merge) and a unit restatement are independent: combining them is the author's
+    responsibility — a unit-change entry should restate its values in full,
+    because the merge would otherwise carry old-currency leaves forward under the
+    new unit (GEP 10).
     """
-    restates_unit = False
-    for unit_key in ("unit", "input_unit", "output_unit"):
-        if unit_key in current:
-            # A present unit key is a restatement whatever its value — hence
-            # the membership test rather than a `pop` default.
-            del current[unit_key]
-            restates_unit = True
-    if restates_unit and updates_previous:
-        raise UnitDefinitionError(
-            "`updates_previous` cannot cross a unit (currency) changeover: "
-            "an entry that restates the unit declaration must restate the "
-            "full value (GEP 10)."
-        )
+    for unit_key in _UNIT_DECLARATION_KEYS:
+        current.pop(unit_key, None)
 
 
 def _get_param_value(
@@ -593,7 +658,7 @@ def _get_param_value(
     current.pop("note", None)
     current.pop("reference", None)
     updates_previous = current.pop("updates_previous", False)
-    _pop_unit_overrides(current=current, updates_previous=updates_previous)
+    _strip_unit_overrides(current=current)
 
     if updates_previous and len(relevant_specs) <= 1:
         raise ValueError(
@@ -615,7 +680,7 @@ def _get_param_value_piecewise(
     current.pop("note", None)
     current.pop("reference", None)
     updates_previous = current.pop("updates_previous", False)
-    _pop_unit_overrides(current=current, updates_previous=updates_previous)
+    _strip_unit_overrides(current=current)
 
     if updates_previous and len(relevant_specs) <= 1:
         raise ValueError(
