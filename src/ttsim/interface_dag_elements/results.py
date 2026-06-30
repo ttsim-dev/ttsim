@@ -13,7 +13,11 @@ from ttsim.interface_dag_elements.data_converters import (
     nested_data_to_df_with_qname_columns,
 )
 from ttsim.interface_dag_elements.interface_node_objects import interface_function
-from ttsim.tt.units import UNIT_REGISTRY, output_unit_in_run_currency
+from ttsim.tt.units import (
+    UnitAnnotatedColumn,
+    composite_from_resolved_unit,
+    output_unit_in_run_currency,
+)
 from ttsim.typing import (
     FlatData,
     FlatResults,
@@ -59,18 +63,24 @@ def tree_with_unit_annotations(
     unit_checks__resolved_units: dict[str, pint.Unit | dict[str | int, Any]],
     currency: str | None,
 ) -> NestedResults:
-    """The combined results as a tree of pint-tagged arrays (GEP 10).
+    """The combined results as a tree of :class:`UnitAnnotatedColumn` leaves.
 
-    Like :func:`tree`, but every leaf is wrapped in a pint ``Quantity`` carrying
-    its resolved unit.
+    Like :func:`tree`, but every leaf is wrapped in a ``UnitAnnotatedColumn`` —
+    the same shape as the unit-annotated input tree (GEP 10) — whose ``unit`` is
+    the node's resolved unit restated in the concrete run currency
+    (``Unit.EUR.PER_MONTH``, never the agnostic ``CURRENCY``). A node with no
+    resolved unit is left bare.
     """
     resolved = unit_checks__resolved_units
     tagged: dict[str, Any] = {}
     for qname, value in dt.flatten_to_qnames(tree).items():
         unit = resolved.get(qname)
         tagged[qname] = (
-            UNIT_REGISTRY.Quantity(
-                value, output_unit_in_run_currency(units=unit, run_currency=currency)
+            UnitAnnotatedColumn(
+                values=value,
+                unit=composite_from_resolved_unit(
+                    output_unit_in_run_currency(units=unit, run_currency=currency)
+                ),
             )
             if isinstance(unit, pint.Unit)
             else value

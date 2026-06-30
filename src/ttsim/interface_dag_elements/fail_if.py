@@ -21,7 +21,7 @@ import pint
 from dags import get_free_arguments
 from dags.tree.validation import fail_if_paths_are_invalid
 
-from ttsim.exceptions import TTSIMError
+from ttsim.exceptions import TTSIMError, UnitConsistencyError
 from ttsim.interface_dag_elements.backend import jax
 from ttsim.interface_dag_elements.interface_node_objects import fail_function
 from ttsim.interface_dag_elements.shared import (
@@ -32,7 +32,7 @@ from ttsim.interface_dag_elements.unit_checks import (
     fail_if_environment_units_are_inconsistent,
     fail_if_environment_units_are_missing,
     fail_if_input_units_are_inconsistent,
-    fail_if_not_all_leaves_are_quantities,
+    fail_if_not_all_leaves_are_unit_annotated_columns,
 )
 from ttsim.tt.column_objects_param_function import (
     DEFAULT_END_DATE,
@@ -47,7 +47,14 @@ from ttsim.tt.param_objects import (
     PLACEHOLDER_VALUE,
     ParamObject,
 )
-from ttsim.tt.units import UNSET_UNIT, CompositeUnit
+from ttsim.tt.units import (
+    PERSON_LEVEL,
+    UNSET_UNIT,
+    CompositeUnit,
+    _unit_level_denominator,
+    base_currency,
+    token_is_agnostic_currency,
+)
 from ttsim.typing import (
     FlatColumnObjectsParamFunctions,
     FlatData,
@@ -1023,17 +1030,102 @@ def tt_units_are_inconsistent(
 @fail_function(
     include_if_any_element_present=["input_data__tree_with_unit_annotations"]
 )
-def not_all_input_leaves_are_quantities(
+def not_all_input_leaves_are_unit_annotated_columns(
     input_data__tree_with_unit_annotations: NestedData,
 ) -> None:
     """Reject a unit-annotated input tree with any bare (untagged) leaf.
 
     Raises:
-        UnitConsistencyError: If any leaf is not a ``pint.Quantity``.
+        UnitConsistencyError: If any leaf is not a ``UnitAnnotatedColumn``.
     """
-    fail_if_not_all_leaves_are_quantities(
+    fail_if_not_all_leaves_are_unit_annotated_columns(
         flat=dt.flatten_to_tree_paths(input_data__tree_with_unit_annotations)
     )
+
+
+@fail_function(
+    include_if_any_element_present=["input_data__tree_with_unit_annotations"]
+)
+def input_currency_is_not_concrete(
+    input_data__tree_with_unit_annotations: NestedData,
+) -> None:
+    """Fail if a currency-bearing input column names the agnostic ``CURRENCY``.
+
+    Input data, like a parameter, is written in a concrete currency: a currency
+    column must name one (``Unit.EUR``, ``Unit.DM``), never the agnostic
+    ``Unit.CURRENCY`` — which would leave the run unable to tell what the numbers
+    are denominated in. (Columns and functions are the opposite: agnostic only.)
+    Only meaningful once a concrete currency exists to demand, mirroring the
+    parameter guard ``_fail_if_param_token_is_agnostic_currency``.
+
+    Raises:
+        UnitConsistencyError: If any input column's tag is an agnostic currency.
+    """
+    if base_currency() is None:
+        return
+    agnostic = sorted(
+        dt.qname_from_tree_path(path)
+        for path, col in dt.flatten_to_tree_paths(
+            input_data__tree_with_unit_annotations
+        ).items()
+        if token_is_agnostic_currency(col.unit)
+    )
+    if agnostic:
+        raise UnitConsistencyError(
+            "Input data is denominated in a concrete currency, so a currency "
+            "column must name one (e.g. Unit.EUR, Unit.DM), not the agnostic "
+            f"Unit.CURRENCY (GEP 10). These name the agnostic currency: "
+            f"{', '.join(agnostic)}."
+        )
+
+
+@fail_function(
+    include_if_any_element_present=["input_data__tree_with_unit_annotations"]
+)
+def input_levels_disagree_with_suffix(
+    input_data__tree_with_unit_annotations: NestedData,
+    unit_checks__resolved_units: dict[str, pint.Unit | dict[str | int, Any]],
+) -> None:
+    """Fail if an input tag's spelled grouping level disagrees with the column's.
+
+    Like a parameter, an input tag **spells** its group level
+    (``Unit.EUR.PER_MONTH.PER_BG``); the person leaf is implied. That spelled
+    level must equal the level the column's *declared* unit carries — which the
+    column resolver already derived from the GEP-1 suffix, and which is correctly
+    level-less for an intensive quantity even at a group suffix (a ``rate_hh``).
+    The measurement check (``input_units_are_inconsistent``) screens the rest;
+    this owns the index axis.
+
+    Raises:
+        UnitConsistencyError: If any spelled level contradicts the declared one.
+    """
+    errors: list[str] = []
+    for path, col in dt.flatten_to_tree_paths(
+        input_data__tree_with_unit_annotations
+    ).items():
+        declared = unit_checks__resolved_units.get(dt.qname_from_tree_path(path))
+        if not isinstance(declared, pint.Unit):
+            # No scalar declared unit (absent, or a dict parameter); nothing to check.
+            continue
+        expected_level = _unit_level_denominator(declared) or PERSON_LEVEL
+        spelled_level = (
+            col.unit.level.lower() if col.unit.level is not None else PERSON_LEVEL
+        )
+        if spelled_level != expected_level:
+            spelled_desc = (
+                f"PER_{col.unit.level}"
+                if col.unit.level is not None
+                else "no group level"
+            )
+            errors.append(
+                f"  {dt.qname_from_tree_path(path)}: tag spells {spelled_desc}, but "
+                f"the column is at the {expected_level!r} level (GEP 10)."
+            )
+    if errors:
+        raise UnitConsistencyError(
+            "Input unit annotations spell a grouping level that disagrees with the "
+            "column's level:\n" + "\n".join(sorted(errors))
+        )
 
 
 @fail_function(

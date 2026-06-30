@@ -25,7 +25,7 @@ from __future__ import annotations
 
 import inspect
 import re
-from collections.abc import Iterator, Mapping
+from collections.abc import Mapping
 from typing import Any, cast
 
 import dags.tree as dt
@@ -66,8 +66,12 @@ from ttsim.tt.units import (
     UNIT_REGISTRY,
     UNSET_UNIT,
     CompositeUnit,
+    UnitAnnotatedColumn,
     _flow_period_of,
+    _grouping_levels_with_exponent,
     _token_base_unit,
+    _unit_level_denominator,
+    _unit_without_grouping_levels,
     base_currency,
     fail_if_units_are_missing,
     is_calendar_point_unit,
@@ -355,64 +359,6 @@ def _suffix_grouping_level(match: re.Match[str] | None) -> str:
     return match.group("grouping") or PERSON_LEVEL
 
 
-#: The dimensionality-key prefix of a grouping-level dimension: the internal pint
-#: unit name :data:`_GROUPING_LEVEL_PREFIX` wrapped in pint's ``[…]`` dimension
-#: brackets (e.g. ``[grouping_level_hh]``).
-_GROUPING_LEVEL_DIM_PREFIX = f"[{_GROUPING_LEVEL_PREFIX}"
-
-
-def _grouping_levels_with_exponent(unit: pint.Unit) -> Iterator[tuple[str, Any]]:
-    """Yield ``(level_name, exponent)`` for each grouping-level dimension of a unit.
-
-    A negative exponent is a denominator level (``/[hh]``), a positive one a
-    numerator level (a ``[person]`` head count). Non-grouping dimensions and
-    pint's (never-occurring here) complex exponents are skipped.
-    """
-    for dimension, exponent in UNIT_REGISTRY.Quantity(1.0, unit).dimensionality.items():
-        if isinstance(exponent, complex):  # pint exponents are real; narrow for ty
-            continue
-        if dimension.startswith(_GROUPING_LEVEL_DIM_PREFIX):
-            yield dimension[len(_GROUPING_LEVEL_DIM_PREFIX) : -1], exponent
-
-
-def _strip_grouping_levels(unit: pint.Unit, *, denominators_only: bool) -> pint.Unit:
-    """Divide grouping-level components out of a unit.
-
-    Each grouping level is its own base dimension, so a level is cancelled by
-    multiplying its unit raised to the *negated* exponent (a ``…/[hh]``
-    denominator, exponent -1, is multiplied by ``[hh] ** 1``). With
-    ``denominators_only`` the count numerator of a head count (positive
-    exponent) is kept as physical content; otherwise every level is removed.
-    """
-    result = UNIT_REGISTRY.Quantity(1.0, unit)
-    for name, exponent in _grouping_levels_with_exponent(unit):
-        if denominators_only and exponent >= 0:
-            continue
-        level_unit = UNIT_REGISTRY.Quantity(1.0, f"{_GROUPING_LEVEL_PREFIX}{name}")
-        result = result * level_unit ** (-exponent)
-    return cast("pint.Unit", result.units)
-
-
-def _unit_level_denominator(unit: pint.Unit) -> str | None:
-    """The grouping level a resolved unit carries as a denominator.
-
-    A leveled quantity carries its level as a ``/[level]`` denominator (negative
-    exponent in the dimensionality), exactly as a flow carries its period. Returns
-    the level name (``"hh"``, ``"person"``, …) found in the denominator, or
-    ``None`` for a level-less unit. A head count's ``[person]`` *numerator*
-    (positive exponent) is not a denominator level and is ignored, so a
-    ``[person]/[hh]`` count reports ``"hh"`` — its index level.
-    """
-    return next(
-        (
-            name
-            for name, exponent in _grouping_levels_with_exponent(unit)
-            if exponent < 0
-        ),
-        None,
-    )
-
-
 def _has_grouping_level_numerator(unit: pint.Unit) -> bool:
     """Whether a unit carries a grouping level as a *numerator* — a head count."""
     return any(exponent > 0 for _, exponent in _grouping_levels_with_exponent(unit))
@@ -532,7 +478,13 @@ def _strip_grouping_level_denominator(unit: pint.Unit) -> pint.Unit:
     *per*) are removed; the ``[person]`` *count numerator* of a head count is
     physical content and is kept.
     """
-    return _strip_grouping_levels(unit, denominators_only=True)
+    result = UNIT_REGISTRY.Quantity(1.0, unit)
+    for name, exponent in _grouping_levels_with_exponent(unit):
+        if exponent >= 0:  # keep the [person] count numerator of a head count
+            continue
+        level_unit = UNIT_REGISTRY.Quantity(1.0, f"{_GROUPING_LEVEL_PREFIX}{name}")
+        result = result * level_unit ** (-exponent)
+    return cast("pint.Unit", result.units)
 
 
 def _physical_kind_of(unit: pint.Unit) -> pint.Unit:
@@ -704,33 +656,34 @@ def fail_if_environment_units_are_inconsistent(
         )
 
 
-def fail_if_not_all_leaves_are_quantities(
+def fail_if_not_all_leaves_are_unit_annotated_columns(
     flat: Mapping[tuple[str, ...], Any],
 ) -> None:
     """Reject a unit-annotated input tree with any bare (untagged) leaf.
 
-    Every leaf of the unit-annotated input tree must carry a pint unit tag. The
-    producers that strip the tags (``input_data__flat`` / ``input_data__units``)
-    assume this, so the ``not_all_input_leaves_are_quantities`` fail node — which
-    the ``fail_if`` namespace orders ahead of them (see ``entry_point.lexsort_key``)
+    Every leaf of the unit-annotated input tree must be a
+    :class:`UnitAnnotatedColumn`. The producers that strip the tags
+    (``input_data__flat`` / ``input_data__units``) assume this, so the
+    ``not_all_input_leaves_are_unit_annotated_columns`` fail node — which the
+    ``fail_if`` namespace orders ahead of them (see ``entry_point.lexsort_key``)
     — calls this first, turning a bare leaf into a clean error rather than an
-    ``AttributeError`` when a producer reaches for ``.units``.
+    ``AttributeError`` when a producer reaches for ``.unit``.
 
     Raises:
-        UnitConsistencyError: If any leaf is not a ``pint.Quantity``.
+        UnitConsistencyError: If any leaf is not a ``UnitAnnotatedColumn``.
     """
     untagged = sorted(
         dt.qname_from_tree_path(path)
         for path, value in flat.items()
-        if not isinstance(value, pint.Quantity)
+        if not isinstance(value, UnitAnnotatedColumn)
     )
     if untagged:
         raise UnitConsistencyError(
-            "input_data__tree_with_unit_annotations requires every leaf to carry a "
-            "pint unit tag (GEP 10), but these are bare: "
-            f"{', '.join(untagged)}. Tag a dimensionless column (an id, a head "
-            "count) with `Quantity(arr, 'dimensionless')`, or pass untagged data "
-            "via input_data__tree."
+            "input_data__tree_with_unit_annotations requires every leaf to be a "
+            "UnitAnnotatedColumn (GEP 10), but these are bare: "
+            f"{', '.join(untagged)}. Tag a dimensionless column (an id, a boolean) "
+            "with `UnitAnnotatedColumn(values=arr, unit=Unit.DIMENSIONLESS)`, or "
+            "pass untagged data via input_data__tree."
         )
 
 
@@ -1536,18 +1489,6 @@ def _verify_one_body(
         if not explorer.advance():
             break
     return None
-
-
-def _unit_without_grouping_levels(unit: pint.Unit) -> pint.Unit:
-    """A unit with every grouping-level component (numerator or denominator) removed.
-
-    The level-free *residual* used to compare an inferred unit against the
-    declaration on its physical content alone (currency, period, area, …) — the
-    grouping level is screened separately under the index-vs-unit rule.
-    Both a denominator level (a ``…/[hh]`` total) and a numerator level (a head
-    count's ``[person]/…``) are divided out.
-    """
-    return _strip_grouping_levels(unit, denominators_only=False)
 
 
 def _inferred_result_error(

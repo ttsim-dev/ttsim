@@ -28,9 +28,9 @@ from __future__ import annotations
 
 import math
 import re
-from collections.abc import Callable, Iterable, Mapping
+from collections.abc import Callable, Iterable, Iterator, Mapping
 from dataclasses import dataclass, replace
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 import pint
 from pint.util import to_units_container
@@ -493,7 +493,24 @@ def register_unit_builder_levels(names: Iterable[str]) -> None:
         )
 
 
-class Unit:
+class _UnitNamespaceMeta(type):
+    """Metaclass for :class:`Unit` so ``ty`` accepts dynamically-added bases.
+
+    Concrete currency bases (``Unit.EUR``, ``Unit.DM``, ``Unit.SILVER_PENNY``)
+    are injected onto :class:`Unit` by :func:`register_currency` at registration
+    time — they cannot be hard-wired class attributes because the currency
+    vocabulary is discovered per package. At runtime an injected base is a real
+    attribute, so this metaclass adds no ``__getattr__``; under type checking it
+    declares one so ``Unit.EUR`` type-checks (mirroring
+    :class:`CompositeUnit`'s builder-step hint).
+    """
+
+    if TYPE_CHECKING:
+
+        def __getattr__(cls, name: str) -> CompositeUnit: ...
+
+
+class Unit(metaclass=_UnitNamespaceMeta):
     """The builder namespace of unit *bases*.
 
     Each attribute is a bare :class:`CompositeUnit` — ``Unit.CURRENCY`` *is*
@@ -501,9 +518,11 @@ class Unit:
     enforcing the canonical order ``base _PER_ <area> _PER_ <period> _PER_
     <level>`` (``Unit.CURRENCY.PER_MONTH.PER_BG``).
 
-    Only the agnostic currency base ``CURRENCY`` lives here; concrete currency
-    bases (``SILVER_PENNY``, ``DM``) are spelled directly in parameter YAML and
-    reached via :func:`parse_compositional_unit`, never off this namespace.
+    The agnostic currency base ``CURRENCY`` lives here permanently; each concrete
+    currency base (``EUR``, ``DM``, ``SILVER_PENNY``) is injected by
+    :func:`register_currency` when its package registers it, so concrete bases
+    can tag a :class:`UnitAnnotatedColumn` of input data (``Unit.EUR.PER_MONTH``)
+    even though a column/function declaration must stay agnostic.
     """
 
     CURRENCY = CompositeUnit(base=CURRENCY_TOKEN)
@@ -549,6 +568,31 @@ class Unit:
 
     CALENDAR_DAY = CompositeUnit(base="CALENDAR_DAY")
     """A *point* on the calendar measured in days."""
+
+
+@dataclass(frozen=True)
+class UnitAnnotatedColumn:
+    """A column of data paired with the :class:`CompositeUnit` it is measured in.
+
+    The leaf type of the unit-annotated input *and* result trees (GEP 10). On the
+    way in, the user hand-authors one per column —
+    ``UnitAnnotatedColumn(values=[2000.0, 0.0], unit=Unit.EUR.PER_MONTH)`` — and
+    a currency column must name a **concrete** currency (``Unit.EUR``,
+    ``Unit.DM``), exactly as a parameter does; the agnostic ``Unit.CURRENCY`` is
+    rejected at the boundary. On the way out, each result leaf is wrapped the same
+    way, its ``unit`` the node's resolved unit in the concrete run currency.
+
+    The wrapper is resolved to bare arrays (and its unit validated) at the
+    build-time boundary; it never flows through the numeric runtime.
+
+    Args:
+        values: The column data — any leaf the ordinary input tree accepts (a
+            list, a numpy/JAX array, a ``pd.Series``); canonicalized downstream.
+        unit: The column's compositional unit, built off :class:`Unit`.
+    """
+
+    values: Any
+    unit: CompositeUnit
 
 
 #: Sentinel distinguishing an *omitted* unit declaration from an explicit one.
@@ -817,6 +861,11 @@ def register_currency(
         _base_currency = name
     _ALLOWED_UNIT_TOKENS.add(name)
     _registered_currencies.add(name)
+    # Surface the concrete currency on the `Unit` builder (`Unit.EUR`, `Unit.DM`,
+    # `Unit.SILVER_PENNY`) so it can tag a `UnitAnnotatedColumn` of input data.
+    # A column/function declaration still rejects a concrete base
+    # (`resolve_compositional_column_unit`); this only makes it reachable.
+    setattr(Unit, name.upper(), CompositeUnit(base=name.upper()))
 
 
 #: The grouping levels registered so far (the bare names, e.g. ``"person"``,
@@ -1106,6 +1155,69 @@ def _currency_component_of(units: pint.Unit) -> pint.Unit | None:
     return None
 
 
+#: The dimensionality-key prefix of a grouping-level dimension: the internal pint
+#: unit name :data:`_GROUPING_LEVEL_PREFIX` wrapped in pint's ``[…]`` dimension
+#: brackets (e.g. ``[grouping_level_hh]``).
+_GROUPING_LEVEL_DIM_PREFIX = f"[{_GROUPING_LEVEL_PREFIX}"
+
+
+def _grouping_levels_with_exponent(unit: pint.Unit) -> Iterator[tuple[str, Any]]:
+    """Yield ``(level_name, exponent)`` for each grouping-level dimension of a unit.
+
+    A negative exponent is a denominator level (``/[hh]``), a positive one a
+    numerator level (a ``[person]`` head count). Non-grouping dimensions and
+    pint's (never-occurring here) complex exponents are skipped.
+    """
+    for dimension, exponent in UNIT_REGISTRY.Quantity(1.0, unit).dimensionality.items():
+        if isinstance(exponent, complex):  # pint exponents are real; narrow for ty
+            continue
+        if dimension.startswith(_GROUPING_LEVEL_DIM_PREFIX):
+            yield dimension[len(_GROUPING_LEVEL_DIM_PREFIX) : -1], exponent
+
+
+def _unit_without_grouping_levels(unit: pint.Unit) -> pint.Unit:
+    """A unit with every grouping level (numerator and denominator) divided out."""
+    result = UNIT_REGISTRY.Quantity(1.0, unit)
+    for name, exponent in _grouping_levels_with_exponent(unit):
+        level_unit = UNIT_REGISTRY.Quantity(1.0, f"{_GROUPING_LEVEL_PREFIX}{name}")
+        result = result * level_unit ** (-exponent)
+    return cast("pint.Unit", result.units)
+
+
+def _unit_level_denominator(unit: pint.Unit) -> str | None:
+    """The grouping level a resolved unit carries as a denominator.
+
+    A leveled quantity carries its level as a ``/[level]`` denominator (negative
+    exponent in the dimensionality), exactly as a flow carries its period. Returns
+    the level name (``"hh"``, ``"person"``, …) found in the denominator, or
+    ``None`` for a level-less unit. A head count's ``[person]`` *numerator*
+    (positive exponent) is not a denominator level and is ignored, so a
+    ``[person]/[hh]`` count reports ``"hh"`` — its index level.
+    """
+    return next(
+        (
+            name
+            for name, exponent in _grouping_levels_with_exponent(unit)
+            if exponent < 0
+        ),
+        None,
+    )
+
+
+def _substitute_currency(units: pint.Unit, currency: str) -> pint.Unit:
+    """Swap a unit's currency component for ``currency``; a no-op if it has none.
+
+    The one currency move both boundaries make: the period, area and levels are
+    left untouched. On the way *out* ``currency`` is the run currency
+    (:func:`output_unit_in_run_currency`); on the way *in* it is the tag's
+    concrete currency (:func:`input_strip_unit`).
+    """
+    component = _currency_component_of(units)
+    if component is None:
+        return units
+    return units / component * UNIT_REGISTRY.parse_units(currency)
+
+
 def output_unit_in_run_currency(
     units: pint.Unit, run_currency: str | None
 ) -> pint.Unit:
@@ -1124,15 +1236,65 @@ def output_unit_in_run_currency(
         UnitDefinitionError: If the unit is currency-dimensioned but no run
             currency is set — a run with currency quantities must pin one down.
     """
-    currency_component = _currency_component_of(units)
-    if currency_component is None:
+    if _currency_component_of(units) is None:
         return units
     if run_currency is None:
         raise UnitDefinitionError(
             f"Cannot restate '{units}' without a run currency: a run that uses "
             f"currency quantities must pin down a concrete currency (GEP 10)."
         )
-    return units / currency_component * UNIT_REGISTRY.parse_units(run_currency)
+    return _substitute_currency(units, run_currency)
+
+
+#: Reverse of the forward token→pint maps, for :func:`composite_from_resolved_unit`.
+_PINT_NAME_TO_PERIOD_TOKEN = {v: k for k, v in _PERIOD_TOKEN_TO_PINT.items()}
+_PINT_NAME_TO_BASE_TOKEN = {
+    pint_name: token
+    for token, pint_name in _COMPOSITIONAL_BASE_TO_PINT.items()
+    if pint_name is not None
+}
+
+
+def composite_from_resolved_unit(units: pint.Unit) -> CompositeUnit:
+    """Reconstruct the compositional spelling of a *resolved* pint unit.
+
+    The output-side inverse of :func:`resolve_compositional_unit`: it labels a
+    result-tree leaf with a :class:`CompositeUnit` (so the result tree is the same
+    shape as the input tree, GEP 10). A resolved unit obeys the grammar, so each
+    component maps back to one slot — the currency / count / area / duration
+    numerator base, the flow period, and the spelled group level. The implied
+    person leaf (a ``grouping_level_person`` denominator) is dropped, as a
+    spelling never spells it; a person-leaf *numerator* is the ``PERSON_COUNT``
+    base of a head count.
+
+    Apply it to a unit already restated in the run currency
+    (:func:`output_unit_in_run_currency`) so the base is the concrete run
+    currency (``EUR``), never the agnostic ``CURRENCY``.
+    """
+    currency = _currency_component_of(units)
+    period = _flow_period_of(units)
+    base = str(currency).upper() if currency is not None else "DIMENSIONLESS"
+    area: str | None = None
+    level: str | None = None
+    for name, exponent in _grouping_levels_with_exponent(units):
+        if name == PERSON_LEVEL and exponent > 0:
+            base = "PERSON_COUNT"
+        elif name != PERSON_LEVEL and exponent < 0:
+            level = name.upper()
+        # A `grouping_level_person` denominator is the implied leaf — dropped.
+    physical = to_units_container(_unit_without_grouping_levels(units))
+    for token, exponent in physical.items():
+        if token == "meter":  # noqa: S105 (a pint unit token, not a secret)
+            base = "SQUARE_METER" if exponent > 0 and currency is None else base
+            area = "SQUARE_METER" if exponent < 0 else area
+        elif currency is None and exponent > 0 and token in _PINT_NAME_TO_BASE_TOKEN:
+            base = _PINT_NAME_TO_BASE_TOKEN[token]
+    return CompositeUnit(
+        base=base,
+        area=area,
+        period=_PINT_NAME_TO_PERIOD_TOKEN[str(period)] if period is not None else None,
+        level=level,
+    )
 
 
 def _flow_period_of(units: pint.Unit) -> pint.Unit | None:
@@ -1158,21 +1320,23 @@ def _flow_period_of(units: pint.Unit) -> pint.Unit | None:
 
 
 def unit_residual_excluding_currency_and_flow_period(units: pint.Unit) -> pint.Unit:
-    """A unit with its currency component and flow period divided out.
+    """A unit's *measurement* residual: currency, flow period, and levels removed.
 
-    The two axes the input boundary does *not* require to match exactly: the
-    currency is converted to the run currency at the boundary, and the flow
-    period is screened against the column's name suffix. What remains — the
-    numerator scale (area, intrinsic time, plain counts) — must match the
-    declared unit *exactly*, so the input check compares the residuals of a tag
-    and its declared unit for equivalence rather than mere dimensionality
-    (a ``HECTARE`` column tagged ``m²`` shares the area dimension but is a
+    The input check screens measurement (the numerator scale — area, intrinsic
+    time, plain counts) on its own axis, leaving the other three to the boundary:
+    the currency is converted to the run currency, the flow period is screened
+    against the column's name suffix, and the **grouping level** is screened
+    against the suffix too (the structural index, not a measurement). So this
+    divides out all three and the input check compares the residuals of a tag and
+    its declared unit for equivalence rather than mere dimensionality (a
+    ``HECTARE`` column tagged ``m²`` shares the area dimension but is a
     10,000-fold level error).
     """
     currency = _currency_component_of(units)
     residual = units / currency if currency is not None else units
     period = _flow_period_of(residual)
-    return residual * period if period is not None else residual
+    residual = residual * period if period is not None else residual
+    return _unit_without_grouping_levels(residual)
 
 
 def _suffix_period_of(column_label: str | None) -> pint.Unit | None:
@@ -1219,6 +1383,19 @@ def _fail_if_tag_period_disagrees_with_suffix(
         f"exactly — a `_m` column needs a `/month` tag, an unsuffixed column a "
         f"tag with no period."
     )
+
+
+def input_strip_unit(unit: CompositeUnit) -> pint.Unit:
+    """The concrete pint unit used to strip a :class:`UnitAnnotatedColumn`.
+
+    Resolves the tag with its concrete currency and flow period — the two axes the
+    boundary acts on: the currency is converted to the run currency and the period
+    is screened against the name suffix. Grouping levels do not affect the
+    magnitude and are omitted, so this needs no registered level dimension.
+    """
+    resolved = resolve_compositional_unit(unit, with_level=False)
+    concrete = token_source_currency(unit)
+    return resolved if concrete is None else _substitute_currency(resolved, concrete)
 
 
 def strip_input_quantity_at_boundary(

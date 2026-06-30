@@ -20,7 +20,12 @@ from ttsim.interface_dag_elements.interface_node_objects import (
 from ttsim.interface_dag_elements.processed_data import (
     _canonicalize_input_dtype,
 )
-from ttsim.tt.units import strip_input_quantity_at_boundary
+from ttsim.tt.units import (
+    UNIT_REGISTRY,
+    input_strip_unit,
+    resolve_compositional_unit,
+    strip_input_quantity_at_boundary,
+)
 
 if TYPE_CHECKING:
     from types import ModuleType
@@ -68,16 +73,19 @@ def qname() -> QNameData:
 
 @interface_input()
 def tree_with_unit_annotations() -> NestedData:
-    """The input data as a nested dict of pint-tagged arrays.
+    """The input data as a nested dict of :class:`UnitAnnotatedColumn` leaves.
 
-    Like :func:`tree`, but every leaf must be a pint ``Quantity`` carrying the
-    column's unit (a dimensionless column — an id, a head count — is tagged
-    ``Quantity(arr, "dimensionless")``). Selecting this node opts into
+    Like :func:`tree`, but every leaf is a
+    ``UnitAnnotatedColumn(values=…, unit=Unit.…)`` carrying the column's unit (a
+    dimensionless column — an id, a boolean — is tagged
+    ``unit=Unit.DIMENSIONLESS``). As for a parameter, a currency column must name
+    a **concrete** currency (``Unit.EUR``), and a group column **spells** its
+    level (``Unit.EUR.PER_MONTH.PER_BG``). Selecting this node opts into
     full-coverage boundary unit validation: each tag's currency is converted to
-    the run currency and its period is checked against the column's time suffix,
-    and ``fail_if__input_units_are_inconsistent`` rejects any tag whose dimension
-    disagrees with the column's declared unit. Use bare :func:`tree` for untagged
-    data.
+    the run currency, its period and level are screened against the name suffix,
+    and ``fail_if__input_units_are_inconsistent`` rejects any tag whose
+    measurement disagrees with the column's declared unit. Use bare :func:`tree`
+    for untagged data.
     """
 
 
@@ -194,16 +202,18 @@ def flat_from_tree_with_unit_annotations(
     currency: str | None,
 ) -> FlatData:
     """The input data as a flat dictionary of arrays."""
-    # Every leaf is assumed to be a pint Quantity:
-    # fail_if__not_all_input_leaves_are_quantities runs first and rejects bare leaves.
+    # Every leaf is a UnitAnnotatedColumn (fail_if__not_all_input_leaves_are_unit_
+    # annotated_columns runs first and rejects bare leaves). Each is resolved to
+    # its concrete pint unit and stripped at the boundary: the currency is
+    # converted to the run currency and the period is screened against the suffix.
     flat = dt.flatten_to_tree_paths(tree_with_unit_annotations)
     return {
         path: strip_input_quantity_at_boundary(
-            value,
+            UNIT_REGISTRY.Quantity(col.values, input_strip_unit(col.unit)),
             run_currency=currency,
             column_label=dt.qname_from_tree_path(path),
         )
-        for path, value in flat.items()
+        for path, col in flat.items()
     }
 
 
@@ -214,14 +224,21 @@ def flat_from_tree_with_unit_annotations(
 def units_from_tree_with_unit_annotations(
     tree_with_unit_annotations: NestedData,
 ) -> dict[str, pint.Unit]:
-    """The unit tag of every input column, keyed by qualified name.
+    """Each input column's measurement unit (agnostic, level-free), by qname.
 
-    Read off the raw tags before they are stripped, so
-    ``fail_if__input_units_are_inconsistent`` can compare each tag's dimension
-    against the column's declared unit.
+    Resolved off every :class:`UnitAnnotatedColumn`'s tag so
+    ``fail_if__input_units_are_inconsistent`` can compare it — on the measurement
+    axis, currency / period / level factored out — against the column's declared
+    unit. The level a tag spells is screened separately, against the name suffix,
+    by ``fail_if__input_levels_disagree_with_suffix``.
     """
     flat = dt.flatten_to_tree_paths(tree_with_unit_annotations)
-    return {dt.qname_from_tree_path(path): value.units for path, value in flat.items()}
+    return {
+        dt.qname_from_tree_path(path): resolve_compositional_unit(
+            col.unit, with_level=False
+        )
+        for path, col in flat.items()
+    }
 
 
 @interface_function()

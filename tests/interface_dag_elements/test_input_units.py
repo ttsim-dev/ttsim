@@ -1,10 +1,10 @@
 """Unit tests for the Layer-2 unit-annotated input/output boundary (GEP 10).
 
-Currency-free tests only — they use the always-available agnostic ``CURRENCY``
-token plus time/dimensionless units, so they do not depend on a concrete
-currency being registered. The concrete currency conversion / substitution and
-the end-to-end ``main`` runs are exercised against mettsim's registered
-currencies in ``src_mettsim`` (where the example is fully unit-annotated).
+Currency-free tests mostly use the always-available agnostic ``CURRENCY`` token
+plus time/dimensionless units, so they do not depend on a concrete currency being
+registered. The concrete currency conversion / substitution and the end-to-end
+``main`` runs are exercised against mettsim's registered currencies in
+``src_mettsim`` (where the example is fully unit-annotated).
 """
 
 from __future__ import annotations
@@ -14,15 +14,25 @@ import pint
 import pytest
 
 from ttsim.exceptions import UnitConsistencyError, UnitDefinitionError
+from ttsim.interface_dag_elements.fail_if import (
+    input_currency_is_not_concrete,
+    input_levels_disagree_with_suffix,
+)
 from ttsim.interface_dag_elements.input_data import (
     flat_from_tree_with_unit_annotations,
     units_from_tree_with_unit_annotations,
 )
 from ttsim.interface_dag_elements.unit_checks import (
     fail_if_input_units_are_inconsistent,
-    fail_if_not_all_leaves_are_quantities,
+    fail_if_not_all_leaves_are_unit_annotated_columns,
 )
-from ttsim.tt.units import UNIT_REGISTRY, output_unit_in_run_currency
+from ttsim.tt.units import (
+    UNIT_REGISTRY,
+    Unit,
+    UnitAnnotatedColumn,
+    output_unit_in_run_currency,
+    register_grouping_levels,
+)
 
 
 def test_output_unit_in_run_currency_without_run_currency_raises():
@@ -39,31 +49,43 @@ def test_output_unit_in_run_currency_leaves_non_currency_units_untouched():
 
 def test_units_from_tree_with_unit_annotations_extracts_each_tag():
     tree = {
-        "wage_m": UNIT_REGISTRY.Quantity(numpy.array([1.0, 2.0]), "CURRENCY / month"),
-        "nested": {"alter": UNIT_REGISTRY.Quantity(numpy.array([30, 40]), "year")},
-        "p_id": UNIT_REGISTRY.Quantity(numpy.array([0, 1]), "dimensionless"),
+        "wage_m": UnitAnnotatedColumn(
+            values=numpy.array([1.0, 2.0]), unit=Unit.CURRENCY.PER_MONTH
+        ),
+        "nested": {
+            "alter": UnitAnnotatedColumn(values=numpy.array([30, 40]), unit=Unit.YEARS)
+        },
+        "p_id": UnitAnnotatedColumn(
+            values=numpy.array([0, 1]), unit=Unit.DIMENSIONLESS
+        ),
     }
     units = units_from_tree_with_unit_annotations(tree_with_unit_annotations=tree)
     assert {k: str(v) for k, v in units.items()} == {
         "wage_m": "CURRENCY / month",
-        "nested__alter": "year",
+        "nested__alter": "delta_calendar_year",
         "p_id": "dimensionless",
     }
 
 
-def test_fail_if_not_all_leaves_are_quantities_rejects_bare_leaf():
+def test_fail_if_not_all_leaves_are_unit_annotated_columns_rejects_bare_leaf():
     flat: dict[tuple[str, ...], object] = {
-        ("wage_m",): UNIT_REGISTRY.Quantity(numpy.array([1.0]), "CURRENCY / month"),
+        ("wage_m",): UnitAnnotatedColumn(
+            values=numpy.array([1.0]), unit=Unit.CURRENCY.PER_MONTH
+        ),
         ("alter",): numpy.array([30]),  # bare — not tagged
     }
     with pytest.raises(UnitConsistencyError, match="requires every leaf"):
-        fail_if_not_all_leaves_are_quantities(flat=flat)
+        fail_if_not_all_leaves_are_unit_annotated_columns(flat=flat)
 
 
 def test_flat_from_tree_with_unit_annotations_strips_to_bare_arrays():
     tree = {
-        "wage_m": UNIT_REGISTRY.Quantity(numpy.array([1.0, 2.0]), "CURRENCY / month"),
-        "p_id": UNIT_REGISTRY.Quantity(numpy.array([0, 1]), "dimensionless"),
+        "wage_m": UnitAnnotatedColumn(
+            values=numpy.array([1.0, 2.0]), unit=Unit.CURRENCY.PER_MONTH
+        ),
+        "p_id": UnitAnnotatedColumn(
+            values=numpy.array([0, 1]), unit=Unit.DIMENSIONLESS
+        ),
     }
     flat = flat_from_tree_with_unit_annotations(
         tree_with_unit_annotations=tree, currency=None
@@ -75,21 +97,99 @@ def test_flat_from_tree_with_unit_annotations_strips_to_bare_arrays():
     assert list(flat[("wage_m",)]) == [1.0, 2.0]
 
 
-def test_fail_if_not_all_leaves_are_quantities_passes_when_all_tagged():
+def test_fail_if_not_all_leaves_are_unit_annotated_columns_passes_when_all_tagged():
     flat: dict[tuple[str, ...], object] = {
-        ("wage_m",): UNIT_REGISTRY.Quantity(numpy.array([1.0]), "CURRENCY / month"),
-        ("p_id",): UNIT_REGISTRY.Quantity(numpy.array([0]), "dimensionless"),
+        ("wage_m",): UnitAnnotatedColumn(
+            values=numpy.array([1.0]), unit=Unit.CURRENCY.PER_MONTH
+        ),
+        ("p_id",): UnitAnnotatedColumn(
+            values=numpy.array([0]), unit=Unit.DIMENSIONLESS
+        ),
     }
-    fail_if_not_all_leaves_are_quantities(flat=flat)
+    fail_if_not_all_leaves_are_unit_annotated_columns(flat=flat)
 
 
 def test_flat_from_tree_with_unit_annotations_fails_on_period_mismatch():
     # A `_m` column tagged without a period (a stock tag) is a boundary error.
-    tree = {"wage_m": UNIT_REGISTRY.Quantity(numpy.array([1.0]), "CURRENCY")}
+    tree = {
+        "wage_m": UnitAnnotatedColumn(values=numpy.array([1.0]), unit=Unit.CURRENCY)
+    }
     with pytest.raises(UnitConsistencyError):
         flat_from_tree_with_unit_annotations(
             tree_with_unit_annotations=tree, currency=None
         )
+
+
+def test_input_currency_non_currency_columns_pass():
+    # Non-currency columns are never flagged (the agnostic-rejection path only fires
+    # for currency-dimensioned tags). Rejection-when-a-currency-is-registered is
+    # covered end-to-end in the mettsim suite (a base currency is registered there).
+    input_currency_is_not_concrete(
+        input_data__tree_with_unit_annotations={
+            "alter": UnitAnnotatedColumn(values=numpy.array([30]), unit=Unit.YEARS),
+            "p_id": UnitAnnotatedColumn(
+                values=numpy.array([0]), unit=Unit.DIMENSIONLESS
+            ),
+        }
+    )
+
+
+def test_input_level_must_match_declared():
+    # A `_hh` column declares the hh level; a person-leaf (level-less) tag contradicts
+    # it. Compared against the declared resolved unit, not the name suffix directly.
+    register_grouping_levels(["hh"])
+    with pytest.raises(UnitConsistencyError, match="disagrees with the column"):
+        input_levels_disagree_with_suffix(
+            input_data__tree_with_unit_annotations={
+                "miete_m_hh": UnitAnnotatedColumn(
+                    values=numpy.array([1.0]), unit=Unit.CURRENCY.PER_MONTH
+                )
+            },
+            unit_checks__resolved_units={
+                "miete_m_hh": UNIT_REGISTRY.parse_units(
+                    "CURRENCY / month / grouping_level_hh"
+                )
+            },
+        )
+
+
+def test_input_level_matching_declared_passes():
+    register_grouping_levels(["hh"])
+    input_levels_disagree_with_suffix(
+        input_data__tree_with_unit_annotations={
+            "miete_m_hh": UnitAnnotatedColumn(
+                values=numpy.array([1.0]), unit=Unit.CURRENCY.PER_MONTH.PER_LEVEL("hh")
+            ),
+            "wage_m": UnitAnnotatedColumn(
+                values=numpy.array([1.0]), unit=Unit.CURRENCY.PER_MONTH
+            ),
+        },
+        unit_checks__resolved_units={
+            "miete_m_hh": UNIT_REGISTRY.parse_units(
+                "CURRENCY / month / grouping_level_hh"
+            ),
+            "wage_m": UNIT_REGISTRY.parse_units(
+                "CURRENCY / month / grouping_level_person"
+            ),
+        },
+    )
+
+
+def test_input_level_intensive_group_suffix_stays_level_less():
+    # An intensive quantity (a share) at a group suffix declares *level-less*, so a
+    # level-less tag is correct — the column's declared unit carries no level. (The
+    # earlier suffix-regex check wrongly demanded a level here.)
+    register_grouping_levels(["hh"])
+    input_levels_disagree_with_suffix(
+        input_data__tree_with_unit_annotations={
+            "rate_hh": UnitAnnotatedColumn(
+                values=numpy.array([0.5]), unit=Unit.DIMENSIONLESS
+            )
+        },
+        unit_checks__resolved_units={
+            "rate_hh": UNIT_REGISTRY.parse_units("dimensionless")
+        },
+    )
 
 
 def test_input_units_consistent_passes():
