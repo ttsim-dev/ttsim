@@ -248,12 +248,18 @@ def kin_id() -> int:
     pass
 
 
-@agg_by_group_function(leaf_name="y_kin", agg_type=AggType.SUM, unit=Unit.DIMENSIONLESS)
+@agg_by_group_function(
+    leaf_name="y_kin", agg_type=AggType.SUM, unit=Unit.DIMENSIONLESS.PER_LEVEL("kin")
+)
 def y_kin(kin_id: int, x: int) -> int:
     pass
 
 
-@agg_by_group_function(leaf_name="y_kin", agg_type=AggType.SUM, unit=Unit.DIMENSIONLESS)
+# A SUM is the group's whatever the source's base (GEP 10) — even a dimensionless
+# share acquires the target level, so the declared unit spells it.
+@agg_by_group_function(
+    leaf_name="y_kin", agg_type=AggType.SUM, unit=Unit.DIMENSIONLESS.PER_LEVEL("kin")
+)
 def y_kin_namespaced_input(kin_id: int, inputs__x: int) -> int:
     pass
 
@@ -598,7 +604,9 @@ def test_user_provided_aggregation(backend):
     def betrag_double_m(betrag_m: float) -> float:
         return 2 * betrag_m
 
-    @agg_by_group_function(agg_type=AggType.MAX, unit=Unit.CURRENCY.PER_MONTH.PER_FAM)
+    @agg_by_group_function(
+        agg_type=AggType.MAX, unit=Unit.CURRENCY.PER_MONTH.PER_LEVEL("fam")
+    )
     def betrag_double_m_fam(betrag_double_m: float, fam_id: int) -> float:
         pass
 
@@ -648,7 +656,9 @@ def test_user_provided_aggregation_with_time_conversion(backend):
     def betrag_double_m(betrag_m: float) -> float:
         return 2 * betrag_m
 
-    @agg_by_group_function(agg_type=AggType.MAX, unit=Unit.CURRENCY.PER_MONTH.PER_FAM)
+    @agg_by_group_function(
+        agg_type=AggType.MAX, unit=Unit.CURRENCY.PER_MONTH.PER_LEVEL("fam")
+    )
     def max_betrag_double_m_fam(betrag_double_m: float, fam_id: int) -> float:
         pass
 

@@ -5,7 +5,7 @@ import functools
 import inspect
 import textwrap
 import types
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from importlib import import_module
 from types import ModuleType
 from typing import TYPE_CHECKING, Any, Literal, cast
@@ -183,6 +183,7 @@ def recompile_with_logical_ops_as_calls(
     func: Callable[..., Any],
     module: str,
     module_obj: Any,  # noqa: ANN401
+    extra_globals: Mapping[str, Any] | None = None,
 ) -> Callable[..., Any]:
     """Return a copy of ``func`` with ``and``/``or`` as ``{module}.logical_*`` calls.
 
@@ -193,9 +194,16 @@ def recompile_with_logical_ops_as_calls(
     leveled-boolean combine) so author-written ``and``/``or`` are checked the way
     they run. The numeric runtime is untouched.
 
-    A function with no ``and``/``or`` is returned unchanged. Falls back to the
-    original when source is unavailable (a builtin, a C function, a REPL
-    definition) or unparseable, so the dry-run sees the original body.
+    ``extra_globals`` rebinds module-level names in the recompiled body's scope —
+    the dry-run uses it to swap ``piecewise_polynomial``/``join`` for unit-only
+    shims, so a body that calls them is checked rather than executed. When it is
+    given, the body is rebound even if it has no ``and``/``or`` (the rebinding,
+    not the rewrite, is then the point).
+
+    A function with no ``and``/``or`` and no ``extra_globals`` is returned
+    unchanged. Falls back to the original when source is unavailable (a builtin, a
+    C function, a REPL definition) or unparseable, so the dry-run sees the original
+    body.
     """
     if _is_lambda_function(func):
         return func
@@ -203,22 +211,27 @@ def recompile_with_logical_ops_as_calls(
         tree = _func_to_ast(func)
     except (OSError, TypeError):
         return func
-    if not any(isinstance(node, ast.BoolOp) for node in ast.walk(tree)):
+    has_boolop = any(isinstance(node, ast.BoolOp) for node in ast.walk(tree))
+    if not has_boolop and not extra_globals:
         return func
 
-    class _BoolOpRewriter(ast.NodeTransformer):
-        def visit_BoolOp(self, node: ast.BoolOp) -> ast.Call:
-            self.generic_visit(node)
-            return _boolop_to_call(node, module=module)
+    if has_boolop:
 
-    _BoolOpRewriter().visit(tree)
-    ast.fix_missing_locations(tree)
+        class _BoolOpRewriter(ast.NodeTransformer):
+            def visit_BoolOp(self, node: ast.BoolOp) -> ast.Call:
+                self.generic_visit(node)
+                return _boolop_to_call(node, module=module)
+
+        _BoolOpRewriter().visit(tree)
+        ast.fix_missing_locations(tree)
     scope = dict(func.__globals__)  # ty: ignore[unresolved-attribute]
     if func.__closure__:  # ty: ignore[unresolved-attribute]
         closure_vars = func.__code__.co_freevars  # ty: ignore[unresolved-attribute]
         closure_cells = [c.cell_contents for c in func.__closure__]  # ty: ignore[unresolved-attribute]
         scope.update(dict(zip(closure_vars, closure_cells, strict=False)))
     scope[module] = module_obj
+    if extra_globals:
+        scope.update(extra_globals)
     exec(compile(tree, "<unit-check-logical-ops>", "exec"), scope)  # noqa: S102
     rewritten = functools.wraps(func, assigned=_WRAPPER_ASSIGNMENTS_NO_ANNOTATIONS)(
         scope[func.__name__]  # ty: ignore[unresolved-attribute]

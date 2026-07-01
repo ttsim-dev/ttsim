@@ -2,9 +2,10 @@
 
 These exercise the core level mechanics directly on the unit primitives:
 levels as non-convertible base dimensions, the level-as-denominator
-resolution, the [person] count bridge, cross-level rejection, the
-``reference_level`` parameter facet, and the level-aware aggregation
-(SUM swaps, COUNT mints ``[person]/[target]``, MIN/MAX/MEAN preserve).
+resolution, the [person] count bridge, cross-level rejection, and the
+level-aware aggregation (SUM/MIN/MAX take the target level, MEAN the
+individual, COUNT mints ``[person]/[target]``, ANY/ALL a boolean at the
+target).
 """
 
 from __future__ import annotations
@@ -22,11 +23,12 @@ from ttsim.tt import (
 from ttsim.tt.units import (
     CURRENCY_TOKEN,
     PERSON_LEVEL,
-    composite_base_is_extensive,
+    composite_base_is_level_carrying,
     divide_by_grouping_level,
     grouping_level_count_unit,
     register_currency,
     register_grouping_levels,
+    resolve_compositional_column_unit,
     resolve_compositional_param_unit,
     resolve_compositional_unit,
     resolved_unit_for_aggregation,
@@ -78,12 +80,12 @@ def test_unregistered_grouping_level_is_rejected():
 
 
 # ----------------------------------------------------------------------------
-# Which tokens carry a level (extensive/intensive default)
+# Which tokens carry a level (level-carrying/level-less default)
 # ----------------------------------------------------------------------------
 
 
 @pytest.mark.parametrize(
-    ("base", "extensive"),
+    ("base", "level_carrying"),
     [
         ("CURRENCY", True),
         ("PERSON_COUNT", True),
@@ -96,27 +98,23 @@ def test_unregistered_grouping_level_is_rejected():
         ("CALENDAR_MONTH", False),
         ("CALENDAR_DAY", False),
         ("DIMENSIONLESS", False),
-        ("HOURS", False),
+        ("HOURS", True),
     ],
 )
-def test_composite_base_is_extensive_defaults(base, extensive):
-    # The extensive/intensive default: an extensive base gets the implied person
-    # leaf level (and must spell a group level); an intensive one carries none.
-    assert composite_base_is_extensive(base) is extensive
+def test_composite_base_is_level_carrying_defaults(base, level_carrying):
+    assert composite_base_is_level_carrying(base) is level_carrying
 
 
 def test_spelled_level_carries_level():
-    # `carries_level` now reports whether a level denominator is *spelled*.
     assert Unit.CURRENCY.PER_HH.carries_level
     assert not Unit.CURRENCY.carries_level
 
 
-def test_concrete_currency_base_is_extensive():
-    # A registered currency is an extensive base, like the agnostic CURRENCY.
-    # Defined relative to the always-present CURRENCY reference unit so the test
-    # is independent of which base currency the suite has registered.
+def test_concrete_currency_base_is_level_carrying():
+    # Defined relative to the always-present CURRENCY reference so the test does not
+    # depend on which base currency the suite registered.
     register_currency("LEVEL_TEST_COIN", definition=f"{CURRENCY_TOKEN} / 2")
-    assert composite_base_is_extensive("LEVEL_TEST_COIN")
+    assert composite_base_is_level_carrying("LEVEL_TEST_COIN")
 
 
 # ----------------------------------------------------------------------------
@@ -247,6 +245,82 @@ def test_person_implied_on_scalar_param_with_name_suffix():
 
 
 # ----------------------------------------------------------------------------
+# The level is declared, not read off the suffix, on columns
+# ----------------------------------------------------------------------------
+
+
+def test_column_omitting_the_group_level_is_a_person_property():
+    # A per-person amount constant within the group (GEP 10's
+    # ``regelbedarf_pro_person_m_bg``): omitting the level at a group suffix
+    # leaves the implied person leaf, no ``[bg]``.
+    resolved = resolve_compositional_column_unit(
+        Unit.CURRENCY.PER_MONTH,
+        time_unit_id="m",
+        grouping_level="bg",
+        where="test",
+    )
+    expected = divide_by_grouping_level(parse_unit("CURRENCY / month"), PERSON_LEVEL)
+    assert units_are_equivalent(left=resolved, right=expected)
+
+
+def test_intensive_column_omitting_the_level_stays_bare_at_a_group_suffix():
+    resolved = resolve_compositional_column_unit(
+        Unit.MONTHS, time_unit_id=None, grouping_level="bg", where="test"
+    )
+    assert units_are_equivalent(left=resolved, right=parse_unit("delta_calendar_month"))
+
+
+def test_intensive_column_with_a_spelled_group_level_resolves():
+    # GEP 10's ``alter_monate_jüngstes_mitglied_fg``: the family's property, so
+    # the duration carries the group level — declared, not read off the base.
+    resolved = resolve_compositional_column_unit(
+        Unit.MONTHS.PER_LEVEL("hh"),
+        time_unit_id=None,
+        grouping_level="hh",
+        where="test",
+    )
+    expected = divide_by_grouping_level(parse_unit("delta_calendar_month"), "hh")
+    assert units_are_equivalent(left=resolved, right=expected)
+
+
+def test_spelled_group_level_contradicting_the_suffix_is_rejected():
+    with pytest.raises(UnitDefinitionError, match="must not contradict"):
+        resolve_compositional_column_unit(
+            Unit.CURRENCY.PER_MONTH.PER_LEVEL("bg"),
+            time_unit_id="m",
+            grouping_level="hh",
+            where="test",
+        )
+
+
+def test_boolean_omitting_the_level_at_a_group_suffix_is_a_person_indicator():
+    resolved = resolve_compositional_column_unit(
+        Unit.DIMENSIONLESS,
+        time_unit_id=None,
+        grouping_level="hh",
+        where="test",
+        is_boolean=True,
+    )
+    expected = divide_by_grouping_level(UNIT_REGISTRY.dimensionless, PERSON_LEVEL)
+    assert units_are_equivalent(left=resolved, right=expected)
+
+
+def test_calendar_point_carries_a_level():
+    # GEP 10's ``baujahr_immobilie_hh``: the dwelling's construction year is the
+    # household's property — a leveled calendar point. Attaching and comparing
+    # the level must stay clear of pint's offset-arithmetic rules.
+    resolved = resolve_compositional_column_unit(
+        Unit.CALENDAR_YEAR.PER_LEVEL("hh"),
+        time_unit_id=None,
+        grouping_level="hh",
+        where="test",
+    )
+    expected = divide_by_grouping_level(parse_unit("calendar_year"), "hh")
+    assert units_are_equivalent(left=resolved, right=expected)
+    assert not units_are_equivalent(left=resolved, right=parse_unit("calendar_year"))
+
+
+# ----------------------------------------------------------------------------
 # Level-aware aggregation (resolved_unit_for_aggregation)
 # ----------------------------------------------------------------------------
 
@@ -278,10 +352,9 @@ def test_resolved_aggregation_count_mints_person_over_target():
     )
 
 
-def test_resolved_aggregation_min_levels_a_level_less_source():
-    # MIN of a level-less MONTHS source acquires the target level (GEP 10, T8):
-    # the `_xx` suffix and the unit level are always in sync, so even an intensive
-    # age aggregated to a group carries that group's level — MONTHS / [hh].
+def test_resolved_aggregation_min_over_level_less_source_acquires_target_level():
+    # An extreme is a property of the target group whatever the source's base
+    # (GEP 10): an ``_hh`` min of a bare month-duration age carries ``[hh]``.
     source = parse_unit("delta_calendar_month")
     result = resolved_unit_for_aggregation(
         source_unit=source,
@@ -289,14 +362,11 @@ def test_resolved_aggregation_min_levels_a_level_less_source():
         target_level="hh",
         source_level=None,
     )
-    expected = divide_by_grouping_level(parse_unit("delta_calendar_month"), "hh")
+    expected = divide_by_grouping_level(source, "hh")
     assert units_are_equivalent(left=result, right=expected)
 
 
-def test_resolved_aggregation_min_swaps_person_to_target():
-    # MIN of a CURRENCY/[person] source swaps to the target level (GEP 10, T8):
-    # like SUM, it carries the level its `_xx` suffix claims — CURRENCY / [hh],
-    # not the source [person].
+def test_resolved_aggregation_min_over_level_carrying_source_carries_target_level():
     source = divide_by_grouping_level(parse_unit("CURRENCY"), PERSON_LEVEL)
     result = resolved_unit_for_aggregation(
         source_unit=source,
@@ -325,8 +395,6 @@ def test_resolved_aggregation_any_all_are_boolean_at_target_level(agg_type):
 
 
 def test_resolved_aggregation_sum_over_level_less_source_acquires_target_level():
-    # A level-less source summed to a group acquires the target level (GEP 10,
-    # T8): the total working hours in a household is working_hour / week / [hh].
     source = parse_unit("working_hour / week")
     result = resolved_unit_for_aggregation(
         source_unit=source,
@@ -334,7 +402,61 @@ def test_resolved_aggregation_sum_over_level_less_source_acquires_target_level()
         target_level="hh",
         source_level=None,
     )
-    expected = divide_by_grouping_level(parse_unit("working_hour / week"), "hh")
+    expected = divide_by_grouping_level(source, "hh")
+    assert units_are_equivalent(left=result, right=expected)
+
+
+def test_resolved_aggregation_mean_resolves_to_the_individual_level():
+    # A per-head average belongs to the person, whatever the target (GEP 10):
+    # leveling it to the target would break ``mean · count = sum``.
+    source = divide_by_grouping_level(parse_unit(CURRENCY_TOKEN), "hh")
+    result = resolved_unit_for_aggregation(
+        source_unit=source,
+        agg_type=AggType.MEAN,
+        target_level="sn",
+        source_level="hh",
+    )
+    expected = divide_by_grouping_level(parse_unit(CURRENCY_TOKEN), PERSON_LEVEL)
+    assert units_are_equivalent(left=result, right=expected)
+
+
+def test_resolved_aggregation_mean_over_level_less_source_stays_bare():
+    # The person-level reading of an intensive base is bare, so an age's mean
+    # stays comparable to level-less thresholds.
+    source = parse_unit("delta_calendar_month")
+    result = resolved_unit_for_aggregation(
+        source_unit=source,
+        agg_type=AggType.MEAN,
+        target_level="hh",
+        source_level=None,
+    )
+    assert units_are_equivalent(left=result, right=source)
+
+
+def test_resolved_aggregation_mean_over_boolean_source_is_a_bare_share():
+    # The mean of an indicator is a share: stripping the boolean's level leaves
+    # no base to put at the person leaf.
+    source = divide_by_grouping_level(UNIT_REGISTRY.dimensionless, "hh")
+    result = resolved_unit_for_aggregation(
+        source_unit=source,
+        agg_type=AggType.MEAN,
+        target_level="hh",
+        source_level="hh",
+    )
+    assert units_are_equivalent(left=result, right=UNIT_REGISTRY.dimensionless)
+
+
+def test_resolved_aggregation_min_over_leveled_calendar_point_swaps_level():
+    # Re-leveling a calendar point must not trip pint's offset-arithmetic rules:
+    # levels attach and strip via *unit* arithmetic (GEP 10).
+    source = divide_by_grouping_level(parse_unit("calendar_year"), "hh")
+    result = resolved_unit_for_aggregation(
+        source_unit=source,
+        agg_type=AggType.MIN,
+        target_level="sn",
+        source_level="hh",
+    )
+    expected = divide_by_grouping_level(parse_unit("calendar_year"), "sn")
     assert units_are_equivalent(left=result, right=expected)
 
 
@@ -394,4 +516,37 @@ def test_any_all_aggregation_token_is_dimensionless(agg_type):
     assert (
         unit_for_aggregation(source_unit=Unit.DIMENSIONLESS, agg_type=agg_type)
         == Unit.DIMENSIONLESS
+    )
+
+
+def test_sum_aggregation_token_takes_the_target_level():
+    assert (
+        unit_for_aggregation(
+            source_unit=Unit.CURRENCY.PER_MONTH,
+            agg_type=AggType.SUM,
+            target_level="hh",
+        )
+        == Unit.CURRENCY.PER_MONTH.PER_HH
+    )
+
+
+def test_min_aggregation_token_over_a_level_less_base_takes_the_target_level():
+    assert (
+        unit_for_aggregation(
+            source_unit=Unit.MONTHS, agg_type=AggType.MIN, target_level="hh"
+        )
+        == Unit.MONTHS.PER_HH
+    )
+
+
+def test_mean_aggregation_token_strips_to_the_individual_spelling():
+    # The individual reading is the level-less spelling: the person leaf is
+    # implied for a level-carrying base, bare for an intensive one.
+    assert (
+        unit_for_aggregation(
+            source_unit=Unit.CURRENCY.PER_MONTH.PER_HH,
+            agg_type=AggType.MEAN,
+            target_level="hh",
+        )
+        == Unit.CURRENCY.PER_MONTH
     )

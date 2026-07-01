@@ -933,6 +933,153 @@ def test_python_and_on_unit_carrying_operand_is_still_caught():
         )
 
 
+# ----------------------------------------------------------------------------
+# Cross-level shares (division across grouping levels)
+# ----------------------------------------------------------------------------
+
+
+def test_terminal_cross_level_division_is_caught():
+    """Dividing two amounts at *different* group levels leaves a bare ratio of
+    levels (``betrag_m_fam / betrag_m_kin`` -> ``[kin]/[fam]``) once the physical
+    content cancels. A grouping level cannot outlive its base, so returning that
+    residue as a *result* is caught on the level axis (GEP 10)."""
+
+    @policy_input(unit=Unit.CURRENCY.PER_MONTH.PER_FAM)
+    def betrag_m_fam() -> float:
+        """A monthly family amount."""
+
+    @policy_input(unit=Unit.CURRENCY.PER_MONTH.PER_KIN)
+    def betrag_m_kin() -> float:
+        """A monthly kin amount."""
+
+    @policy_function(unit=Unit.DIMENSIONLESS)
+    def anteil(betrag_m_fam: float, betrag_m_kin: float) -> float:
+        return betrag_m_fam / betrag_m_kin
+
+    with pytest.raises(UnitConsistencyError, match="anteil"):
+        fail_if_environment_units_are_inconsistent(
+            env={
+                "betrag_m_fam": betrag_m_fam,
+                "betrag_m_kin": betrag_m_kin,
+                "anteil": anteil,
+            },
+            grouping_levels=GROUPING_LEVELS,
+        )
+
+
+def test_terminal_cross_level_division_passes_with_an_explicit_opt_out():
+    """A genuine terminal cross-level ratio is a deliberate policy judgement, so
+    it takes a local ``verify_units=False`` rather than a blanket exemption
+    (GEP 10)."""
+
+    @policy_input(unit=Unit.CURRENCY.PER_MONTH.PER_FAM)
+    def betrag_m_fam() -> float:
+        """A monthly family amount."""
+
+    @policy_input(unit=Unit.CURRENCY.PER_MONTH.PER_KIN)
+    def betrag_m_kin() -> float:
+        """A monthly kin amount."""
+
+    @policy_function(unit=Unit.DIMENSIONLESS, verify_units=False)
+    def anteil(betrag_m_fam: float, betrag_m_kin: float) -> float:
+        return betrag_m_kin / betrag_m_fam
+
+    fail_if_environment_units_are_inconsistent(
+        env={
+            "betrag_m_fam": betrag_m_fam,
+            "betrag_m_kin": betrag_m_kin,
+            "anteil": anteil,
+        },
+        grouping_levels=GROUPING_LEVELS,
+    )
+
+
+def test_bedarfsanteilsmethode_cross_level_share_consumed_by_multiplication_passes():
+    """The GETTSIM idiom: a person's share of a group claim,
+    ``(bedarf_m / bedarf_m_fam) * anspruch_m_fam``. The cross-level result
+    ``[fam]/[person]`` is consumed by the multiply, landing on a person-level flow
+    that matches the declaration — no exemption needed, and unchanged by the
+    cross-level rule (GEP 10)."""
+
+    @policy_input(unit=Unit.CURRENCY.PER_MONTH)
+    def bedarf_m() -> float:
+        """A person's monthly need."""
+
+    @policy_input(unit=Unit.CURRENCY.PER_MONTH.PER_FAM)
+    def bedarf_m_fam() -> float:
+        """The family's pooled monthly need."""
+
+    @policy_input(unit=Unit.CURRENCY.PER_MONTH.PER_FAM)
+    def anspruch_m_fam() -> float:
+        """The family's monthly claim."""
+
+    @policy_function(unit=Unit.CURRENCY.PER_MONTH)
+    def betrag_m(bedarf_m: float, bedarf_m_fam: float, anspruch_m_fam: float) -> float:
+        return (bedarf_m / bedarf_m_fam) * anspruch_m_fam
+
+    fail_if_environment_units_are_inconsistent(
+        env={
+            "bedarf_m": bedarf_m,
+            "bedarf_m_fam": bedarf_m_fam,
+            "anspruch_m_fam": anspruch_m_fam,
+            "betrag_m": betrag_m,
+        },
+        grouping_levels=GROUPING_LEVELS,
+    )
+
+
+def test_cross_level_share_declared_with_concrete_content_is_caught():
+    """A cross-level division leaves a physically dimensionless result; declaring
+    it with concrete content (``CURRENCY_PER_MONTH`` rather than
+    ``DIMENSIONLESS``) is caught on the physical axis, before the level axis is
+    even reached (GEP 10)."""
+
+    @policy_input(unit=Unit.CURRENCY.PER_MONTH.PER_FAM)
+    def betrag_m_fam() -> float:
+        """A monthly family amount."""
+
+    @policy_input(unit=Unit.CURRENCY.PER_MONTH.PER_KIN)
+    def betrag_m_kin() -> float:
+        """A monthly kin amount."""
+
+    @policy_function(leaf_name="anteil_m", unit=Unit.CURRENCY.PER_MONTH)
+    def anteil_m(betrag_m_fam: float, betrag_m_kin: float) -> float:
+        return betrag_m_fam / betrag_m_kin  # [kin]/[fam] cross-level result, not money
+
+    with pytest.raises(UnitConsistencyError, match="anteil_m"):
+        fail_if_environment_units_are_inconsistent(
+            env={
+                "betrag_m_fam": betrag_m_fam,
+                "betrag_m_kin": betrag_m_kin,
+                "anteil_m": anteil_m,
+            },
+            grouping_levels=GROUPING_LEVELS,
+        )
+
+
+def test_head_count_at_wrong_group_level_is_still_caught():
+    """A head count carries a ``[person]`` numerator and is a declarable,
+    level-checked unit. A ``[person]/[fam]`` count declared at the kin level is
+    caught (GEP 10) — it is not mistaken for a cross-level share."""
+
+    @policy_input(unit=Unit.PERSON_COUNT.PER_FAM)
+    def anzahl_personen_fam() -> int:
+        """A head count per family — ``[person]/[fam]``."""
+
+    @policy_function(leaf_name="anzahl_personen_kin", unit=Unit.PERSON_COUNT.PER_KIN)
+    def anzahl_personen_kin(anzahl_personen_fam: int) -> int:
+        return anzahl_personen_fam  # a [person]/[fam] count under a _kin name
+
+    with pytest.raises(UnitConsistencyError, match="anzahl_personen_kin"):
+        fail_if_environment_units_are_inconsistent(
+            env={
+                "anzahl_personen_fam": anzahl_personen_fam,
+                "anzahl_personen_kin": anzahl_personen_kin,
+            },
+            grouping_levels=GROUPING_LEVELS,
+        )
+
+
 def test_path_cap_truncation_demands_opt_out(monkeypatch):
     """Exceeding the path cap demands an opt-out, never passes silently (GEP 10).
 
@@ -1598,6 +1745,51 @@ def test_sum_aggregation_over_booleans_declares_dimensionless():
     )
 
 
+def test_aggregation_must_spell_the_derived_grouping_level():
+    """An aggregation's declared unit must be precise and complete: a ``_fam`` sum
+    declaring a bare ``CURRENCY`` (omitting the derived ``[fam]`` level) is rejected
+    — there is no implicit matching of group levels, the author spells it (GEP 10)."""
+
+    @agg_by_group_function(agg_type=AggType.SUM, unit=Unit.CURRENCY)
+    def wealth_fam(wealth: float, fam_id: int) -> float:
+        """A family sum that fails to spell its [fam] level."""
+
+    with pytest.raises(UnitConsistencyError, match="wealth_fam"):
+        fail_if_environment_units_are_inconsistent(
+            env={"wealth": wealth, "wealth_fam": wealth_fam},
+            grouping_levels=GROUPING_LEVELS,
+        )
+
+
+def test_aggregation_with_the_precise_derived_unit_passes():
+    """The full, precise declaration — kind, period, *and* level — matches the
+    derived unit and passes (GEP 10)."""
+
+    @agg_by_group_function(agg_type=AggType.SUM, unit=Unit.CURRENCY.PER_FAM)
+    def wealth_fam(wealth: float, fam_id: int) -> float:
+        """Family wealth, level spelled."""
+
+    fail_if_environment_units_are_inconsistent(
+        env={"wealth": wealth, "wealth_fam": wealth_fam},
+        grouping_levels=GROUPING_LEVELS,
+    )
+
+
+def test_aggregation_with_spelled_wrong_grouping_level_is_caught():
+    """A spelled grouping level that contradicts the derivation is rejected: a
+    ``_fam`` sum declaring ``CURRENCY_PER_KIN`` derives ``[fam]`` (GEP 10)."""
+
+    @agg_by_group_function(agg_type=AggType.SUM, unit=Unit.CURRENCY.PER_KIN)
+    def wealth_fam(wealth: float, fam_id: int) -> float:
+        """A family sum mis-declared at the kin level."""
+
+    with pytest.raises(UnitConsistencyError, match="wealth_fam"):
+        fail_if_environment_units_are_inconsistent(
+            env={"wealth": wealth, "wealth_fam": wealth_fam},
+            grouping_levels=GROUPING_LEVELS,
+        )
+
+
 def test_aggregation_decorator_rejects_invalid_unit():
     # Strings are not tokens: the decorator's type contract only admits
     # `Unit` members (or None), enforced by the beartype claw.
@@ -1977,11 +2169,10 @@ def test_sum_of_currency_declared_with_wrong_kind_is_caught():
         )
 
 
-def test_max_resolves_to_the_target_group_level():
-    """A MAX aggregation resolves to its *target* group level, like SUM (GEP 10,
-    T8): the `_xx` suffix and the unit's grouping level are always in sync, so a
-    `_fam` MAX of a person income is CURRENCY/month/[fam] — not the source
-    [person] level. The correct declaration spells `..._PER_FAM`.
+def test_max_over_level_carrying_source_carries_the_target_group_level():
+    """Aggregations follow the *base*, not the agg type: a MAX of a level-carrying
+    person income carries the target group level like a SUM. A `_fam` MAX is
+    CURRENCY/month/[fam], not the source [person], and is declared `..._PER_FAM`.
     """
 
     @policy_input(unit=Unit.CURRENCY.PER_MONTH)

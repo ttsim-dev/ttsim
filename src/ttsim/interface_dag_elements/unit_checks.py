@@ -67,9 +67,7 @@ from ttsim.tt.units import (
     UNSET_UNIT,
     CompositeUnit,
     UnitAnnotatedColumn,
-    _flow_period_of,
     _grouping_levels_with_exponent,
-    _token_base_unit,
     _unit_level_denominator,
     _unit_without_grouping_levels,
     base_currency,
@@ -113,13 +111,19 @@ NON_UNIT_ARGUMENTS = FRAMEWORK_PARTIAL_ARGUMENTS
 
 
 class _DryRunXnp:
-    """The dry-run's ``xnp``: NumPy, but with ``logical_and``/``logical_or`` routing
-    through ``_DryRunQuantity``'s leveled-boolean combine.
+    """The dry-run's ``xnp``: NumPy, but with the unit-bearing ops routed through
+    ``_DryRunQuantity``'s checks so a vectorized (``not_required``) body is checked
+    at full parity with a scalar one.
 
-    The array vectorizer rewrites ``and``/``or`` to ``logical_and``/``logical_or``
-    calls; the dry-run reuses that rewrite, so these two ops must combine operands
-    via ``&``/``|`` (the ``__and__``/``__or__`` path) rather than NumPy's truth-value
-    reduction.
+    ``_DryRunQuantity`` sets ``__array_ufunc__ = None`` to force ``+``/``-``/… onto
+    its checking dunders, which also stops NumPy ufuncs (``numpy.maximum`` …) from
+    running. So the array ops a body actually calls are intercepted here and routed
+    to the *same* checking primitives the operators use — ``maximum``/``minimum``
+    screen like an ordering comparison (the scalar ``max``/``min`` the vectorizer
+    rewrote), ``where`` like ``+`` (its two branches become one column), reductions
+    and unary shape ops preserve the unit. An op not modelled here falls through to
+    raw NumPy, raises, and is reported as needing ``verify_units=False`` — never
+    silently passed through.
     """
 
     @staticmethod
@@ -129,6 +133,50 @@ class _DryRunXnp:
     @staticmethod
     def logical_or(left: Any, right: Any) -> Any:  # noqa: ANN401
         return left | right
+
+    @staticmethod
+    def maximum(left: Any, right: Any) -> Any:  # noqa: ANN401
+        return _clamping_op(left=left, right=right, op="maximum")
+
+    @staticmethod
+    def minimum(left: Any, right: Any) -> Any:  # noqa: ANN401
+        return _clamping_op(left=left, right=right, op="minimum")
+
+    @staticmethod
+    def where(condition: Any, x: Any, y: Any) -> Any:  # noqa: ANN401, ARG004
+        return _where_op(x=x, y=y)
+
+    @staticmethod
+    def clip(value: Any, a_min: Any, a_max: Any) -> Any:  # noqa: ANN401
+        return _clip_op(value=value, a_min=a_min, a_max=a_max)
+
+    @staticmethod
+    def sum(value: Any, *args: Any, **kwargs: Any) -> Any:  # noqa: ANN401, ARG004
+        return _unit_preserving_op(value)
+
+    @staticmethod
+    def amin(value: Any, *args: Any, **kwargs: Any) -> Any:  # noqa: ANN401, ARG004
+        return _unit_preserving_op(value)
+
+    @staticmethod
+    def amax(value: Any, *args: Any, **kwargs: Any) -> Any:  # noqa: ANN401, ARG004
+        return _unit_preserving_op(value)
+
+    @staticmethod
+    def floor(value: Any) -> Any:  # noqa: ANN401
+        return _unit_preserving_op(value)
+
+    @staticmethod
+    def ceil(value: Any) -> Any:  # noqa: ANN401
+        return _unit_preserving_op(value)
+
+    @staticmethod
+    def round(value: Any, *args: Any, **kwargs: Any) -> Any:  # noqa: ANN401, ARG004
+        return _unit_preserving_op(value)
+
+    @staticmethod
+    def abs(value: Any) -> Any:  # noqa: ANN401
+        return _unit_preserving_op(value)
 
     def __getattr__(self, name: str) -> Any:  # noqa: ANN401
         return getattr(numpy, name)
@@ -240,14 +288,12 @@ def _resolve_leveled_column_unit(
 
     Both booleans and ordinary columns resolve via
     :func:`resolve_compositional_column_unit`, which validates the spelled
-    period/level against the name suffix and adds the implied person leaf for a
-    *leveled* base. A **boolean** is leveled (``is_boolean``): it is
-    ``DIMENSIONLESS`` per the level it is defined at — ``1 / [fam]`` for a
+    period/level against the name suffix and resolves an omitted group level to
+    the person grain — the implied person leaf for a level-carrying base or a
+    boolean, bare for an intensive one. A **boolean** is leveled (``is_boolean``):
+    it is ``DIMENSIONLESS`` per the level it is defined at — ``1 / [fam]`` for a
     fam-level indicator (spelled ``DIMENSIONLESS_PER_FAM``), ``1 / [person]`` for
-    a person-level one (bare ``DIMENSIONLESS``, person implied). A level-less,
-    non-boolean unit — a share, an age — stays level-less regardless of any
-    suffix: the suffix is then a pure *index* level (a ``MIN``-of-age at ``_fg``),
-    not a unit level.
+    a person-level one (bare ``DIMENSIONLESS``, person implied).
     """
     time_unit_id = match.group("time_unit") if match else None
     grouping_level = _suffix_grouping_level(match)
@@ -287,10 +333,9 @@ def _resolve_agg_by_group_unit(
 
     - a **head count** — ``COUNT``, or a ``SUM`` over a *boolean* source (counting
       the persons the indicator is true for) — mints ``[person]/[target]``;
-    - ``SUM`` / ``MEAN`` / ``MIN`` / ``MAX`` all resolve to the target level: the
-      source level (if any) is swapped for the target level and a level-less source
-      acquires it, so a ``_fg`` aggregate carries ``[fg]`` whatever the agg type —
-      they differ only in the numeric worker;
+    - ``SUM`` / ``MIN`` / ``MAX`` resolve to the **target** level whatever the
+      source (a level-less source acquires it); ``MEAN`` resolves to the
+      **individual** level — a per-head average belongs to the person (GEP 10);
     - ``ANY`` / ``ALL`` yield a dimensionless boolean at the target level.
 
     The value source is the function's own summed/averaged argument — read off the
@@ -471,72 +516,48 @@ def fail_if_environment_units_are_missing(
     fail_if_units_are_missing(units_by_qname)
 
 
-def _strip_grouping_level_denominator(unit: pint.Unit) -> pint.Unit:
-    """Divide out grouping-level *denominators*, keeping the count numerator.
-
-    Only grouping levels in the *denominator* (the level a quantity is measured
-    *per*) are removed; the ``[person]`` *count numerator* of a head count is
-    physical content and is kept.
-    """
-    result = UNIT_REGISTRY.Quantity(1.0, unit)
-    for name, exponent in _grouping_levels_with_exponent(unit):
-        if exponent >= 0:  # keep the [person] count numerator of a head count
-            continue
-        level_unit = UNIT_REGISTRY.Quantity(1.0, f"{_GROUPING_LEVEL_PREFIX}{name}")
-        result = result * level_unit ** (-exponent)
-    return cast("pint.Unit", result.units)
-
-
-def _physical_kind_of(unit: pint.Unit) -> pint.Unit:
-    """The period-free, level-free physical content of a unit.
-
-    An aggregation *derives* its full unit — physical kind, flow period, and
-    grouping level — from its source. Of these only the **physical kind**
-    (currency, the ``[person]`` count, area, a duration, or dimensionless) is the
-    author's to declare; the flow period comes from the source's suffix and the
-    grouping level from the aggregation rule — every group aggregation resolves to
-    its target level, so the declared token need not (and for a level-less
-    intensive base cannot) spell it. So the declared-vs-derived check compares this
-    residual: the flow period and the grouping-level denominator divided out, the
-    currency / count / area / duration kept.
-    """
-    # `_flow_period_of` returns the *denominator* period (the `month` of
-    # `CURRENCY / month`), so multiplying cancels it.
-    period = _flow_period_of(unit)
-    without_period = unit * period if period is not None else unit
-    return _strip_grouping_level_denominator(without_period)
-
-
 def _agg_declaration_inconsistency(
     qname: str,
     obj: AggByGroupFunction,
     resolved_units: Mapping[str, pint.Unit | dict[str | int, Any]],
 ) -> str | None:
-    """Error message if an aggregation's declared *kind* ≠ what it derives.
+    """Error message if an aggregation's declared unit ≠ what it derives.
 
     The resolved unit (:func:`_resolve_agg_by_group_unit`) is the *derived* one —
-    minted / swapped / preserved from the source and agg_type. The declared unit's
-    physical kind (its period-free, level-free base) must equal the derived unit's;
-    a ``SUM`` over a boolean is a head count and must be declared
-    ``PERSON_COUNT_PER_…``, not ``DIMENSIONLESS``. Returns ``None`` when there is
-    nothing to check: the
-    derivation could not resolve the source, or no unit is declared (the
-    mandatory-units check reports either).
+    minted / swapped / preserved from the source and agg_type. A hand-written
+    aggregation's declared unit must be **precise and complete**: it must equal the
+    derived unit in full — physical kind, flow period, *and* grouping level — with
+    no implicit matching of time units or group levels. The author spells the group
+    level (``CURRENCY_PER_YEAR_PER_HH``, ``PERSON_COUNT_PER_BG``, even
+    ``MONTHS_PER_FG``); only the ``[person]`` leaf is implied, never spelled. So a
+    ``SUM`` over a boolean declared ``DIMENSIONLESS`` rather than
+    ``PERSON_COUNT_PER_BG`` is rejected, and a ``_hh`` sum declared
+    ``CURRENCY_PER_YEAR`` (omitting the level) or ``CURRENCY_PER_YEAR_PER_BG``
+    (wrong level) is rejected too.
+
+    A *purely derived* aggregation (a ``COUNT`` / ``ANY`` with no hand-written
+    declaration) carries the derived unit directly and has nothing to check.
+    Returns ``None`` when there is nothing to check: the derivation could not
+    resolve the source, or no unit is declared (the mandatory-units check reports
+    either).
     """
     derived = resolved_units.get(qname)
     declared_token = getattr(obj, "unit", UNSET_UNIT)
     if derived is None or isinstance(derived, dict) or declared_token is UNSET_UNIT:
         return None
-    declared_kind = _token_base_unit(cast("CompositeUnit", declared_token))
-    derived_kind = _physical_kind_of(cast("pint.Unit", derived))
-    if units_are_equivalent(left=declared_kind, right=derived_kind):
+    declared_unit = resolve_compositional_param_unit(
+        cast("CompositeUnit", declared_token), where=f"Aggregation {qname!r}"
+    )
+    derived_unit = cast("pint.Unit", derived)
+    if units_are_equivalent(left=declared_unit, right=derived_unit):
         return None
     return (
-        f"{qname}: declares unit `{declared_token}` (a {declared_kind} quantity), "
-        f"but its {obj.agg_type.name} aggregation derives {derived} (a "
-        f"{derived_kind} quantity) from its source. An aggregation's declared unit "
-        f"must match the kind it derives — e.g. `PERSON_COUNT_PER_<level>` for a "
-        f"count, the source's currency for a sum of money (GEP 10)."
+        f"{qname}: declares `{declared_token}` but its {obj.agg_type.name} "
+        f"aggregation derives '{derived_unit}'. An aggregation's declared unit must "
+        f"match what it produces exactly — physical kind, flow period, and grouping "
+        f"level; spell the group level (the ``[person]`` leaf is implied), e.g. "
+        f"`PERSON_COUNT_PER_<level>` for a count, the source's currency and period "
+        f"for a sum of money (GEP 10)."
     )
 
 
@@ -591,10 +612,6 @@ def fail_if_environment_units_are_inconsistent(
     representative_values = _representative_values_by_qname(
         env=env, resolved_units=resolved_units
     )
-    suffix_pattern = get_re_pattern_for_all_time_units_and_groupings(
-        time_units=tuple(TIME_UNIT_IDS_TO_LABELS),
-        grouping_levels=grouping_levels,
-    )
     boolean_nodes = {
         qname
         for qname, obj in env.items()
@@ -636,15 +653,15 @@ def fail_if_environment_units_are_inconsistent(
             name: representative_values.get(name, UNIT_REGISTRY.Quantity(1.0, ""))
             for name in boolean_parameters
         }
-        leaf_name = dt.tree_path_from_qname(qname)[-1]
-        suffix_match = suffix_pattern.fullmatch(leaf_name)
         error = _verify_one_body(
             qname=qname,
             function=recompile_with_logical_ops_as_calls(
-                obj.function, module="xnp", module_obj=_NON_UNIT_ARGUMENT_VALUES["xnp"]
+                obj.function,
+                module="xnp",
+                module_obj=_NON_UNIT_ARGUMENT_VALUES["xnp"],
+                extra_globals=_DRY_RUN_HELPER_SHIMS,
             ),
             declared=declared,
-            suffix_level=_suffix_grouping_level(suffix_match),
             boolean_values=boolean_values,
             base_kwargs=base_kwargs,
         )
@@ -947,20 +964,42 @@ def _uniform_quantity_tree(value: Any, resolved_unit: pint.Unit) -> Any:  # noqa
     return UNIT_REGISTRY.Quantity(1.0, resolved_unit)
 
 
+def _resolve_schedule_input_unit(obj: ParamMappingObject) -> pint.Unit | None:
+    """The resolved ``input_unit`` of a schedule/lookup parameter, or ``None``.
+
+    Resolved the same way as the ``output_unit`` the environment exposes, so a
+    concrete-currency input axis and an agnostic ``CURRENCY`` consumer argument
+    compare as equivalent. ``None`` when the parameter left ``input_unit`` unset.
+    """
+    if obj.input_unit is UNSET_UNIT:
+        return None
+    return resolve_compositional_param_unit(
+        cast("CompositeUnit", obj.input_unit), where="A schedule input axis"
+    )
+
+
 def _representative_values_by_qname(
     env: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
     resolved_units: Mapping[str, pint.Unit | dict[str | int, Any]],
 ) -> dict[str, Any]:
     """Representative dry-run values for every unit-resolved node.
 
-    A dict parameter with a scalar ``unit:`` declaration becomes a dict of
-    uniform representative quantities mirroring its value structure, so that
-    subscripting works inside a consumer's dry-run.
+    A ``piecewise_*``/lookup-table parameter becomes a :class:`_DryRunSchedule`
+    carrying its input/output axes, so a consumer's ``piecewise_polynomial`` /
+    ``look_up`` call resolves to the output unit. A dict parameter with a scalar
+    ``unit:`` declaration becomes a dict of uniform representative quantities
+    mirroring its value structure, so that subscripting works inside a consumer's
+    dry-run.
     """
     out: dict[str, Any] = {}
     for qname, unit in resolved_units.items():
         obj = env.get(qname)
-        if isinstance(obj, DictParam | RawParam) and not isinstance(unit, dict):
+        if isinstance(obj, ParamMappingObject) and not isinstance(unit, dict):
+            out[qname] = _DryRunSchedule(
+                input_unit=_resolve_schedule_input_unit(obj),
+                output_unit=cast("pint.Unit", unit),
+            )
+        elif isinstance(obj, DictParam | RawParam) and not isinstance(unit, dict):
             out[qname] = _uniform_quantity_tree(
                 value=obj.value, resolved_unit=cast("pint.Unit", unit)
             )
@@ -1347,6 +1386,141 @@ def _wrap_for_dry_run(value: Any, explorer: _PathExplorer) -> Any:  # noqa: ANN4
     return value
 
 
+class _ScheduleNotDryRunnableError(Exception):
+    """A schedule/lookup/join call the dry-run cannot resolve to a unit.
+
+    Raised when a function-like parameter carries no axes (a converter-produced
+    or unannotated schedule) or a gather has no unit-carrying target — caught by
+    :func:`_verify_one_body`'s generic handler and reported as needing an explicit
+    ``verify_units=False`` opt-out, exactly like any other un-evaluable op.
+    """
+
+
+class _DryRunSchedule:
+    """A dry-run stand-in for a ``piecewise_*``/lookup-table parameter value.
+
+    Such a parameter is a *function between quantities*: a body calls
+    ``piecewise_polynomial(x, parameters=…)`` or ``….look_up(idx)`` on it and gets
+    an array. The dry-run needs only the unit that falls out. This stand-in carries
+    the parameter's resolved ``input_unit``/``output_unit`` axes: it screens each
+    domain argument against ``input_unit`` (as ``+`` screens an operand) and
+    produces the ``output_unit``. ``input_unit`` is ``None`` when the parameter
+    left it unset, in which case the domain is not screened.
+    """
+
+    __slots__ = ("input_unit", "output_unit")
+
+    def __init__(self, input_unit: pint.Unit | None, output_unit: pint.Unit) -> None:
+        self.input_unit = input_unit
+        self.output_unit = output_unit
+
+    def _produce(self, domain_args: tuple[Any, ...]) -> _DryRunQuantity:
+        explorer: _PathExplorer | None = None
+        for arg in domain_args:
+            if isinstance(arg, _DryRunQuantity):
+                explorer = arg._explorer  # noqa: SLF001
+                if self.input_unit is not None and not units_are_equivalent(
+                    left=cast("pint.Unit", arg.q.units), right=self.input_unit
+                ):
+                    raise _UnitMixError(
+                        op="look-up",
+                        left=self.input_unit,
+                        right=cast("pint.Unit", arg.q.units),
+                    )
+        if explorer is None:
+            # No unit-carrying domain argument to anchor the result on (a bare
+            # literal index): not dry-runnable, fall back to the opt-out.
+            raise _ScheduleNotDryRunnableError
+        return _DryRunQuantity(
+            q=UNIT_REGISTRY.Quantity(1.0, self.output_unit), explorer=explorer
+        )
+
+    def look_up(self, *args: Any) -> _DryRunQuantity:  # noqa: ANN401
+        return self._produce(args)
+
+
+def _piecewise_polynomial_dry_run(x: Any, parameters: Any, xnp: Any) -> Any:  # noqa: ANN401, ARG001
+    """Dry-run shim for ``piecewise_polynomial``.
+
+    Screen ``x`` against the schedule's ``input_unit`` and produce its
+    ``output_unit``. A ``parameters`` that is not a :class:`_DryRunSchedule` — a
+    converter-produced or unannotated schedule — is not dry-runnable here.
+    """
+    if isinstance(parameters, _DryRunSchedule):
+        return parameters._produce((x,))  # noqa: SLF001
+    raise _ScheduleNotDryRunnableError
+
+
+def _join_dry_run(
+    foreign_key: Any,  # noqa: ANN401, ARG001
+    primary_key: Any,  # noqa: ANN401, ARG001
+    target: Any,  # noqa: ANN401
+    value_if_foreign_key_is_missing: Any,  # noqa: ANN401, ARG001
+    xnp: Any,  # noqa: ANN401, ARG001
+) -> Any:  # noqa: ANN401
+    """Dry-run shim for ``join``.
+
+    A person-to-person gather preserves the ``target`` column's unit and level
+    (the keys are dimensionless ``p_id``s, the missing-value a sentinel literal).
+    """
+    if isinstance(target, _DryRunQuantity):
+        return target._wrap(target.q)  # noqa: SLF001
+    raise _ScheduleNotDryRunnableError
+
+
+#: Module-level helpers swapped for unit-only shims in a dry-run body's scope.
+_DRY_RUN_HELPER_SHIMS: Mapping[str, Any] = {
+    "piecewise_polynomial": _piecewise_polynomial_dry_run,
+    "join": _join_dry_run,
+}
+
+
+def _clamping_op(left: Any, right: Any, op: str) -> Any:  # noqa: ANN401
+    """``xnp.maximum``/``xnp.minimum``: an ordering-style screen, unit preserved.
+
+    The vectorizer rewrites a scalar ``max(a, b)``/``min(a, b)`` to these, so the
+    operands are screened exactly as an ordering comparison — two unit-carrying
+    operands must be equivalent, a bare non-zero literal bound is rejected — and
+    the result carries the quantity's unit.
+    """
+    quantity = left if isinstance(left, _DryRunQuantity) else right
+    if not isinstance(quantity, _DryRunQuantity):
+        return getattr(numpy, op)(left, right)
+    other = right if quantity is left else left
+    quantity._fail_if_ordering_operand_is_invalid(other=other, op=op)  # noqa: SLF001
+    return quantity._wrap(quantity.q)  # noqa: SLF001
+
+
+def _where_op(x: Any, y: Any) -> Any:  # noqa: ANN401
+    """``xnp.where``: the two branches become one column, so they must carry
+    equivalent units (as for ``+``); the result carries that unit."""
+    quantity = x if isinstance(x, _DryRunQuantity) else y
+    if not isinstance(quantity, _DryRunQuantity):
+        return numpy.where(True, x, y)  # noqa: FBT003
+    other = y if quantity is x else x
+    quantity._fail_if_other_unit_is_not_equivalent(other=other, op="where")  # noqa: SLF001
+    return quantity._wrap(quantity.q)  # noqa: SLF001
+
+
+def _clip_op(value: Any, a_min: Any, a_max: Any) -> Any:  # noqa: ANN401
+    """``xnp.clip``: each bound is screened against the value as an ordering
+    operand (so a bare non-zero literal bound is rejected); the unit is preserved.
+    """
+    if not isinstance(value, _DryRunQuantity):
+        return numpy.clip(value, a_min, a_max)
+    for bound in (a_min, a_max):
+        if bound is not None:
+            value._fail_if_ordering_operand_is_invalid(other=bound, op="clip")  # noqa: SLF001
+    return value._wrap(value.q)  # noqa: SLF001
+
+
+def _unit_preserving_op(value: Any) -> Any:  # noqa: ANN401
+    """A unit-preserving reduction/unary op (``sum``/``floor``/``abs``/…)."""
+    if isinstance(value, _DryRunQuantity):
+        return value._wrap(value.q)  # noqa: SLF001
+    return value
+
+
 def _opt_out_required_error(qname: str, reason: str) -> str:
     """Message demanding an explicit opt-out for a body the dry-run cannot check.
 
@@ -1423,7 +1597,6 @@ def _verify_one_body(
     qname: str,
     function: Any,  # noqa: ANN401  (a scalar body, possibly a dags wrapper)
     declared: pint.Unit,
-    suffix_level: str,
     boolean_values: Mapping[str, Any],
     base_kwargs: dict[str, Any],
 ) -> str | None:
@@ -1481,7 +1654,6 @@ def _verify_one_body(
             qname=qname,
             inferred=_unwrap(result),
             declared=declared,
-            suffix_level=suffix_level,
             detail=detail,
         )
         if error is not None:
@@ -1495,7 +1667,6 @@ def _inferred_result_error(
     qname: str,
     inferred: Any,  # noqa: ANN401
     declared: pint.Unit,
-    suffix_level: str,
     detail: str,
 ) -> str | None:
     """Check one dry-run result against the declaration.
@@ -1506,12 +1677,12 @@ def _inferred_result_error(
 
     - its **physical content** (currency, period, area, …) — the unit with every
       grouping level divided out — must equal the declaration's; and
-    - its **grouping level**, under the index-vs-unit rule: *when the inferred unit
-      carries a level denominator it must equal the name's aggregation-suffix
-      level*; a level-less inferred unit is exempt (its index level is the
-      structural system's concern, not the unit check's). So a per-person rent
-      share mis-named ``…_hh`` (inferred ``…/[person]``, suffix ``[hh]``) is caught,
-      while a level-less ``MIN``-of-age at ``_fg`` passes.
+    - its **grouping level**: *when the inferred unit carries a level denominator
+      it must equal the declared (resolved) unit's level*. The level is declared,
+      not read off the suffix (GEP 10), so a person-level body under a
+      group-suffixed name passes when the declaration leaves the group level off
+      and fails when it spells one. A level-less inferred unit is exempt (an
+      intensive result makes no level claim).
 
     A *dimensionless* inference is deliberately not flagged against a concrete
     declaration: it is unit-polymorphic — exactly what an identifier, a head count,
@@ -1541,11 +1712,17 @@ def _inferred_result_error(
             f"'{inferred_unit}'{detail}."
         )
     inferred_level = _unit_level_denominator(inferred_unit)
-    if inferred_level is not None and inferred_level != suffix_level:
+    declared_level = _unit_level_denominator(declared)
+    if inferred_level is not None and inferred_level != declared_level:
+        declared_level_clause = (
+            f"the '[{declared_level}]' level"
+            if declared_level is not None
+            else "no level"
+        )
         return (
             f"{qname}: its body infers a '[{inferred_level}]'-level result "
-            f"('{inferred_unit}'){detail}, but its name's aggregation suffix is "
-            f"'[{suffix_level}]' (it resolves to '{declared}'). A unit's grouping "
-            f"level, when present, must match the name's suffix level (GEP 10)."
+            f"('{inferred_unit}'){detail}, but its declaration resolves to "
+            f"'{declared}' — {declared_level_clause}. A quantity carries a group "
+            f"level iff it is a property of the group as a whole (GEP 10)."
         )
     return None

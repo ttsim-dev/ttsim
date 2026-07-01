@@ -328,6 +328,7 @@ def test_input_dependent_interface_functions_with_same_path_have_same_docstring(
                 "housing_benefits__eligibility__requirement_fulfilled_fam",
                 "housing_benefits__income__amount_m_fam",
                 "housing_benefits__income__amount_m",
+                "housing_benefits__income__amount_per_member_m_fam",
             ],
         ),
         (

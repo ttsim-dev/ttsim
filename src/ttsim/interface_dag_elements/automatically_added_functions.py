@@ -411,9 +411,8 @@ def create_agg_by_group_functions(
                 column_functions=column_functions,
                 qname_policy_environment=qname_policy_environment,
             )
-            # A sum aggregation preserves the source's physical token; the
-            # target group level is resolved later at build time, so the unit
-            # stored here carries no spelled level.
+            # A sum aggregation preserves the source's physical token and takes
+            # the target group level (GEP 10).
             source_unit = _resolve_source_unit(
                 source_name=base_name_with_time_unit,
                 column_functions=column_functions,
@@ -442,7 +441,9 @@ def create_agg_by_group_functions(
                     f"{group_id} ID."
                 ),
                 unit=unit_for_aggregation(
-                    source_unit=source_unit, agg_type=AggType.SUM
+                    source_unit=source_unit,
+                    agg_type=AggType.SUM,
+                    target_level=group_id,
                 ),
             )
     return out

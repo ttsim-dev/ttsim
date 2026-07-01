@@ -1082,7 +1082,7 @@ def input_currency_is_not_concrete(
 @fail_function(
     include_if_any_element_present=["input_data__tree_with_unit_annotations"]
 )
-def input_levels_disagree_with_suffix(
+def input_levels_disagree_with_declaration(
     input_data__tree_with_unit_annotations: NestedData,
     unit_checks__resolved_units: dict[str, pint.Unit | dict[str | int, Any]],
 ) -> None:
@@ -1090,9 +1090,9 @@ def input_levels_disagree_with_suffix(
 
     Like a parameter, an input tag **spells** its group level
     (``Unit.EUR.PER_MONTH.PER_BG``); the person leaf is implied. That spelled
-    level must equal the level the column's *declared* unit carries — which the
-    column resolver already derived from the GEP-1 suffix, and which is correctly
-    level-less for an intensive quantity even at a group suffix (a ``rate_hh``).
+    level must equal the level the column's *declared* unit carries — the level
+    is declared, not read off the suffix (GEP 10), so it is correctly the person
+    leaf (or none, for a share or rate) even at a group suffix.
     The measurement check (``input_units_are_inconsistent``) screens the rest;
     this owns the index axis.
 

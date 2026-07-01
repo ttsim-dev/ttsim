@@ -79,13 +79,15 @@ def tree_with_unit_annotations() -> NestedData:
     ``UnitAnnotatedColumn(values=…, unit=Unit.…)`` carrying the column's unit (a
     dimensionless column — an id, a boolean — is tagged
     ``unit=Unit.DIMENSIONLESS``). As for a parameter, a currency column must name
-    a **concrete** currency (``Unit.EUR``), and a group column **spells** its
-    level (``Unit.EUR.PER_MONTH.PER_BG``). Selecting this node opts into
-    full-coverage boundary unit validation: each tag's currency is converted to
-    the run currency, its period and level are screened against the name suffix,
-    and ``fail_if__input_units_are_inconsistent`` rejects any tag whose
-    measurement disagrees with the column's declared unit. Use bare :func:`tree`
-    for untagged data.
+    a **concrete** currency (``Unit.EUR``), and the tag's grouping level must
+    equal the column's *declared* level — a group-owned column spells it
+    (``Unit.EUR.PER_MONTH.PER_BG``), a person property is tagged without one,
+    even at a group suffix. Selecting this node opts into full-coverage boundary
+    unit validation: each tag's currency is converted to the run currency, its
+    period is screened against the name suffix and its level against the
+    declared level, and ``fail_if__input_units_are_inconsistent`` rejects any
+    tag whose measurement disagrees with the column's declared unit. Use bare
+    :func:`tree` for untagged data.
     """
 
 
@@ -229,8 +231,8 @@ def units_from_tree_with_unit_annotations(
     Resolved off every :class:`UnitAnnotatedColumn`'s tag so
     ``fail_if__input_units_are_inconsistent`` can compare it — on the measurement
     axis, currency / period / level factored out — against the column's declared
-    unit. The level a tag spells is screened separately, against the name suffix,
-    by ``fail_if__input_levels_disagree_with_suffix``.
+    unit. The level a tag spells is screened separately, against the column's
+    declared level, by ``fail_if__input_levels_disagree_with_declaration``.
     """
     flat = dt.flatten_to_tree_paths(tree_with_unit_annotations)
     return {

@@ -672,7 +672,9 @@ def test_time_conversion_variants_rebased_period():
     )
 
 
-def test_auto_aggregation_preserves_source_unit():
+def test_auto_aggregation_carries_the_target_level():
+    # An auto-aggregation preserves the source's physical base and period and
+    # carries the *target* group level, so its declared token is precise (GEP 10).
     aggs = create_agg_by_group_functions(
         column_functions={
             "betrag_m": policy_function(
@@ -686,7 +688,7 @@ def test_auto_aggregation_preserves_source_unit():
     )
     assert (
         aggs["betrag_m_kin"].unit  # ty: ignore[unresolved-attribute]
-        == Unit.CURRENCY.PER_MONTH
+        == Unit.CURRENCY.PER_MONTH.PER_KIN
     )
 
 

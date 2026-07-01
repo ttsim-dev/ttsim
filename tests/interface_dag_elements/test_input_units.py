@@ -16,7 +16,7 @@ import pytest
 from ttsim.exceptions import UnitConsistencyError, UnitDefinitionError
 from ttsim.interface_dag_elements.fail_if import (
     input_currency_is_not_concrete,
-    input_levels_disagree_with_suffix,
+    input_levels_disagree_with_declaration,
 )
 from ttsim.interface_dag_elements.input_data import (
     flat_from_tree_with_unit_annotations,
@@ -139,7 +139,7 @@ def test_input_level_must_match_declared():
     # it. Compared against the declared resolved unit, not the name suffix directly.
     register_grouping_levels(["hh"])
     with pytest.raises(UnitConsistencyError, match="disagrees with the column"):
-        input_levels_disagree_with_suffix(
+        input_levels_disagree_with_declaration(
             input_data__tree_with_unit_annotations={
                 "miete_m_hh": UnitAnnotatedColumn(
                     values=numpy.array([1.0]), unit=Unit.CURRENCY.PER_MONTH
@@ -155,7 +155,7 @@ def test_input_level_must_match_declared():
 
 def test_input_level_matching_declared_passes():
     register_grouping_levels(["hh"])
-    input_levels_disagree_with_suffix(
+    input_levels_disagree_with_declaration(
         input_data__tree_with_unit_annotations={
             "miete_m_hh": UnitAnnotatedColumn(
                 values=numpy.array([1.0]), unit=Unit.CURRENCY.PER_MONTH.PER_LEVEL("hh")
@@ -175,12 +175,10 @@ def test_input_level_matching_declared_passes():
     )
 
 
-def test_input_level_intensive_group_suffix_stays_level_less():
-    # An intensive quantity (a share) at a group suffix declares *level-less*, so a
-    # level-less tag is correct — the column's declared unit carries no level. (The
-    # earlier suffix-regex check wrongly demanded a level here.)
+def test_input_share_at_group_suffix_stays_level_less():
+    # A group suffix must not force a level onto a level-less quantity.
     register_grouping_levels(["hh"])
-    input_levels_disagree_with_suffix(
+    input_levels_disagree_with_declaration(
         input_data__tree_with_unit_annotations={
             "rate_hh": UnitAnnotatedColumn(
                 values=numpy.array([0.5]), unit=Unit.DIMENSIONLESS
