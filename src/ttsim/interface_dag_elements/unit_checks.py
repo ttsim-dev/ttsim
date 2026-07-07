@@ -12,6 +12,9 @@ assembled policy environment on two counts:
   / ``@param_function`` body is dry-run on representative quantities built from
   its producers' resolved units. A body that cannot be evaluated symbolically
   must opt out with ``verify_units=False``, so every un-verified body is visible.
+  A single deliberate irregularity — policy-mandated cross-level arithmetic, a
+  dimensioned constant — re-tags itself with ``cast_unit`` instead, keeping the
+  rest of the body checked.
 
 The dry-run wraps each ``Quantity(1.0, unit)`` in a :class:`_DryRunQuantity`,
 whose arithmetic propagates units while a :class:`_PathExplorer` drives its
@@ -71,10 +74,12 @@ from ttsim.tt.units import (
     _unit_level_denominator,
     _unit_without_grouping_levels,
     base_currency,
+    coerce_unit_token,
     fail_if_units_are_missing,
     is_calendar_point_unit,
     parse_unit,
     register_grouping_levels,
+    resolve_compositional_cast_unit,
     resolve_compositional_column_unit,
     resolve_compositional_param_unit,
     resolved_unit_for_aggregation,
@@ -1201,13 +1206,16 @@ class _DryRunQuantity:
         )
 
     def _fail_if_other_unit_is_not_equivalent(self, other: Any, op: str) -> None:  # noqa: ANN401
-        """Reject a non-equivalent *unit-carrying* operand of ``+``/``-``/comparison.
+        """Reject an invalid operand of ``+``/``-``/comparison/``where``.
 
         At run time there is no pint, so these operations are unit-blind (raw
         arrays are added or compared without conversion); two unit-carrying
-        operands must already be in equivalent units. A bare literal carries no
-        unit to compare against, so it stays lenient — the literal ambiguity we
-        deliberately do not resolve (an ``x + 0.0`` guard must not be flagged).
+        operands must already be in equivalent units. A non-zero *bare literal*
+        next to a non-dimensionless quantity is rejected too: it silently
+        carries the quantity's unit (``betrag_m + 100.0`` hides a monthly
+        amount) — promote it to a parameter or tag it with ``cast_unit``. Only
+        ``0`` (the ``x + 0.0`` guard, the floor at zero) is allowed inline, and
+        literals next to a dimensionless quantity stay lenient.
 
         A calendar point (an affine offset unit) is the exception: its valid
         ``point + duration`` is *not* equivalence (a point and a duration differ),
@@ -1229,22 +1237,6 @@ class _DryRunQuantity:
             right=cast("pint.Unit", other_q.units),
         ):
             raise _UnitMixError(op=op, left=self.q.units, right=other_q.units)
-
-    def _fail_if_ordering_operand_is_invalid(self, other: Any, op: str) -> None:  # noqa: ANN401
-        """Screen an operand of an ordering comparison (``<``/``<=``/``>``/``>=``).
-
-        Two unit-carrying operands must be equivalent, exactly as for ``+``/``-``.
-        In addition a *bare numeric literal* is rejected here: an ordering
-        comparison is unit-blind at run time, so comparing a non-dimensionless
-        quantity against a non-zero number silently lends the number that
-        quantity's unit — ``wealth > 1_000_000`` reads the bound as currency. Only
-        ``0`` (the sign test / floor-at-zero) is allowed inline; a real threshold
-        belongs in a parameter, which carries its own unit. When the quantity is
-        itself dimensionless (a share, a count, working hours), bare literals are
-        fine and stay lenient.
-        """
-        self._fail_if_other_unit_is_not_equivalent(other=other, op=op)
-        other_q = _unwrap(other)
         if (
             isinstance(other_q, int | float | numpy.number)
             and not self.q.dimensionless
@@ -1256,6 +1248,16 @@ class _DryRunQuantity:
                 right=_DIMENSIONLESS_UNIT,
                 literal=other_q,
             )
+
+    def _fail_if_ordering_operand_is_invalid(self, other: Any, op: str) -> None:  # noqa: ANN401
+        """Screen an operand of an ordering comparison (``<``/``<=``/``>``/``>=``).
+
+        The rules are those of ``+``/``-``: two unit-carrying operands must be
+        equivalent, and a non-zero bare literal next to a non-dimensionless
+        quantity is rejected (``wealth > 1_000_000`` reads the bound as
+        currency) — see :meth:`_fail_if_other_unit_is_not_equivalent`.
+        """
+        self._fail_if_other_unit_is_not_equivalent(other=other, op=op)
 
     def __bool__(self) -> bool:
         return self._explorer.decide()
@@ -1468,10 +1470,32 @@ def _join_dry_run(
     raise _ScheduleNotDryRunnableError
 
 
+def _cast_unit_dry_run(value: Any, unit: str | CompositeUnit) -> Any:  # noqa: ANN401
+    """Dry-run shim for ``cast_unit``.
+
+    The cast is total: whatever flowed in — a quantity at another unit or
+    level, a bare literal, an attribute plucked off a structured value — the
+    stand-in flowing out carries the stated unit, resolved like a declaration
+    (currency-agnostic, the person leaf implied). A ``_DryRunQuantity`` input
+    keeps its explorer, so branch decisions stay on the run's path; any other
+    input anchors a plain representative quantity, which a wrapped operand
+    combines with like any parameter value. A malformed token raises a
+    :class:`UnitDefinitionError`, which :func:`_verify_one_body` re-raises
+    rather than misreporting as an un-evaluable body.
+    """
+    token = coerce_unit_token(unit, where="A `cast_unit` call")
+    resolved = resolve_compositional_cast_unit(token, where="A `cast_unit` call")
+    quantity = UNIT_REGISTRY.Quantity(1.0, resolved)
+    if isinstance(value, _DryRunQuantity):
+        return value._wrap(quantity)  # noqa: SLF001
+    return quantity
+
+
 #: Module-level helpers swapped for unit-only shims in a dry-run body's scope.
 _DRY_RUN_HELPER_SHIMS: Mapping[str, Any] = {
     "piecewise_polynomial": _piecewise_polynomial_dry_run,
     "join": _join_dry_run,
+    "cast_unit": _cast_unit_dry_run,
 }
 
 
@@ -1570,10 +1594,10 @@ def _unit_mix_error_message(qname: str, mix: _UnitMixError, detail: str) -> str:
     """
     if mix.literal is not None:
         return (
-            f"{qname}: compares '{mix.left}' against the bare literal "
-            f"{mix.literal}{detail} — a literal in an ordering comparison silently "
-            f"carries the other operand's unit; promote it to a parameter, or "
-            f"compare against 0 (GEP 10)."
+            f"{qname}: combines '{mix.left}' {mix.op} the bare literal "
+            f"{mix.literal}{detail} — a literal next to a quantity silently "
+            f"carries that quantity's unit; promote it to a parameter, tag it "
+            f"with `cast_unit`, or use 0 (GEP 10)."
         )
     if mix.op not in _LOGICAL_OPS:
         return (
@@ -1643,6 +1667,10 @@ def _verify_one_body(
         except (_UnitMixError, pint.OffsetUnitCalculusError) as err:
             detail = " on a conditional branch" if explorer.on_a_branch else ""
             return _arithmetic_misuse_message(qname=qname, error=err, detail=detail)
+        except UnitDefinitionError:
+            # A malformed `cast_unit` token is a definition error, not an
+            # un-evaluable body; report it as itself.
+            raise
         except Exception:  # noqa: BLE001
             return _opt_out_required_error(
                 qname,
@@ -1663,6 +1691,60 @@ def _verify_one_body(
     return None
 
 
+def _bare_literal_result_error(
+    qname: str,
+    inferred: Any,  # noqa: ANN401
+    declared: pint.Unit,
+    detail: str,
+) -> str | None:
+    """The literal-return screen for a plain (non-``Quantity``) scalar result.
+
+    Only ``0`` (the eligibility guard) and booleans fall through: a non-zero
+    numeric literal returned under a non-dimensionless declaration is a hidden
+    dimensioned constant, exactly as a bare bound in an ordering comparison.
+    """
+    if (
+        isinstance(inferred, int | float | numpy.number)
+        and not isinstance(inferred, bool | numpy.bool_)
+        and inferred != 0
+        and not UNIT_REGISTRY.Quantity(1.0, declared).dimensionless
+    ):
+        return (
+            f"{qname}: returns the bare literal {inferred}{detail} under the "
+            f"declaration '{declared}' — a literal return silently carries "
+            f"the declared unit; promote it to a parameter, tag it with "
+            f"`cast_unit`, or return 0 (GEP 10)."
+        )
+    return None
+
+
+def _dimensionless_claim_error(
+    qname: str,
+    declared: pint.Unit,
+    detail: str,
+) -> str | None:
+    """The group-ownership screen for a plain dimensionless inference.
+
+    A dimensionless result is unit-polymorphic — what an identifier, a share,
+    or a count magnitude produces (``p_id * 2.0``) — so it may stand in for any
+    *person-grain* declaration. It cannot claim a group-owned one: ownership is
+    a statement that arithmetic on level-less material can never produce, so it
+    is made explicitly, with ``cast_unit``.
+    """
+    declared_group_levels = {
+        name
+        for name, exponent in _grouping_levels_with_exponent(declared)
+        if exponent < 0 and name != PERSON_LEVEL
+    }
+    if not declared_group_levels:
+        return None
+    return (
+        f"{qname}: its body infers a plain dimensionless result{detail}, "
+        f"which cannot claim the group-owned declaration '{declared}'; "
+        f"state the intended unit at the site with `cast_unit` (GEP 10)."
+    )
+
+
 def _inferred_result_error(
     qname: str,
     inferred: Any,  # noqa: ANN401
@@ -1677,20 +1759,22 @@ def _inferred_result_error(
 
     - its **physical content** (currency, period, area, …) — the unit with every
       grouping level divided out — must equal the declaration's; and
-    - its **grouping level**: *when the inferred unit carries a level denominator
-      it must equal the declared (resolved) unit's level*. The level is declared,
-      not read off the suffix (GEP 10), so a person-level body under a
-      group-suffixed name passes when the declaration leaves the group level off
-      and fails when it spells one. A level-less inferred unit is exempt (an
-      intensive result makes no level claim).
+    - its **grouping levels** must equal the declared (resolved) unit's level
+      signature *exactly* — every level with its exponent. A level-less inference
+      under a declaration that spells a level fails, and so does the squared
+      level of multiplying two group-owned quantities
+      (``1/[fam] * CURRENCY/month/[fam]`` → ``…/[fam]**2``). The level is
+      declared, not read off the suffix (GEP 10); a body whose arithmetic cannot
+      produce the declared levels — an intensive group property computed from
+      level-less material, a policy-mandated cross-level product — states the
+      intended unit with ``cast_unit`` at the site.
 
-    A *dimensionless* inference is deliberately not flagged against a concrete
-    declaration: it is unit-polymorphic — exactly what an identifier, a head count,
-    or a share produces (``p_id * 2.0``), legitimately standing in for the
-    magnitude of a concrete quantity — and separating a genuine cancellation
-    (``wealth / income`` declared ``CURRENCY``) from it would need operand
-    provenance the dry-run does not track. A bare-literal ``return 0.0`` is not a
-    ``Quantity``, so it is a plain scalar and falls through cleanly.
+    A plain scalar result and a plain dimensionless inference take their own
+    screens (:func:`_bare_literal_result_error`,
+    :func:`_dimensionless_claim_error`): ``return 0.0`` and dimensionless
+    magnitudes standing in for a person-grain quantity (``p_id * 2.0`` under
+    ``CURRENCY``) stay lenient; a non-zero literal return and a dimensionless
+    claim on a group-owned declaration are rejected.
     """
     if not isinstance(
         inferred, pint.Quantity | int | float | numpy.number | numpy.bool_
@@ -1700,8 +1784,12 @@ def _inferred_result_error(
             "it returns a value the dry-run cannot unit-check — a dataclass, "
             "a tuple, or another non-scalar",
         )
-    if not isinstance(inferred, pint.Quantity) or inferred.dimensionless:
-        return None
+    if not isinstance(inferred, pint.Quantity):
+        return _bare_literal_result_error(
+            qname=qname, inferred=inferred, declared=declared, detail=detail
+        )
+    if inferred.dimensionless:
+        return _dimensionless_claim_error(qname=qname, declared=declared, detail=detail)
     inferred_unit = cast("pint.Unit", inferred.units)
     if not units_are_equivalent(
         left=_unit_without_grouping_levels(inferred_unit),
@@ -1711,18 +1799,14 @@ def _inferred_result_error(
             f"{qname}: declares '{declared}' but its body infers "
             f"'{inferred_unit}'{detail}."
         )
-    inferred_level = _unit_level_denominator(inferred_unit)
-    declared_level = _unit_level_denominator(declared)
-    if inferred_level is not None and inferred_level != declared_level:
-        declared_level_clause = (
-            f"the '[{declared_level}]' level"
-            if declared_level is not None
-            else "no level"
-        )
+    inferred_levels = dict(_grouping_levels_with_exponent(inferred_unit))
+    declared_levels = dict(_grouping_levels_with_exponent(declared))
+    if inferred_levels != declared_levels:
         return (
-            f"{qname}: its body infers a '[{inferred_level}]'-level result "
-            f"('{inferred_unit}'){detail}, but its declaration resolves to "
-            f"'{declared}' — {declared_level_clause}. A quantity carries a group "
-            f"level iff it is a property of the group as a whole (GEP 10)."
+            f"{qname}: its body infers '{inferred_unit}'{detail}, whose grouping "
+            f"levels do not match its declaration's resolution '{declared}'. A "
+            f"quantity carries a group level iff it is a property of the group "
+            f"as a whole; where the mismatch is deliberate, state the intended "
+            f"unit at the site with `cast_unit` (GEP 10)."
         )
     return None

@@ -28,6 +28,7 @@ from ttsim.tt import (
     AggType,
     CompositeUnit,
     Unit,
+    cast_unit,
     coerce_unit_token,
     currency_conversion_factor,
     fail_if_units_are_missing,
@@ -50,6 +51,8 @@ from ttsim.tt.units import (
     infer_function_unit,
     is_calendar_point_unit,
     register_grouping_levels,
+    resolve_compositional_cast_unit,
+    resolve_compositional_param_unit,
 )
 
 
@@ -1074,3 +1077,77 @@ def test_hours_per_week_rebases_period_only():
     )
     # Different periods are not equivalent (a 52/12 factor apart).
     assert not units_are_equivalent(left=per_week, right=per_month)
+
+
+# ----------------------------------------------------------------------------
+# `cast_unit` and the implied person leaf (GEP 10)
+# ----------------------------------------------------------------------------
+
+
+def test_cast_unit_is_the_identity_at_run_time():
+    # Like `typing.cast`: no runtime effect, scalar or column, so the numeric
+    # path and JAX tracing are untouched.
+    column = np.array([1.0, 2.0])
+    assert cast_unit(column, Unit.CURRENCY.PER_MONTH) is column
+    assert cast_unit(3.5, Unit.MONTHS) == 3.5
+
+
+def test_cast_target_resolves_like_a_column_declaration():
+    # The cast states a unit in the declaration vocabulary: the person leaf is
+    # implied for a level-carrying base, an intensive base stays bare.
+    assert units_are_equivalent(
+        left=resolve_compositional_cast_unit(Unit.CURRENCY.PER_MONTH, where="test"),
+        right=resolve_compositional_column_unit(
+            Unit.CURRENCY.PER_MONTH,
+            time_unit_id="m",
+            grouping_level="person",
+            where="test",
+        ),
+    )
+    assert units_are_equivalent(
+        left=resolve_compositional_cast_unit(Unit.MONTHS, where="test"),
+        right=resolve_compositional_unit(Unit.MONTHS),
+    )
+
+
+def test_cast_target_must_be_currency_agnostic():
+    token = coerce_unit_token("CASTAR_PER_MONTH", where="test")
+    with pytest.raises(UnitDefinitionError, match="currency-agnostic"):
+        resolve_compositional_cast_unit(token, where="test")
+
+
+def test_area_denominator_suppresses_the_implied_person_leaf():
+    # A rent cap is a price, owned by nobody: the area denominator keeps the
+    # person leaf off, so `cap * area` cancels to a person-level amount
+    # (GEP 10). Both the column and the parameter resolver apply the rule.
+    expected = parse_unit("CURRENCY / meter ** 2 / month")
+    assert units_are_equivalent(
+        left=resolve_compositional_column_unit(
+            Unit.CURRENCY.PER_SQUARE_METER.PER_MONTH,
+            time_unit_id="m",
+            grouping_level="person",
+            where="test",
+        ),
+        right=expected,
+    )
+    assert units_are_equivalent(
+        left=resolve_compositional_param_unit(
+            coerce_unit_token("CASTAR_PER_SQUARE_METER_PER_MONTH", where="test"),
+            where="test",
+        ),
+        right=expected,
+    )
+
+
+def test_bare_area_base_still_carries_the_person_leaf():
+    # A dwelling area is owned: without an area *denominator*, the extensive
+    # SQUARE_METER base takes the implied person leaf as any owned amount does.
+    assert units_are_equivalent(
+        left=resolve_compositional_column_unit(
+            Unit.SQUARE_METER,
+            time_unit_id=None,
+            grouping_level="person",
+            where="test",
+        ),
+        right=parse_unit("meter ** 2 / grouping_level_person"),
+    )

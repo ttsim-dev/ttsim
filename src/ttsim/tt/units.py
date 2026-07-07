@@ -30,7 +30,7 @@ import math
 import re
 from collections.abc import Callable, Iterable, Iterator, Mapping
 from dataclasses import dataclass, replace
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, TypeVar
 
 import pint
 from pint.util import to_units_container
@@ -357,6 +357,32 @@ def resolve_compositional_unit(
     return resolved
 
 
+def _attach_implied_person_leaf(
+    resolved: pint.Unit,
+    unit: CompositeUnit,
+    *,
+    is_boolean: bool = False,
+) -> pint.Unit:
+    """Attach the implied ``[person]`` leaf where the vocabulary calls for it.
+
+    An omitted group level means a person property, and whether that attaches
+    the ``[person]`` leaf is fixed per spelling (GEP 10): a boolean always
+    carries its level; a level-carrying base (currency, area, working hours,
+    the ``[person]`` count) carries the leaf unless an *area denominator* makes
+    the unit a price or a density — owned by nobody, so a rent cap
+    (``CURRENCY_PER_SQUARE_METER_PER_MONTH``) stays leaf-less and cancels
+    cleanly against an area. Intensive bases (a duration, a share, a calendar
+    point) stay bare.
+    """
+    if unit.level is not None:
+        return resolved
+    if is_boolean or (
+        composite_base_is_level_carrying(unit.base) and unit.area is None
+    ):
+        return divide_by_grouping_level(unit=resolved, level=PERSON_LEVEL)
+    return resolved
+
+
 def resolve_compositional_column_unit(
     unit: CompositeUnit,
     *,
@@ -404,13 +430,7 @@ def resolve_compositional_column_unit(
             f"group level must not contradict the suffix (GEP 10)."
         )
     resolved = resolve_compositional_unit(unit, with_level=True)
-    # An omitted level means a person property; the person leaf is implied, never
-    # spelled, so add it here (intensive bases stay bare).
-    if unit.level is None and (
-        is_boolean or composite_base_is_level_carrying(unit.base)
-    ):
-        resolved = divide_by_grouping_level(unit=resolved, level=PERSON_LEVEL)
-    return resolved
+    return _attach_implied_person_leaf(resolved, unit, is_boolean=is_boolean)
 
 
 def composite_with_rebased_period(
@@ -458,10 +478,33 @@ def resolve_compositional_param_unit(
                 f"time suffix implies {expected_period!r}; they must agree (GEP 10)."
             )
     resolved = resolve_compositional_unit(unit, with_level=True)
-    # The person leaf is implied, never spelled, so add it here.
-    if unit.level is None and composite_base_is_level_carrying(unit.base):
-        resolved = divide_by_grouping_level(unit=resolved, level=PERSON_LEVEL)
-    return resolved
+    return _attach_implied_person_leaf(resolved, unit)
+
+
+def resolve_compositional_cast_unit(
+    unit: CompositeUnit,
+    *,
+    where: str,
+) -> pint.Unit:
+    """Resolve the target unit of a :func:`cast_unit` call inside a body.
+
+    A cast states a full unit in the declaration vocabulary but has no name to
+    validate suffixes against: the spelled period and group level stand as
+    given. Exactly as for a column declaration, the base must stay
+    currency-agnostic — bodies compute in the run currency — and the person
+    leaf is implied, never spelled.
+
+    Raises:
+        UnitDefinitionError: If the base pins a concrete currency.
+    """
+    if token_source_currency(unit) is not None:
+        raise UnitDefinitionError(
+            f"{where}: a cast inside a body pins the concrete currency "
+            f"{unit.base!r}; bodies are currency-agnostic and must use "
+            f"{CURRENCY_TOKEN} (GEP 10)."
+        )
+    resolved = resolve_compositional_unit(unit, with_level=True)
+    return _attach_implied_person_leaf(resolved, unit)
 
 
 def register_unit_builder_levels(names: Iterable[str]) -> None:
@@ -584,6 +627,41 @@ class UnitAnnotatedColumn:
 
     values: Any
     unit: CompositeUnit
+
+
+_CastValueT = TypeVar("_CastValueT")
+
+
+def cast_unit(
+    value: _CastValueT,
+    unit: str | CompositeUnit,  # noqa: ARG001
+) -> _CastValueT:
+    """Re-tag ``value`` with ``unit`` for the build-time unit check (GEP 10).
+
+    The expression-level escape hatch of the dry-run: like ``typing.cast``,
+    this is the identity at run time — ``value`` comes back unchanged, scalar
+    or column, so the numeric path and JAX tracing are untouched. Only the
+    dry-run gives the call meaning: the stand-in flowing through it is
+    re-tagged with the stated unit, wholesale — dimension, flow period, and
+    grouping level, resolved like a declaration (currency-agnostic, the person
+    leaf implied). The rest of the body stays checked, and every override is
+    visible at the expression that needs it.
+
+    Use it where a single operation is dimensionally irregular but deliberate:
+    policy-mandated cross-level arithmetic (a group extreme against a person
+    threshold, a group share times a group total), a granularity conversion on
+    the calendar axes, or a genuine dimensioned constant that cannot be
+    promoted to a parameter.
+
+    Args:
+        value: The expression to re-tag; returned unchanged.
+        unit: The stated unit — built off :class:`Unit` or the flat
+            compositional spelling.
+
+    Returns:
+        ``value``, unchanged.
+    """
+    return value
 
 
 #: Sentinel distinguishing an *omitted* unit declaration from an explicit one.

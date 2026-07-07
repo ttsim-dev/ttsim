@@ -32,6 +32,7 @@ from ttsim.tt import (
     FKType,
     Unit,
     agg_by_group_function,
+    cast_unit,
     coerce_unit_token,
     group_creation_function,
     join,
@@ -1080,6 +1081,322 @@ def test_head_count_at_wrong_group_level_is_still_caught():
         )
 
 
+# ----------------------------------------------------------------------------
+# `cast_unit`: the expression-level escape hatch
+# ----------------------------------------------------------------------------
+
+
+def test_cross_level_comparison_without_cast_is_caught():
+    """Comparing a group extreme against a level-less threshold mixes levels
+    (``month/[fam]`` against ``month``), so the ordering screen rejects it —
+    even where the law mandates exactly this test (GEP 10)."""
+
+    @policy_input(unit=Unit.MONTHS.PER_FAM)
+    def age_youngest_months_fam() -> float:
+        """The family's youngest member's age — a property of the family."""
+
+    @policy_input(unit=Unit.MONTHS)
+    def age_limit_months() -> float:
+        """An age threshold; a level-less duration."""
+
+    @policy_function(unit=Unit.DIMENSIONLESS)
+    def eligible(age_youngest_months_fam: float, age_limit_months: float) -> bool:
+        return age_youngest_months_fam <= age_limit_months
+
+    with pytest.raises(UnitConsistencyError, match="eligible"):
+        fail_if_environment_units_are_inconsistent(
+            env={
+                "age_youngest_months_fam": age_youngest_months_fam,
+                "age_limit_months": age_limit_months,
+                "eligible": eligible,
+            },
+            grouping_levels=GROUPING_LEVELS,
+        )
+
+
+def test_cross_level_comparison_with_cast_passes():
+    """The policy-mandated per-person reading — each person sees their family's
+    extreme — is stated at the site with ``cast_unit``; the rest of the body
+    stays checked (GEP 10)."""
+
+    @policy_input(unit=Unit.MONTHS.PER_FAM)
+    def age_youngest_months_fam() -> float:
+        """The family's youngest member's age — a property of the family."""
+
+    @policy_input(unit=Unit.MONTHS)
+    def age_limit_months() -> float:
+        """An age threshold; a level-less duration."""
+
+    @policy_function(unit=Unit.DIMENSIONLESS)
+    def eligible(age_youngest_months_fam: float, age_limit_months: float) -> bool:
+        return cast_unit(age_youngest_months_fam, Unit.MONTHS) <= age_limit_months
+
+    fail_if_environment_units_are_inconsistent(
+        env={
+            "age_youngest_months_fam": age_youngest_months_fam,
+            "age_limit_months": age_limit_months,
+            "eligible": eligible,
+        },
+        grouping_levels=GROUPING_LEVELS,
+    )
+
+
+def test_level_less_inference_under_a_declared_group_level_is_caught():
+    """The declared-vs-inferred level match is exact: a body whose arithmetic
+    yields no level cannot silently claim the declared group level; the error
+    points at ``cast_unit`` (GEP 10)."""
+
+    @policy_input(unit=Unit.MONTHS)
+    def age_limit_months() -> float:
+        """An age threshold; a level-less duration."""
+
+    @policy_function(unit=Unit.MONTHS.PER_FAM)
+    def doubled_limit_months_fam(age_limit_months: float) -> float:
+        return age_limit_months * 2.0
+
+    with pytest.raises(UnitConsistencyError, match="cast_unit"):
+        fail_if_environment_units_are_inconsistent(
+            env={
+                "age_limit_months": age_limit_months,
+                "doubled_limit_months_fam": doubled_limit_months_fam,
+            },
+            grouping_levels=GROUPING_LEVELS,
+        )
+
+
+def test_cast_at_the_return_states_the_declared_group_level():
+    """An intensive group property computed from level-less material states its
+    level with ``cast_unit`` at the return (GEP 10)."""
+
+    @policy_input(unit=Unit.MONTHS)
+    def age_limit_months() -> float:
+        """An age threshold; a level-less duration."""
+
+    @policy_function(unit=Unit.MONTHS.PER_FAM)
+    def doubled_limit_months_fam(age_limit_months: float) -> float:
+        return cast_unit(age_limit_months * 2.0, Unit.MONTHS.PER_FAM)
+
+    fail_if_environment_units_are_inconsistent(
+        env={
+            "age_limit_months": age_limit_months,
+            "doubled_limit_months_fam": doubled_limit_months_fam,
+        },
+        grouping_levels=GROUPING_LEVELS,
+    )
+
+
+def test_group_share_times_group_total_squares_the_level_and_is_caught():
+    """A group-owned share times a group total squares the level
+    (``1/[fam] * CURRENCY/month/[fam]`` → ``…/[fam]**2``); the level signature
+    is compared with exponents, so the product cannot silently claim the
+    declared single level (GEP 10)."""
+
+    @policy_input(unit=Unit.DIMENSIONLESS.PER_FAM)
+    def parents_share_fam() -> float:
+        """The parents' share of the family's need — the family's property."""
+
+    @policy_input(unit=Unit.CURRENCY.PER_MONTH.PER_FAM)
+    def need_m_fam() -> float:
+        """The family's monthly need."""
+
+    @policy_function(unit=Unit.CURRENCY.PER_MONTH.PER_FAM)
+    def parents_need_m_fam(parents_share_fam: float, need_m_fam: float) -> float:
+        return parents_share_fam * need_m_fam
+
+    with pytest.raises(UnitConsistencyError, match="cast_unit"):
+        fail_if_environment_units_are_inconsistent(
+            env={
+                "parents_share_fam": parents_share_fam,
+                "need_m_fam": need_m_fam,
+                "parents_need_m_fam": parents_need_m_fam,
+            },
+            grouping_levels=GROUPING_LEVELS,
+        )
+
+
+def test_group_share_times_group_total_passes_with_cast():
+    """Where the law mandates the group-share product, the cast states the
+    intended result at the site (GEP 10)."""
+
+    @policy_input(unit=Unit.DIMENSIONLESS.PER_FAM)
+    def parents_share_fam() -> float:
+        """The parents' share of the family's need — the family's property."""
+
+    @policy_input(unit=Unit.CURRENCY.PER_MONTH.PER_FAM)
+    def need_m_fam() -> float:
+        """The family's monthly need."""
+
+    @policy_function(unit=Unit.CURRENCY.PER_MONTH.PER_FAM)
+    def parents_need_m_fam(parents_share_fam: float, need_m_fam: float) -> float:
+        return cast_unit(
+            parents_share_fam * need_m_fam, Unit.CURRENCY.PER_MONTH.PER_FAM
+        )
+
+    fail_if_environment_units_are_inconsistent(
+        env={
+            "parents_share_fam": parents_share_fam,
+            "need_m_fam": need_m_fam,
+            "parents_need_m_fam": parents_need_m_fam,
+        },
+        grouping_levels=GROUPING_LEVELS,
+    )
+
+
+def test_cast_tags_a_dimensioned_literal_in_an_ordering_comparison():
+    """A genuine dimensioned bound that must stay inline is tagged in place;
+    the tagged literal is still screened, so a wrong-period tag is caught
+    (GEP 10)."""
+
+    @policy_function(unit=Unit.DIMENSIONLESS)
+    def poor(income_m: float) -> bool:
+        return income_m < cast_unit(1000.0, Unit.CURRENCY.PER_MONTH)
+
+    fail_if_environment_units_are_inconsistent(
+        env={"income_m": income_m, "poor": poor},
+        grouping_levels=GROUPING_LEVELS,
+    )
+
+    @policy_function(unit=Unit.DIMENSIONLESS)
+    def poor_buggy(income_m: float) -> bool:
+        return income_m < cast_unit(1000.0, Unit.CURRENCY.PER_YEAR)  # wrong period
+
+    with pytest.raises(UnitConsistencyError, match="poor_buggy"):
+        fail_if_environment_units_are_inconsistent(
+            env={"income_m": income_m, "poor_buggy": poor_buggy},
+            grouping_levels=GROUPING_LEVELS,
+        )
+
+
+def test_cast_in_a_vectorized_body_is_screened_identically():
+    """The dry-run's ``xnp`` shim and the cast compose: a literal cap tagged in
+    place inside ``xnp.minimum`` passes where the bare literal would be
+    rejected (GEP 10)."""
+
+    @policy_function(
+        unit=Unit.CURRENCY.PER_MONTH, vectorization_strategy="not_required"
+    )
+    def capped_income_m(income_m: FloatColumn, xnp: ModuleType) -> FloatColumn:
+        return xnp.minimum(income_m, cast_unit(2000.0, Unit.CURRENCY.PER_MONTH))
+
+    fail_if_environment_units_are_inconsistent(
+        env={"income_m": income_m, "capped_income_m": capped_income_m},
+        grouping_levels=GROUPING_LEVELS,
+    )
+
+
+def test_cast_to_a_concrete_currency_is_rejected():
+    """Bodies are currency-agnostic, so a cast pinning a concrete currency is a
+    definition error — reported as such, not as an un-evaluable body (GEP 10)."""
+
+    @policy_function(unit=Unit.CURRENCY.PER_MONTH)
+    def pinned_m(income_m: float) -> float:
+        return cast_unit(income_m, "CASTAR_PER_MONTH")
+
+    with pytest.raises(UnitDefinitionError, match="currency-agnostic"):
+        fail_if_environment_units_are_inconsistent(
+            env={"income_m": income_m, "pinned_m": pinned_m},
+            grouping_levels=GROUPING_LEVELS,
+        )
+
+
+def test_dimensionless_inference_cannot_claim_a_group_owned_declaration():
+    """A plain dimensionless result slips every level screen, so it cannot
+    claim a group-owned declaration: a fam predicate over level-less shares
+    states its level with ``cast_unit``; the person grain stays lenient
+    (GEP 10)."""
+
+    @policy_input(unit=Unit.DIMENSIONLESS)
+    def share_of_need() -> float:
+        """A level-less share."""
+
+    @policy_input(unit=Unit.DIMENSIONLESS)
+    def threshold_share() -> float:
+        """A level-less share."""
+
+    @policy_function(unit=Unit.DIMENSIONLESS.PER_FAM)
+    def requirement_fulfilled_fam(share_of_need: float, threshold_share: float) -> bool:
+        return share_of_need < threshold_share
+
+    with pytest.raises(UnitConsistencyError, match="cast_unit"):
+        fail_if_environment_units_are_inconsistent(
+            env={
+                "share_of_need": share_of_need,
+                "threshold_share": threshold_share,
+                "requirement_fulfilled_fam": requirement_fulfilled_fam,
+            },
+            grouping_levels=GROUPING_LEVELS,
+        )
+
+    @policy_function(unit=Unit.DIMENSIONLESS.PER_FAM)
+    def requirement_fulfilled_cast_fam(
+        share_of_need: float, threshold_share: float
+    ) -> bool:
+        return cast_unit(share_of_need < threshold_share, Unit.DIMENSIONLESS.PER_FAM)
+
+    fail_if_environment_units_are_inconsistent(
+        env={
+            "share_of_need": share_of_need,
+            "threshold_share": threshold_share,
+            "requirement_fulfilled_fam": requirement_fulfilled_cast_fam,
+        },
+        grouping_levels=GROUPING_LEVELS,
+    )
+
+
+def test_adding_a_nonzero_bare_literal_to_a_quantity_is_caught():
+    """``income_m + 100.0`` hides a monthly amount in the literal; ``+``/``-``
+    screen literals exactly as the ordering comparisons do — promote to a
+    parameter, tag with ``cast_unit``, or use 0 (GEP 10)."""
+
+    @policy_function(unit=Unit.CURRENCY.PER_MONTH)
+    def bumped_income_m(income_m: float) -> float:
+        return income_m + 100.0
+
+    with pytest.raises(UnitConsistencyError, match="bare literal"):
+        fail_if_environment_units_are_inconsistent(
+            env={"income_m": income_m, "bumped_income_m": bumped_income_m},
+            grouping_levels=GROUPING_LEVELS,
+        )
+
+    @policy_function(unit=Unit.CURRENCY.PER_MONTH)
+    def bumped_income_cast_m(income_m: float) -> float:
+        return income_m + cast_unit(100.0, Unit.CURRENCY.PER_MONTH)
+
+    fail_if_environment_units_are_inconsistent(
+        env={"income_m": income_m, "bumped_income_m": bumped_income_cast_m},
+        grouping_levels=GROUPING_LEVELS,
+    )
+
+
+def test_nonzero_literal_return_under_a_dimensioned_declaration_is_caught():
+    """``return 25.0`` under a currency declaration is a hidden dimensioned
+    constant: only ``0`` falls through (the eligibility guard); anything else
+    is promoted to a parameter or tagged with ``cast_unit`` (GEP 10)."""
+
+    @policy_function(unit=Unit.CURRENCY.PER_MONTH)
+    def lump_m(is_exempt: bool, income_m: float) -> float:
+        if is_exempt:
+            return 25.0
+        return income_m
+
+    with pytest.raises(UnitConsistencyError, match="bare literal"):
+        fail_if_environment_units_are_inconsistent(
+            env={"is_exempt": is_exempt, "income_m": income_m, "lump_m": lump_m},
+            grouping_levels=GROUPING_LEVELS,
+        )
+
+    @policy_function(unit=Unit.CURRENCY.PER_MONTH)
+    def lump_cast_m(is_exempt: bool, income_m: float) -> float:
+        if is_exempt:
+            return cast_unit(25.0, Unit.CURRENCY.PER_MONTH)
+        return income_m
+
+    fail_if_environment_units_are_inconsistent(
+        env={"is_exempt": is_exempt, "income_m": income_m, "lump_m": lump_cast_m},
+        grouping_levels=GROUPING_LEVELS,
+    )
+
+
 def test_path_cap_truncation_demands_opt_out(monkeypatch):
     """Exceeding the path cap demands an opt-out, never passes silently (GEP 10).
 
@@ -1271,7 +1588,7 @@ def test_adding_same_period_flows_does_not_false_positive():
 
 
 def test_adding_bare_literal_does_not_false_positive():
-    """A bare literal carries no unit, so an ``x + 0.0`` guard stays lenient."""
+    """Only ``0`` is allowed inline, so the ``x + 0.0`` guard stays lenient."""
 
     @policy_function(unit=Unit.CURRENCY.PER_MONTH)
     def income_floor_m(income_m: float) -> float:
