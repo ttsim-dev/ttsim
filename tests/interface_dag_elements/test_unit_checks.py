@@ -195,6 +195,16 @@ def statutory_age() -> int:
     """A duration in years (an age threshold)."""
 
 
+@policy_input(unit=Unit.DIMENSIONLESS)
+def geburtsmonat() -> int:
+    """A month-of-year (1-12): a cyclic ordinal, not a calendar point (GEP 10)."""
+
+
+@policy_input(unit=Unit.MONTHS)
+def months_paid() -> int:
+    """A duration in months."""
+
+
 # ----------------------------------------------------------------------------
 # Mandatory units, no exemptions: identifiers and booleans declare
 # DIMENSIONLESS; group-creation group ids are auto-assigned DIMENSIONLESS;
@@ -745,6 +755,12 @@ def _policy_year() -> ScalarParam:
     return ScalarParam(value=2020, start_date=_START, end_date=_END)
 
 
+def _policy_month() -> ScalarParam:
+    # A framework date node carrying a month-of-year (1-12): a cyclic ordinal,
+    # resolved to dimensionless via FRAMEWORK_DATE_NODE_UNITS (GEP 10).
+    return ScalarParam(value=1, start_date=_START, end_date=_END)
+
+
 def test_calendar_point_difference_is_a_duration_in_years():
     """The motivating S1 pattern: ``now - birth_year`` is a duration, declared
     ``YEARS``; the dry-run accepts it through pint's offset algebra."""
@@ -831,6 +847,157 @@ def test_calendar_point_difference_declared_as_a_calendar_year_is_caught():
                 "policy_year": _policy_year(),
                 "geburtsjahr": geburtsjahr,
                 "age": age,
+            },
+            grouping_levels=GROUPING_LEVELS,
+        )
+
+
+def test_ordering_a_calendar_point_against_another_unit_is_caught():
+    """An ordering runs no forward pint op, so a calendar point gets no
+    delegate-to-pint dispensation there: ordered against anything but a
+    same-axis point, it is a unit mix (GEP 10)."""
+
+    @policy_function(unit=Unit.DIMENSIONLESS)
+    def nonsense(geburtsjahr: int, income_m: float) -> bool:
+        return geburtsjahr >= income_m  # bug: a calendar point vs a flow
+
+    with pytest.raises(UnitConsistencyError, match="non-equivalent"):
+        fail_if_environment_units_are_inconsistent(
+            env={
+                "geburtsjahr": geburtsjahr,
+                "income_m": income_m,
+                "nonsense": nonsense,
+            },
+            grouping_levels=GROUPING_LEVELS,
+        )
+
+
+def test_ordering_a_calendar_point_against_a_duration_is_caught():
+    """A point and a duration share ``[time]`` but not an algebra: equivalence
+    decides points by identity, so ordering them is a unit mix (GEP 10)."""
+
+    @policy_function(unit=Unit.DIMENSIONLESS)
+    def nonsense(geburtsjahr: int, statutory_age: int) -> bool:
+        return geburtsjahr >= statutory_age  # bug: a point vs a duration
+
+    with pytest.raises(UnitConsistencyError, match="non-equivalent"):
+        fail_if_environment_units_are_inconsistent(
+            env={
+                "geburtsjahr": geburtsjahr,
+                "statutory_age": statutory_age,
+                "nonsense": nonsense,
+            },
+            grouping_levels=GROUPING_LEVELS,
+        )
+
+
+def test_ordering_two_same_axis_calendar_points_passes():
+    """Ordering two points on the same calendar axis is sound
+    (``geburtsjahr <= policy_year``): identical units, so the ordering screen
+    passes without any calendar dispensation."""
+
+    @policy_function(unit=Unit.DIMENSIONLESS)
+    def born_by_policy_year(policy_year: int, geburtsjahr: int) -> bool:
+        return geburtsjahr <= policy_year
+
+    fail_if_environment_units_are_inconsistent(
+        env={
+            "policy_year": _policy_year(),
+            "geburtsjahr": geburtsjahr,
+            "born_by_policy_year": born_by_policy_year,
+        },
+        grouping_levels=GROUPING_LEVELS,
+    )
+
+
+def test_month_date_nodes_are_cyclic_ordinals():
+    """``policy_month`` carries a month-of-year (1-12): a cyclic ordinal, hence
+    ``DIMENSIONLESS`` (GEP 10), so comparing it to another ordinal is plain
+    dimensionless arithmetic."""
+
+    @policy_function(unit=Unit.DIMENSIONLESS)
+    def had_birthday(policy_month: int, geburtsmonat: int) -> bool:
+        return policy_month >= geburtsmonat
+
+    fail_if_environment_units_are_inconsistent(
+        env={
+            "policy_month": _policy_month(),
+            "geburtsmonat": geburtsmonat,
+            "had_birthday": had_birthday,
+        },
+        grouping_levels=GROUPING_LEVELS,
+    )
+
+
+def test_month_date_node_shifted_by_a_duration_is_caught():
+    """Shifting the cyclic ``policy_month`` by a months duration wraps at run
+    time — the silent fold the ordinal/point split exists to catch. As a
+    dimensionless ordinal it does not add to a ``MONTHS`` duration (GEP 10)."""
+
+    @policy_function(unit=Unit.DIMENSIONLESS)
+    def nonsense(policy_month: int, months_paid: int) -> int:
+        return policy_month + months_paid  # bug: an ordinal shifted like a point
+
+    with pytest.raises(UnitConsistencyError, match="nonsense"):
+        fail_if_environment_units_are_inconsistent(
+            env={
+                "policy_month": _policy_month(),
+                "months_paid": months_paid,
+                "nonsense": nonsense,
+            },
+            grouping_levels=GROUPING_LEVELS,
+        )
+
+
+def test_error_names_the_failing_branch():
+    """A branch-confined failure names the branch in the body's own terms and
+    reports the other combinations clean (GEP 10)."""
+
+    @policy_function(unit=Unit.CURRENCY.PER_MONTH)
+    def betrag_m(bonus_y: float, is_exempt: bool) -> float:
+        if is_exempt:
+            return 0.0
+        else:
+            return bonus_y  # bug: a yearly flow under a monthly declaration
+
+    with pytest.raises(
+        UnitConsistencyError,
+        match=(
+            r"on the branch where `is_exempt` is False\. "
+            r"All other branch combinations match the declaration\."
+        ),
+    ):
+        fail_if_environment_units_are_inconsistent(
+            env={
+                "bonus_y": bonus_y,
+                "is_exempt": is_exempt,
+                "betrag_m": betrag_m,
+            },
+            grouping_levels=GROUPING_LEVELS,
+        )
+
+
+def test_error_names_a_comparison_driven_branch():
+    """A branch decided by a comparison is named by that comparison's operands
+    (GEP 10)."""
+
+    @policy_function(unit=Unit.CURRENCY.PER_MONTH)
+    def gated_m(income_m: float, other_income_m: float, bonus_y: float) -> float:
+        if income_m < other_income_m:
+            return income_m
+        else:
+            return bonus_y  # bug: a yearly flow under a monthly declaration
+
+    with pytest.raises(
+        UnitConsistencyError,
+        match=r"on the branch where `income_m < other_income_m` is False",
+    ):
+        fail_if_environment_units_are_inconsistent(
+            env={
+                "income_m": income_m,
+                "other_income_m": other_income_m,
+                "bonus_y": bonus_y,
+                "gated_m": gated_m,
             },
             grouping_levels=GROUPING_LEVELS,
         )
@@ -1829,6 +1996,32 @@ def test_where_arms_are_screened_for_equivalence():
                 "income_m": income_m,
                 "bonus_y": bonus_y,
                 "gated_buggy_m": gated_buggy_m,
+            },
+            grouping_levels=GROUPING_LEVELS,
+        )
+
+
+def test_where_mixing_a_calendar_point_and_a_duration_is_caught():
+    """``xnp.where`` runs no forward pint op, so a calendar-point arm gets no
+    delegate-to-pint dispensation: an arm mix of a point and a duration is
+    flagged (GEP 10)."""
+
+    @policy_function(unit=Unit.CALENDAR_YEAR, vectorization_strategy="not_required")
+    def year_or_age(
+        is_exempt: BoolColumn,
+        geburtsjahr: IntColumn,
+        statutory_age: IntColumn,
+        xnp: ModuleType,
+    ) -> IntColumn:
+        return xnp.where(is_exempt, geburtsjahr, statutory_age)  # bug: point/duration
+
+    with pytest.raises(UnitConsistencyError, match="year_or_age"):
+        fail_if_environment_units_are_inconsistent(
+            env={
+                "is_exempt": is_exempt,
+                "geburtsjahr": geburtsjahr,
+                "statutory_age": statutory_age,
+                "year_or_age": year_or_age,
             },
             grouping_levels=GROUPING_LEVELS,
         )

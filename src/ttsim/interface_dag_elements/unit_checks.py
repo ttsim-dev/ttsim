@@ -99,17 +99,20 @@ from ttsim.unit_converters import TIME_UNIT_IDS_TO_LABELS
 
 #: Units of the date nodes the framework injects into every policy environment
 #: (see ``policy_environment.policy_environment``); their units live here rather
-#: than in downstream annotations. Each is a *calendar point*, not a duration, so
-#: ``policy_year - geburtsjahr`` is a duration in years and adding two points is
-#: rejected. (Month/day are points too, but are read as cyclic ordinals via
-#: equality/lookup, which the dry-run does not unit-screen.)
+#: than in downstream annotations. The *year* nodes are calendar **points** —
+#: they run without bound, so ``policy_year - geburtsjahr`` is a duration in
+#: years and adding two points is rejected. The month/day nodes carry a
+#: month-of-year (1-12) / day-of-month (1-31): **cyclic ordinals** that wrap and
+#: pin nothing on a running calendar, hence ``DIMENSIONLESS`` (GEP 10) — exactly
+#: like ``geburtsmonat``, so ``policy_month >= geburtsmonat`` screens as plain
+#: dimensionless arithmetic.
 FRAMEWORK_DATE_NODE_UNITS: Mapping[str, str] = {
     "policy_year": "calendar_year",
-    "policy_month": "calendar_month",
-    "policy_day": "calendar_day",
+    "policy_month": "dimensionless",
+    "policy_day": "dimensionless",
     "evaluation_year": "calendar_year",
-    "evaluation_month": "calendar_month",
-    "evaluation_day": "calendar_day",
+    "evaluation_month": "dimensionless",
+    "evaluation_day": "dimensionless",
 }
 
 #: Arguments of column/param functions that the framework partials in and that
@@ -251,7 +254,11 @@ def resolve_environment_units(
         grouping_levels=grouping_levels,
     )
     resolved: dict[str, pint.Unit | dict[str | int, Any]] = {
-        qname: parse_unit(unit)
+        # `parse_unit` guides declarations to the DIMENSIONLESS token, so the
+        # framework-internal ordinal spelling resolves directly.
+        qname: (
+            _DIMENSIONLESS_UNIT if unit == "dimensionless" else parse_unit(unit)
+        )
         for qname, unit in FRAMEWORK_DATE_NODE_UNITS.items()
         if qname in env
     }
@@ -1129,6 +1136,9 @@ def _base_dry_run_kwargs(
 _MAX_PATHS = 1024
 _MAX_DECISIONS_PER_RUN = 64
 
+#: How many of a failing run's branch decisions an error message spells out.
+_MAX_NAMED_DECISIONS = 4
+
 
 class _PathBudgetExceededError(TTSIMError):
     """A single dry-run made too many branch decisions (likely a loop)."""
@@ -1182,19 +1192,28 @@ class _PathExplorer:
     def __init__(self) -> None:
         self._prefix: list[bool] = []
         self._trail: list[bool] = []
+        self._labels: list[str | None] = []
         self._index = 0
 
     def start_run(self) -> None:
         self._index = 0
         self._trail = []
+        self._labels = []
 
-    def decide(self) -> bool:
-        """Resolve the next branch: replay the prefix, then explore ``False``."""
+    def decide(self, label: str | None = None) -> bool:
+        """Resolve the next branch: replay the prefix, then explore ``False``.
+
+        ``label`` names the condition consulted — an argument tested directly, a
+        comparison of named operands — so a failure can report the branch in the
+        body's own terms (:meth:`branch_detail`); ``None`` where the dry-run has
+        no name for it.
+        """
         if self._index >= _MAX_DECISIONS_PER_RUN:
             raise _PathBudgetExceededError
         value = self._prefix[self._index] if self._index < len(self._prefix) else False
         self._index += 1
         self._trail.append(value)
+        self._labels.append(label)
         return value
 
     def advance(self) -> bool:
@@ -1205,9 +1224,27 @@ class _PathExplorer:
                 return True
         return False
 
-    @property
-    def on_a_branch(self) -> bool:
-        return bool(self._trail)
+    def branch_detail(self) -> str:
+        """The current run's branch combination, phrased for an error message.
+
+        Empty when the run made no branch decision. Decisions are named where a
+        label was recorded and fall back to their ordinal otherwise; long trails
+        are truncated after :data:`_MAX_NAMED_DECISIONS` decisions.
+        """
+        if not self._trail:
+            return ""
+        parts = [
+            f"`{label}` is {value}"
+            if label is not None
+            else f"branch decision {position} is {value}"
+            for position, (label, value) in enumerate(
+                zip(self._labels, self._trail, strict=True), start=1
+            )
+        ]
+        if len(parts) > _MAX_NAMED_DECISIONS:
+            dropped = len(parts) - _MAX_NAMED_DECISIONS
+            parts = [*parts[:_MAX_NAMED_DECISIONS], f"{dropped} more decision(s)"]
+        return " on the branch where " + " and ".join(parts)
 
 
 def _unwrap(value: Any) -> Any:  # noqa: ANN401
@@ -1226,22 +1263,49 @@ class _DryRunQuantity:
     the declaration — so the wrapper can never produce a false positive.
     """
 
-    __slots__ = ("_explorer", "q")
+    __slots__ = ("_explorer", "_label", "q")
     # Keep NumPy from broadcasting over us: defer binary ops with a NumPy operand
     # to our reflected dunders instead.
     __array_ufunc__ = None
     __array_priority__ = 1000
     __hash__ = object.__hash__
 
-    def __init__(self, q: Any, explorer: _PathExplorer) -> None:  # noqa: ANN401
+    def __init__(
+        self,
+        q: Any,  # noqa: ANN401
+        explorer: _PathExplorer,
+        label: str | None = None,
+    ) -> None:
         self.q = q
         self._explorer = explorer
+        # How the body's author would name this value — the argument name for a
+        # direct input, a composed description for a comparison or logical
+        # combination, ``None`` once arithmetic has mixed it beyond naming. Used
+        # to report the branch a failure sits on (`_PathExplorer.branch_detail`).
+        self._label = label
 
     def _wrap(self, q: Any) -> _DryRunQuantity:  # noqa: ANN401
         return _DryRunQuantity(q=q, explorer=self._explorer)
 
-    def _controlled_bool_at(self, level: str | None) -> _DryRunQuantity:
-        return self._wrap(_boolean_quantity(level))
+    def _controlled_bool_at(
+        self, level: str | None, label: str | None = None
+    ) -> _DryRunQuantity:
+        return _DryRunQuantity(
+            q=_boolean_quantity(level), explorer=self._explorer, label=label
+        )
+
+    def _composed_label(self, other: Any, op: str) -> str | None:  # noqa: ANN401
+        """Describe ``self <op> other`` for branch naming, if either side has
+        a name; a bare literal operand shows as itself."""
+        if isinstance(other, _DryRunQuantity):
+            right = other._label  # noqa: SLF001
+        elif isinstance(other, int | float | numpy.number | numpy.bool_):
+            right = repr(other)
+        else:
+            right = None
+        if self._label is None and right is None:
+            return None
+        return f"{self._label or '…'} {op} {right or '…'}"
 
     def _comparison_level(self, other: Any) -> str | None:  # noqa: ANN401
         """The grouping level a comparison result carries.
@@ -1290,29 +1354,25 @@ class _DryRunQuantity:
                 op=op, left=cast("pint.Unit", self.q.units), right=right
             )
         return self._controlled_bool_at(
-            _combined_boolean_level(self_level, other_level)
+            _combined_boolean_level(self_level, other_level),
+            label=self._composed_label(other, op),
         )
 
-    def _fail_if_other_unit_is_not_equivalent(self, other: Any, op: str) -> None:  # noqa: ANN401
-        """Reject an invalid operand of ``+``/``-``/comparison/``where``.
+    def _fail_if_additive_operand_is_invalid(self, other: Any, op: str) -> None:  # noqa: ANN401
+        """Screen an operand of ``+``/``-``.
 
-        At run time there is no pint, so these operations are unit-blind (raw
-        arrays are added or compared without conversion); two unit-carrying
-        operands must already be in equivalent units. A non-zero *bare literal*
-        next to a non-dimensionless quantity is rejected too: it silently
-        carries the quantity's unit (``betrag_m + 100.0`` hides a monthly
-        amount) — promote it to a parameter or tag it with ``cast_unit``. Only
-        ``0`` (the ``x + 0.0`` guard, the floor at zero) is allowed inline, and
-        literals next to a dimensionless quantity stay lenient.
-
-        A calendar point (an affine offset unit) is the exception: its valid
-        ``point + duration`` is *not* equivalence (a point and a duration differ),
-        yet pint's offset algebra permits it and forbids the genuine misuses
-        (``point + point``, cross-axis mixes). So when either operand is a
-        calendar point we skip the magnitude pre-screen and let the forward
-        operation delegate to pint, which raises ``OffsetUnitCalculusError`` on a
-        misuse — caught in :func:`_verify_one_body` and reported as a calendar
-        misuse.
+        The rules are those of :meth:`_fail_if_other_unit_is_not_equivalent`,
+        with one dispensation: a calendar point (an affine offset unit). Its
+        valid ``point ± duration`` is *not* equivalence (a point and a duration
+        differ), yet pint's offset algebra permits exactly it and forbids the
+        genuine misuses (``point + point``, cross-axis mixes). So when either
+        operand is a calendar point the magnitude pre-screen is skipped and the
+        forward operation delegates to pint, which raises
+        ``OffsetUnitCalculusError`` on a misuse — caught in
+        :func:`_verify_one_body` and reported as a calendar misuse. Only
+        ``+``/``-`` get the dispensation: they alone run a forward pint
+        operation afterwards, so nothing would catch a point mixed into an
+        ordering or a ``where`` later.
         """
         other_q = _unwrap(other)
         if isinstance(other_q, _DryRunStructuredValue):
@@ -1322,6 +1382,27 @@ class _DryRunQuantity:
             and is_calendar_point_unit(cast("pint.Unit", other_q.units))
         ):
             return
+        self._fail_if_other_unit_is_not_equivalent(other=other, op=op)
+
+    def _fail_if_other_unit_is_not_equivalent(self, other: Any, op: str) -> None:  # noqa: ANN401
+        """Reject an invalid operand of an ordering comparison or ``where``.
+
+        At run time there is no pint, so these operations are unit-blind (raw
+        arrays are added or compared without conversion); two unit-carrying
+        operands must already be in equivalent units. Equivalence decides
+        calendar points by *identity* (:func:`units_are_equivalent`): ordering
+        two same-axis points (``geburtsjahr <= policy_year``) passes, while a
+        point against a duration — or any other unit — is rejected. A non-zero
+        *bare literal* next to a non-dimensionless quantity is rejected too: it
+        silently carries the quantity's unit (``betrag_m + 100.0`` hides a
+        monthly amount) — promote it to a parameter or tag it with
+        ``cast_unit``. Only ``0`` (the ``x + 0.0`` guard, the floor at zero) is
+        allowed inline, and literals next to a dimensionless quantity stay
+        lenient.
+        """
+        other_q = _unwrap(other)
+        if isinstance(other_q, _DryRunStructuredValue):
+            other_q._raise_used_as_quantity(op)  # noqa: SLF001
         if isinstance(other_q, pint.Quantity) and not units_are_equivalent(
             left=cast("pint.Unit", self.q.units),
             right=cast("pint.Unit", other_q.units),
@@ -1342,41 +1423,56 @@ class _DryRunQuantity:
     def _fail_if_ordering_operand_is_invalid(self, other: Any, op: str) -> None:  # noqa: ANN401
         """Screen an operand of an ordering comparison (``<``/``<=``/``>``/``>=``).
 
-        The rules are those of ``+``/``-``: two unit-carrying operands must be
-        equivalent, and a non-zero bare literal next to a non-dimensionless
-        quantity is rejected (``wealth > 1_000_000`` reads the bound as
-        currency) — see :meth:`_fail_if_other_unit_is_not_equivalent`.
+        Two unit-carrying operands must be equivalent (calendar points by
+        identity, so only same-axis points order), and a non-zero bare literal
+        next to a non-dimensionless quantity is rejected (``wealth >
+        1_000_000`` reads the bound as currency) — see
+        :meth:`_fail_if_other_unit_is_not_equivalent`. Unlike ``+``/``-``, an
+        ordering runs no forward pint operation, so calendar points get no
+        delegate-to-pint dispensation here.
         """
         self._fail_if_other_unit_is_not_equivalent(other=other, op=op)
 
     def __bool__(self) -> bool:
-        return self._explorer.decide()
+        return self._explorer.decide(self._label)
 
     # Ordering comparisons are unit-blind at run time, so a non-equivalent
     # unit-carrying operand is a bug; the explorer still forces which branch runs.
     def __lt__(self, other: Any) -> _DryRunQuantity:  # noqa: ANN401
         self._fail_if_ordering_operand_is_invalid(other=other, op="<")
-        return self._controlled_bool_at(self._comparison_level(other))
+        return self._controlled_bool_at(
+            self._comparison_level(other), label=self._composed_label(other, "<")
+        )
 
     def __le__(self, other: Any) -> _DryRunQuantity:  # noqa: ANN401
         self._fail_if_ordering_operand_is_invalid(other=other, op="<=")
-        return self._controlled_bool_at(self._comparison_level(other))
+        return self._controlled_bool_at(
+            self._comparison_level(other), label=self._composed_label(other, "<=")
+        )
 
     def __gt__(self, other: Any) -> _DryRunQuantity:  # noqa: ANN401
         self._fail_if_ordering_operand_is_invalid(other=other, op=">")
-        return self._controlled_bool_at(self._comparison_level(other))
+        return self._controlled_bool_at(
+            self._comparison_level(other), label=self._composed_label(other, ">")
+        )
 
     def __ge__(self, other: Any) -> _DryRunQuantity:  # noqa: ANN401
         self._fail_if_ordering_operand_is_invalid(other=other, op=">=")
-        return self._controlled_bool_at(self._comparison_level(other))
+        return self._controlled_bool_at(
+            self._comparison_level(other), label=self._composed_label(other, ">=")
+        )
 
     # ``==``/``!=`` are deliberately *not* unit-screened: they are routinely used
     # polymorphically (sentinels, ``x == 0``) and are not magnitude comparisons.
     def __eq__(self, other: object) -> _DryRunQuantity:  # ty: ignore[invalid-method-override]
-        return self._controlled_bool_at(self._comparison_level(other))
+        return self._controlled_bool_at(
+            self._comparison_level(other), label=self._composed_label(other, "==")
+        )
 
     def __ne__(self, other: object) -> _DryRunQuantity:  # ty: ignore[invalid-method-override]
-        return self._controlled_bool_at(self._comparison_level(other))
+        return self._controlled_bool_at(
+            self._comparison_level(other), label=self._composed_label(other, "!=")
+        )
 
     def __and__(self, other: Any) -> _DryRunQuantity:  # noqa: ANN401
         return self._logical_result(other=other, op="&")
@@ -1402,24 +1498,26 @@ class _DryRunQuantity:
             raise _UnitMixError(
                 op="~", left=cast("pint.Unit", self.q.units), right=_DIMENSIONLESS_UNIT
             )
-        return self._controlled_bool_at(level)
+        return self._controlled_bool_at(
+            level, label=f"~{self._label}" if self._label is not None else None
+        )
 
     # Addition and subtraction require equivalent units (see ``_UnitMixError``);
     # multiplication, division, and powers legitimately combine different units.
     def __add__(self, other: Any) -> _DryRunQuantity:  # noqa: ANN401
-        self._fail_if_other_unit_is_not_equivalent(other=other, op="+")
+        self._fail_if_additive_operand_is_invalid(other=other, op="+")
         return self._wrap(self.q + _unwrap(other))
 
     def __radd__(self, other: Any) -> _DryRunQuantity:  # noqa: ANN401
-        self._fail_if_other_unit_is_not_equivalent(other=other, op="+")
+        self._fail_if_additive_operand_is_invalid(other=other, op="+")
         return self._wrap(_unwrap(other) + self.q)
 
     def __sub__(self, other: Any) -> _DryRunQuantity:  # noqa: ANN401
-        self._fail_if_other_unit_is_not_equivalent(other=other, op="-")
+        self._fail_if_additive_operand_is_invalid(other=other, op="-")
         return self._wrap(self.q - _unwrap(other))
 
     def __rsub__(self, other: Any) -> _DryRunQuantity:  # noqa: ANN401
-        self._fail_if_other_unit_is_not_equivalent(other=other, op="-")
+        self._fail_if_additive_operand_is_invalid(other=other, op="-")
         return self._wrap(_unwrap(other) - self.q)
 
     def __mul__(self, other: Any) -> _DryRunQuantity:  # noqa: ANN401
@@ -1462,17 +1560,27 @@ class _DryRunQuantity:
         return self._wrap(abs(self.q))
 
 
-def _wrap_for_dry_run(value: Any, explorer: _PathExplorer) -> Any:  # noqa: ANN401
+def _wrap_for_dry_run(
+    value: Any,  # noqa: ANN401
+    explorer: _PathExplorer,
+    label: str | None = None,
+) -> Any:  # noqa: ANN401
     """Wrap unit-carrying representative values; pass framework args through.
 
     Quantities (and the leaves of dict-param trees) become ``_DryRunQuantity`` so the
     explorer controls branches on them; ``xnp``/``num_segments``/… stay raw.
+    ``label`` is the argument name the body sees, carried on the stand-in so a
+    branch decision on it can be named in an error.
     """
     if isinstance(value, pint.Quantity):
-        return _DryRunQuantity(q=value, explorer=explorer)
+        return _DryRunQuantity(q=value, explorer=explorer, label=label)
     if isinstance(value, dict):
         return {
-            key: _wrap_for_dry_run(value=leaf, explorer=explorer)
+            key: _wrap_for_dry_run(
+                value=leaf,
+                explorer=explorer,
+                label=f"{label}[{key!r}]" if label is not None else None,
+            )
             for key, leaf in value.items()
         }
     return value
@@ -1736,7 +1844,8 @@ def _clamping_op(left: Any, right: Any, op: str) -> Any:  # noqa: ANN401
 
 def _where_op(x: Any, y: Any) -> Any:  # noqa: ANN401
     """``xnp.where``: the two branches become one column, so they must carry
-    equivalent units (as for ``+``); the result carries that unit."""
+    equivalent units (as for an ordering comparison — no forward pint op runs,
+    so calendar points screen by identity); the result carries that unit."""
     quantity = x if isinstance(x, _DryRunQuantity) else y
     if not isinstance(quantity, _DryRunQuantity):
         return numpy.where(True, x, y)  # noqa: FBT003
@@ -1877,9 +1986,16 @@ def _verify_one_body(
     polynomial, ``join``, or a raw ``xnp`` op the dry-run cannot evaluate — is
     reported as needing an explicit ``verify_units=False`` opt-out (callers reach
     this only for bodies that have not already opted out).
+
+    A branch failure does not stop the exploration: the remaining paths still
+    run, so the error can say whether the offence is confined to the reported
+    branch combination (named via :meth:`_PathExplorer.branch_detail`) or other
+    combinations fail as well.
     """
     explorer = _PathExplorer()
     paths = 0
+    branch_errors: list[str] = []
+    clean_paths = 0
     while True:
         if paths >= _MAX_PATHS:
             # Truncating exploration must not pass silently: a wrong-unit branch
@@ -1892,11 +2008,11 @@ def _verify_one_body(
         paths += 1
         explorer.start_run()
         kwargs = {
-            name: _wrap_for_dry_run(value=value, explorer=explorer)
+            name: _wrap_for_dry_run(value=value, explorer=explorer, label=name)
             for name, value in base_kwargs.items()
         }
         for name, value in boolean_values.items():
-            kwargs[name] = _wrap_for_dry_run(value=value, explorer=explorer)
+            kwargs[name] = _wrap_for_dry_run(value=value, explorer=explorer, label=name)
         try:
             result: Any = function(**kwargs)
         except _PathBudgetExceededError:
@@ -1910,8 +2026,14 @@ def _verify_one_body(
             _StructuredValueUsedAsQuantityError,
             pint.OffsetUnitCalculusError,
         ) as err:
-            detail = " on a conditional branch" if explorer.on_a_branch else ""
-            return _arithmetic_misuse_message(qname=qname, error=err, detail=detail)
+            message = _arithmetic_misuse_message(
+                qname=qname, error=err, detail=explorer.branch_detail()
+            )
+            if message not in branch_errors:
+                branch_errors.append(message)
+            if not explorer.advance():
+                break
+            continue
         except UnitDefinitionError:
             # A malformed `cast_unit` token is a definition error, not an
             # un-evaluable body; report it as itself.
@@ -1922,18 +2044,32 @@ def _verify_one_body(
                 "it uses an operation pint cannot evaluate symbolically — a "
                 "piecewise polynomial, a lookup table, `join`, or a raw `xnp` op",
             )
-        detail = " on a conditional branch" if explorer.on_a_branch else ""
         error = _inferred_result_error(
             qname=qname,
             inferred=_unwrap(result),
             declared=declared,
-            detail=detail,
+            detail=explorer.branch_detail(),
         )
         if error is not None:
-            return error
+            if error not in branch_errors:
+                branch_errors.append(error)
+        else:
+            clean_paths += 1
         if not explorer.advance():
             break
-    return None
+    if not branch_errors:
+        return None
+    if len(branch_errors) == 1 and clean_paths:
+        return (
+            f"{branch_errors[0]} All other branch combinations match the "
+            f"declaration."
+        )
+    if len(branch_errors) > 1:
+        return (
+            f"{branch_errors[0]} ({len(branch_errors) - 1} further branch "
+            f"combination(s) fail too.)"
+        )
+    return branch_errors[0]
 
 
 def _non_quantity_result_error(
