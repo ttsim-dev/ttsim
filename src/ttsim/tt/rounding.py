@@ -1,7 +1,7 @@
 import functools
 import inspect
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from types import ModuleType
 from typing import Literal, ParamSpec, get_args
 
@@ -9,6 +9,11 @@ from beartype import beartype
 
 from ttsim._beartype_conf import ROUNDING_SPEC_CONF
 from ttsim.tt.type_resolution import build_beartype_checkable_wrapper
+from ttsim.tt.units import (
+    CompositeUnit,
+    currency_conversion_factor,
+    token_source_currency,
+)
 from ttsim.typing import FloatColumn
 
 ROUNDING_DIRECTION = Literal["up", "down", "nearest"]
@@ -34,6 +39,13 @@ class RoundingSpec:
     direction: ROUNDING_DIRECTION
     to_add_after_rounding: int | float = 0
     reference: str | None = None
+    unit: CompositeUnit | None = None
+    """The fully-spelled unit ``base`` and ``to_add_after_rounding`` are written
+    in. Mandatory for a spec on a currency-valued function — the magnitudes are
+    statutory numbers written in a concrete currency, exactly like a parameter's
+    (``Unit.DM.PER_YEAR``) — and its composite must equal the function's declared
+    unit with the agnostic base swapped for the concrete currency. Stays ``None``
+    on a non-currency function: there is nothing to convert (GEP 10)."""
 
     def __post_init__(self) -> None:
         """Validate the types of base and to_add_after_rounding."""
@@ -52,6 +64,31 @@ class RoundingSpec:
         if not isinstance(self.to_add_after_rounding, (int, float)):
             msg = f"Additive part must be a number, got {self.to_add_after_rounding!r}"
             raise TypeError(msg)
+
+    def in_run_currency(self, run_currency: str | None) -> "RoundingSpec":
+        """This spec with its magnitudes restated in the run currency (GEP 10).
+
+        Keeps the rounding step statutorily exact under a currency changeover:
+        rounding down to multiples of 54 DM in a EUR run becomes rounding down
+        to multiples of ``54 / 1.95583`` EUR. Returns ``self`` when there is
+        nothing to convert — no run currency, no declared unit, the run
+        currency itself, or a declaration that does not pin down a registered
+        currency (the unit checks reject those; the conversion never guesses).
+        """
+        if run_currency is None or self.unit is None:
+            return self
+        source = token_source_currency(self.unit)
+        if source is None or source == run_currency:
+            return self
+        factor = currency_conversion_factor(
+            source_currency=source, run_currency=run_currency
+        )
+        return replace(
+            self,
+            base=self.base * factor,
+            to_add_after_rounding=self.to_add_after_rounding * factor,
+            unit=replace(self.unit, base=run_currency.upper()),
+        )
 
     def apply_rounding(
         self,

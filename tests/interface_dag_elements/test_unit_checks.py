@@ -31,6 +31,7 @@ from ttsim.tt import (
     UNSET_UNIT,
     AggType,
     FKType,
+    RoundingSpec,
     Unit,
     agg_by_group_function,
     cast_unit,
@@ -245,6 +246,127 @@ def test_missing_check_reports_unannotated_identifier_and_boolean():
     with pytest.raises(UnitDefinitionError, match="some_id"):
         fail_if_environment_units_are_missing(
             env={"some_id": some_id, "some_flag": some_flag},
+            grouping_levels=GROUPING_LEVELS,
+        )
+
+
+# ----------------------------------------------------------------------------
+# Currency-denominated rounding specs: mandatory on a currency-valued function,
+# forbidden elsewhere, composite must equal the function's declared unit with
+# the agnostic base swapped for the concrete currency (GEP 10)
+# ----------------------------------------------------------------------------
+
+
+def make_rounded_amount_y(rounding_spec: RoundingSpec):
+    @policy_function(rounding_spec=rounding_spec, unit=Unit.CURRENCY.PER_YEAR)
+    def rounded_amount_y(bonus_y: float) -> float:
+        return bonus_y
+
+    return rounded_amount_y
+
+
+def test_missing_check_reports_currency_rounding_spec_without_unit():
+    with pytest.raises(
+        UnitDefinitionError, match=r"rounded_amount_y \(rounding_spec\)"
+    ):
+        fail_if_environment_units_are_missing(
+            env={
+                "rounded_amount_y": make_rounded_amount_y(
+                    RoundingSpec(base=1, direction="down")
+                ),
+                "bonus_y": bonus_y,
+            },
+            grouping_levels=GROUPING_LEVELS,
+        )
+
+
+def test_missing_check_passes_for_currency_rounding_spec_with_unit():
+    fail_if_environment_units_are_missing(
+        env={
+            "rounded_amount_y": make_rounded_amount_y(
+                RoundingSpec(base=1, direction="down", unit=CASTAR_PER_YEAR)
+            ),
+            "bonus_y": bonus_y,
+        },
+        grouping_levels=GROUPING_LEVELS,
+    )
+
+
+def test_missing_check_passes_for_non_currency_rounding_spec_without_unit():
+    @policy_function(
+        rounding_spec=RoundingSpec(base=1, direction="down"), unit=Unit.YEARS
+    )
+    def rounded_age(statutory_age: int) -> int:
+        return statutory_age
+
+    fail_if_environment_units_are_missing(
+        env={"rounded_age": rounded_age, "statutory_age": statutory_age},
+        grouping_levels=GROUPING_LEVELS,
+    )
+
+
+def test_inconsistency_check_passes_for_matching_rounding_spec_unit():
+    fail_if_environment_units_are_inconsistent(
+        env={
+            "rounded_amount_y": make_rounded_amount_y(
+                RoundingSpec(base=1, direction="down", unit=CASTAR_PER_YEAR)
+            ),
+            "bonus_y": bonus_y,
+        },
+        grouping_levels=GROUPING_LEVELS,
+    )
+
+
+def test_inconsistency_check_reports_rounding_spec_composite_mismatch():
+    with pytest.raises(UnitConsistencyError, match="same flow period"):
+        fail_if_environment_units_are_inconsistent(
+            env={
+                "rounded_amount_y": make_rounded_amount_y(
+                    RoundingSpec(base=1, direction="down", unit=CASTAR_PER_MONTH)
+                ),
+                "bonus_y": bonus_y,
+            },
+            grouping_levels=GROUPING_LEVELS,
+        )
+
+
+def test_inconsistency_check_reports_agnostic_rounding_spec_unit():
+    with pytest.raises(UnitConsistencyError, match="concrete"):
+        fail_if_environment_units_are_inconsistent(
+            env={
+                "rounded_amount_y": make_rounded_amount_y(
+                    RoundingSpec(base=1, direction="down", unit=Unit.CURRENCY.PER_YEAR)
+                ),
+                "bonus_y": bonus_y,
+            },
+            grouping_levels=GROUPING_LEVELS,
+        )
+
+
+def test_inconsistency_check_reports_non_currency_rounding_spec_unit():
+    with pytest.raises(UnitConsistencyError, match="registered currency"):
+        fail_if_environment_units_are_inconsistent(
+            env={
+                "rounded_amount_y": make_rounded_amount_y(
+                    RoundingSpec(base=1, direction="down", unit=Unit.YEARS)
+                ),
+                "bonus_y": bonus_y,
+            },
+            grouping_levels=GROUPING_LEVELS,
+        )
+
+
+def test_inconsistency_check_reports_rounding_spec_unit_on_non_currency_function():
+    @policy_function(
+        rounding_spec=RoundingSpec(base=1, direction="down", unit=CASTAR_PER_YEAR),
+        unit=Unit.YEARS,
+    )
+    def rounded_age(statutory_age: int) -> int:
+        return statutory_age
+
+    with pytest.raises(UnitConsistencyError, match="nothing to convert"):
+        fail_if_environment_units_are_inconsistent(
+            env={"rounded_age": rounded_age, "statutory_age": statutory_age},
             grouping_levels=GROUPING_LEVELS,
         )
 

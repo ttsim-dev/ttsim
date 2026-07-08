@@ -44,6 +44,7 @@ from ttsim.interface_dag_elements.shared import (
 from ttsim.tt.aggregation import AggType
 from ttsim.tt.column_objects_param_function import (
     AggByGroupFunction,
+    ColumnFunction,
     ColumnObject,
     ParamFunction,
     PolicyFunction,
@@ -84,6 +85,8 @@ from ttsim.tt.units import (
     resolve_compositional_param_unit,
     resolved_unit_for_aggregation,
     token_is_agnostic_currency,
+    token_source_currency,
+    unit_for_derived_node,
     unit_residual_excluding_currency_and_flow_period,
     units_are_equivalent,
 )
@@ -477,6 +480,11 @@ def fail_if_environment_units_are_missing(
     not a quantity, and the decorator requires the argument, so the sentinel is
     never an omission (GEP 10).
 
+    A rounding spec on a currency-valued function must declare its own unit:
+    its magnitudes are statutory numbers written in a concrete currency,
+    exactly like a parameter's (GEP 10). A missing one is reported as
+    ``<qname> (rounding_spec)``.
+
     Raises:
         UnitDefinitionError: If any node (or per-leaf-mapping leaf) lacks a unit
             declaration.
@@ -523,6 +531,13 @@ def fail_if_environment_units_are_missing(
                 units_by_qname[display] = units_by_leaf.get(leaf_qname, UNSET_UNIT)
         else:
             units_by_qname[qname] = cast("CompositeUnit", declared_unit)
+            rounding_spec = getattr(obj, "rounding_spec", None)
+            if (
+                rounding_spec is not None
+                and rounding_spec.unit is None
+                and token_is_agnostic_currency(cast("CompositeUnit", declared_unit))
+            ):
+                units_by_qname[f"{qname} (rounding_spec)"] = UNSET_UNIT
     fail_if_units_are_missing(units_by_qname)
 
 
@@ -589,6 +604,65 @@ def _aggregation_declaration_errors(
     ]
 
 
+def _rounding_spec_declaration_inconsistency(
+    qname: str,
+    obj: ColumnFunction,
+) -> str | None:
+    """Error message if a rounding spec's unit disagrees with its function's.
+
+    A rounding spec's magnitudes are statutory numbers written in a concrete
+    currency, exactly like a parameter's — so on a currency-valued function the
+    spec pins down a registered currency and spells the full composite, which
+    must equal the function's declared unit with the agnostic base swapped for
+    the concrete one. On a non-currency function the magnitudes are in the
+    function's own unit and there is nothing to convert, so a declaration is
+    rejected (GEP 10). The *missing* declaration on a currency-valued function
+    is the mandatory-units check's to report, as is a function without a unit.
+    """
+    spec = getattr(obj, "rounding_spec", None)
+    declared = getattr(obj, "unit", UNSET_UNIT)
+    if spec is None or spec.unit is None or declared is UNSET_UNIT:
+        return None
+    if not token_is_agnostic_currency(cast("CompositeUnit", declared)):
+        return (
+            f"{qname}: the rounding spec declares `{spec.unit}` but the function's "
+            f"unit `{declared}` has no currency base, so there is nothing to "
+            f"convert; drop the spec's `unit=` (GEP 10)."
+        )
+    if token_is_agnostic_currency(spec.unit):
+        return (
+            f"{qname}: the rounding spec's magnitudes are written in a concrete "
+            f"currency; declare it (e.g. `Unit.DM.PER_YEAR`), not the agnostic "
+            f"`{spec.unit}` (GEP 10)."
+        )
+    if token_source_currency(spec.unit) is None:
+        return (
+            f"{qname}: the rounding spec's unit `{spec.unit}` does not pin down a "
+            f"registered currency (GEP 10)."
+        )
+    if unit_for_derived_node(spec.unit) != declared:
+        return (
+            f"{qname}: the rounding spec's unit `{spec.unit}` must equal the "
+            f"function's declared `{declared}` with the agnostic base swapped for "
+            f"the concrete currency — same flow period, same grouping level "
+            f"(GEP 10)."
+        )
+    return None
+
+
+def _rounding_spec_declaration_errors(
+    env: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
+) -> list[str]:
+    """Spec-vs-function unit errors for every rounded column function."""
+    return [
+        error
+        for qname, obj in env.items()
+        if isinstance(obj, ColumnFunction)
+        for error in [_rounding_spec_declaration_inconsistency(qname=qname, obj=obj)]
+        if error is not None
+    ]
+
+
 def fail_if_environment_units_are_inconsistent(
     env: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
     grouping_levels: OrderedQNames,
@@ -602,8 +676,10 @@ def fail_if_environment_units_are_inconsistent(
     boolean-enumeration strategy. An aggregation has no scalar body, but it
     *derives* a unit from its source and agg_type; its declared token is checked
     against that derivation here, the same declared-vs-produced contract a body is
-    held to. Time-conversion variants and group-creation functions are
-    unit-assigned by construction and need no check.
+    held to. A rounding spec's declared unit is checked against its function's
+    (:func:`_rounding_spec_declaration_inconsistency`). Time-conversion variants
+    and group-creation functions are unit-assigned by construction and need no
+    check.
 
     In the interface DAG the resolved units are supplied by the
     :func:`resolved_units` node, so the environment walk runs once per build
@@ -631,6 +707,7 @@ def fail_if_environment_units_are_inconsistent(
     errors: list[str] = _aggregation_declaration_errors(
         env=env, resolved_units=resolved_units
     )
+    errors.extend(_rounding_spec_declaration_errors(env=env))
     for qname, obj in env.items():
         # Only these two have a human-written scalar body; everything else
         # (aggregations validated above, time-conversions, group ids) is assigned

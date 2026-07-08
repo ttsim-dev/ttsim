@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import dataclasses
 import datetime
 from collections.abc import Callable, Mapping
 from types import ModuleType
@@ -144,6 +145,7 @@ def policy_environment(
             left=_active_column_objects_and_param_functions(
                 orig=orig_policy_objects__column_objects_and_param_functions,
                 policy_date=policy_date,
+                currency=currency,
             ),
             right=_active_param_objects(
                 orig=orig_policy_objects__param_specs,
@@ -158,24 +160,47 @@ def policy_environment(
 def _active_column_objects_and_param_functions(
     orig: FlatColumnObjectsParamFunctions,
     policy_date: datetime.date,
+    currency: str | None = None,
 ) -> NestedColumnObjectsParamFunctions:
     """Traverse `root` and return all ColumnObjectParamFunctions for a given date.
 
     Args:
         root: The directory to traverse.
         policy_date: The date for which policy objects should be loaded.
+        currency: The run currency; rounding specs are restated in it.
 
     Returns:
         A tree of active ColumnObjectParamFunctions.
 
     """
     flat_objects_tree: dict[tuple[str, ...], Any] = {
-        (*orig_path[:-2], obj.leaf_name): obj
+        (*orig_path[:-2], obj.leaf_name): _with_rounding_spec_in_run_currency(
+            obj=obj, currency=currency
+        )
         for orig_path, obj in orig.items()
         if obj.is_active(policy_date)
     }
 
     return dt.unflatten_from_tree_paths(flat_objects_tree)
+
+
+def _with_rounding_spec_in_run_currency(
+    obj: Any,  # noqa: ANN401
+    currency: str | None,
+) -> Any:  # noqa: ANN401
+    """Restate an object's rounding-spec magnitudes in the run currency (GEP 10).
+
+    The policy environment is entirely in the run currency: parameters convert
+    their values on parsing, a rounding spec converts its magnitudes here. A
+    fresh object is built because the orig objects are shared across builds.
+    """
+    spec = getattr(obj, "rounding_spec", None)
+    if spec is None:
+        return obj
+    converted_spec = spec.in_run_currency(currency)
+    if converted_spec is spec:
+        return obj
+    return dataclasses.replace(obj, rounding_spec=converted_spec)
 
 
 def _active_param_objects(
