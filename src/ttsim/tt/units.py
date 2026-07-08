@@ -29,6 +29,7 @@ from __future__ import annotations
 import math
 import re
 from collections.abc import Callable, Iterable, Iterator, Mapping
+from contextlib import contextmanager
 from dataclasses import dataclass, replace
 from typing import TYPE_CHECKING, Any, TypeVar
 
@@ -833,17 +834,123 @@ _ALLOWED_UNIT_TOKENS: set[str] = {
 #: base also names the currency the numbers are written in.
 _registered_currencies: set[str] = set()
 
-#: The name of the registered base currency, set by ``register_currency(...,
-#: base=True)``. ``None`` until a downstream package registers one.
-_base_currency: str | None = None
+#: Each registered currency's *family root*: the base currency its definition
+#: chains to (a base currency roots itself). Currencies convert only within one
+#: family — two packages' families (gettsim's EUR/DM, mettsim's
+#: CASTAR/SILVER_PENNY) can coexist in one process, e.g. two test suites in one
+#: pytest run, but no exchange rate connects them.
+_currency_family_root: dict[str, str] = {}
 
 #: Tolerance for the magnitude part of a unit-equivalence comparison.
 _REL_TOL = 1e-9
 
 
 def base_currency() -> str | None:
-    """Return the name of the registered base currency, or ``None``."""
-    return _base_currency
+    """The single registered base currency, or ``None`` if none is registered.
+
+    With more than one currency *family* registered in the process — two
+    packages imported into one test run — there is no meaningful process-wide
+    base: the default run currency must then come from the policy objects (the
+    ``currency`` interface node derives it from the parameters' declarations)
+    or from an explicit ``currency=`` argument.
+
+    Raises:
+        UnitDefinitionError: If base currencies of more than one family are
+            registered.
+    """
+    roots = registered_base_currencies()
+    if not roots:
+        return None
+    if len(roots) == 1:
+        return roots[0]
+    raise UnitDefinitionError(
+        f"Base currencies of {len(roots)} different families are registered "
+        f"({', '.join(roots)}), so there is no process-wide default currency. "
+        f"Pass `currency=...` explicitly (GEP 10)."
+    )
+
+
+def registered_base_currencies() -> tuple[str, ...]:
+    """The registered currency-family roots (the base currencies), sorted."""
+    return tuple(sorted(set(_currency_family_root.values())))
+
+
+def currency_family_root(name: str) -> str:
+    """The base currency that ``name``'s definition chains to.
+
+    Currencies convert only within one family: a package's currencies share the
+    base that package registered, and no exchange rate connects two packages'
+    families.
+
+    Raises:
+        UnitDefinitionError: If ``name`` is not a registered currency.
+    """
+    if name not in _currency_family_root:
+        known = ", ".join(sorted(_registered_currencies)) or "(none registered)"
+        raise UnitDefinitionError(
+            f"Unknown currency {name!r}; expected one of {known} (GEP 10)."
+        )
+    return _currency_family_root[name]
+
+
+def _definition_family_root(name: str, definition: str) -> str:
+    """The family root of a currency defined relative to another.
+
+    A definition referencing one registered currency joins that currency's
+    family. A definition against the abstract :data:`CURRENCY_TOKEN` reference
+    alone roots its *own* family: like a base currency it chains to no other,
+    only at a factor other than 1.
+
+    Raises:
+        UnitDefinitionError: If the definition references an unregistered unit
+            or more than one registered currency.
+    """
+    try:
+        parsed_definition = UNIT_REGISTRY.parse_expression(definition)
+    except pint.UndefinedUnitError as error:
+        raise UnitDefinitionError(
+            f"Currency {name!r} is defined as {definition!r}, which "
+            f"references an unregistered unit. Define a currency relative "
+            f"to an already-registered one (GEP 10)."
+        ) from error
+    referenced = sorted(
+        str(token)
+        for token in to_units_container(parsed_definition.units)
+        if str(token) in _registered_currencies
+    )
+    if len(referenced) > 1:
+        raise UnitDefinitionError(
+            f"Currency {name!r} must be defined relative to at most one "
+            f"registered currency; {definition!r} references "
+            f"{', '.join(referenced)} (GEP 10)."
+        )
+    if not referenced:
+        return name
+    return _currency_family_root[referenced[0]]
+
+
+@contextmanager
+def isolated_currency_registration() -> Iterator[None]:
+    """Restore the currency bookkeeping on exit (a test isolation tool).
+
+    Registrations made inside the block do not leak: the currency set, the
+    family roots, and the token vocabulary are restored. The pint definitions
+    created inside the block cannot be removed, but without the bookkeeping
+    they are inert, and a later *consistent* re-registration is tolerated
+    (:func:`register_currency`).
+    """
+    saved_currencies = set(_registered_currencies)
+    saved_roots = dict(_currency_family_root)
+    saved_tokens = set(_ALLOWED_UNIT_TOKENS)
+    try:
+        yield
+    finally:
+        _registered_currencies.clear()
+        _registered_currencies.update(saved_currencies)
+        _currency_family_root.clear()
+        _currency_family_root.update(saved_roots)
+        _ALLOWED_UNIT_TOKENS.clear()
+        _ALLOWED_UNIT_TOKENS.update(saved_tokens)
 
 
 def register_currency(
@@ -854,10 +961,14 @@ def register_currency(
 ) -> None:
     """Register a concrete currency in the ``[currency]`` dimension.
 
-    Downstream packages call this on import. Exactly one currency per process
-    is the *base* currency (factor 1 against the abstract :data:`CURRENCY_TOKEN`
-    reference); every other currency is defined relative to an already-known
-    currency.
+    Downstream packages call this on import. Exactly one currency per *family*
+    is the *base* currency (factor 1 against the abstract
+    :data:`CURRENCY_TOKEN` reference); every other currency is defined relative
+    to an already-known currency of the same family. Families from different
+    packages coexist in one process — conversion is possible only within a
+    family (:func:`currency_conversion_factor`), and the default run currency
+    follows the policy objects in play (the ``currency`` interface node) once
+    more than one family is registered.
 
     The registered currency becomes a valid compositional *base* — its
     upper-cased name (``register_currency("DM", ...)`` makes ``DM``,
@@ -866,28 +977,26 @@ def register_currency(
 
     Args:
         name: The currency's unit name (e.g. ``"euro"``, ``"DM"``).
-        base: Whether this is the base currency. Mutually exclusive with
+        base: Whether this is a base currency. Mutually exclusive with
             ``definition``.
         definition: A pint-parseable definition relative to another currency
             (e.g. ``"euro / 1.95583"``). Mutually exclusive with ``base``.
 
     Raises:
-        UnitDefinitionError: If the arguments are inconsistent, if a second base
-            currency is registered, or if the definition does not resolve to the
-            ``[currency]`` dimension.
+        UnitDefinitionError: If the arguments are inconsistent, if the
+            definition does not resolve to the ``[currency]`` dimension, or if
+            it does not reference exactly one registered currency.
     """
-    global _base_currency  # noqa: PLW0603
-
     if base == (definition is not None):
         raise UnitDefinitionError(
             "register_currency requires exactly one of `base=True` or "
             f"`definition=...`; got base={base!r}, definition={definition!r}."
         )
-    if base and _base_currency not in (None, name):
-        raise UnitDefinitionError(
-            f"Cannot register {name!r} as the base currency: "
-            f"{_base_currency!r} is already the base currency."
-        )
+    family_root = (
+        _definition_family_root(name=name, definition=definition)
+        if definition is not None
+        else name
+    )
 
     currency_dim = UNIT_REGISTRY.Quantity(1.0, CURRENCY_TOKEN).dimensionality
     if name in UNIT_REGISTRY:
@@ -916,6 +1025,13 @@ def register_currency(
                 f"requests {requested_factor}. A currency's factor against "
                 f"{CURRENCY_TOKEN} must be consistent across registrations (GEP 10)."
             )
+        existing_root = _currency_family_root.get(name)
+        if existing_root is not None and existing_root != family_root:
+            raise UnitDefinitionError(
+                f"Cannot re-register currency {name!r} into the family of "
+                f"{family_root!r}: it belongs to the family of "
+                f"{existing_root!r} (GEP 10)."
+            )
     else:
         UNIT_REGISTRY.define(
             f"{name} = {CURRENCY_TOKEN}" if base else f"{name} = {definition}"
@@ -926,10 +1042,9 @@ def register_currency(
                 f"to the [currency] dimension."
             )
 
-    if base:
-        _base_currency = name
     _ALLOWED_UNIT_TOKENS.add(name)
     _registered_currencies.add(name)
+    _currency_family_root[name] = family_root
     # Surface the concrete currency on the `Unit` builder (`Unit.EUR`, `Unit.DM`,
     # `Unit.SILVER_PENNY`) so it can tag a `UnitAnnotatedColumn` of input data.
     # A column/function declaration still rejects a concrete base
@@ -1190,16 +1305,30 @@ def currency_conversion_factor(source_currency: str, run_currency: str) -> float
 
     Used to bake historical parameters denominated in their legal currency (e.g.
     DM) into the run currency at environment-build time. pint is the single
-    source of truth for the rate. Both currencies must be registered.
+    source of truth for the rate. Both currencies must be registered and belong
+    to the same *family*: two packages' families share no exchange rate, and
+    their pint factors would relate them 1:1 through the abstract
+    :data:`CURRENCY_TOKEN` reference — a silent wrong number, so it is rejected
+    here.
 
     Raises:
-        UnitDefinitionError: If either currency is unknown or not a currency.
+        UnitDefinitionError: If either currency is unknown, not a currency, or
+            of another family than the other.
     """
     for name in (source_currency, run_currency):
         if name not in UNIT_REGISTRY:
             raise UnitDefinitionError(
                 f"Cannot convert currency: {name!r} is not a registered currency."
             )
+    source_root = currency_family_root(source_currency)
+    run_root = currency_family_root(run_currency)
+    if source_root != run_root:
+        raise UnitDefinitionError(
+            f"No exchange rate connects {source_currency!r} (family of "
+            f"{source_root!r}) and {run_currency!r} (family of {run_root!r}): "
+            f"they were registered by different packages. Use a run currency "
+            f"from the family the parameters are denominated in (GEP 10)."
+        )
     try:
         return UNIT_REGISTRY.Quantity(1.0, source_currency).to(run_currency).magnitude
     except pint.DimensionalityError as e:
@@ -1517,6 +1646,16 @@ def strip_input_quantity_at_boundary(
     run_unit = UNIT_REGISTRY.parse_units(run_currency)
     if source_currency == run_unit:
         return quantity.magnitude
+    source_root = currency_family_root(str(source_currency))
+    run_root = currency_family_root(run_currency)
+    if source_root != run_root:
+        where = f" on input column {column_label!r}" if column_label else ""
+        raise UnitConsistencyError(
+            f"pint-tagged input{where}: no exchange rate connects "
+            f"{source_currency!s} (family of {source_root!r}) and the run "
+            f"currency {run_currency!r} (family of {run_root!r}); tag the "
+            f"column in a currency of the run's family (GEP 10)."
+        )
     target = quantity.units / source_currency * run_unit
     return quantity.to(target).magnitude
 

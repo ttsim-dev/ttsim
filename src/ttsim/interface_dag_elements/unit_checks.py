@@ -74,12 +74,12 @@ from ttsim.tt.units import (
     _grouping_levels_with_exponent,
     _unit_level_denominator,
     _unit_without_grouping_levels,
-    base_currency,
     coerce_unit_token,
     fail_if_units_are_missing,
     is_calendar_point_unit,
     parse_unit,
     register_grouping_levels,
+    registered_base_currencies,
     resolve_compositional_cast_unit,
     resolve_compositional_column_unit,
     resolve_compositional_param_unit,
@@ -892,9 +892,9 @@ def _fail_if_param_token_is_agnostic_currency(
     base stays legal — and required — on columns and functions, which are
     currency-agnostic by design.
     """
-    base = base_currency()
-    if base is not None and token_is_agnostic_currency(token):
-        concrete = f"{base.upper()}{str(token).removeprefix('CURRENCY')}"
+    bases = registered_base_currencies()
+    if bases and token_is_agnostic_currency(token):
+        concrete = f"{bases[0].upper()}{str(token).removeprefix('CURRENCY')}"
         raise UnitDefinitionError(
             f"{where}: parameters must pin down the concrete currency their "
             f"numbers are written in; the agnostic unit {token} is not "

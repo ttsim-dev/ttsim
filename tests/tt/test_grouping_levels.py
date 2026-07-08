@@ -26,6 +26,7 @@ from ttsim.tt.units import (
     composite_base_is_level_carrying,
     divide_by_grouping_level,
     grouping_level_count_unit,
+    isolated_currency_registration,
     register_currency,
     register_grouping_levels,
     resolve_compositional_column_unit,
@@ -111,10 +112,13 @@ def test_spelled_level_carries_level():
 
 
 def test_concrete_currency_base_is_level_carrying():
-    # Defined relative to the always-present CURRENCY reference so the test does not
-    # depend on which base currency the suite registered.
-    register_currency("LEVEL_TEST_COIN", definition=f"{CURRENCY_TOKEN} / 2")
-    assert composite_base_is_level_carrying("LEVEL_TEST_COIN")
+    # Defined relative to the always-present CURRENCY reference so the test does
+    # not depend on which base currency the suite registered; such a currency
+    # roots its own family, so the registration is isolated to keep the
+    # process-wide family set unchanged for other tests.
+    with isolated_currency_registration():
+        register_currency("LEVEL_TEST_COIN", definition=f"{CURRENCY_TOKEN} / 2")
+        assert composite_base_is_level_carrying("LEVEL_TEST_COIN")
 
 
 # ----------------------------------------------------------------------------

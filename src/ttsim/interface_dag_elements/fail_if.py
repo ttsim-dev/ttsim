@@ -52,7 +52,7 @@ from ttsim.tt.units import (
     UNSET_UNIT,
     CompositeUnit,
     _unit_level_denominator,
-    base_currency,
+    registered_base_currencies,
     token_is_agnostic_currency,
 )
 from ttsim.typing import (
@@ -1061,7 +1061,7 @@ def input_currency_is_not_concrete(
     Raises:
         UnitConsistencyError: If any input column's tag is an agnostic currency.
     """
-    if base_currency() is None:
+    if not registered_base_currencies():
         return
     agnostic = sorted(
         dt.qname_from_tree_path(path)

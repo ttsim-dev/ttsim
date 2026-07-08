@@ -46,7 +46,9 @@ from ttsim.tt import (
     unit_for_aggregation,
     units_are_equivalent,
 )
+from ttsim.tt import units as units_module
 from ttsim.tt.units import (
+    currency_family_root,
     grouping_level_count_unit,
     infer_function_unit,
     is_calendar_point_unit,
@@ -259,9 +261,29 @@ def test_register_currency_with_inconsistent_factor_fails():
         register_currency("SILVER_PENNY", definition="CASTAR / 5")
 
 
-def test_register_second_base_currency_fails():
-    with pytest.raises(UnitDefinitionError, match="base currency"):
+def test_second_base_currency_starts_a_new_family():
+    # A second package may register its own base currency: the families
+    # coexist in one process and convert only within themselves (GEP 10).
+    # The bookkeeping is restored afterwards; the leftover pint definition
+    # is inert without it and tolerated on re-registration.
+    saved_currencies = set(units_module._registered_currencies)
+    saved_roots = dict(units_module._currency_family_root)
+    saved_tokens = set(units_module._ALLOWED_UNIT_TOKENS)
+    try:
         register_currency("mithril_coin", base=True)
+        assert currency_family_root("mithril_coin") == "mithril_coin"
+        assert currency_family_root("CASTAR") == "CASTAR"
+        with pytest.raises(UnitDefinitionError, match="No exchange rate"):
+            currency_conversion_factor(
+                source_currency="CASTAR", run_currency="mithril_coin"
+            )
+    finally:
+        units_module._registered_currencies.clear()
+        units_module._registered_currencies.update(saved_currencies)
+        units_module._currency_family_root.clear()
+        units_module._currency_family_root.update(saved_roots)
+        units_module._ALLOWED_UNIT_TOKENS.clear()
+        units_module._ALLOWED_UNIT_TOKENS.update(saved_tokens)
 
 
 def test_register_currency_requires_exactly_one_of_base_or_definition():
