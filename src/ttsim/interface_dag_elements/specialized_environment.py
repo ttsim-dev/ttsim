@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import datetime
 import functools
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from types import ModuleType
 from typing import Any, Literal, cast
 
@@ -148,6 +148,14 @@ def _add_derived_functions(
     }
 
 
+def _unit_declares_a_currency(unit: Any) -> bool:  # noqa: ANN401
+    """Whether a leaf-scaled ``unit:`` declaration (a single token or a per-leaf
+    mapping) pins down a concrete currency anywhere."""
+    if isinstance(unit, Mapping):
+        return any(_unit_declares_a_currency(sub) for sub in unit.values())
+    return isinstance(unit, CompositeUnit) and token_source_currency(unit) is not None
+
+
 def _convert_function_like_converter_outputs(
     *,
     outputs: dict[str, Any],
@@ -163,11 +171,11 @@ def _convert_function_like_converter_outputs(
     schedule or lookup table), that *output* is converted per axis here — the
     only place that knows both the converted structure and the run currency.
 
-    A *homogeneous* ``require_converter`` (one currency ``unit:``) that
-    nonetheless produces such a function-like value was scaled uniformly, leaf
-    by leaf — which silently mis-states polynomial coefficients (the order-``j``
-    term must scale by ``f_out / f_in**j``, not by a single factor). That is
-    rejected, pointing the author at the per-axis declaration.
+    A *leaf-scaled* ``require_converter`` (a currency ``unit:``, single token or
+    per-leaf mapping) that nonetheless produces such a function-like value was
+    scaled leaf by leaf — which silently mis-states polynomial coefficients (the
+    order-``j`` term must scale by ``f_out / f_in**j``, not by a single factor).
+    That is rejected, pointing the author at the per-axis declaration.
     """
     for raw_qname, raw in params.items():
         if not isinstance(raw, RawParam):
@@ -190,20 +198,16 @@ def _convert_function_like_converter_outputs(
                     xnp=xnp,
                     leaf_name=raw_qname,
                 )
-            elif (
-                isinstance(raw.unit, CompositeUnit)
-                and token_source_currency(raw.unit) is not None
-                and isinstance(
-                    outputs[pf_name],
-                    PiecewisePolynomialParamValue | ConsecutiveIntLookupTableParamValue,
-                )
+            elif _unit_declares_a_currency(raw.unit) and isinstance(
+                outputs[pf_name],
+                PiecewisePolynomialParamValue | ConsecutiveIntLookupTableParamValue,
             ):
                 raise UnitDefinitionError(
-                    f"require_converter {raw_qname!r} declares a homogeneous "
+                    f"require_converter {raw_qname!r} declares a leaf-scaled "
                     f"currency `unit:` ({raw.unit}), but its converter "
                     f"{pf_name!r} produces a {type(outputs[pf_name]).__name__} "
                     f"— a function whose coefficients do not all scale by one "
-                    f"factor. Scaling them uniformly silently mis-states the "
+                    f"factor. Scaling them leaf by leaf silently mis-states the "
                     f"schedule; declare `input_unit:` / `output_unit:` on the "
                     f"require_converter so each axis converts correctly (GEP 10)."
                 )

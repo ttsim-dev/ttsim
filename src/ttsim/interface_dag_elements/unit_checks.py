@@ -29,7 +29,7 @@ from __future__ import annotations
 import inspect
 import re
 from collections.abc import Mapping
-from typing import Any, cast
+from typing import Any, NoReturn, cast
 
 import dags.tree as dt
 import numpy
@@ -471,11 +471,14 @@ def fail_if_environment_units_are_missing(
 
     Every active node must declare a unit — where ``unit=Unit.DIMENSIONLESS``
     / ``unit: DIMENSIONLESS`` *is* a declaration (a dimensionless quantity).
-    For a dict parameter with per-leaf units, every leaf of the value active at
-    the policy date must be covered.
+    For a dict or require_converter parameter with per-leaf units, every leaf
+    of the value active at the policy date must be covered. A ``@param_function``
+    declaring ``unit=UNSET_UNIT`` is exempt: its output is a structured value,
+    not a quantity, and the decorator requires the argument, so the sentinel is
+    never an omission (GEP 10).
 
     Raises:
-        UnitDefinitionError: If any node (or dict-param leaf) lacks a unit
+        UnitDefinitionError: If any node (or per-leaf-mapping leaf) lacks a unit
             declaration.
     """
     units_by_qname: dict[str, CompositeUnit] = {}
@@ -485,6 +488,8 @@ def fail_if_environment_units_are_missing(
         if qname in FRAMEWORK_DATE_NODE_UNITS:
             continue
         declared_unit = getattr(obj, "unit", UNSET_UNIT)
+        if isinstance(obj, ParamFunction) and declared_unit is UNSET_UNIT:
+            continue
         if isinstance(obj, ParamMappingObject):
             units_by_qname[f"{qname} (input_unit)"] = cast(
                 "CompositeUnit", obj.input_unit
@@ -891,12 +896,12 @@ def _resolve_param_object_unit(
 
     Every parameter spells its unit fully: a **scalar** additionally
     takes a time suffix on its *name*, which must agree with the spelled period
-    (``lump_sum_deduction_y`` declaring ``CURRENCY_PER_YEAR``). A **dict**
-    parameter with heterogeneous leaves declares a per-leaf ``unit:`` mapping
-    (see :func:`_resolve_unit_mapping`), resolving to a nested dict of pint units
-    mirroring the value structure; a uniformly typed dict or a raw parameter
-    declares one unit for the whole structure. Mapping parameters (schedules,
-    lookup tables) declare per-axis units instead — see
+    (``lump_sum_deduction_y`` declaring ``CURRENCY_PER_YEAR``). A **dict** or
+    **require_converter** parameter with heterogeneous leaves declares a
+    per-leaf ``unit:`` mapping (see :func:`_resolve_unit_mapping`), resolving to
+    a nested dict of pint units mirroring the value structure; a uniformly typed
+    one declares one unit for the whole structure. Mapping parameters
+    (schedules, lookup tables) declare per-axis units instead — see
     :func:`_resolve_param_mapping_object_units`. Returns ``None`` for an
     unannotated parameter — the mandatory-units check reports it.
     """
@@ -994,7 +999,8 @@ def _representative_values_by_qname(
     ``look_up`` call resolves to the output unit. A dict parameter with a scalar
     ``unit:`` declaration becomes a dict of uniform representative quantities
     mirroring its value structure, so that subscripting works inside a consumer's
-    dry-run.
+    dry-run. A structured param function (``unit=UNSET_UNIT``) becomes a
+    :class:`_DryRunStructuredValue`.
     """
     out: dict[str, Any] = {}
     for qname, unit in resolved_units.items():
@@ -1010,6 +1016,9 @@ def _representative_values_by_qname(
             )
         else:
             out[qname] = _representative_value(unit)
+    for qname, obj in env.items():
+        if isinstance(obj, ParamFunction) and obj.unit is UNSET_UNIT:
+            out[qname] = _DryRunStructuredValue(producer=qname)
     return out
 
 
@@ -1186,6 +1195,8 @@ class _DryRunQuantity:
         """
         self_is_boolean, self_level = _boolean_level(cast("pint.Unit", self.q.units))
         other_q = _unwrap(other)
+        if isinstance(other_q, _DryRunStructuredValue):
+            other_q._raise_used_as_quantity(op)  # noqa: SLF001
         if isinstance(other_q, pint.Quantity):
             other_is_boolean, other_level = _boolean_level(
                 cast("pint.Unit", other_q.units)
@@ -1227,6 +1238,8 @@ class _DryRunQuantity:
         misuse.
         """
         other_q = _unwrap(other)
+        if isinstance(other_q, _DryRunStructuredValue):
+            other_q._raise_used_as_quantity(op)  # noqa: SLF001
         if is_calendar_point_unit(cast("pint.Unit", self.q.units)) or (
             isinstance(other_q, pint.Quantity)
             and is_calendar_point_unit(cast("pint.Unit", other_q.units))
@@ -1398,6 +1411,132 @@ class _ScheduleNotDryRunnableError(Exception):
     """
 
 
+class _StructuredValueUsedAsQuantityError(Exception):
+    """A value plucked off a structured parameter was used as a quantity —
+    caught by :func:`_verify_one_body` and reported with the
+    cast-at-the-pluck fix."""
+
+    def __init__(self, producer: str, op: str) -> None:
+        super().__init__()
+        self.producer = producer
+        self.op = op
+
+
+class _DryRunStructuredValue:
+    """The dry-run stand-in for a structured param-function output
+    (``unit=UNSET_UNIT``, GEP 10): plucks pass through — attribute access,
+    subscripting, method calls all yield the stand-in again — while using a
+    pluck as a quantity raises, demanding a ``cast_unit`` at the pluck.
+    """
+
+    __slots__ = ("producer",)
+    # Defer binary NumPy ops to our (raising) reflected dunders.
+    __array_ufunc__ = None
+    __array_priority__ = 1000
+    __hash__ = object.__hash__
+
+    def __init__(self, producer: str) -> None:
+        self.producer = producer
+
+    def _raise_used_as_quantity(self, op: str) -> NoReturn:
+        raise _StructuredValueUsedAsQuantityError(producer=self.producer, op=op)
+
+    def __getattr__(self, name: str) -> _DryRunStructuredValue:
+        # Refuse protocol probes (``__array__``, copy/pickle hooks, …).
+        if name.startswith("__") and name.endswith("__"):
+            raise AttributeError(name)
+        return self
+
+    def __getitem__(self, _key: Any) -> _DryRunStructuredValue:  # noqa: ANN401
+        return self
+
+    def __call__(self, *_args: Any, **_kwargs: Any) -> _DryRunStructuredValue:  # noqa: ANN401
+        return self
+
+    def __bool__(self) -> Any:  # noqa: ANN401
+        return self._raise_used_as_quantity("a branch decision")
+
+    def __lt__(self, _other: Any) -> Any:  # noqa: ANN401
+        return self._raise_used_as_quantity("<")
+
+    def __le__(self, _other: Any) -> Any:  # noqa: ANN401
+        return self._raise_used_as_quantity("<=")
+
+    def __gt__(self, _other: Any) -> Any:  # noqa: ANN401
+        return self._raise_used_as_quantity(">")
+
+    def __ge__(self, _other: Any) -> Any:  # noqa: ANN401
+        return self._raise_used_as_quantity(">=")
+
+    def __eq__(self, _other: object) -> Any:  # noqa: ANN401
+        return self._raise_used_as_quantity("==")
+
+    def __ne__(self, _other: object) -> Any:  # noqa: ANN401
+        return self._raise_used_as_quantity("!=")
+
+    def __add__(self, _other: Any) -> Any:  # noqa: ANN401
+        return self._raise_used_as_quantity("+")
+
+    __radd__ = __add__
+
+    def __sub__(self, _other: Any) -> Any:  # noqa: ANN401
+        return self._raise_used_as_quantity("-")
+
+    __rsub__ = __sub__
+
+    def __mul__(self, _other: Any) -> Any:  # noqa: ANN401
+        return self._raise_used_as_quantity("*")
+
+    __rmul__ = __mul__
+
+    def __truediv__(self, _other: Any) -> Any:  # noqa: ANN401
+        return self._raise_used_as_quantity("/")
+
+    __rtruediv__ = __truediv__
+
+    def __floordiv__(self, _other: Any) -> Any:  # noqa: ANN401
+        return self._raise_used_as_quantity("//")
+
+    __rfloordiv__ = __floordiv__
+
+    def __mod__(self, _other: Any) -> Any:  # noqa: ANN401
+        return self._raise_used_as_quantity("%")
+
+    __rmod__ = __mod__
+
+    def __pow__(self, _other: Any) -> Any:  # noqa: ANN401
+        return self._raise_used_as_quantity("**")
+
+    __rpow__ = __pow__
+
+    def __and__(self, _other: Any) -> Any:  # noqa: ANN401
+        return self._raise_used_as_quantity("&")
+
+    __rand__ = __and__
+
+    def __or__(self, _other: Any) -> Any:  # noqa: ANN401
+        return self._raise_used_as_quantity("|")
+
+    __ror__ = __or__
+
+    def __xor__(self, _other: Any) -> Any:  # noqa: ANN401
+        return self._raise_used_as_quantity("^")
+
+    __rxor__ = __xor__
+
+    def __invert__(self) -> Any:  # noqa: ANN401
+        return self._raise_used_as_quantity("~")
+
+    def __neg__(self) -> Any:  # noqa: ANN401
+        return self._raise_used_as_quantity("unary -")
+
+    def __pos__(self) -> Any:  # noqa: ANN401
+        return self._raise_used_as_quantity("unary +")
+
+    def __abs__(self) -> Any:  # noqa: ANN401
+        return self._raise_used_as_quantity("abs")
+
+
 class _DryRunSchedule:
     """A dry-run stand-in for a ``piecewise_*``/lookup-table parameter value.
 
@@ -1445,11 +1584,14 @@ def _piecewise_polynomial_dry_run(x: Any, parameters: Any, xnp: Any) -> Any:  # 
     """Dry-run shim for ``piecewise_polynomial``.
 
     Screen ``x`` against the schedule's ``input_unit`` and produce its
-    ``output_unit``. A ``parameters`` that is not a :class:`_DryRunSchedule` — a
-    converter-produced or unannotated schedule — is not dry-runnable here.
+    ``output_unit``. A converter-built schedule carries no axes, so the call
+    stays opaque — the caller casts the result. Anything else is not
+    dry-runnable here.
     """
     if isinstance(parameters, _DryRunSchedule):
         return parameters._produce((x,))  # noqa: SLF001
+    if isinstance(parameters, _DryRunStructuredValue):
+        return parameters
     raise _ScheduleNotDryRunnableError
 
 
@@ -1561,20 +1703,42 @@ def _opt_out_required_error(qname: str, reason: str) -> str:
     )
 
 
+def _structured_pluck_message(
+    qname: str,
+    error: _StructuredValueUsedAsQuantityError,
+) -> str:
+    """Message for a body computing with an un-cast pluck off a structured
+    value."""
+    return (
+        f"{qname}: uses a value plucked off the structured parameter "
+        f"'{error.producer}' as a quantity ('{error.op}'), but such a value "
+        f"carries no unit. State its unit where it leaves the structure — "
+        f"`cast_unit(<pluck>, <unit>)` — or opt out of body inference with "
+        f"`verify_units=False` (GEP 10)."
+    )
+
+
 def _arithmetic_misuse_message(
     qname: str,
-    error: _UnitMixError | pint.OffsetUnitCalculusError,
+    error: _UnitMixError
+    | _StructuredValueUsedAsQuantityError
+    | pint.OffsetUnitCalculusError,
     detail: str,
 ) -> str:
     """Message for a body that combines quantities unsoundly under ``+``/``-``/order.
 
-    Dispatches the two ways the dry-run catches such a body: an explicit
+    Dispatches the three ways the dry-run catches such a body: an explicit
     :class:`_UnitMixError` (non-equivalent units, a logical operator on a real
-    quantity, a bare-literal threshold) or a :class:`pint.OffsetUnitCalculusError`
-    raised by pint when a calendar point is used outside its affine algebra.
+    quantity, a bare-literal threshold), a
+    :class:`_StructuredValueUsedAsQuantityError` (an un-cast pluck off a
+    structured value used as a quantity), or a
+    :class:`pint.OffsetUnitCalculusError` raised by pint when a calendar point
+    is used outside its affine algebra.
     """
     if isinstance(error, _UnitMixError):
         return _unit_mix_error_message(qname=qname, mix=error, detail=detail)
+    if isinstance(error, _StructuredValueUsedAsQuantityError):
+        return _structured_pluck_message(qname=qname, error=error)
     return (
         f"{qname}: combines calendar points unsoundly{detail} — two calendar "
         f"points cannot be added (subtract them to get a duration) and a point "
@@ -1664,7 +1828,11 @@ def _verify_one_body(
                 f"it makes more than {_MAX_DECISIONS_PER_RUN} branch decisions "
                 "in one run — a data-driven loop?",
             )
-        except (_UnitMixError, pint.OffsetUnitCalculusError) as err:
+        except (
+            _UnitMixError,
+            _StructuredValueUsedAsQuantityError,
+            pint.OffsetUnitCalculusError,
+        ) as err:
             detail = " on a conditional branch" if explorer.on_a_branch else ""
             return _arithmetic_misuse_message(qname=qname, error=err, detail=detail)
         except UnitDefinitionError:
@@ -1689,6 +1857,26 @@ def _verify_one_body(
         if not explorer.advance():
             break
     return None
+
+
+def _non_quantity_result_error(
+    qname: str,
+    inferred: Any,  # noqa: ANN401
+) -> str:
+    """The screen for a result that is neither a quantity nor a plain scalar:
+    a bare structured pluck names its cast; any other opaque return — a
+    dataclass, a tuple — must opt out."""
+    if isinstance(inferred, _DryRunStructuredValue):
+        return (
+            f"{qname}: returns a value plucked off the structured parameter "
+            f"'{inferred.producer}' without stating its unit; tag it with "
+            f"`cast_unit` at the pluck (GEP 10)."
+        )
+    return _opt_out_required_error(
+        qname,
+        "it returns a value the dry-run cannot unit-check — a dataclass, "
+        "a tuple, or another non-scalar",
+    )
 
 
 def _bare_literal_result_error(
@@ -1779,11 +1967,7 @@ def _inferred_result_error(
     if not isinstance(
         inferred, pint.Quantity | int | float | numpy.number | numpy.bool_
     ):
-        return _opt_out_required_error(
-            qname,
-            "it returns a value the dry-run cannot unit-check — a dataclass, "
-            "a tuple, or another non-scalar",
-        )
+        return _non_quantity_result_error(qname=qname, inferred=inferred)
     if not isinstance(inferred, pint.Quantity):
         return _bare_literal_result_error(
             qname=qname, inferred=inferred, declared=declared, detail=detail

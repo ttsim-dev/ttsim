@@ -437,6 +437,34 @@ def test_dict_param_converts_currency_leaves_only():
     assert param.value["max_age"] == 18
 
 
+def test_require_converter_converts_currency_leaves_only():
+    """Each leaf converts per its own token, at any nesting depth (GEP 10)."""
+    spec = {
+        **_HEADER,
+        "unit": {
+            "amounts": {
+                "base_m": "SILVER_PENNY_PER_MONTH",
+                "supplement_m": "SILVER_PENNY_PER_MONTH",
+            },
+            "bounds": {"min_age": "YEARS", "max_age": "YEARS"},
+        },
+        "type": "require_converter",
+        datetime.date(1900, 1, 1): {
+            "amounts": {"base_m": 100.0, "supplement_m": 40.0},
+            "bounds": {"min_age": 0, "max_age": 18},
+        },
+    }
+    param = _load(
+        leaf_name="raw_child_rate",
+        spec=spec,
+        policy_date=POLICY_DATE,
+        currency="CASTAR",
+    )
+    assert param.value["amounts"]["base_m"] == pytest.approx(25.0)
+    assert param.value["amounts"]["supplement_m"] == pytest.approx(10.0)
+    assert param.value["bounds"]["max_age"] == 18
+
+
 def test_function_like_converter_output_converts_polynomial_per_order():
     """A require_converter's piecewise output scales per polynomial order (GEP 10 S3).
 
@@ -494,6 +522,35 @@ def test_homogeneous_require_converter_producing_a_schedule_is_rejected():
         return raw_schedule
 
     raw = RawParam(value={"a": 1.0}, unit="SILVER_PENNY")
+    outputs = {
+        "schedule": PiecewisePolynomialParamValue(
+            thresholds=np.array([0.0]),
+            intercepts=np.array([0.0]),
+            coefficients=np.array([[0.0]]),
+        )
+    }
+    with pytest.raises(UnitDefinitionError, match="input_unit"):
+        _convert_function_like_converter_outputs(
+            outputs=outputs,
+            params={"raw_schedule": raw},
+            param_functions={"schedule": schedule},
+            run_currency="CASTAR",
+            xnp=np,
+        )
+
+
+def test_mapping_require_converter_producing_a_schedule_is_rejected():
+    """A currency leaf in the mapping feeding a function-like output is
+    rejected exactly as a homogeneous currency token (GEP 10)."""
+
+    @param_function(unit=Unit.DIMENSIONLESS)
+    def schedule(raw_schedule: Any) -> Any:
+        return raw_schedule
+
+    raw = RawParam(
+        value={"ceiling": 1000.0, "top_rate": 0.2},
+        unit={"ceiling": "SILVER_PENNY", "top_rate": "DIMENSIONLESS"},
+    )
     outputs = {
         "schedule": PiecewisePolynomialParamValue(
             thresholds=np.array([0.0]),

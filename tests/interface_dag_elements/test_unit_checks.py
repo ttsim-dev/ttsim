@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import datetime
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 # Importing the mettsim package registers the castar (the base currency), so
@@ -49,13 +50,14 @@ from ttsim.tt.param_objects import (
     DictParam,
     PiecewisePolynomialParam,
     PiecewisePolynomialParamValue,
+    RawParam,
     ScalarParam,
 )
 from ttsim.tt.units import (
     PERSON_LEVEL,
     divide_by_grouping_level,
 )
-from ttsim.typing import BoolColumn, FloatColumn, IntColumn
+from ttsim.typing import BoolColumn, FloatColumn, IntColumn, RawParamValue
 
 if TYPE_CHECKING:
     from types import ModuleType
@@ -1960,6 +1962,199 @@ def test_uniform_dict_param_is_subscriptable_in_dry_run():
         },
         grouping_levels=GROUPING_LEVELS,
     )
+
+
+# ----------------------------------------------------------------------------
+# Structured param functions (unit=UNSET_UNIT): plucks are cast at the site
+# ----------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class _AgeBounds:
+    min_age: int
+    max_age: int
+
+
+@dataclass(frozen=True)
+class _ChildRate:
+    amount_m: float
+    bounds: _AgeBounds
+
+
+def make_raw_child_rate() -> RawParam:
+    return RawParam(
+        value={"amount_m": 100.0, "bounds": {"min_age": 0, "max_age": 18}},
+        unit={
+            "amount_m": "CASTAR_PER_MONTH",
+            "bounds": {"min_age": "YEARS", "max_age": "YEARS"},
+        },
+        start_date=_START,
+        end_date=_END,
+    )
+
+
+@param_function(unit=UNSET_UNIT)
+def child_rate(raw_child_rate: RawParamValue) -> _ChildRate:
+    """A structured builder: its output is a dataclass, not a quantity."""
+    return _ChildRate(
+        amount_m=raw_child_rate["amount_m"],
+        bounds=_AgeBounds(
+            min_age=raw_child_rate["bounds"]["min_age"],
+            max_age=raw_child_rate["bounds"]["max_age"],
+        ),
+    )
+
+
+@policy_input(unit=Unit.YEARS)
+def age() -> int:
+    """A duration in years (a person's age)."""
+
+
+def test_missing_check_accepts_structured_param_function():
+    fail_if_environment_units_are_missing(
+        env={"raw_child_rate": make_raw_child_rate(), "child_rate": child_rate},
+        grouping_levels=GROUPING_LEVELS,
+    )
+
+
+def test_missing_check_reports_uncovered_require_converter_leaf():
+    raw = RawParam(
+        value={"amount_m": 100.0, "bounds": {"min_age": 0, "max_age": 18}},
+        unit={"amount_m": "CASTAR_PER_MONTH", "bounds": {"min_age": "YEARS"}},
+        start_date=_START,
+        end_date=_END,
+    )
+    with pytest.raises(
+        UnitDefinitionError, match=r"raw_child_rate\[bounds\]\[max_age\]"
+    ):
+        fail_if_environment_units_are_missing(
+            env={"raw_child_rate": raw},
+            grouping_levels=GROUPING_LEVELS,
+        )
+
+
+def test_structured_plucks_with_casts_are_verifiable():
+    """Casting each pluck keeps the rest of the body checked (GEP 10)."""
+
+    @policy_function(unit=Unit.CURRENCY.PER_MONTH)
+    def child_benefit_m(age: int, child_rate: _ChildRate) -> float:
+        amount_m = cast_unit(child_rate.amount_m, Unit.CURRENCY.PER_MONTH)
+        max_age = cast_unit(child_rate.bounds.max_age, Unit.YEARS)
+        if age <= max_age:
+            return amount_m
+        return 0.0
+
+    fail_if_environment_units_are_inconsistent(
+        env={
+            "age": age,
+            "raw_child_rate": make_raw_child_rate(),
+            "child_rate": child_rate,
+            "child_benefit_m": child_benefit_m,
+        },
+        grouping_levels=GROUPING_LEVELS,
+    )
+
+
+def test_structured_pluck_used_without_cast_is_caught():
+    @policy_function(unit=Unit.CURRENCY.PER_MONTH)
+    def child_benefit_m(age: int, child_rate: _ChildRate) -> float:
+        if age <= child_rate.bounds.max_age:  # bug: pluck used as a quantity
+            return cast_unit(child_rate.amount_m, Unit.CURRENCY.PER_MONTH)
+        return 0.0
+
+    with pytest.raises(UnitConsistencyError, match="cast_unit"):
+        fail_if_environment_units_are_inconsistent(
+            env={
+                "age": age,
+                "child_rate": child_rate,
+                "child_benefit_m": child_benefit_m,
+            },
+            grouping_levels=GROUPING_LEVELS,
+        )
+
+
+def test_structured_pluck_returned_without_cast_is_caught():
+    @policy_function(unit=Unit.CURRENCY.PER_MONTH)
+    def child_benefit_m(child_rate: _ChildRate) -> float:
+        return child_rate.amount_m  # bug: returned without stating its unit
+
+    with pytest.raises(UnitConsistencyError, match="at the pluck"):
+        fail_if_environment_units_are_inconsistent(
+            env={"child_rate": child_rate, "child_benefit_m": child_benefit_m},
+            grouping_levels=GROUPING_LEVELS,
+        )
+
+
+def test_structured_cast_too_coarse_fails_on_the_deeper_pluck():
+    """A cast on a sub-structure yields a plain quantity, so the next deeper
+    pluck fails loudly — a too-coarse cast can never silently mis-tag."""
+
+    @policy_function(unit=Unit.CURRENCY.PER_MONTH)
+    def child_benefit_m(age: int, child_rate: _ChildRate) -> float:
+        bounds = cast_unit(child_rate.bounds, Unit.YEARS)  # too coarse
+        if age <= bounds.max_age:
+            return cast_unit(child_rate.amount_m, Unit.CURRENCY.PER_MONTH)
+        return 0.0
+
+    with pytest.raises(UnitConsistencyError, match="verify_units=False"):
+        fail_if_environment_units_are_inconsistent(
+            env={
+                "age": age,
+                "child_rate": child_rate,
+                "child_benefit_m": child_benefit_m,
+            },
+            grouping_levels=GROUPING_LEVELS,
+        )
+
+
+@param_function(unit=UNSET_UNIT)
+def built_schedule(
+    raw_schedule_blob: RawParamValue, xnp: ModuleType
+) -> PiecewisePolynomialParamValue:
+    """A converter-built schedule: opaque to the dry-run (GEP 10)."""
+    return PiecewisePolynomialParamValue(
+        thresholds=xnp.asarray(raw_schedule_blob["thresholds"]),
+        intercepts=xnp.asarray(raw_schedule_blob["intercepts"]),
+        coefficients=xnp.asarray(raw_schedule_blob["coefficients"]),
+    )
+
+
+def test_piecewise_call_on_converter_built_schedule_is_cast_at_the_call():
+    @policy_function(unit=Unit.CURRENCY.PER_YEAR)
+    def levy_y(
+        bonus_y: float,
+        built_schedule: PiecewisePolynomialParamValue,
+        xnp: ModuleType,
+    ) -> float:
+        return cast_unit(
+            piecewise_polynomial(x=bonus_y, parameters=built_schedule, xnp=xnp),
+            Unit.CURRENCY.PER_YEAR,
+        )
+
+    fail_if_environment_units_are_inconsistent(
+        env={"bonus_y": bonus_y, "built_schedule": built_schedule, "levy_y": levy_y},
+        grouping_levels=GROUPING_LEVELS,
+    )
+
+
+def test_piecewise_call_on_converter_built_schedule_without_cast_is_caught():
+    @policy_function(unit=Unit.CURRENCY.PER_YEAR)
+    def levy_y(
+        bonus_y: float,
+        built_schedule: PiecewisePolynomialParamValue,
+        xnp: ModuleType,
+    ) -> float:
+        return piecewise_polynomial(x=bonus_y, parameters=built_schedule, xnp=xnp)
+
+    with pytest.raises(UnitConsistencyError, match="at the pluck"):
+        fail_if_environment_units_are_inconsistent(
+            env={
+                "bonus_y": bonus_y,
+                "built_schedule": built_schedule,
+                "levy_y": levy_y,
+            },
+            grouping_levels=GROUPING_LEVELS,
+        )
 
 
 # ----------------------------------------------------------------------------

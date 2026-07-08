@@ -257,12 +257,12 @@ class RawParam(ParamObject):
     dictionary.
 
     A ``require_converter`` is handed to a ``param_function`` that knows its
-    structure. For currency conversion it declares one of two shapes: a single
-    ``unit:`` token if the whole structure is homogeneously one currency (scaled
-    uniformly), or ``input_unit:`` / ``output_unit:`` axes if its converter
-    produces a function-like value (a piecewise schedule or lookup table) whose
-    output is converted per-axis. A structure mixing currency with non-currency
-    numbers (ages, shares) must be split into separate homogeneous parameters.
+    structure. For currency conversion it declares one of three shapes: a single
+    ``unit:`` token if the whole structure is homogeneously one unit (scaled
+    uniformly), a per-leaf ``unit:`` mapping if the structure mixes units (each
+    numeric leaf scaled by its own token), or ``input_unit:`` / ``output_unit:``
+    axes if its converter produces a function-like value (a piecewise schedule
+    or lookup table) whose output is converted per-axis.
     """
 
     value: dict[str | int, Any] = PLACEHOLDER_FIELD
@@ -286,8 +286,8 @@ class RawParam(ParamObject):
         )
         if declares_axes and self.unit is not UNSET_UNIT:
             raise UnitDefinitionError(
-                "A require_converter declares either a single `unit:` (a "
-                "homogeneous structure, scaled uniformly) or `input_unit:` / "
+                "A require_converter declares either `unit:` (a single token or "
+                "a per-leaf mapping, scaled leaf by leaf) or `input_unit:` / "
                 "`output_unit:` axes (a function-like output, converted "
                 f"per-axis), not both (GEP 10); got unit={self.unit!r}, "
                 f"input_unit={self.input_unit!r}, output_unit={self.output_unit!r}."

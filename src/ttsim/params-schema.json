@@ -166,7 +166,7 @@
           }
         },
         {
-          "$comment": "A scalar parameter takes its period from a time suffix on its name and declares a single fully-spelled `unit:` token, not a per-leaf mapping (which only a dict parameter may use).",
+          "$comment": "A scalar parameter takes its period from a time suffix on its name and declares a single fully-spelled `unit:` token, not a per-leaf mapping (which only a dict or require_converter parameter may use).",
           "if": {
             "properties": { "type": { "const": "scalar" } },
             "required": ["type"]

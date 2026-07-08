@@ -1172,9 +1172,10 @@ class ParamFunction(Generic[FunArgTypes, ReturnType]):
     fail_msg_if_included: str | None = None
     unit: CompositeUnit = UNSET_UNIT
     """The parameter function's compositional unit, e.g. ``Unit.CURRENCY.PER_YEAR``.
-    ``Unit.DIMENSIONLESS`` declares a dimensionless parameter function. Mandatory:
-    the decorator requires it, so :data:`UNSET_UNIT` is only the unreachable field
-    default."""
+    An explicit ``unit=UNSET_UNIT`` declares a *structured* output — not a
+    quantity: the body is not dry-run, and consumers state each plucked value's
+    unit with ``cast_unit`` (GEP 10). The decorator requires the argument, so
+    the sentinel is never an omission."""
     verify_units: bool = True
     """Whether the build-time unit check dry-runs this function's body. ``False``
     opts the body out of unit *inference*; the declared :attr:`unit` still stands as
@@ -1246,7 +1247,8 @@ def param_function(
     flat homogenous dictionary, or a set of parameters of a piecewise polynomial
     function) to custom representations. They must not use any data columns (i.e.,
     arrays of the same length as `p_id`). Use `policy_function` / `PolicyFunction` for
-    functions that operate on data columns.
+    functions that operate on data columns. A ParamFunction returning a structured
+    value declares ``unit=UNSET_UNIT`` (GEP 10).
 
     As a consequence, the arguments of the decorated function must be found in the
     params tree. They are typically defined as outermost keys in the yaml files with

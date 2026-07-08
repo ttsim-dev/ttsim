@@ -455,9 +455,9 @@ def _get_one_param(
         )
         return DictParam(**cleaned_spec)
     if param_type == "require_converter":
-        # A homogeneous one is scaled uniformly here; a per-axis one is left raw
-        # and converted on its typed output in `with_processed_params_and_scalars`,
-        # the only place that knows the polynomial convention.
+        # A leaf-scaled one converts here; a per-axis one is left raw and
+        # converted on its typed output, where the polynomial convention is
+        # known.
         declares_axes = (
             cleaned_spec.get("input_unit", UNSET_UNIT) is not UNSET_UNIT
             or cleaned_spec.get("output_unit", UNSET_UNIT) is not UNSET_UNIT
@@ -502,11 +502,11 @@ def _unit_fields_from_spec(spec: OrigParamSpec) -> dict[str, Any]:
     kwargs (GEP 10).
 
     Mapping parameters declare one token per axis; a require_converter declares
-    either a single ``unit:`` (homogeneous, scaled uniformly) or per-axis tokens
-    (a function-like output, converted per axis) — RawParam enforces the
-    exclusivity; everything else declares a single ``unit:``. A stray ``unit:``
-    on a mapping parameter is passed through so that ParamMappingObject rejects
-    it with a precise message.
+    either ``unit:`` (a single token or a per-leaf mapping, scaled leaf by leaf)
+    or per-axis tokens (a function-like output, converted per axis) — RawParam
+    enforces the exclusivity; everything else declares a single ``unit:``. A
+    stray ``unit:`` on a mapping parameter is passed through so that
+    ParamMappingObject rejects it with a precise message.
     """
     if spec["type"] in PARAM_MAPPING_OBJECT_TYPES:
         fields: dict[str, Any] = {
