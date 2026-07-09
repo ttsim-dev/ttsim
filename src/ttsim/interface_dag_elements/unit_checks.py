@@ -256,9 +256,7 @@ def resolve_environment_units(
     resolved: dict[str, pint.Unit | dict[str | int, Any]] = {
         # `parse_unit` guides declarations to the DIMENSIONLESS token, so the
         # framework-internal ordinal spelling resolves directly.
-        qname: (
-            _DIMENSIONLESS_UNIT if unit == "dimensionless" else parse_unit(unit)
-        )
+        qname: (_DIMENSIONLESS_UNIT if unit == "dimensionless" else parse_unit(unit))
         for qname, unit in FRAMEWORK_DATE_NODE_UNITS.items()
         if qname in env
     }
@@ -2009,65 +2007,95 @@ def _verify_one_body(
         explorer.start_run()
         kwargs = {
             name: _wrap_for_dry_run(value=value, explorer=explorer, label=name)
-            for name, value in base_kwargs.items()
+            for name, value in {**base_kwargs, **boolean_values}.items()
         }
-        for name, value in boolean_values.items():
-            kwargs[name] = _wrap_for_dry_run(value=value, explorer=explorer, label=name)
-        try:
-            result: Any = function(**kwargs)
-        except _PathBudgetExceededError:
-            return _opt_out_required_error(
-                qname,
-                f"it makes more than {_MAX_DECISIONS_PER_RUN} branch decisions "
-                "in one run — a data-driven loop?",
-            )
-        except (
-            _UnitMixError,
-            _StructuredValueUsedAsQuantityError,
-            pint.OffsetUnitCalculusError,
-        ) as err:
-            message = _arithmetic_misuse_message(
-                qname=qname, error=err, detail=explorer.branch_detail()
-            )
-            if message not in branch_errors:
-                branch_errors.append(message)
-            if not explorer.advance():
-                break
-            continue
-        except UnitDefinitionError:
-            # A malformed `cast_unit` token is a definition error, not an
-            # un-evaluable body; report it as itself.
-            raise
-        except Exception:  # noqa: BLE001
-            return _opt_out_required_error(
-                qname,
-                "it uses an operation pint cannot evaluate symbolically — a "
-                "piecewise polynomial, a lookup table, `join`, or a raw `xnp` op",
-            )
-        error = _inferred_result_error(
+        error, terminal = _run_one_path(
             qname=qname,
-            inferred=_unwrap(result),
+            function=function,
             declared=declared,
-            detail=explorer.branch_detail(),
+            kwargs=kwargs,
+            explorer=explorer,
         )
-        if error is not None:
-            if error not in branch_errors:
-                branch_errors.append(error)
-        else:
+        if terminal:
+            return error
+        if error is None:
             clean_paths += 1
+        elif error not in branch_errors:
+            branch_errors.append(error)
         if not explorer.advance():
             break
+    return _summarize_branch_errors(
+        branch_errors=branch_errors, clean_paths=clean_paths
+    )
+
+
+def _run_one_path(
+    qname: str,
+    function: Any,  # noqa: ANN401  (a scalar body, possibly a dags wrapper)
+    declared: pint.Unit,
+    kwargs: dict[str, Any],
+    explorer: _PathExplorer,
+) -> tuple[str | None, bool]:
+    """Run the body once along the explorer's current path.
+
+    Returns ``(error, terminal)``. A *terminal* error aborts the exploration —
+    an un-evaluable body or a blown decision budget is not branch-specific —
+    while a non-terminal error is one branch combination's failure and the
+    exploration continues.
+    """
+    try:
+        result: Any = function(**kwargs)
+    except _PathBudgetExceededError:
+        return _opt_out_required_error(
+            qname,
+            f"it makes more than {_MAX_DECISIONS_PER_RUN} branch decisions "
+            "in one run — a data-driven loop?",
+        ), True
+    except (
+        _UnitMixError,
+        _StructuredValueUsedAsQuantityError,
+        pint.OffsetUnitCalculusError,
+    ) as err:
+        return _arithmetic_misuse_message(
+            qname=qname, error=err, detail=explorer.branch_detail()
+        ), False
+    except UnitDefinitionError:
+        # A malformed `cast_unit` token is a definition error, not an
+        # un-evaluable body; report it as itself.
+        raise
+    except Exception:  # noqa: BLE001
+        return _opt_out_required_error(
+            qname,
+            "it uses an operation pint cannot evaluate symbolically — a "
+            "piecewise polynomial, a lookup table, `join`, or a raw `xnp` op",
+        ), True
+    return _inferred_result_error(
+        qname=qname,
+        inferred=_unwrap(result),
+        declared=declared,
+        detail=explorer.branch_detail(),
+    ), False
+
+
+def _summarize_branch_errors(
+    branch_errors: list[str],
+    clean_paths: int,
+) -> str | None:
+    """Collapse an exploration's branch failures into one message.
+
+    A single failing combination next to clean ones states that the others
+    match; several distinct failures report the first and count the rest.
+    """
     if not branch_errors:
         return None
-    if len(branch_errors) == 1 and clean_paths:
-        return (
-            f"{branch_errors[0]} All other branch combinations match the "
-            f"declaration."
-        )
     if len(branch_errors) > 1:
         return (
             f"{branch_errors[0]} ({len(branch_errors) - 1} further branch "
             f"combination(s) fail too.)"
+        )
+    if clean_paths:
+        return (
+            f"{branch_errors[0]} All other branch combinations match the declaration."
         )
     return branch_errors[0]
 

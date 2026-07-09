@@ -957,8 +957,7 @@ def test_error_names_the_failing_branch():
     def betrag_m(bonus_y: float, is_exempt: bool) -> float:
         if is_exempt:
             return 0.0
-        else:
-            return bonus_y  # bug: a yearly flow under a monthly declaration
+        return bonus_y  # bug: a yearly flow under a monthly declaration
 
     with pytest.raises(
         UnitConsistencyError,
@@ -985,8 +984,7 @@ def test_error_names_a_comparison_driven_branch():
     def gated_m(income_m: float, other_income_m: float, bonus_y: float) -> float:
         if income_m < other_income_m:
             return income_m
-        else:
-            return bonus_y  # bug: a yearly flow under a monthly declaration
+        return bonus_y  # bug: a yearly flow under a monthly declaration
 
     with pytest.raises(
         UnitConsistencyError,
