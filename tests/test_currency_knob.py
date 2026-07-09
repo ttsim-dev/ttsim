@@ -19,13 +19,13 @@ from ttsim.interface_dag_elements.specialized_environment import (
     _convert_function_like_converter_outputs,
 )
 from ttsim.tt import Unit, param_function
-from ttsim.tt import units as units_module
 from ttsim.tt.param_objects import PiecewisePolynomialParamValue, RawParam
 from ttsim.tt.units import (
     UNSET_UNIT,
     base_currency,
     currency_conversion_factor,
     currency_family_root,
+    isolated_currency_registration,
     register_currency,
     registered_base_currencies,
 )
@@ -602,40 +602,34 @@ def test_unknown_annotation_is_rejected_at_load():
 # --------------------------------------------------------------------------
 # Currency families: two packages' registrations coexist in one process
 # (GEP 10). mettsim's CASTAR family is registered by the import above; these
-# tests register a second family and restore the bookkeeping afterwards (the
-# pint definitions cannot be removed, but with the bookkeeping restored they
-# are inert, and re-registration tolerates consistent leftovers).
+# tests register a second family inside `isolated_currency_registration`, so
+# nothing leaks to other tests.
 # --------------------------------------------------------------------------
 
 
 @pytest.fixture
 def second_currency_family():
-    saved_currencies = set(units_module._registered_currencies)
-    saved_roots = dict(units_module._currency_family_root)
-    saved_tokens = set(units_module._ALLOWED_UNIT_TOKENS)
-    register_currency("GOLD_DRAGON", base=True)
-    register_currency("COPPER_STAR", definition="GOLD_DRAGON / 56")
-    yield
-    units_module._registered_currencies.clear()
-    units_module._registered_currencies.update(saved_currencies)
-    units_module._currency_family_root.clear()
-    units_module._currency_family_root.update(saved_roots)
-    units_module._ALLOWED_UNIT_TOKENS.clear()
-    units_module._ALLOWED_UNIT_TOKENS.update(saved_tokens)
+    with isolated_currency_registration():
+        register_currency("GOLD_DRAGON", base=True)
+        register_currency("COPPER_STAR", definition="GOLD_DRAGON / 56")
+        yield
 
 
-def test_second_currency_family_coexists(second_currency_family):
+@pytest.mark.usefixtures("second_currency_family")
+def test_second_currency_family_coexists():
     assert currency_family_root("COPPER_STAR") == "GOLD_DRAGON"
     assert currency_family_root("SILVER_PENNY") == "CASTAR"
     assert set(registered_base_currencies()) >= {"CASTAR", "GOLD_DRAGON"}
 
 
-def test_base_currency_is_ambiguous_across_families(second_currency_family):
+@pytest.mark.usefixtures("second_currency_family")
+def test_base_currency_is_ambiguous_across_families():
     with pytest.raises(UnitDefinitionError, match="no process-wide default"):
         base_currency()
 
 
-def test_conversion_across_families_is_rejected(second_currency_family):
+@pytest.mark.usefixtures("second_currency_family")
+def test_conversion_across_families_is_rejected():
     # Both bases sit at factor 1 against the abstract CURRENCY reference, so
     # pint would relate them 1:1 — a silent wrong number the family check
     # turns into a loud error.
@@ -645,7 +639,8 @@ def test_conversion_across_families_is_rejected(second_currency_family):
         )
 
 
-def test_default_currency_follows_the_policy_objects(second_currency_family, backend):
+@pytest.mark.usefixtures("second_currency_family")
+def test_default_currency_follows_the_policy_objects(backend):
     # The mixed-process scenario: with two families registered, the default
     # run currency is read off the parameters' declarations, not the process
     # registry — mettsim's parameters are denominated in the CASTAR family.
