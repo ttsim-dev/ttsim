@@ -665,12 +665,16 @@ def cast_unit(
     return value
 
 
-#: Sentinel distinguishing an *omitted* unit declaration from an explicit one.
-#: Units are mandatory in the public decorators, so this is unreachable through
-#: them; it survives only as a dataclass field default (the ``unit`` field needs
-#: one for field-ordering) that the mandatory-units check reports. It is a
-#: :class:`CompositeUnit` so the field type is clean; its base never resolves and
-#: it is only ever compared by identity.
+#: Sentinel with two readings, told apart by the node type (GEP 10). On a
+#: ``@param_function``, ``unit=UNSET_UNIT`` is the *explicit* declaration of a
+#: structured output — a dataclass of related parameters, a converter-built
+#: schedule — that is not a quantity: the body is not dry-run and consumers
+#: state each plucked value's unit with ``cast_unit``. Everywhere else a real
+#: unit is mandatory, so the sentinel only survives as a dataclass field
+#: default (the ``unit`` field needs one for field-ordering) marking an
+#: *omitted* declaration, which the mandatory-units check reports. It is a
+#: :class:`CompositeUnit` so the field type is clean; its base never resolves
+#: and it is only ever compared by identity.
 UNSET_UNIT: CompositeUnit = CompositeUnit(base="__UNSET__")
 
 

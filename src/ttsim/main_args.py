@@ -152,14 +152,17 @@ class InputData(MainArg):
     def tree_with_unit_annotations(
         cls, tree_with_unit_annotations: UserNestedData
     ) -> InputData:
-        """A nested dict whose every leaf is a pint ``Quantity`` carrying the
-        column's unit (GEP 10).
+        """A nested dict whose every leaf is a ``UnitAnnotatedColumn`` carrying
+        the column's unit (GEP 10).
 
         Opts into full-coverage boundary unit validation: each tag's currency is
         converted to the run currency, its period is checked against the column's
-        time suffix, and its dimension is checked against the column's declared
-        unit. Tag a dimensionless column (an id, a head count) with
-        ``Quantity(arr, "dimensionless")``; use :meth:`tree` for untagged data.
+        time suffix, and its dimension and grouping level are checked against the
+        column's declared unit. A currency column names a concrete currency
+        (``unit=Unit.EUR.PER_MONTH``, never the agnostic ``Unit.CURRENCY``); tag
+        a dimensionless column (an id, a boolean) with
+        ``UnitAnnotatedColumn(values=arr, unit=Unit.DIMENSIONLESS)``; use
+        :meth:`tree` for untagged data.
         """
         return _set_single_field(
             cls=cls,
