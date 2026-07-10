@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import datetime
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Annotated, Any
 
 # Importing the mettsim package registers the castar (the base currency), so
 # the concrete currency tokens exist and the params-must-pin-down-their-
@@ -2420,6 +2420,172 @@ def test_structured_cast_too_coarse_fails_on_the_deeper_pluck():
         )
 
 
+# ----------------------------------------------------------------------------
+# Annotated parameter dataclasses: fields state their units, plucks resolve
+# (GEP 10)
+# ----------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class _AnnotatedAgeBounds:
+    min_age: Annotated[int, Unit.YEARS]
+    max_age: Annotated[int, Unit.YEARS]
+
+
+@dataclass(frozen=True)
+class _AnnotatedChildRate:
+    amount_m: Annotated[float, Unit.CURRENCY.PER_MONTH]
+    bounds: _AnnotatedAgeBounds
+
+
+@param_function(unit=UNSET_UNIT)
+def annotated_child_rate(raw_child_rate: RawParamValue) -> _AnnotatedChildRate:
+    """A structured builder whose dataclass states each field's unit."""
+    return _AnnotatedChildRate(
+        amount_m=raw_child_rate["amount_m"],
+        bounds=_AnnotatedAgeBounds(
+            min_age=raw_child_rate["bounds"]["min_age"],
+            max_age=raw_child_rate["bounds"]["max_age"],
+        ),
+    )
+
+
+def test_annotated_fields_resolve_plucks_without_casts():
+    @policy_function(unit=Unit.CURRENCY.PER_MONTH)
+    def child_benefit_m(age: int, annotated_child_rate: _AnnotatedChildRate) -> float:
+        if age <= annotated_child_rate.bounds.max_age:
+            return annotated_child_rate.amount_m
+        return 0.0
+
+    fail_if_environment_units_are_inconsistent(
+        env={
+            "age": age,
+            "raw_child_rate": make_raw_child_rate(),
+            "annotated_child_rate": annotated_child_rate,
+            "child_benefit_m": child_benefit_m,
+        },
+        grouping_levels=GROUPING_LEVELS,
+    )
+
+
+def test_annotated_pluck_misuse_is_caught():
+    @policy_function(unit=Unit.CURRENCY.PER_MONTH)
+    def child_benefit_m(age: int, annotated_child_rate: _AnnotatedChildRate) -> float:
+        return annotated_child_rate.amount_m + age  # bug: money plus a duration
+
+    with pytest.raises(UnitConsistencyError, match="non-equivalent units"):
+        fail_if_environment_units_are_inconsistent(
+            env={
+                "age": age,
+                "raw_child_rate": make_raw_child_rate(),
+                "annotated_child_rate": annotated_child_rate,
+                "child_benefit_m": child_benefit_m,
+            },
+            grouping_levels=GROUPING_LEVELS,
+        )
+
+
+@dataclass(frozen=True)
+class _PartiallyAnnotatedRate:
+    amount_m: Annotated[float, Unit.CURRENCY.PER_MONTH]
+    max_age: int
+
+
+@param_function(unit=UNSET_UNIT)
+def partially_annotated_rate(raw_child_rate: RawParamValue) -> _PartiallyAnnotatedRate:
+    return _PartiallyAnnotatedRate(
+        amount_m=raw_child_rate["amount_m"],
+        max_age=raw_child_rate["bounds"]["max_age"],
+    )
+
+
+def test_unannotated_field_keeps_the_cast_requirement():
+    @policy_function(unit=Unit.CURRENCY.PER_MONTH)
+    def benefit_m(age: int, partially_annotated_rate: _PartiallyAnnotatedRate) -> float:
+        if age <= partially_annotated_rate.max_age:  # bug: opaque pluck, no cast
+            return partially_annotated_rate.amount_m
+        return 0.0
+
+    with pytest.raises(UnitConsistencyError, match="cast_unit"):
+        fail_if_environment_units_are_inconsistent(
+            env={
+                "age": age,
+                "raw_child_rate": make_raw_child_rate(),
+                "partially_annotated_rate": partially_annotated_rate,
+                "benefit_m": benefit_m,
+            },
+            grouping_levels=GROUPING_LEVELS,
+        )
+
+
+@dataclass(frozen=True)
+class _DriftingChildRate:
+    amount_m: Annotated[float, Unit.YEARS]
+
+
+@param_function(unit=UNSET_UNIT)
+def drifting_child_rate(raw_child_rate: RawParamValue) -> _DriftingChildRate:
+    return _DriftingChildRate(amount_m=raw_child_rate["amount_m"])
+
+
+def test_field_annotation_drifting_from_the_unit_mapping_is_rejected():
+    # The YAML mapping declares CASTAR_PER_MONTH for the `amount_m` leaf; the
+    # field of the same path claims YEARS. The number would convert as money
+    # and check as a duration — the drift check makes that loud (GEP 10).
+    with pytest.raises(UnitConsistencyError, match="state the same unit"):
+        fail_if_environment_units_are_inconsistent(
+            env={
+                "raw_child_rate": make_raw_child_rate(),
+                "drifting_child_rate": drifting_child_rate,
+            },
+            grouping_levels=GROUPING_LEVELS,
+        )
+
+
+@dataclass(frozen=True)
+class _ConcreteCurrencyRate:
+    amount_m: Annotated[float, CASTAR_PER_MONTH]
+
+
+@param_function(unit=UNSET_UNIT)
+def concrete_currency_rate(raw_child_rate: RawParamValue) -> _ConcreteCurrencyRate:
+    return _ConcreteCurrencyRate(amount_m=raw_child_rate["amount_m"])
+
+
+def test_concrete_currency_field_annotation_is_rejected():
+    with pytest.raises(UnitDefinitionError, match="concrete currency"):
+        fail_if_environment_units_are_inconsistent(
+            env={
+                "raw_child_rate": make_raw_child_rate(),
+                "concrete_currency_rate": concrete_currency_rate,
+            },
+            grouping_levels=GROUPING_LEVELS,
+        )
+
+
+@dataclass(frozen=True)
+class _ContainerRate:
+    amounts_m: Annotated[dict[str, float], Unit.CURRENCY.PER_MONTH]
+
+
+@param_function(unit=UNSET_UNIT)
+def container_rate(raw_child_rate: RawParamValue) -> _ContainerRate:
+    return _ContainerRate(
+        amounts_m={str(key): float(value) for key, value in raw_child_rate.items()}
+    )
+
+
+def test_container_field_annotation_is_rejected():
+    with pytest.raises(UnitDefinitionError, match="scalar field"):
+        fail_if_environment_units_are_inconsistent(
+            env={
+                "raw_child_rate": make_raw_child_rate(),
+                "container_rate": container_rate,
+            },
+            grouping_levels=GROUPING_LEVELS,
+        )
+
+
 @param_function(unit=UNSET_UNIT)
 def built_schedule(
     raw_schedule_blob: RawParamValue, xnp: ModuleType
@@ -2465,6 +2631,150 @@ def test_piecewise_call_on_converter_built_schedule_without_cast_is_caught():
                 "bonus_y": bonus_y,
                 "built_schedule": built_schedule,
                 "levy_y": levy_y,
+            },
+            grouping_levels=GROUPING_LEVELS,
+        )
+
+
+# ----------------------------------------------------------------------------
+# Converter-built schedules from axes-declaring blobs screen like
+# parameter-declared ones (GEP 10)
+# ----------------------------------------------------------------------------
+
+
+def make_raw_levy_schedule() -> RawParam:
+    return RawParam(
+        value={"top_rate": 0.2, "ceiling": 1000},
+        input_unit="CASTAR",
+        output_unit="CASTAR_PER_YEAR",
+        start_date=_START,
+        end_date=_END,
+    )
+
+
+@param_function(unit=UNSET_UNIT)
+def levy_schedule(
+    raw_levy_schedule: RawParamValue, xnp: ModuleType
+) -> PiecewisePolynomialParamValue:
+    """A converter whose blob declares axes: consumers screen against them."""
+    return PiecewisePolynomialParamValue(
+        thresholds=xnp.asarray([0.0, raw_levy_schedule["ceiling"]]),
+        intercepts=xnp.asarray([0.0, 0.0]),
+        coefficients=xnp.asarray([[0.0], [raw_levy_schedule["top_rate"]]]),
+    )
+
+
+def test_axes_declared_schedule_screens_consumer_without_cast():
+    @policy_function(unit=Unit.CURRENCY.PER_YEAR)
+    def levy_y(
+        wealth: float,
+        levy_schedule: PiecewisePolynomialParamValue,
+        xnp: ModuleType,
+    ) -> float:
+        return piecewise_polynomial(x=wealth, parameters=levy_schedule, xnp=xnp)
+
+    fail_if_environment_units_are_inconsistent(
+        env={
+            "wealth": wealth,
+            "raw_levy_schedule": make_raw_levy_schedule(),
+            "levy_schedule": levy_schedule,
+            "levy_y": levy_y,
+        },
+        grouping_levels=GROUPING_LEVELS,
+    )
+
+
+def test_axes_declared_schedule_rejects_wrong_domain_argument():
+    @policy_function(unit=Unit.CURRENCY.PER_YEAR)
+    def levy_y(
+        age: int,
+        levy_schedule: PiecewisePolynomialParamValue,
+        xnp: ModuleType,
+    ) -> float:
+        return piecewise_polynomial(x=age, parameters=levy_schedule, xnp=xnp)
+
+    with pytest.raises(UnitConsistencyError, match="non-equivalent units"):
+        fail_if_environment_units_are_inconsistent(
+            env={
+                "age": age,
+                "raw_levy_schedule": make_raw_levy_schedule(),
+                "levy_schedule": levy_schedule,
+                "levy_y": levy_y,
+            },
+            grouping_levels=GROUPING_LEVELS,
+        )
+
+
+def test_axes_declared_schedule_output_reaches_the_consumer_declaration():
+    @policy_function(unit=Unit.CURRENCY.PER_MONTH)
+    def levy_m(
+        wealth: float,
+        levy_schedule: PiecewisePolynomialParamValue,
+        xnp: ModuleType,
+    ) -> float:
+        return piecewise_polynomial(x=wealth, parameters=levy_schedule, xnp=xnp)
+
+    with pytest.raises(UnitConsistencyError, match="but its body infers"):
+        fail_if_environment_units_are_inconsistent(
+            env={
+                "wealth": wealth,
+                "raw_levy_schedule": make_raw_levy_schedule(),
+                "levy_schedule": levy_schedule,
+                "levy_m": levy_m,
+            },
+            grouping_levels=GROUPING_LEVELS,
+        )
+
+
+def test_axes_consumer_without_schedule_return_annotation_is_rejected():
+    @param_function(unit=UNSET_UNIT)
+    def levy_params(raw_levy_schedule: RawParamValue) -> dict[str, float]:
+        return dict(raw_levy_schedule)
+
+    with pytest.raises(UnitConsistencyError, match="annotated as returning"):
+        fail_if_environment_units_are_inconsistent(
+            env={
+                "raw_levy_schedule": make_raw_levy_schedule(),
+                "levy_params": levy_params,
+            },
+            grouping_levels=GROUPING_LEVELS,
+        )
+
+
+def test_axes_consumer_with_quantity_unit_is_rejected():
+    @param_function(unit=Unit.CURRENCY.PER_YEAR)
+    def levy_ceiling_y(raw_levy_schedule: RawParamValue) -> float:
+        return raw_levy_schedule["ceiling"]
+
+    with pytest.raises(UnitConsistencyError, match="UNSET_UNIT"):
+        fail_if_environment_units_are_inconsistent(
+            env={
+                "raw_levy_schedule": make_raw_levy_schedule(),
+                "levy_ceiling_y": levy_ceiling_y,
+            },
+            grouping_levels=GROUPING_LEVELS,
+        )
+
+
+def test_converter_of_two_axes_blobs_is_rejected():
+    @param_function(unit=UNSET_UNIT)
+    def merged_schedule(
+        raw_levy_schedule: RawParamValue,
+        raw_second_levy_schedule: RawParamValue,  # noqa: ARG001
+        xnp: ModuleType,
+    ) -> PiecewisePolynomialParamValue:
+        return PiecewisePolynomialParamValue(
+            thresholds=xnp.asarray([0.0, raw_levy_schedule["ceiling"]]),
+            intercepts=xnp.asarray([0.0, 0.0]),
+            coefficients=xnp.asarray([[0.0], [0.0]]),
+        )
+
+    with pytest.raises(UnitConsistencyError, match="exactly one"):
+        fail_if_environment_units_are_inconsistent(
+            env={
+                "raw_levy_schedule": make_raw_levy_schedule(),
+                "raw_second_levy_schedule": make_raw_levy_schedule(),
+                "merged_schedule": merged_schedule,
             },
             grouping_levels=GROUPING_LEVELS,
         )

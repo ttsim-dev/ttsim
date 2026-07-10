@@ -508,6 +508,34 @@ def resolve_compositional_cast_unit(
     return _attach_implied_person_leaf(resolved, unit)
 
 
+def resolve_compositional_field_unit(
+    unit: CompositeUnit,
+    *,
+    where: str,
+) -> pint.Unit:
+    """Resolve a parameter dataclass field annotation's compositional unit.
+
+    A parameter dataclass states each scalar field's unit in its ``Annotated``
+    type (GEP 10). Like a ``cast_unit`` target, the annotation has no name to
+    validate suffixes against: the spelled period and group level stand as
+    given, and the person leaf is implied, never spelled. The base must stay
+    currency-agnostic — the concrete denomination the raw numbers are written
+    in lives in the parameter YAML, which drives the numeric conversion.
+
+    Raises:
+        UnitDefinitionError: If the base pins a concrete currency.
+    """
+    if token_source_currency(unit) is not None:
+        raise UnitDefinitionError(
+            f"{where}: a field annotation pins the concrete currency "
+            f"{unit.base!r}; code is currency-agnostic and must use "
+            f"{CURRENCY_TOKEN} — the concrete denomination lives in the "
+            f"parameter YAML (GEP 10)."
+        )
+    resolved = resolve_compositional_unit(unit, with_level=True)
+    return _attach_implied_person_leaf(resolved, unit)
+
+
 def register_unit_builder_levels(names: Iterable[str]) -> None:
     """Give the fluent builder a ``per_<level>`` attribute for each level.
 

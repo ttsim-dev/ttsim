@@ -586,6 +586,37 @@ def test_require_converter_unit_and_axes_are_mutually_exclusive():
         )
 
 
+def test_converter_of_two_axes_blobs_is_rejected_at_conversion():
+    """Two axes-declaring blobs into one converter would rescale its typed
+    output once per blob — rejected before any conversion runs (GEP 10)."""
+
+    @param_function(unit=UNSET_UNIT)
+    def schedule(raw_a: Any, raw_b: Any) -> Any:
+        return raw_a or raw_b
+
+    raw_a = RawParam(
+        value={"a": 1.0}, input_unit="SILVER_PENNY", output_unit="SILVER_PENNY"
+    )
+    raw_b = RawParam(
+        value={"b": 1.0}, input_unit="SILVER_PENNY", output_unit="SILVER_PENNY"
+    )
+    outputs = {
+        "schedule": PiecewisePolynomialParamValue(
+            thresholds=np.array([0.0]),
+            intercepts=np.array([0.0]),
+            coefficients=np.array([[0.0]]),
+        )
+    }
+    with pytest.raises(UnitDefinitionError, match="exactly one"):
+        _convert_function_like_converter_outputs(
+            outputs=outputs,
+            params={"raw_a": raw_a, "raw_b": raw_b},
+            param_functions={"schedule": schedule},
+            run_currency="CASTAR",
+            xnp=np,
+        )
+
+
 def test_unknown_annotation_is_rejected_at_load():
     # An annotation the vocabulary does not know fails loudly at load time
     # (issue #121) — nothing is ever silently scaled or left unconverted.

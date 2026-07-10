@@ -156,6 +156,35 @@ def _unit_declares_a_currency(unit: Any) -> bool:  # noqa: ANN401
     return isinstance(unit, CompositeUnit) and token_source_currency(unit) is not None
 
 
+def _fail_if_a_converter_mixes_axes_declaring_blobs(
+    params: dict[str, ParamObject],
+    param_functions: dict[str, ParamFunction],
+) -> None:
+    """Reject a param function fed by several axes-declaring blobs.
+
+    The per-axis conversion of a converter's typed output is defined against
+    exactly one axes declaration; converting once per blob would silently
+    rescale the output several times (GEP 10).
+    """
+    axes_blobs_by_consumer: dict[str, list[str]] = {}
+    for pf_name, pf in param_functions.items():
+        for raw_qname in pf.dependencies:
+            raw = params.get(raw_qname)
+            if isinstance(raw, RawParam) and (
+                raw.input_unit is not UNSET_UNIT or raw.output_unit is not UNSET_UNIT
+            ):
+                axes_blobs_by_consumer.setdefault(pf_name, []).append(raw_qname)
+    for pf_name, blob_qnames in axes_blobs_by_consumer.items():
+        if len(blob_qnames) > 1:
+            names = ", ".join(f"{qname!r}" for qname in sorted(blob_qnames))
+            raise UnitDefinitionError(
+                f"Param function {pf_name!r} consumes {len(blob_qnames)} "
+                f"axes-declaring require_converter parameters ({names}); the "
+                f"per-axis conversion of a converter's typed output is defined "
+                f"against exactly one (GEP 10)."
+            )
+
+
 def _convert_function_like_converter_outputs(
     *,
     outputs: dict[str, Any],
@@ -175,8 +204,14 @@ def _convert_function_like_converter_outputs(
     per-leaf mapping) that nonetheless produces such a function-like value was
     scaled leaf by leaf — which silently mis-states polynomial coefficients (the
     order-``j`` term must scale by ``f_out / f_in**j``, not by a single factor).
-    That is rejected, pointing the author at the per-axis declaration.
+    That is rejected, pointing the author at the per-axis declaration. A
+    converter fed by *several* axes-declaring blobs is rejected too
+    (:func:`_fail_if_a_converter_mixes_axes_declaring_blobs`): the loop below
+    would rescale its output once per blob (GEP 10).
     """
+    _fail_if_a_converter_mixes_axes_declaring_blobs(
+        params=params, param_functions=param_functions
+    )
     for raw_qname, raw in params.items():
         if not isinstance(raw, RawParam):
             continue

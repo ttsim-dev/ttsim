@@ -1173,9 +1173,10 @@ class ParamFunction(Generic[FunArgTypes, ReturnType]):
     unit: CompositeUnit = UNSET_UNIT
     """The parameter function's compositional unit, e.g. ``Unit.CURRENCY.PER_YEAR``.
     An explicit ``unit=UNSET_UNIT`` declares a *structured* output — not a
-    quantity: the body is not dry-run, and consumers state each plucked value's
-    unit with ``cast_unit`` (GEP 10). The decorator requires the argument, so
-    the sentinel is never an omission."""
+    quantity: the body is not dry-run, and each plucked value's unit comes from
+    the return dataclass's ``Annotated`` fields or a ``cast_unit`` at the pluck
+    (GEP 10). The decorator requires the argument, so the sentinel is never an
+    omission."""
     verify_units: bool = True
     """Whether the build-time unit check dry-runs this function's body. ``False``
     opts the body out of unit *inference*; the declared :attr:`unit` still stands as

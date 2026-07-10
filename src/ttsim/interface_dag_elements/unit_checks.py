@@ -26,14 +26,17 @@ build time; no live array is ever wrapped.
 
 from __future__ import annotations
 
+import dataclasses
 import inspect
 import re
+import sys
 from collections.abc import Mapping
-from typing import Any, NoReturn, cast
+from typing import Any, NoReturn, cast, get_args, get_type_hints
 
 import dags.tree as dt
 import numpy
 import pint
+from dags import get_annotations
 
 from ttsim.exceptions import TTSIMError, UnitConsistencyError, UnitDefinitionError
 from ttsim.interface_dag_elements.interface_node_objects import interface_function
@@ -82,6 +85,7 @@ from ttsim.tt.units import (
     registered_base_currencies,
     resolve_compositional_cast_unit,
     resolve_compositional_column_unit,
+    resolve_compositional_field_unit,
     resolve_compositional_param_unit,
     resolved_unit_for_aggregation,
     token_is_agnostic_currency,
@@ -682,7 +686,9 @@ def fail_if_environment_units_are_inconsistent(
     *derives* a unit from its source and agg_type; its declared token is checked
     against that derivation here, the same declared-vs-produced contract a body is
     held to. A rounding spec's declared unit is checked against its function's
-    (:func:`_rounding_spec_declaration_inconsistency`). Time-conversion variants
+    (:func:`_rounding_spec_declaration_inconsistency`), and a converter of an
+    axes-declaring ``require_converter`` blob against the axes contract
+    (:func:`_axes_converter_contract_errors`). Time-conversion variants
     and group-creation functions are unit-assigned by construction and need no
     check.
 
@@ -713,6 +719,10 @@ def fail_if_environment_units_are_inconsistent(
         env=env, resolved_units=resolved_units
     )
     errors.extend(_rounding_spec_declaration_errors(env=env))
+    errors.extend(_axes_converter_contract_errors(env=env))
+    errors.extend(
+        _structured_annotation_drift_errors(env=env, resolved_units=resolved_units)
+    )
     for qname, obj in env.items():
         # Only these two have a human-written scalar body; everything else
         # (aggregations validated above, time-conversions, group ids) is assigned
@@ -1056,6 +1066,295 @@ def _uniform_quantity_tree(value: Any, resolved_unit: pint.Unit) -> Any:  # noqa
     return UNIT_REGISTRY.Quantity(1.0, resolved_unit)
 
 
+#: The unqualified return-annotation names the axes contract accepts: the two
+#: schedule types whose typed output the per-axis conversion can restate.
+_SCHEDULE_RETURN_TYPE_NAMES = frozenset(
+    {"PiecewisePolynomialParamValue", "ConsecutiveIntLookupTableParamValue"}
+)
+
+
+def _return_annotation_name(func: Any) -> str:  # noqa: ANN401
+    """The unqualified name of a function's return annotation.
+
+    Annotations are strings under ``from __future__ import annotations``; the
+    beartype claw may resolve them to live types. Either way the unqualified
+    name identifies the schedule types the axes contract asks for.
+    """
+    annotation = get_annotations(func, default="").get("return", "")
+    name = (
+        annotation
+        if isinstance(annotation, str)
+        else getattr(annotation, "__name__", "")
+    )
+    return name.rsplit(".", maxsplit=1)[-1]
+
+
+def _axes_declaring_raw_dependencies(
+    obj: ParamFunction,
+    env: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
+) -> list[tuple[str, RawParam]]:
+    """The axes-declaring ``require_converter`` blobs a param function consumes."""
+    out: list[tuple[str, RawParam]] = []
+    for dep in sorted(obj.dependencies):
+        raw = env.get(dep)
+        if isinstance(raw, RawParam) and (
+            raw.input_unit is not UNSET_UNIT or raw.output_unit is not UNSET_UNIT
+        ):
+            out.append((dep, raw))
+    return out
+
+
+def _resolved_raw_param_axis(
+    token: Any,  # noqa: ANN401
+    qname: str,
+) -> pint.Unit | None:
+    """Resolve one declared axis of an axes-declaring ``require_converter`` blob."""
+    if token is UNSET_UNIT:
+        return None
+    where = f"Parameter {qname!r}"
+    unit_token = cast("CompositeUnit", token)
+    _fail_if_param_token_is_agnostic_currency(token=unit_token, where=where)
+    return resolve_compositional_param_unit(unit_token, where=where)
+
+
+def _resolved_return_dataclass(func: Any) -> type | None:  # noqa: ANN401
+    """The dataclass a param function's return annotation names, or ``None``.
+
+    Resolved by walking the (possibly dotted) annotation string through the
+    function's module namespace — annotations are strings under
+    ``from __future__ import annotations``, and the class must be importable
+    at runtime for its field annotations to matter. Anything unresolvable
+    simply yields ``None``: the output stays fully opaque and plucks are cast
+    at the site (GEP 10).
+    """
+    annotation = get_annotations(func, default="").get("return", "")
+    if isinstance(annotation, type):
+        return annotation if dataclasses.is_dataclass(annotation) else None
+    if not isinstance(annotation, str) or not annotation:
+        return None
+    obj: Any = sys.modules.get(getattr(func, "__module__", ""))
+    for part in annotation.split("."):
+        obj = getattr(obj, part, None)
+    return obj if isinstance(obj, type) and dataclasses.is_dataclass(obj) else None
+
+
+#: Per-class memo of :func:`_structured_field_kinds`. ``None`` records a class
+#: whose annotations do not resolve at runtime. Field annotations are
+#: currency-agnostic by rule, so a cached resolution never goes stale when a
+#: currency registration is rolled back.
+_STRUCTURED_FIELD_KINDS: dict[type, dict[str, pint.Unit | type] | None] = {}
+
+
+def _structured_field_kinds(cls: type) -> dict[str, pint.Unit | type] | None:
+    """Resolve a parameter dataclass's field annotations for the dry-run.
+
+    Maps each field to what its pluck yields: the resolved unit of an
+    ``Annotated[<scalar>, Unit…]`` field, or the class of a nested-dataclass
+    field (whose plucks resolve recursively). Fields that are neither — a bare
+    scalar, a dict, an array, a schedule value — are absent: their plucks stay
+    opaque and are cast at the site (GEP 10). ``None`` when the annotations do
+    not resolve at runtime (a name imported only under ``TYPE_CHECKING``), in
+    which case every pluck stays opaque.
+
+    Raises:
+        UnitDefinitionError: If a field annotates several units, annotates a
+            non-scalar field, or pins a concrete currency.
+    """
+    if cls in _STRUCTURED_FIELD_KINDS:
+        return _STRUCTURED_FIELD_KINDS[cls]
+    try:
+        hints = get_type_hints(cls, include_extras=True)
+    except NameError:
+        _STRUCTURED_FIELD_KINDS[cls] = None
+        return None
+    kinds: dict[str, pint.Unit | type] = {}
+    for field in dataclasses.fields(cls):
+        hint = hints.get(field.name, field.type)
+        tokens = [
+            token
+            for token in getattr(hint, "__metadata__", ())
+            if isinstance(token, CompositeUnit)
+        ]
+        base = get_args(hint)[0] if hasattr(hint, "__metadata__") else hint
+        where = f"Field '{cls.__name__}.{field.name}'"
+        if len(tokens) > 1:
+            raise UnitDefinitionError(
+                f"{where}: annotates {len(tokens)} units "
+                f"({', '.join(str(t) for t in tokens)}); a field states exactly "
+                f"one (GEP 10)."
+            )
+        if tokens:
+            if base not in (int, float, bool):
+                raise UnitDefinitionError(
+                    f"{where}: a unit annotation sits on a scalar field "
+                    f"(int/float/bool); a structured or container field has no "
+                    f"single unit — cast at the pluck instead (GEP 10)."
+                )
+            kinds[field.name] = resolve_compositional_field_unit(tokens[0], where=where)
+        elif isinstance(base, type) and dataclasses.is_dataclass(base):
+            kinds[field.name] = base
+    _STRUCTURED_FIELD_KINDS[cls] = kinds
+    return kinds
+
+
+def _annotated_field_units(cls: type) -> dict[tuple[str, ...], pint.Unit]:
+    """Flatten a parameter dataclass's annotated field units to field paths."""
+    out: dict[tuple[str, ...], pint.Unit] = {}
+    for name, resolved in (_structured_field_kinds(cls) or {}).items():
+        if isinstance(resolved, pint.Unit):
+            out[(name,)] = resolved
+        else:
+            for path, unit in _annotated_field_units(resolved).items():
+                out[(name, *path)] = unit
+    return out
+
+
+def _flattened_unit_mapping(
+    units: Mapping[str | int, Any],
+) -> dict[tuple[str, ...], pint.Unit]:
+    """Flatten a resolved per-leaf ``unit:`` mapping to string leaf paths."""
+    out: dict[tuple[str, ...], pint.Unit] = {}
+    for key, value in units.items():
+        if isinstance(value, dict):
+            for path, unit in _flattened_unit_mapping(value).items():
+                out[(str(key), *path)] = unit
+        else:
+            out[(str(key),)] = value
+    return out
+
+
+def _structured_annotation_drift_errors(
+    env: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
+    resolved_units: Mapping[str, pint.Unit | dict[str | int, Any]],
+) -> list[str]:
+    """YAML-vs-annotation drift check for dataclass-building converters.
+
+    The per-leaf ``unit:`` mapping of a parameter drives the numeric
+    conversion of its raw value; the field annotations of the dataclass a
+    converter builds from it drive the checking of consumer bodies. Where a
+    mapping leaf's path coincides with a field's path — the converter kept the
+    name — the two independent declarations describe the same number and must
+    agree; a drift would convert the number one way and check it another,
+    silently. A renamed or derived field has no matching leaf and is not
+    checked here (GEP 10).
+    """
+    errors: list[str] = []
+    for qname, obj in env.items():
+        if not isinstance(obj, ParamFunction) or obj.unit is not UNSET_UNIT:
+            continue
+        cls = _resolved_return_dataclass(obj.function)
+        if cls is None:
+            continue
+        field_units = _annotated_field_units(cls)
+        if not field_units:
+            continue
+        for dep in sorted(obj.dependencies):
+            declared = resolved_units.get(dep)
+            if not isinstance(env.get(dep), ParamObject) or not isinstance(
+                declared, dict
+            ):
+                continue
+            leaf_units = _flattened_unit_mapping(
+                cast("Mapping[str | int, Any]", declared)
+            )
+            for path, field_unit in sorted(field_units.items()):
+                leaf_unit = leaf_units.get(path)
+                if leaf_unit is None or units_are_equivalent(
+                    left=leaf_unit, right=field_unit
+                ):
+                    continue
+                errors.append(
+                    f"{qname}: the field '{cls.__name__}.{'.'.join(path)}' is "
+                    f"annotated '{field_unit}' but parameter '{dep}' declares "
+                    f"'{leaf_unit}' for the same leaf — the declaration "
+                    f"converts the number, the annotation checks its uses, so "
+                    f"the two must state the same unit (GEP 10)."
+                )
+    return errors
+
+
+def _param_function_stand_in(
+    qname: str,
+    obj: ParamFunction,
+    env: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
+) -> _DryRunSchedule | _DryRunStructuredValue:
+    """The dry-run stand-in for a structured param-function output (GEP 10).
+
+    A converter of a single axes-declaring ``require_converter`` blob that is
+    annotated as returning a schedule type gets a :class:`_DryRunSchedule`
+    carrying the blob's axes: the per-axis currency conversion already assumes
+    the declared axes describe the typed output, so consumers screen against
+    them exactly as for a parameter-declared schedule — no cast at the call.
+    Everything else stays a :class:`_DryRunStructuredValue`, typed with the
+    return dataclass where one resolves so that annotated plucks carry their
+    field units; a converter that breaks the axes contract is reported by
+    :func:`_axes_converter_contract_errors`.
+    """
+    axes_deps = _axes_declaring_raw_dependencies(obj=obj, env=env)
+    if (
+        len(axes_deps) == 1
+        and _return_annotation_name(obj.function) in _SCHEDULE_RETURN_TYPE_NAMES
+    ):
+        raw_qname, raw = axes_deps[0]
+        output_unit = _resolved_raw_param_axis(raw.output_unit, qname=raw_qname)
+        if output_unit is not None:
+            return _DryRunSchedule(
+                input_unit=_resolved_raw_param_axis(raw.input_unit, qname=raw_qname),
+                output_unit=output_unit,
+            )
+    return _DryRunStructuredValue(
+        producer=qname, cls=_resolved_return_dataclass(obj.function)
+    )
+
+
+def _axes_converter_contract_errors(
+    env: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
+) -> list[str]:
+    """The axes contract: declared axes must reach a schedule-typed output.
+
+    A ``require_converter`` declaring ``input_unit:``/``output_unit:`` axes
+    promises that its converters build a schedule, which the framework
+    converts per axis and screens call sites against. A converter that is not
+    annotated as returning one of the two schedule types, that declares a
+    quantity unit, or that mixes several axes-declaring blobs (the per-axis
+    conversion would scale its output once per blob) breaks that promise — at
+    build time, independent of whether a currency conversion is active in this
+    run (GEP 10).
+    """
+    errors: list[str] = []
+    for qname, obj in env.items():
+        if not isinstance(obj, ParamFunction):
+            continue
+        axes_deps = _axes_declaring_raw_dependencies(obj=obj, env=env)
+        if not axes_deps:
+            continue
+        names = ", ".join(f"'{dep}'" for dep, _ in axes_deps)
+        if len(axes_deps) > 1:
+            errors.append(
+                f"{qname}: consumes {len(axes_deps)} axes-declaring "
+                f"require_converter parameters ({names}); the per-axis "
+                f"conversion of a converter's typed output is defined against "
+                f"exactly one (GEP 10)."
+            )
+        elif obj.unit is not UNSET_UNIT:
+            errors.append(
+                f"{qname}: consumes the axes-declaring require_converter "
+                f"parameter {names} but declares a quantity unit; a converter "
+                f"of an axes-declaring blob builds a schedule, a structured "
+                f"value — declare `unit=UNSET_UNIT` (GEP 10)."
+            )
+        elif _return_annotation_name(obj.function) not in _SCHEDULE_RETURN_TYPE_NAMES:
+            errors.append(
+                f"{qname}: consumes the axes-declaring require_converter "
+                f"parameter {names}, so it must be annotated as returning a "
+                f"PiecewisePolynomialParamValue or a "
+                f"ConsecutiveIntLookupTableParamValue — the declared axes "
+                f"describe that typed output, and its call sites are screened "
+                f"against them (GEP 10)."
+            )
+    return errors
+
+
 def _resolve_schedule_input_unit(obj: ParamMappingObject) -> pint.Unit | None:
     """The resolved ``input_unit`` of a schedule/lookup parameter, or ``None``.
 
@@ -1081,8 +1380,9 @@ def _representative_values_by_qname(
     ``look_up`` call resolves to the output unit. A dict parameter with a scalar
     ``unit:`` declaration becomes a dict of uniform representative quantities
     mirroring its value structure, so that subscripting works inside a consumer's
-    dry-run. A structured param function (``unit=UNSET_UNIT``) becomes a
-    :class:`_DryRunStructuredValue`.
+    dry-run. A structured param function (``unit=UNSET_UNIT``) becomes its
+    :func:`_param_function_stand_in` — a schedule where a ``require_converter``
+    blob declares axes for it, a :class:`_DryRunStructuredValue` otherwise.
     """
     out: dict[str, Any] = {}
     for qname, unit in resolved_units.items():
@@ -1100,7 +1400,7 @@ def _representative_values_by_qname(
             out[qname] = _representative_value(unit)
     for qname, obj in env.items():
         if isinstance(obj, ParamFunction) and obj.unit is UNSET_UNIT:
-            out[qname] = _DryRunStructuredValue(producer=qname)
+            out[qname] = _param_function_stand_in(qname=qname, obj=obj, env=env)
     return out
 
 
@@ -1568,10 +1868,19 @@ def _wrap_for_dry_run(
     Quantities (and the leaves of dict-param trees) become ``_DryRunQuantity`` so the
     explorer controls branches on them; ``xnp``/``num_segments``/… stay raw.
     ``label`` is the argument name the body sees, carried on the stand-in so a
-    branch decision on it can be named in an error.
+    branch decision on it can be named in an error. A structured stand-in is
+    re-anchored on the run's explorer, so its annotated plucks screen and
+    branch like any other operand.
     """
     if isinstance(value, pint.Quantity):
         return _DryRunQuantity(q=value, explorer=explorer, label=label)
+    if isinstance(value, _DryRunStructuredValue):
+        return _DryRunStructuredValue(
+            producer=value._producer,  # noqa: SLF001
+            cls=value._cls,  # noqa: SLF001
+            explorer=explorer,
+            label=label,
+        )
     if isinstance(value, dict):
         return {
             key: _wrap_for_dry_run(
@@ -1607,34 +1916,66 @@ class _StructuredValueUsedAsQuantityError(Exception):
 
 class _DryRunStructuredValue:
     """The dry-run stand-in for a structured param-function output
-    (``unit=UNSET_UNIT``, GEP 10): plucks pass through — attribute access,
-    subscripting, method calls all yield the stand-in again — while using a
-    pluck as a quantity raises, demanding a ``cast_unit`` at the pluck.
+    (``unit=UNSET_UNIT``, GEP 10). A pluck off an ``Annotated`` scalar field of
+    the producer's return dataclass resolves to a quantity at the field's
+    declared unit; a nested-dataclass pluck resolves recursively. Everything
+    else stays opaque — attribute access, subscripting, method calls yield an
+    opaque stand-in again — and using an opaque pluck as a quantity raises,
+    demanding a ``cast_unit`` at the pluck.
     """
 
-    __slots__ = ("producer",)
+    __slots__ = ("_cls", "_explorer", "_label", "_producer")
     # Defer binary NumPy ops to our (raising) reflected dunders.
     __array_ufunc__ = None
     __array_priority__ = 1000
     __hash__ = object.__hash__
 
-    def __init__(self, producer: str) -> None:
-        self.producer = producer
+    def __init__(
+        self,
+        producer: str,
+        cls: type | None = None,
+        explorer: _PathExplorer | None = None,
+        label: str | None = None,
+    ) -> None:
+        self._producer = producer
+        self._cls = cls
+        self._explorer = explorer
+        self._label = label
 
     def _raise_used_as_quantity(self, op: str) -> NoReturn:
-        raise _StructuredValueUsedAsQuantityError(producer=self.producer, op=op)
+        raise _StructuredValueUsedAsQuantityError(producer=self._producer, op=op)
 
-    def __getattr__(self, name: str) -> _DryRunStructuredValue:
+    def _opaque(self) -> _DryRunStructuredValue:
+        return _DryRunStructuredValue(producer=self._producer)
+
+    def __getattr__(self, name: str) -> Any:  # noqa: ANN401
         # Refuse protocol probes (``__array__``, copy/pickle hooks, …).
         if name.startswith("__") and name.endswith("__"):
             raise AttributeError(name)
-        return self
+        kinds = _structured_field_kinds(self._cls) if self._cls is not None else None
+        resolved = (kinds or {}).get(name)
+        label = f"{self._label}.{name}" if self._label is not None else None
+        if isinstance(resolved, pint.Unit):
+            # An annotated field's pluck is a known quantity; with the run's
+            # explorer it screens and branches like any other operand.
+            quantity = UNIT_REGISTRY.Quantity(1.0, resolved)
+            if self._explorer is None:
+                return quantity
+            return _DryRunQuantity(q=quantity, explorer=self._explorer, label=label)
+        if resolved is not None:
+            return _DryRunStructuredValue(
+                producer=self._producer,
+                cls=resolved,
+                explorer=self._explorer,
+                label=label,
+            )
+        return self._opaque()
 
     def __getitem__(self, _key: Any) -> _DryRunStructuredValue:  # noqa: ANN401
-        return self
+        return self._opaque()
 
     def __call__(self, *_args: Any, **_kwargs: Any) -> _DryRunStructuredValue:  # noqa: ANN401
-        return self
+        return self._opaque()
 
     def __bool__(self) -> Any:  # noqa: ANN401
         return self._raise_used_as_quantity("a branch decision")
@@ -1725,11 +2066,13 @@ class _DryRunSchedule:
 
     Such a parameter is a *function between quantities*: a body calls
     ``piecewise_polynomial(x, parameters=…)`` or ``….look_up(idx)`` on it and gets
-    an array. The dry-run needs only the unit that falls out. This stand-in carries
-    the parameter's resolved ``input_unit``/``output_unit`` axes: it screens each
-    domain argument against ``input_unit`` (as ``+`` screens an operand) and
-    produces the ``output_unit``. ``input_unit`` is ``None`` when the parameter
-    left it unset, in which case the domain is not screened.
+    an array. The dry-run needs only the unit that falls out. This stand-in
+    carries the resolved ``input_unit``/``output_unit`` axes — a schedule
+    parameter's own, or those a ``require_converter`` blob declares for its
+    converter's typed output: it screens each domain argument against
+    ``input_unit`` (as ``+`` screens an operand) and produces the
+    ``output_unit``. ``input_unit`` is ``None`` when the parameter left it
+    unset, in which case the domain is not screened.
     """
 
     __slots__ = ("input_unit", "output_unit")
@@ -1767,9 +2110,11 @@ def _piecewise_polynomial_dry_run(x: Any, parameters: Any, xnp: Any) -> Any:  # 
     """Dry-run shim for ``piecewise_polynomial``.
 
     Screen ``x`` against the schedule's ``input_unit`` and produce its
-    ``output_unit``. A converter-built schedule carries no axes, so the call
-    stays opaque — the caller casts the result. Anything else is not
-    dry-runnable here.
+    ``output_unit``. A schedule built from an axes-declaring
+    ``require_converter`` blob arrives as a :class:`_DryRunSchedule` too and
+    screens the same way; only an axis-less converter-built schedule stays
+    opaque — the caller casts the result. Anything else is not dry-runnable
+    here.
     """
     if isinstance(parameters, _DryRunSchedule):
         return parameters._produce((x,))  # noqa: SLF001
@@ -1896,8 +2241,9 @@ def _structured_pluck_message(
     return (
         f"{qname}: uses a value plucked off the structured parameter "
         f"'{error.producer}' as a quantity ('{error.op}'), but such a value "
-        f"carries no unit. State its unit where it leaves the structure — "
-        f"`cast_unit(<pluck>, <unit>)` — or opt out of body inference with "
+        f"carries no unit. State its unit at the structure — annotate the "
+        f"dataclass field (`Annotated[float, Unit…]`) — or at the pluck with "
+        f"`cast_unit(<pluck>, <unit>)`, or opt out of body inference with "
         f"`verify_units=False` (GEP 10)."
     )
 
@@ -2110,8 +2456,8 @@ def _non_quantity_result_error(
     if isinstance(inferred, _DryRunStructuredValue):
         return (
             f"{qname}: returns a value plucked off the structured parameter "
-            f"'{inferred.producer}' without stating its unit; tag it with "
-            f"`cast_unit` at the pluck (GEP 10)."
+            f"'{inferred._producer}' without stating its unit; annotate the "  # noqa: SLF001
+            f"dataclass field or tag it with `cast_unit` at the pluck (GEP 10)."
         )
     return _opt_out_required_error(
         qname,
