@@ -27,6 +27,7 @@ from ttsim.tt.column_objects_param_function import (
 )
 from ttsim.tt.param_objects import ScalarParam
 from ttsim.tt.type_resolution import (
+    BOOL_KINDS,
     ResolvedKind,
     TypeResolutionError,
     resolve_kind_of_annotation,
@@ -37,9 +38,9 @@ from ttsim.tt.type_resolution import (
 from ttsim.tt.units import (
     UNSET_UNIT,
     CompositeUnit,
-    composite_with_rebased_period,
     unit_for_aggregation,
     unit_for_derived_node,
+    unit_with_rebased_period,
 )
 from ttsim.typing import (
     OrderedQNames,
@@ -285,29 +286,13 @@ def _create_one_set_of_time_conversion_functions(
                 f"Time conversion of {dt.tree_path_from_qname(qname_source)} "
                 f"from per {time_unit} to per {target_time_unit}"
             ),
-            unit=_derived_variant_unit(
-                getattr(element, "unit", UNSET_UNIT), time_unit_id=target_time_unit
+            unit=unit_with_rebased_period(
+                unit=unit_for_derived_node(getattr(element, "unit", UNSET_UNIT)),
+                time_unit_id=target_time_unit,
             ),
         )
 
     return result
-
-
-def _derived_variant_unit(
-    source_unit: CompositeUnit,
-    *,
-    time_unit_id: str,
-) -> CompositeUnit:
-    """The unit of a time-conversion variant: agnostic, period re-based.
-
-    A flow's period is re-based to the target period
-    (``CURRENCY_PER_MONTH`` → ``CURRENCY_PER_YEAR``); a non-flow unit (including
-    the :data:`UNSET_UNIT` sentinel of an unannotated source) has no period and
-    is returned unchanged.
-    """
-    return composite_with_rebased_period(
-        unit_for_derived_node(source_unit), time_unit_id
-    )
 
 
 def _create_function_for_time_unit(
@@ -412,7 +397,8 @@ def create_agg_by_group_functions(
                 qname_policy_environment=qname_policy_environment,
             )
             # A sum aggregation preserves the source's physical token and takes
-            # the target group level (GEP 10).
+            # the target group level; over a boolean source it is a head count
+            # (GEP 10), so `unit_for_aggregation` needs the source's kind.
             source_unit = _resolve_source_unit(
                 source_name=base_name_with_time_unit,
                 column_functions=column_functions,
@@ -444,6 +430,7 @@ def create_agg_by_group_functions(
                     source_unit=source_unit,
                     agg_type=AggType.SUM,
                     target_level=group_id,
+                    source_is_boolean=source_kind in BOOL_KINDS,
                 ),
             )
     return out

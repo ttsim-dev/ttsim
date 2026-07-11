@@ -251,7 +251,7 @@ def _currency_conversion_factor_for_token(
     """
     if run_currency is None or raw_token is None or raw_token is UNSET_UNIT:
         return 1.0
-    token = coerce_unit_token(raw_token, where="currency conversion")
+    token = coerce_unit_token(value=raw_token, where="currency conversion")
     if token_is_agnostic_currency(token):
         raise UnitDefinitionError(
             f"Currency conversion: a parameter must pin down the concrete "
@@ -285,8 +285,12 @@ def _scale_numeric_leaves(
 ) -> Any:  # noqa: ANN401
     """Scale every numeric leaf of a (possibly nested) value by ``factor``.
 
-    Booleans and non-numeric leaves pass through untouched.
+    Booleans and non-numeric leaves pass through untouched. A factor of ``1.0``
+    (no currency conversion) returns the value verbatim, so int leaves — GEP-3
+    integer thresholds — keep their type instead of being coerced to float.
     """
+    if factor == 1.0:
+        return value
     if isinstance(value, Mapping):
         return {
             key: _scale_numeric_leaves(value=sub_value, factor=factor)
@@ -297,7 +301,7 @@ def _scale_numeric_leaves(
     return value * factor
 
 
-def _token_for_leaf(unit: Any, path: tuple[str, ...]) -> Any:  # noqa: ANN401
+def _token_for_leaf(unit: Any, path: tuple[str | int, ...]) -> Any:  # noqa: ANN401
     """The unit token governing the leaf at ``path``.
 
     Walk the (possibly coarser or sparser) ``unit`` tree alongside the path: a
@@ -333,7 +337,7 @@ def _dict_param_value_in_run_currency(
             path: _scale_numeric_leaves(
                 value=leaf,
                 factor=_currency_conversion_factor_for_token(
-                    raw_token=_token_for_leaf(unit, path),
+                    raw_token=_token_for_leaf(unit=unit, path=path),
                     run_currency=run_currency,
                 ),
             )
@@ -376,6 +380,8 @@ def _lookup_table_value_in_run_currency(
 
     A lookup table is keyed by consecutive integers, so its input axis cannot be
     a currency — only the looked-up values are scaled, by ``output_factor``.
+    A factor of ``1.0`` (no conversion) returns the table verbatim, keeping int
+    values int; a real conversion returns a copy, never mutating the input.
 
     Raises:
         UnitDefinitionError: If a currency conversion is requested for the
@@ -387,8 +393,11 @@ def _lookup_table_value_in_run_currency(
             f"integer-keyed and cannot be converted between currencies; a "
             f"concrete currency `input_unit:` is not supported (GEP 10)."
         )
-    value.values_to_look_up = value.values_to_look_up * output_factor
-    return value
+    if output_factor == 1.0:
+        return value
+    converted = copy.copy(value)
+    converted.values_to_look_up = value.values_to_look_up * output_factor
+    return converted
 
 
 def function_like_converter_output_in_run_currency(
@@ -495,7 +504,9 @@ def _get_one_param(
             )
         return RawParam(**cleaned_spec)
     if param_type in PIECEWISE_TYPES:
-        input_factor, output_factor = _axis_factors(cleaned_spec, currency)
+        input_factor, output_factor = _axis_factors(
+            cleaned_spec=cleaned_spec, run_currency=currency
+        )
         cleaned_spec["value"] = _piecewise_param_value_in_run_currency(
             value=get_piecewise_parameters(
                 leaf_name=leaf_name,
@@ -510,7 +521,9 @@ def _get_one_param(
         return PiecewisePolynomialParam(**cleaned_spec)
     if param_type in LOOKUP_TABLE_CONVERTERS:
         converter = LOOKUP_TABLE_CONVERTERS[param_type]
-        input_factor, output_factor = _axis_factors(cleaned_spec, currency)
+        input_factor, output_factor = _axis_factors(
+            cleaned_spec=cleaned_spec, run_currency=currency
+        )
         cleaned_spec["value"] = _lookup_table_value_in_run_currency(
             value=converter(raw=cleaned_spec["value"], xnp=xnp),
             input_factor=input_factor,

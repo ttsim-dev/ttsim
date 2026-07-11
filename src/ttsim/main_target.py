@@ -56,9 +56,6 @@ class FailIf(MainTargetABC):
         "fail_if__input_data_uint64_values_overflow_int64"
     )
     input_currency_is_not_concrete: str = "fail_if__input_currency_is_not_concrete"
-    input_levels_disagree_with_declaration: str = (
-        "fail_if__input_levels_disagree_with_declaration"
-    )
     input_units_are_inconsistent: str = "fail_if__input_units_are_inconsistent"
     not_all_input_leaves_are_unit_annotated_columns: str = (
         "fail_if__not_all_input_leaves_are_unit_annotated_columns"

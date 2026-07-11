@@ -104,7 +104,7 @@ def get_re_pattern_for_all_time_units_and_groupings(
 
     """
     return _compiled_time_unit_and_grouping_pattern(
-        tuple(time_units), tuple(grouping_levels)
+        time_units=tuple(time_units), grouping_levels=tuple(grouping_levels)
     )
 
 

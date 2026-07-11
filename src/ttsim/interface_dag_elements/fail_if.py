@@ -48,10 +48,8 @@ from ttsim.tt.param_objects import (
     ParamObject,
 )
 from ttsim.tt.units import (
-    PERSON_LEVEL,
     UNSET_UNIT,
     CompositeUnit,
-    _unit_level_denominator,
     registered_base_currencies,
     token_is_agnostic_currency,
 )
@@ -1082,67 +1080,19 @@ def input_currency_is_not_concrete(
 @fail_function(
     include_if_any_element_present=["input_data__tree_with_unit_annotations"]
 )
-def input_levels_disagree_with_declaration(
-    input_data__tree_with_unit_annotations: NestedData,
-    unit_checks__resolved_units: dict[str, pint.Unit | dict[str | int, Any]],
-) -> None:
-    """Fail if an input tag's spelled grouping level disagrees with the column's.
-
-    Like a parameter, an input tag **spells** its group level
-    (``Unit.EUR.PER_MONTH.PER_BG``); the person leaf is implied. That spelled
-    level must equal the level the column's *declared* unit carries — the level
-    is declared, not read off the suffix (GEP 10), so it is correctly the person
-    leaf (or none, for a share or rate) even at a group suffix.
-    The measurement check (``input_units_are_inconsistent``) screens the rest;
-    this owns the index axis.
-
-    Raises:
-        UnitConsistencyError: If any spelled level contradicts the declared one.
-    """
-    errors: list[str] = []
-    for path, col in dt.flatten_to_tree_paths(
-        input_data__tree_with_unit_annotations
-    ).items():
-        declared = unit_checks__resolved_units.get(dt.qname_from_tree_path(path))
-        if not isinstance(declared, pint.Unit):
-            # No scalar declared unit (absent, or a dict parameter); nothing to check.
-            continue
-        expected_level = _unit_level_denominator(declared) or PERSON_LEVEL
-        spelled_level = (
-            col.unit.level.lower() if col.unit.level is not None else PERSON_LEVEL
-        )
-        if spelled_level != expected_level:
-            spelled_desc = (
-                f"PER_{col.unit.level}"
-                if col.unit.level is not None
-                else "no group level"
-            )
-            errors.append(
-                f"  {dt.qname_from_tree_path(path)}: tag spells {spelled_desc}, but "
-                f"the column is at the {expected_level!r} level (GEP 10)."
-            )
-    if errors:
-        raise UnitConsistencyError(
-            "Input unit annotations spell a grouping level that disagrees with the "
-            "column's level:\n" + "\n".join(sorted(errors))
-        )
-
-
-@fail_function(
-    include_if_any_element_present=["input_data__tree_with_unit_annotations"]
-)
 def input_units_are_inconsistent(
     input_data__units: dict[str, pint.Unit],
     unit_checks__resolved_units: dict[str, pint.Unit | dict[str | int, Any]],
 ) -> None:
-    """Fail if a tagged input column's dimension contradicts its declared unit.
+    """Fail if a tagged input column's unit contradicts its declared unit.
 
-    Each tagged input column's pint tag must share the *dimension* of its
-    declared (resolved) DAG unit.
+    One check of every input tag against the DAG, across currency presence,
+    grouping level, and the residual measurement (see
+    :func:`ttsim.interface_dag_elements.unit_checks.fail_if_input_units_are_inconsistent`).
 
     Raises:
-        UnitConsistencyError: If any tagged column is dimensionally incompatible
-            with its declared unit.
+        UnitConsistencyError: If any tagged column disagrees with its declared
+            unit.
     """
     fail_if_input_units_are_inconsistent(
         input_units=input_data__units,

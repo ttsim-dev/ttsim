@@ -19,6 +19,9 @@ from ttsim.exceptions import (
     UnitConsistencyError,
     UnitDefinitionError,
 )
+from ttsim.interface_dag_elements.automatically_added_functions import (
+    create_agg_by_group_functions,
+)
 from ttsim.interface_dag_elements.unit_checks import (
     FRAMEWORK_DATE_NODE_UNITS,
     fail_if_environment_units_are_inconsistent,
@@ -59,6 +62,7 @@ from ttsim.tt.units import (
     divide_by_grouping_level,
 )
 from ttsim.typing import BoolColumn, FloatColumn, IntColumn, RawParamValue
+from ttsim.unit_converters import m_to_y, per_m_to_per_y, y_to_m
 
 if TYPE_CHECKING:
     from types import ModuleType
@@ -70,9 +74,9 @@ _END = datetime.date(2030, 12, 31)
 
 # Parameters must pin down the concrete currency their numbers are written in
 # (GEP 10); these are mettsim's concrete (castar) compositional spellings.
-CASTAR_PER_YEAR = coerce_unit_token("CASTAR_PER_YEAR", where="test setup")
-CASTAR_PER_MONTH = coerce_unit_token("CASTAR_PER_MONTH", where="test setup")
-CASTAR = coerce_unit_token("CASTAR", where="test setup")
+CASTAR_PER_YEAR = coerce_unit_token(value="CASTAR_PER_YEAR", where="test setup")
+CASTAR_PER_MONTH = coerce_unit_token(value="CASTAR_PER_MONTH", where="test setup")
+CASTAR = coerce_unit_token(value="CASTAR", where="test setup")
 
 
 # ----------------------------------------------------------------------------
@@ -805,7 +809,7 @@ def test_adding_two_calendar_points_is_caught():
     def nonsense(policy_year: int, geburtsjahr: int) -> int:
         return policy_year + geburtsjahr  # bug: two calendar points added
 
-    with pytest.raises(UnitConsistencyError, match="combines calendar points"):
+    with pytest.raises(UnitConsistencyError, match="combines a calendar point"):
         fail_if_environment_units_are_inconsistent(
             env={
                 "policy_year": _policy_year(),
@@ -823,7 +827,7 @@ def test_scaling_a_calendar_point_is_caught():
     def doubled(geburtsjahr: int) -> int:
         return geburtsjahr * 2  # bug: scaling a calendar point
 
-    with pytest.raises(UnitConsistencyError, match="combines calendar points"):
+    with pytest.raises(UnitConsistencyError, match="combines a calendar point"):
         fail_if_environment_units_are_inconsistent(
             env={
                 "geburtsjahr": geburtsjahr,
@@ -908,6 +912,115 @@ def test_ordering_two_same_axis_calendar_points_passes():
         },
         grouping_levels=GROUPING_LEVELS,
     )
+
+
+def test_subtracting_calendar_points_of_different_axes_is_caught():
+    """Two *different* offset units of the same [time] dimension are the trap:
+    pint subtracts ``calendar_month - calendar_year`` with a silent /12 while the
+    run-time subtraction is raw and unconverted, so a cross-axis point - point is
+    rejected rather than delegated to pint (defect #2, GEP 10)."""
+
+    @policy_input(unit=Unit.CALENDAR_MONTH)
+    def some_calendar_month() -> int:
+        """A month point on the calendar."""
+
+    @policy_function(unit=Unit.MONTHS)
+    def nonsense(some_calendar_month: int, geburtsjahr: int) -> int:
+        return some_calendar_month - geburtsjahr  # bug: subtract points across axes
+
+    with pytest.raises(UnitConsistencyError, match="non-equivalent"):
+        fail_if_environment_units_are_inconsistent(
+            env={
+                "some_calendar_month": some_calendar_month,
+                "geburtsjahr": geburtsjahr,
+                "nonsense": nonsense,
+            },
+            grouping_levels=GROUPING_LEVELS,
+        )
+
+
+def test_adding_a_currency_to_a_calendar_point_is_reported_as_a_calendar_misuse():
+    """A calendar point plus a foreign dimension raises pint ``DimensionalityError``;
+    it is a genuine calendar bug, so it reports as a calendar misuse rather than
+    falling into the blanket ``verify_units=False`` advice (defect #7, GEP 10)."""
+
+    @policy_function(unit=Unit.CALENDAR_YEAR)
+    def nonsense(geburtsjahr: int, income_m: float) -> float:
+        return geburtsjahr + income_m  # bug: a calendar point plus a currency
+
+    with pytest.raises(UnitConsistencyError, match="combines a calendar point"):
+        fail_if_environment_units_are_inconsistent(
+            env={
+                "geburtsjahr": geburtsjahr,
+                "income_m": income_m,
+                "nonsense": nonsense,
+            },
+            grouping_levels=GROUPING_LEVELS,
+        )
+
+
+def test_flow_time_converter_body_passes():
+    """``per_m_to_per_y`` rebases a monthly flow to a yearly one; the dry-run models
+    the period rebase, so the body checks against its ``_y`` declaration with no
+    opt-out (GEP 10, time converters)."""
+
+    @policy_input(unit=Unit.CURRENCY.PER_MONTH)
+    def betrag_m() -> float:
+        """A monthly flow."""
+
+    @policy_function(unit=Unit.CURRENCY.PER_YEAR)
+    def betrag_y(betrag_m: float) -> float:
+        return per_m_to_per_y(betrag_m)
+
+    fail_if_environment_units_are_inconsistent(
+        env={"betrag_m": betrag_m, "betrag_y": betrag_y},
+        grouping_levels=GROUPING_LEVELS,
+    )
+
+
+def test_duration_time_converter_body_passes():
+    """``m_to_y`` rebases a ``MONTHS`` duration to ``YEARS``; the classic
+    ``m_to_y(months) >= grenze`` shape checks without an opt-out (GEP 10)."""
+
+    @policy_input(unit=Unit.MONTHS)
+    def wartezeit() -> int:
+        """A waiting time in months (a duration)."""
+
+    @policy_input(unit=Unit.YEARS)
+    def wartezeitgrenze() -> int:
+        """A threshold in years."""
+
+    @policy_function(unit=Unit.DIMENSIONLESS)
+    def wartezeit_erfüllt(wartezeit: int, wartezeitgrenze: int) -> bool:
+        return m_to_y(wartezeit) >= wartezeitgrenze
+
+    fail_if_environment_units_are_inconsistent(
+        env={
+            "wartezeit": wartezeit,
+            "wartezeitgrenze": wartezeitgrenze,
+            "wartezeit_erfüllt": wartezeit_erfüllt,
+        },
+        grouping_levels=GROUPING_LEVELS,
+    )
+
+
+def test_wrong_direction_time_converter_is_caught():
+    """A converter for the wrong period rebases to a unit that disagrees with the
+    declaration, so the misuse is caught rather than silently passed (GEP 10)."""
+
+    @policy_input(unit=Unit.MONTHS)
+    def wartezeit() -> int:
+        """A duration in months."""
+
+    @policy_function(unit=Unit.YEARS)
+    def nonsense(wartezeit: int) -> float:
+        return y_to_m(wartezeit)  # wrong: a MONTHS duration fed to a year->month rebase
+
+    with pytest.raises(UnitConsistencyError, match="nonsense"):
+        fail_if_environment_units_are_inconsistent(
+            env={"wartezeit": wartezeit, "nonsense": nonsense},
+            grouping_levels=GROUPING_LEVELS,
+        )
 
 
 def test_month_date_nodes_are_cyclic_ordinals():
@@ -1067,6 +1180,50 @@ def test_logical_op_on_unit_carrying_operand_is_caught():
                 "is_exempt": is_exempt,
                 "nonsense": nonsense,
             },
+            grouping_levels=GROUPING_LEVELS,
+        )
+
+
+def test_not_of_a_leveled_boolean_keeps_its_level():
+    """``not`` on a leveled boolean keeps its level, exactly as ``~`` does (defect
+    #5, GEP 10): ``flag_fam and not other_flag_fam`` stays fam-level and matches
+    the fam-level declaration — no spurious level error. Before the fix, ``not``
+    dropped the stand-in to a plain bool and the combine mislevelled the result."""
+
+    @policy_input(unit=Unit.DIMENSIONLESS.PER_FAM)
+    def flag_fam() -> bool:
+        """A fam-level indicator."""
+
+    @policy_input(unit=Unit.DIMENSIONLESS.PER_FAM)
+    def other_flag_fam() -> bool:
+        """Another fam-level indicator."""
+
+    @policy_function(leaf_name="combined_fam", unit=Unit.DIMENSIONLESS.PER_FAM)
+    def combined_fam(flag_fam: bool, other_flag_fam: bool) -> bool:
+        return flag_fam and not other_flag_fam
+
+    fail_if_environment_units_are_inconsistent(
+        env={
+            "flag_fam": flag_fam,
+            "other_flag_fam": other_flag_fam,
+            "combined_fam": combined_fam,
+        },
+        grouping_levels=GROUPING_LEVELS,
+    )
+
+
+def test_not_of_a_non_boolean_quantity_is_caught():
+    """``not`` on a non-boolean (a currency) is a bug that ``~`` catches; its scalar
+    spelling must too — the dry-run models ``not`` as ``logical_not`` (defect #5,
+    GEP 10)."""
+
+    @policy_function(unit=Unit.DIMENSIONLESS)
+    def flag(income_m: float) -> bool:
+        return not income_m  # bug: `not` on a currency
+
+    with pytest.raises(UnitConsistencyError, match="non-boolean"):
+        fail_if_environment_units_are_inconsistent(
+            env={"income_m": income_m, "flag": flag},
             grouping_levels=GROUPING_LEVELS,
         )
 
@@ -1418,7 +1575,10 @@ def test_cross_level_comparison_with_cast_passes():
 
     @policy_function(unit=Unit.DIMENSIONLESS)
     def eligible(age_youngest_months_fam: float, age_limit_months: float) -> bool:
-        return cast_unit(age_youngest_months_fam, Unit.MONTHS) <= age_limit_months
+        return (
+            cast_unit(value=age_youngest_months_fam, unit=Unit.MONTHS)
+            <= age_limit_months
+        )
 
     fail_if_environment_units_are_inconsistent(
         env={
@@ -1463,7 +1623,7 @@ def test_cast_at_the_return_states_the_declared_group_level():
 
     @policy_function(unit=Unit.MONTHS.PER_FAM)
     def doubled_limit_months_fam(age_limit_months: float) -> float:
-        return cast_unit(age_limit_months * 2.0, Unit.MONTHS.PER_FAM)
+        return cast_unit(value=age_limit_months * 2.0, unit=Unit.MONTHS.PER_FAM)
 
     fail_if_environment_units_are_inconsistent(
         env={
@@ -1518,7 +1678,7 @@ def test_group_share_times_group_total_passes_with_cast():
     @policy_function(unit=Unit.CURRENCY.PER_MONTH.PER_FAM)
     def parents_need_m_fam(parents_share_fam: float, need_m_fam: float) -> float:
         return cast_unit(
-            parents_share_fam * need_m_fam, Unit.CURRENCY.PER_MONTH.PER_FAM
+            value=parents_share_fam * need_m_fam, unit=Unit.CURRENCY.PER_MONTH.PER_FAM
         )
 
     fail_if_environment_units_are_inconsistent(
@@ -1538,7 +1698,7 @@ def test_cast_tags_a_dimensioned_literal_in_an_ordering_comparison():
 
     @policy_function(unit=Unit.DIMENSIONLESS)
     def poor(income_m: float) -> bool:
-        return income_m < cast_unit(1000.0, Unit.CURRENCY.PER_MONTH)
+        return income_m < cast_unit(value=1000.0, unit=Unit.CURRENCY.PER_MONTH)
 
     fail_if_environment_units_are_inconsistent(
         env={"income_m": income_m, "poor": poor},
@@ -1547,7 +1707,9 @@ def test_cast_tags_a_dimensioned_literal_in_an_ordering_comparison():
 
     @policy_function(unit=Unit.DIMENSIONLESS)
     def poor_buggy(income_m: float) -> bool:
-        return income_m < cast_unit(1000.0, Unit.CURRENCY.PER_YEAR)  # wrong period
+        return income_m < cast_unit(
+            value=1000.0, unit=Unit.CURRENCY.PER_YEAR
+        )  # wrong period
 
     with pytest.raises(UnitConsistencyError, match="poor_buggy"):
         fail_if_environment_units_are_inconsistent(
@@ -1565,7 +1727,9 @@ def test_cast_in_a_vectorized_body_is_screened_identically():
         unit=Unit.CURRENCY.PER_MONTH, vectorization_strategy="not_required"
     )
     def capped_income_m(income_m: FloatColumn, xnp: ModuleType) -> FloatColumn:
-        return xnp.minimum(income_m, cast_unit(2000.0, Unit.CURRENCY.PER_MONTH))
+        return xnp.minimum(
+            income_m, cast_unit(value=2000.0, unit=Unit.CURRENCY.PER_MONTH)
+        )
 
     fail_if_environment_units_are_inconsistent(
         env={"income_m": income_m, "capped_income_m": capped_income_m},
@@ -1579,7 +1743,7 @@ def test_cast_to_a_concrete_currency_is_rejected():
 
     @policy_function(unit=Unit.CURRENCY.PER_MONTH)
     def pinned_m(income_m: float) -> float:
-        return cast_unit(income_m, "CASTAR_PER_MONTH")
+        return cast_unit(value=income_m, unit="CASTAR_PER_MONTH")
 
     with pytest.raises(UnitDefinitionError, match="currency-agnostic"):
         fail_if_environment_units_are_inconsistent(
@@ -1620,7 +1784,9 @@ def test_dimensionless_inference_cannot_claim_a_group_owned_declaration():
     def requirement_fulfilled_cast_fam(
         share_of_need: float, threshold_share: float
     ) -> bool:
-        return cast_unit(share_of_need < threshold_share, Unit.DIMENSIONLESS.PER_FAM)
+        return cast_unit(
+            value=share_of_need < threshold_share, unit=Unit.DIMENSIONLESS.PER_FAM
+        )
 
     fail_if_environment_units_are_inconsistent(
         env={
@@ -1649,7 +1815,7 @@ def test_adding_a_nonzero_bare_literal_to_a_quantity_is_caught():
 
     @policy_function(unit=Unit.CURRENCY.PER_MONTH)
     def bumped_income_cast_m(income_m: float) -> float:
-        return income_m + cast_unit(100.0, Unit.CURRENCY.PER_MONTH)
+        return income_m + cast_unit(value=100.0, unit=Unit.CURRENCY.PER_MONTH)
 
     fail_if_environment_units_are_inconsistent(
         env={"income_m": income_m, "bumped_income_m": bumped_income_cast_m},
@@ -1677,7 +1843,7 @@ def test_nonzero_literal_return_under_a_dimensioned_declaration_is_caught():
     @policy_function(unit=Unit.CURRENCY.PER_MONTH)
     def lump_cast_m(is_exempt: bool, income_m: float) -> float:
         if is_exempt:
-            return cast_unit(25.0, Unit.CURRENCY.PER_MONTH)
+            return cast_unit(value=25.0, unit=Unit.CURRENCY.PER_MONTH)
         return income_m
 
     fail_if_environment_units_are_inconsistent(
@@ -2351,8 +2517,8 @@ def test_structured_plucks_with_casts_are_verifiable():
 
     @policy_function(unit=Unit.CURRENCY.PER_MONTH)
     def child_benefit_m(age: int, child_rate: _ChildRate) -> float:
-        amount_m = cast_unit(child_rate.amount_m, Unit.CURRENCY.PER_MONTH)
-        max_age = cast_unit(child_rate.bounds.max_age, Unit.YEARS)
+        amount_m = cast_unit(value=child_rate.amount_m, unit=Unit.CURRENCY.PER_MONTH)
+        max_age = cast_unit(value=child_rate.bounds.max_age, unit=Unit.YEARS)
         if age <= max_age:
             return amount_m
         return 0.0
@@ -2372,7 +2538,7 @@ def test_structured_pluck_used_without_cast_is_caught():
     @policy_function(unit=Unit.CURRENCY.PER_MONTH)
     def child_benefit_m(age: int, child_rate: _ChildRate) -> float:
         if age <= child_rate.bounds.max_age:  # bug: pluck used as a quantity
-            return cast_unit(child_rate.amount_m, Unit.CURRENCY.PER_MONTH)
+            return cast_unit(value=child_rate.amount_m, unit=Unit.CURRENCY.PER_MONTH)
         return 0.0
 
     with pytest.raises(UnitConsistencyError, match="cast_unit"):
@@ -2404,9 +2570,9 @@ def test_structured_cast_too_coarse_fails_on_the_deeper_pluck():
 
     @policy_function(unit=Unit.CURRENCY.PER_MONTH)
     def child_benefit_m(age: int, child_rate: _ChildRate) -> float:
-        bounds = cast_unit(child_rate.bounds, Unit.YEARS)  # too coarse
+        bounds = cast_unit(value=child_rate.bounds, unit=Unit.YEARS)  # too coarse
         if age <= bounds.max_age:
-            return cast_unit(child_rate.amount_m, Unit.CURRENCY.PER_MONTH)
+            return cast_unit(value=child_rate.amount_m, unit=Unit.CURRENCY.PER_MONTH)
         return 0.0
 
     with pytest.raises(UnitConsistencyError, match="verify_units=False"):
@@ -2606,8 +2772,8 @@ def test_piecewise_call_on_converter_built_schedule_is_cast_at_the_call():
         xnp: ModuleType,
     ) -> float:
         return cast_unit(
-            piecewise_polynomial(x=bonus_y, parameters=built_schedule, xnp=xnp),
-            Unit.CURRENCY.PER_YEAR,
+            value=piecewise_polynomial(x=bonus_y, parameters=built_schedule, xnp=xnp),
+            unit=Unit.CURRENCY.PER_YEAR,
         )
 
     fail_if_environment_units_are_inconsistent(
@@ -3081,6 +3247,71 @@ def test_param_mapping_object_missing_axis_units_are_reported():
     assert "schedule (output_unit)" in str(excinfo.value)
 
 
+def test_auto_generated_boolean_group_aggregate_passes_the_build():
+    """The regression behind defect #1: requesting the group aggregate of a boolean
+    auto-generates a SUM node, whose framework-minted token must match what the
+    resolver derives (a head count). Before the fix the minter produced
+    DIMENSIONLESS_PER_FAM while the resolver derived [person]/[fam], so the build
+    rejected its own auto-assignment. It must now pass unchanged (GEP 10)."""
+
+    @policy_function(leaf_name="is_adult", unit=Unit.DIMENSIONLESS)
+    def is_adult() -> bool:
+        return True
+
+    aggs = create_agg_by_group_functions(
+        column_functions={"is_adult": is_adult},
+        qname_policy_environment={},
+        input_columns=set(),
+        tt_targets={"is_adult_fam"},
+        grouping_levels=("fam",),
+    )
+    # No UnitConsistencyError: the minted token and the derived unit agree.
+    fail_if_environment_units_are_inconsistent(
+        env={"is_adult": is_adult, "is_adult_fam": aggs["is_adult_fam"]},
+        grouping_levels=GROUPING_LEVELS,
+    )
+
+
+def test_opted_out_aggregation_declares_its_own_level():
+    """``verify_units=False`` on an aggregation skips the declared-vs-derived check
+    and resolves the *declared* unit, so a MEAN can be stated ``PER_KIN`` (a kin
+    property) even though the algebra derives it as the person's (GEP 10)."""
+
+    @policy_input(unit=Unit.CURRENCY)
+    def wealth() -> float: ...
+
+    @agg_by_group_function(
+        agg_type=AggType.MEAN, unit=Unit.CURRENCY.PER_KIN, verify_units=False
+    )
+    def average_wealth_kin(kin_id: int, wealth: float) -> float: ...
+
+    env = {"wealth": wealth, "average_wealth_kin": average_wealth_kin}
+    resolved = resolve_environment_units(env=env, grouping_levels=GROUPING_LEVELS)
+    assert units_are_equivalent(
+        left=_scalar_unit(resolved=resolved, qname="average_wealth_kin"),
+        right=parse_unit("CURRENCY / grouping_level_kin"),
+    )
+    # No declared-vs-derived rejection despite the MEAN deriving the person level.
+    fail_if_environment_units_are_inconsistent(env=env, grouping_levels=GROUPING_LEVELS)
+
+
+def test_aggregation_without_opt_out_still_rejects_a_wrong_level():
+    """Without the opt-out, the same ``PER_KIN`` declaration on a MEAN is rejected —
+    the opt-out is the only way to override the derivation (GEP 10)."""
+
+    @policy_input(unit=Unit.CURRENCY)
+    def wealth() -> float: ...
+
+    @agg_by_group_function(agg_type=AggType.MEAN, unit=Unit.CURRENCY.PER_KIN)
+    def average_wealth_kin(kin_id: int, wealth: float) -> float: ...
+
+    with pytest.raises(UnitConsistencyError, match="average_wealth_kin"):
+        fail_if_environment_units_are_inconsistent(
+            env={"wealth": wealth, "average_wealth_kin": average_wealth_kin},
+            grouping_levels=GROUPING_LEVELS,
+        )
+
+
 def test_count_and_sum_of_boolean_both_mint_head_counts():
     """A COUNT and a SUM over a boolean are both head counts (GEP 10): each
     resolves to [person]/[target], not DIMENSIONLESS."""
@@ -3104,10 +3335,12 @@ def test_count_and_sum_of_boolean_both_mint_head_counts():
     )
     head_count = parse_unit("grouping_level_person / grouping_level_fam")
     assert units_are_equivalent(
-        left=_scalar_unit(resolved, "number_of_individuals_fam"), right=head_count
+        left=_scalar_unit(resolved=resolved, qname="number_of_individuals_fam"),
+        right=head_count,
     )
     assert units_are_equivalent(
-        left=_scalar_unit(resolved, "number_of_adults_fam"), right=head_count
+        left=_scalar_unit(resolved=resolved, qname="number_of_adults_fam"),
+        right=head_count,
     )
 
 
@@ -3132,7 +3365,7 @@ def test_per_capita_division_bridges_via_head_count():
     }
     resolved = resolve_environment_units(env=env, grouping_levels=GROUPING_LEVELS)
     assert units_are_equivalent(
-        left=_scalar_unit(resolved, "rent_per_head_m"),
+        left=_scalar_unit(resolved=resolved, qname="rent_per_head_m"),
         right=parse_unit("CURRENCY / month / grouping_level_person"),
     )
     # The [fam] cancels against the count's [person]/[fam] — no level mismatch.
@@ -3322,11 +3555,15 @@ def test_max_over_level_carrying_source_carries_the_target_group_level():
     # The MAX carries the target [fam] level, not the source [person] level.
     assert units_are_equivalent(
         left=max_unit,
-        right=divide_by_grouping_level(parse_unit("CURRENCY / month"), "fam"),
+        right=divide_by_grouping_level(
+            unit=parse_unit("CURRENCY / month"), level="fam"
+        ),
     )
     assert not units_are_equivalent(
         left=max_unit,
-        right=divide_by_grouping_level(parse_unit("CURRENCY / month"), PERSON_LEVEL),
+        right=divide_by_grouping_level(
+            unit=parse_unit("CURRENCY / month"), level=PERSON_LEVEL
+        ),
     )
     # The `_PER_FAM` declaration is consistent with what it derives.
     fail_if_environment_units_are_inconsistent(env=env, grouping_levels=GROUPING_LEVELS)

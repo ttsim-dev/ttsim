@@ -30,7 +30,7 @@ import dataclasses
 import inspect
 import re
 import sys
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from typing import Any, NoReturn, cast, get_args, get_type_hints
 
 import dags.tree as dt
@@ -70,6 +70,7 @@ from ttsim.tt.units import (
     _GROUPING_LEVEL_PREFIX,
     _QNAME_TIME_SUFFIX_PATTERN,
     PERSON_LEVEL,
+    TIME_UNIT_ID_TO_PINT_NAME,
     UNIT_REGISTRY,
     UNSET_UNIT,
     CompositeUnit,
@@ -79,6 +80,7 @@ from ttsim.tt.units import (
     _unit_without_grouping_levels,
     coerce_unit_token,
     fail_if_units_are_missing,
+    head_count_from_boolean_sum,
     is_calendar_point_unit,
     parse_unit,
     register_grouping_levels,
@@ -91,6 +93,7 @@ from ttsim.tt.units import (
     token_is_agnostic_currency,
     token_source_currency,
     unit_for_derived_node,
+    unit_has_currency_component,
     unit_residual_excluding_currency_and_flow_period,
     units_are_equivalent,
 )
@@ -119,11 +122,6 @@ FRAMEWORK_DATE_NODE_UNITS: Mapping[str, str] = {
     "evaluation_day": "dimensionless",
 }
 
-#: Arguments of column/param functions that the framework partials in and that
-#: never carry a unit, shared with `specialized_environment` so the two cannot
-#: drift.
-NON_UNIT_ARGUMENTS = FRAMEWORK_PARTIAL_ARGUMENTS
-
 
 class _DryRunXnp:
     """The dry-run's ``xnp``: NumPy, but with the unit-bearing ops routed through
@@ -148,6 +146,10 @@ class _DryRunXnp:
     @staticmethod
     def logical_or(left: Any, right: Any) -> Any:  # noqa: ANN401
         return left | right
+
+    @staticmethod
+    def logical_not(value: Any) -> Any:  # noqa: ANN401
+        return ~value
 
     @staticmethod
     def maximum(left: Any, right: Any) -> Any:  # noqa: ANN401
@@ -315,7 +317,7 @@ def _resolve_leveled_column_unit(
     time_unit_id = match.group("time_unit") if match else None
     grouping_level = _suffix_grouping_level(match)
     return resolve_compositional_column_unit(
-        token,
+        unit=token,
         time_unit_id=time_unit_id,
         grouping_level=grouping_level,
         where="A column/function",
@@ -333,6 +335,25 @@ def _argument_is_person_pointer(qname: str) -> bool:
     as the ``@agg_by_p_id_function`` constructor does.
     """
     return any(e.startswith("p_id_") for e in dt.tree_path_from_qname(qname))
+
+
+def _resolve_opted_out_agg_unit(
+    qname: str, obj: AggByGroupFunction, match: re.Match[str] | None
+) -> pint.Unit | None:
+    """Resolve an opted-out aggregation from its declared unit, like a column.
+
+    The declaration stands as the contract for consumers where the derivation
+    cannot express it (a ``MEAN`` the author states ``PER_KIN``); ``None`` when it
+    declares no unit (the mandatory-units check reports it).
+    """
+    token = getattr(obj, "unit", UNSET_UNIT)
+    if token is UNSET_UNIT:
+        return None
+    return _resolve_leveled_column_unit(
+        token=cast("CompositeUnit", token),
+        match=match,
+        is_boolean=node_is_boolean(qname=qname, obj=obj),
+    )
 
 
 def _resolve_agg_by_group_unit(
@@ -360,10 +381,16 @@ def _resolve_agg_by_group_unit(
     (``number_of_adults_fam`` sums ``adult``, not ``number_of_adults``) resolves
     correctly. Returns ``None`` if a value source carries no resolvable unit — the
     mandatory-units check reports the source.
+
+    An opted-out aggregation (``verify_units=False``) is resolved from its
+    *declared* unit like a column, not derived from the source: the declaration
+    stands as the contract for consumers even where the derivation cannot express
+    it (a ``MEAN`` the author states ``PER_KIN``).
     """
-    target_level = _suffix_grouping_level(
-        pattern.fullmatch(dt.tree_path_from_qname(qname)[-1])
-    )
+    match = pattern.fullmatch(dt.tree_path_from_qname(qname)[-1])
+    if not obj.verify_units:
+        return _resolve_opted_out_agg_unit(qname=qname, obj=obj, match=match)
+    target_level = _suffix_grouping_level(match)
     agg_type = obj.agg_type
     # COUNT and ANY/ALL are independent of the source's unit, so resolve them
     # before touching the source: well-defined even when the source declares none.
@@ -376,7 +403,7 @@ def _resolve_agg_by_group_unit(
         for p in inspect.signature(obj.function).parameters
         if not p.endswith("_id")
         and not _argument_is_person_pointer(p)
-        and p not in NON_UNIT_ARGUMENTS
+        and p not in FRAMEWORK_PARTIAL_ARGUMENTS
     }
     if len(sources) != 1:
         return None
@@ -387,8 +414,14 @@ def _resolve_agg_by_group_unit(
         return None
     source_is_boolean = node_is_boolean(qname=source_qname, obj=source_obj)
     # A SUM over a boolean is a head count of the persons it is true for — the
-    # same unit a COUNT mints, so resolve it as one.
-    if agg_type is AggType.SUM and source_is_boolean:
+    # same unit a COUNT mints, so resolve it as one (shared rule with the
+    # declared-token minter, `unit_for_aggregation`).
+    if (
+        head_count_from_boolean_sum(
+            agg_type=agg_type, source_is_boolean=source_is_boolean
+        )
+        is AggType.COUNT
+    ):
         return resolved_unit_for_aggregation(
             agg_type=AggType.COUNT, target_level=target_level
         )
@@ -575,12 +608,18 @@ def _agg_declaration_inconsistency(
     resolve the source, or no unit is declared (the mandatory-units check reports
     either).
     """
+    if not obj.verify_units:
+        # An opted-out aggregation keeps its declared unit as the contract for
+        # consumers, but its declaration is not checked against the derivation —
+        # for the rare group-property aggregation whose declared level the
+        # derivation cannot express (a MEAN the author states `PER_KIN`).
+        return None
     derived = resolved_units.get(qname)
     declared_token = getattr(obj, "unit", UNSET_UNIT)
     if derived is None or isinstance(derived, dict) or declared_token is UNSET_UNIT:
         return None
     declared_unit = resolve_compositional_param_unit(
-        cast("CompositeUnit", declared_token), where=f"Aggregation {qname!r}"
+        unit=cast("CompositeUnit", declared_token), where=f"Aggregation {qname!r}"
     )
     derived_unit = cast("pint.Unit", derived)
     if units_are_equivalent(left=declared_unit, right=derived_unit):
@@ -758,7 +797,7 @@ def fail_if_environment_units_are_inconsistent(
         error = _verify_one_body(
             qname=qname,
             function=recompile_with_logical_ops_as_calls(
-                obj.function,
+                func=obj.function,
                 module="xnp",
                 module_obj=_NON_UNIT_ARGUMENT_VALUES["xnp"],
                 extra_globals=_DRY_RUN_HELPER_SHIMS,
@@ -810,29 +849,54 @@ def fail_if_input_units_are_inconsistent(
     input_units: Mapping[str, pint.Unit],
     resolved_units: Mapping[str, Any],
 ) -> None:
-    """Fail if a tagged input column is not equivalent to its declared unit.
+    """Fail if a tagged input column's unit disagrees with its declared unit.
 
-    ``input_units`` maps each tagged input column to its pint unit tag;
-    ``resolved_units`` maps every declared node to its resolved (agnostic) DAG
-    unit. The tag must be *equivalent* to the declared unit once two axes the
-    boundary handles separately are factored out: the currency (converted to the
-    run currency at the boundary — a DM tag on a euro-run column passes) and the
-    flow period (screened against the name suffix by the dedicated period guard).
-    What remains — the numerator scale — must match *exactly*, not merely share a
-    dimension: a ``HECTARES`` column tagged ``m²`` (a 10,000-fold level error) or
-    a ``YEARS`` age tagged ``month`` is rejected here rather than silently
-    mis-stripped at the boundary, while a currency tag on a ``YEARS`` column
-    (different residual dimension) is rejected as before.
+    One check of every input tag against the DAG, on three axes:
+
+    - **currency presence** — the boundary only rescales a column it thinks is
+      currency, so a ``DM`` tag on a ``DIMENSIONLESS`` column (or the converse)
+      would silently rescale — or skip rescaling — the data; both sides must agree
+      on whether a currency component is present;
+    - **grouping level** — the tag spells its level (``EUR.PER_MONTH.PER_BG``, the
+      person leaf implied), which must equal the level the column's declared unit
+      carries (declared, not read off the suffix — GEP 10);
+    - **measurement** — with currency (converted at the boundary) and flow period
+      (screened against the name suffix by the dedicated period guard) factored
+      out, the remaining numerator scale must match *exactly*: a ``HECTARES``
+      column tagged ``m²`` (a 10,000-fold error) or a ``YEARS`` age tagged
+      ``month`` is rejected here rather than silently mis-stripped.
+
+    ``input_units`` maps each tagged input column to its resolved pint tag
+    (carrying its grouping level); ``resolved_units`` maps every declared node to
+    its resolved DAG unit.
 
     Raises:
-        UnitConsistencyError: If any tagged column is not equivalent to its
-            declared unit. All offending columns are reported together.
+        UnitConsistencyError: If any tagged column disagrees with its declared
+            unit. All offending columns are reported together.
     """
     errors: list[str] = []
     for qname, tag in input_units.items():
         expected = resolved_units.get(qname)
         if not isinstance(expected, pint.Unit):
             # No scalar declared unit (absent, or a dict parameter); nothing to check.
+            continue
+        if unit_has_currency_component(tag) != unit_has_currency_component(expected):
+            errors.append(
+                f"  {qname}: tagged '{tag}' but declared '{expected}' — one carries "
+                f"a currency and the other does not, so the boundary would silently "
+                f"rescale (or skip rescaling) the column. A currency column must be "
+                f"tagged with a concrete currency and a non-currency column without "
+                f"one (GEP 10)."
+            )
+            continue
+        tag_level = _unit_level_denominator(tag) or PERSON_LEVEL
+        expected_level = _unit_level_denominator(expected) or PERSON_LEVEL
+        if tag_level != expected_level:
+            errors.append(
+                f"  {qname}: tag is at the {tag_level!r} level but the column is at "
+                f"the {expected_level!r} level — the level is declared, not read off "
+                f"the name suffix (GEP 10)."
+            )
             continue
         tag_residual = unit_residual_excluding_currency_and_flow_period(tag)
         expected_residual = unit_residual_excluding_currency_and_flow_period(expected)
@@ -855,9 +919,9 @@ def node_is_boolean(qname: str, obj: Any) -> bool:  # noqa: ANN401
     values and drive its branch exploration; orthogonal to the declared unit)."""
     try:
         if isinstance(obj, PolicyInput):
-            kind = resolve_kind_of_annotation(obj.data_type, node_name=qname)
+            kind = resolve_kind_of_annotation(annotation=obj.data_type, node_name=qname)
         elif isinstance(obj, ColumnObject | ParamFunction):
-            kind = resolve_kind_of_column_function(obj.function, node_name=qname)
+            kind = resolve_kind_of_column_function(func=obj.function, node_name=qname)
         else:
             return False
     except TypeResolutionError:
@@ -951,10 +1015,12 @@ def _resolve_param_mapping_object_units(
         )
     input_token = tokens["input_unit"]
     if input_token is not UNSET_UNIT:
-        resolve_compositional_param_unit(input_token, where=f"Parameter {qname!r}")
+        resolve_compositional_param_unit(unit=input_token, where=f"Parameter {qname!r}")
     if output_token is UNSET_UNIT:
         return None
-    return resolve_compositional_param_unit(output_token, where=f"Parameter {qname!r}")
+    return resolve_compositional_param_unit(
+        unit=output_token, where=f"Parameter {qname!r}"
+    )
 
 
 def _fail_if_name_suffix_disagrees_with_output_axis(
@@ -975,7 +1041,7 @@ def _fail_if_name_suffix_disagrees_with_output_axis(
             f"`output_unit:` is {_spell_token(output_token)} (GEP 10)."
         )
     resolve_compositional_param_unit(
-        output_token, time_unit_id=name_time_unit_id, where=f"Parameter {qname!r}"
+        unit=output_token, time_unit_id=name_time_unit_id, where=f"Parameter {qname!r}"
     )
 
 
@@ -1012,7 +1078,7 @@ def _resolve_param_object_unit(
     # A scalar parameter takes its period from a time suffix on its name; a
     # dict/raw parameter has no single name to suffix.
     return resolve_compositional_param_unit(
-        token,
+        unit=token,
         time_unit_id=name_time_unit_id if isinstance(obj, ScalarParam) else None,
         where=f"Parameter {qname!r}",
     )
@@ -1039,7 +1105,7 @@ def _resolve_unit_mapping(
         match = _QNAME_TIME_SUFFIX_PATTERN.search(str(key))
         suffix_id = match.group("time_unit") if match else None
         resolved[key] = resolve_compositional_param_unit(
-            cast("CompositeUnit", token), time_unit_id=suffix_id, where=where
+            unit=cast("CompositeUnit", token), time_unit_id=suffix_id, where=where
         )
     return resolved
 
@@ -1114,7 +1180,7 @@ def _resolved_raw_param_axis(
     where = f"Parameter {qname!r}"
     unit_token = cast("CompositeUnit", token)
     _fail_if_param_token_is_agnostic_currency(token=unit_token, where=where)
-    return resolve_compositional_param_unit(unit_token, where=where)
+    return resolve_compositional_param_unit(unit=unit_token, where=where)
 
 
 def _resolved_return_dataclass(func: Any) -> type | None:  # noqa: ANN401
@@ -1190,7 +1256,9 @@ def _structured_field_kinds(cls: type) -> dict[str, pint.Unit | type] | None:
                     f"(int/float/bool); a structured or container field has no "
                     f"single unit — cast at the pluck instead (GEP 10)."
                 )
-            kinds[field.name] = resolve_compositional_field_unit(tokens[0], where=where)
+            kinds[field.name] = resolve_compositional_field_unit(
+                unit=tokens[0], where=where
+            )
         elif isinstance(base, type) and dataclasses.is_dataclass(base):
             kinds[field.name] = base
     _STRUCTURED_FIELD_KINDS[cls] = kinds
@@ -1296,10 +1364,12 @@ def _param_function_stand_in(
         and _return_annotation_name(obj.function) in _SCHEDULE_RETURN_TYPE_NAMES
     ):
         raw_qname, raw = axes_deps[0]
-        output_unit = _resolved_raw_param_axis(raw.output_unit, qname=raw_qname)
+        output_unit = _resolved_raw_param_axis(token=raw.output_unit, qname=raw_qname)
         if output_unit is not None:
             return _DryRunSchedule(
-                input_unit=_resolved_raw_param_axis(raw.input_unit, qname=raw_qname),
+                input_unit=_resolved_raw_param_axis(
+                    token=raw.input_unit, qname=raw_qname
+                ),
                 output_unit=output_unit,
             )
     return _DryRunStructuredValue(
@@ -1365,7 +1435,7 @@ def _resolve_schedule_input_unit(obj: ParamMappingObject) -> pint.Unit | None:
     if obj.input_unit is UNSET_UNIT:
         return None
     return resolve_compositional_param_unit(
-        cast("CompositeUnit", obj.input_unit), where="A schedule input axis"
+        unit=cast("CompositeUnit", obj.input_unit), where="A schedule input axis"
     )
 
 
@@ -1419,7 +1489,7 @@ def _base_dry_run_kwargs(
     for parameter in parameters:
         if parameter in boolean_parameters:
             continue
-        if parameter in NON_UNIT_ARGUMENTS:
+        if parameter in FRAMEWORK_PARTIAL_ARGUMENTS:
             out[parameter] = _NON_UNIT_ARGUMENT_VALUES[parameter]
         elif parameter in representative_values:
             out[parameter] = representative_values[parameter]
@@ -1652,8 +1722,8 @@ class _DryRunQuantity:
                 op=op, left=cast("pint.Unit", self.q.units), right=right
             )
         return self._controlled_bool_at(
-            _combined_boolean_level(self_level, other_level),
-            label=self._composed_label(other, op),
+            level=_combined_boolean_level(left=self_level, right=other_level),
+            label=self._composed_label(other=other, op=op),
         )
 
     def _fail_if_additive_operand_is_invalid(self, other: Any, op: str) -> None:  # noqa: ANN401
@@ -1661,12 +1731,15 @@ class _DryRunQuantity:
 
         The rules are those of :meth:`_fail_if_other_unit_is_not_equivalent`,
         with one dispensation: a calendar point (an affine offset unit). Its
-        valid ``point ± duration`` is *not* equivalence (a point and a duration
-        differ), yet pint's offset algebra permits exactly it and forbids the
-        genuine misuses (``point + point``, cross-axis mixes). So when either
-        operand is a calendar point the magnitude pre-screen is skipped and the
-        forward operation delegates to pint, which raises
-        ``OffsetUnitCalculusError`` on a misuse — caught in
+        valid ``point +/- duration`` is *not* equivalence (a point and a duration
+        differ), yet pint's offset algebra permits exactly it. Two *different*
+        offset units of the same ``[time]`` dimension are the trap: pint
+        subtracts ``calendar_year - calendar_month`` with a silent /12
+        (``0.917 delta_calendar_year``) while the run-time subtraction is raw
+        and unconverted, so a point - point across axes is rejected here rather
+        than delegated. A same-axis point +/- duration (or point - point) is left
+        to pint, which raises ``OffsetUnitCalculusError`` /
+        ``DimensionalityError`` on the remaining misuses — caught in
         :func:`_verify_one_body` and reported as a calendar misuse. Only
         ``+``/``-`` get the dispensation: they alone run a forward pint
         operation afterwards, so nothing would catch a point mixed into an
@@ -1675,10 +1748,24 @@ class _DryRunQuantity:
         other_q = _unwrap(other)
         if isinstance(other_q, _DryRunStructuredValue):
             other_q._raise_used_as_quantity(op)  # noqa: SLF001
-        if is_calendar_point_unit(cast("pint.Unit", self.q.units)) or (
-            isinstance(other_q, pint.Quantity)
-            and is_calendar_point_unit(cast("pint.Unit", other_q.units))
+        self_is_point = is_calendar_point_unit(cast("pint.Unit", self.q.units))
+        other_is_point = isinstance(other_q, pint.Quantity) and is_calendar_point_unit(
+            cast("pint.Unit", other_q.units)
+        )
+        if (
+            self_is_point
+            and other_is_point
+            and not units_are_equivalent(
+                left=cast("pint.Unit", self.q.units),
+                right=cast("pint.Unit", other_q.units),
+            )
         ):
+            raise _UnitMixError(
+                op=op,
+                left=cast("pint.Unit", self.q.units),
+                right=cast("pint.Unit", other_q.units),
+            )
+        if self_is_point or other_is_point:
             return
         self._fail_if_other_unit_is_not_equivalent(other=other, op=op)
 
@@ -1739,37 +1826,43 @@ class _DryRunQuantity:
     def __lt__(self, other: Any) -> _DryRunQuantity:  # noqa: ANN401
         self._fail_if_ordering_operand_is_invalid(other=other, op="<")
         return self._controlled_bool_at(
-            self._comparison_level(other), label=self._composed_label(other, "<")
+            level=self._comparison_level(other),
+            label=self._composed_label(other=other, op="<"),
         )
 
     def __le__(self, other: Any) -> _DryRunQuantity:  # noqa: ANN401
         self._fail_if_ordering_operand_is_invalid(other=other, op="<=")
         return self._controlled_bool_at(
-            self._comparison_level(other), label=self._composed_label(other, "<=")
+            level=self._comparison_level(other),
+            label=self._composed_label(other=other, op="<="),
         )
 
     def __gt__(self, other: Any) -> _DryRunQuantity:  # noqa: ANN401
         self._fail_if_ordering_operand_is_invalid(other=other, op=">")
         return self._controlled_bool_at(
-            self._comparison_level(other), label=self._composed_label(other, ">")
+            level=self._comparison_level(other),
+            label=self._composed_label(other=other, op=">"),
         )
 
     def __ge__(self, other: Any) -> _DryRunQuantity:  # noqa: ANN401
         self._fail_if_ordering_operand_is_invalid(other=other, op=">=")
         return self._controlled_bool_at(
-            self._comparison_level(other), label=self._composed_label(other, ">=")
+            level=self._comparison_level(other),
+            label=self._composed_label(other=other, op=">="),
         )
 
     # ``==``/``!=`` are deliberately *not* unit-screened: they are routinely used
     # polymorphically (sentinels, ``x == 0``) and are not magnitude comparisons.
     def __eq__(self, other: object) -> _DryRunQuantity:  # ty: ignore[invalid-method-override]
         return self._controlled_bool_at(
-            self._comparison_level(other), label=self._composed_label(other, "==")
+            level=self._comparison_level(other),
+            label=self._composed_label(other=other, op="=="),
         )
 
     def __ne__(self, other: object) -> _DryRunQuantity:  # ty: ignore[invalid-method-override]
         return self._controlled_bool_at(
-            self._comparison_level(other), label=self._composed_label(other, "!=")
+            level=self._comparison_level(other),
+            label=self._composed_label(other=other, op="!="),
         )
 
     def __and__(self, other: Any) -> _DryRunQuantity:  # noqa: ANN401
@@ -1797,7 +1890,8 @@ class _DryRunQuantity:
                 op="~", left=cast("pint.Unit", self.q.units), right=_DIMENSIONLESS_UNIT
             )
         return self._controlled_bool_at(
-            level, label=f"~{self._label}" if self._label is not None else None
+            level=level,
+            label=f"~{self._label}" if self._label is not None else None,
         )
 
     # Addition and subtraction require equivalent units (see ``_UnitMixError``);
@@ -1977,88 +2071,55 @@ class _DryRunStructuredValue:
     def __call__(self, *_args: Any, **_kwargs: Any) -> _DryRunStructuredValue:  # noqa: ANN401
         return self._opaque()
 
-    def __bool__(self) -> Any:  # noqa: ANN401
-        return self._raise_used_as_quantity("a branch decision")
 
-    def __lt__(self, _other: Any) -> Any:  # noqa: ANN401
-        return self._raise_used_as_quantity("<")
+#: Every arithmetic / ordering / logical / bool use of an opaque structured value is a
+#: misuse (cast the pluck or opt out), so all of them raise. The dunders are generated
+#: from this table rather than spelled out one near-identical method at a time.
+_STRUCTURED_VALUE_FORBIDDEN_OPS: Mapping[str, str] = {
+    "__bool__": "a branch decision",
+    "__lt__": "<",
+    "__le__": "<=",
+    "__gt__": ">",
+    "__ge__": ">=",
+    "__eq__": "==",
+    "__ne__": "!=",
+    "__add__": "+",
+    "__radd__": "+",
+    "__sub__": "-",
+    "__rsub__": "-",
+    "__mul__": "*",
+    "__rmul__": "*",
+    "__truediv__": "/",
+    "__rtruediv__": "/",
+    "__floordiv__": "//",
+    "__rfloordiv__": "//",
+    "__mod__": "%",
+    "__rmod__": "%",
+    "__pow__": "**",
+    "__rpow__": "**",
+    "__and__": "&",
+    "__rand__": "&",
+    "__or__": "|",
+    "__ror__": "|",
+    "__xor__": "^",
+    "__rxor__": "^",
+    "__invert__": "~",
+    "__neg__": "unary -",
+    "__pos__": "unary +",
+    "__abs__": "abs",
+}
 
-    def __le__(self, _other: Any) -> Any:  # noqa: ANN401
-        return self._raise_used_as_quantity("<=")
 
-    def __gt__(self, _other: Any) -> Any:  # noqa: ANN401
-        return self._raise_used_as_quantity(">")
+def _structured_value_forbidden_op(op: str) -> Callable[..., Any]:
+    def method(self: _DryRunStructuredValue, *_a: Any, **_k: Any) -> Any:  # noqa: ANN401
+        return self._raise_used_as_quantity(op)
 
-    def __ge__(self, _other: Any) -> Any:  # noqa: ANN401
-        return self._raise_used_as_quantity(">=")
+    return method
 
-    def __eq__(self, _other: object) -> Any:  # noqa: ANN401
-        return self._raise_used_as_quantity("==")
 
-    def __ne__(self, _other: object) -> Any:  # noqa: ANN401
-        return self._raise_used_as_quantity("!=")
-
-    def __add__(self, _other: Any) -> Any:  # noqa: ANN401
-        return self._raise_used_as_quantity("+")
-
-    __radd__ = __add__
-
-    def __sub__(self, _other: Any) -> Any:  # noqa: ANN401
-        return self._raise_used_as_quantity("-")
-
-    __rsub__ = __sub__
-
-    def __mul__(self, _other: Any) -> Any:  # noqa: ANN401
-        return self._raise_used_as_quantity("*")
-
-    __rmul__ = __mul__
-
-    def __truediv__(self, _other: Any) -> Any:  # noqa: ANN401
-        return self._raise_used_as_quantity("/")
-
-    __rtruediv__ = __truediv__
-
-    def __floordiv__(self, _other: Any) -> Any:  # noqa: ANN401
-        return self._raise_used_as_quantity("//")
-
-    __rfloordiv__ = __floordiv__
-
-    def __mod__(self, _other: Any) -> Any:  # noqa: ANN401
-        return self._raise_used_as_quantity("%")
-
-    __rmod__ = __mod__
-
-    def __pow__(self, _other: Any) -> Any:  # noqa: ANN401
-        return self._raise_used_as_quantity("**")
-
-    __rpow__ = __pow__
-
-    def __and__(self, _other: Any) -> Any:  # noqa: ANN401
-        return self._raise_used_as_quantity("&")
-
-    __rand__ = __and__
-
-    def __or__(self, _other: Any) -> Any:  # noqa: ANN401
-        return self._raise_used_as_quantity("|")
-
-    __ror__ = __or__
-
-    def __xor__(self, _other: Any) -> Any:  # noqa: ANN401
-        return self._raise_used_as_quantity("^")
-
-    __rxor__ = __xor__
-
-    def __invert__(self) -> Any:  # noqa: ANN401
-        return self._raise_used_as_quantity("~")
-
-    def __neg__(self) -> Any:  # noqa: ANN401
-        return self._raise_used_as_quantity("unary -")
-
-    def __pos__(self) -> Any:  # noqa: ANN401
-        return self._raise_used_as_quantity("unary +")
-
-    def __abs__(self) -> Any:  # noqa: ANN401
-        return self._raise_used_as_quantity("abs")
+for _dunder, _op in _STRUCTURED_VALUE_FORBIDDEN_OPS.items():
+    setattr(_DryRunStructuredValue, _dunder, _structured_value_forbidden_op(_op))
+del _dunder, _op
 
 
 class _DryRunSchedule:
@@ -2153,12 +2214,54 @@ def _cast_unit_dry_run(value: Any, unit: str | CompositeUnit) -> Any:  # noqa: A
     :class:`UnitDefinitionError`, which :func:`_verify_one_body` re-raises
     rather than misreporting as an un-evaluable body.
     """
-    token = coerce_unit_token(unit, where="A `cast_unit` call")
-    resolved = resolve_compositional_cast_unit(token, where="A `cast_unit` call")
+    token = coerce_unit_token(value=unit, where="A `cast_unit` call")
+    resolved = resolve_compositional_cast_unit(unit=token, where="A `cast_unit` call")
     quantity = UNIT_REGISTRY.Quantity(1.0, resolved)
     if isinstance(value, _DryRunQuantity):
         return value._wrap(quantity)  # noqa: SLF001
     return quantity
+
+
+def _time_conversion_shim(
+    from_pint: str, to_pint: str, *, is_flow: bool
+) -> Callable[[Any], Any]:
+    """Build a dry-run shim for one ``ttsim.unit_converters`` time converter.
+
+    A converter restates a value on a different time period by multiplying by a
+    whole number — a *dimensionless* factor pint cannot see — so the shim rebases
+    the period token instead: a duration converter (``m_to_y``) swaps the
+    numerator period (``MONTHS`` -> ``YEARS``), a flow converter
+    (``per_m_to_per_y``) the denominator flow period (``CURRENCY/month`` ->
+    ``CURRENCY/year``). A bare literal (no unit to rebase) flows through
+    unchanged; a value whose period does not match the converter produces a
+    mismatched unit that the declared-vs-inferred check then reports.
+    """
+    from_q = UNIT_REGISTRY.Quantity(1.0, from_pint)
+    to_q = UNIT_REGISTRY.Quantity(1.0, to_pint)
+
+    def shim(value: Any) -> Any:  # noqa: ANN401
+        if not isinstance(value, _DryRunQuantity):
+            return value
+        rebased = value.q * from_q / to_q if is_flow else value.q / from_q * to_q
+        return value._wrap(rebased)  # noqa: SLF001
+
+    return shim
+
+
+def _time_conversion_shims() -> dict[str, Any]:
+    """A dry-run shim for every ``<a>_to_<b>`` / ``per_<a>_to_per_<b>`` converter."""
+    shims: dict[str, Any] = {}
+    for from_id, from_pint in TIME_UNIT_ID_TO_PINT_NAME.items():
+        for to_id, to_pint in TIME_UNIT_ID_TO_PINT_NAME.items():
+            if from_id == to_id:
+                continue
+            shims[f"{from_id}_to_{to_id}"] = _time_conversion_shim(
+                from_pint=from_pint, to_pint=to_pint, is_flow=False
+            )
+            shims[f"per_{from_id}_to_per_{to_id}"] = _time_conversion_shim(
+                from_pint=from_pint, to_pint=to_pint, is_flow=True
+            )
+    return shims
 
 
 #: Module-level helpers swapped for unit-only shims in a dry-run body's scope.
@@ -2166,6 +2269,7 @@ _DRY_RUN_HELPER_SHIMS: Mapping[str, Any] = {
     "piecewise_polynomial": _piecewise_polynomial_dry_run,
     "join": _join_dry_run,
     "cast_unit": _cast_unit_dry_run,
+    **_time_conversion_shims(),
 }
 
 
@@ -2252,28 +2356,33 @@ def _arithmetic_misuse_message(
     qname: str,
     error: _UnitMixError
     | _StructuredValueUsedAsQuantityError
-    | pint.OffsetUnitCalculusError,
+    | pint.OffsetUnitCalculusError
+    | pint.DimensionalityError,
     detail: str,
 ) -> str:
     """Message for a body that combines quantities unsoundly under ``+``/``-``/order.
 
-    Dispatches the three ways the dry-run catches such a body: an explicit
+    Dispatches the ways the dry-run catches such a body: an explicit
     :class:`_UnitMixError` (non-equivalent units, a logical operator on a real
     quantity, a bare-literal threshold), a
     :class:`_StructuredValueUsedAsQuantityError` (an un-cast pluck off a
-    structured value used as a quantity), or a
-    :class:`pint.OffsetUnitCalculusError` raised by pint when a calendar point
-    is used outside its affine algebra.
+    structured value used as a quantity), or the pint error a calendar point
+    raises when used outside its affine algebra — an
+    :class:`pint.OffsetUnitCalculusError` (point + point, a scaled point) or a
+    :class:`pint.DimensionalityError` (point + a foreign dimension such as a
+    currency, ``geburtsjahr + income_m``). The latter two are genuine calendar
+    bugs, not un-checkable bodies, so they report as misuse rather than
+    demanding ``verify_units=False``.
     """
     if isinstance(error, _UnitMixError):
         return _unit_mix_error_message(qname=qname, mix=error, detail=detail)
     if isinstance(error, _StructuredValueUsedAsQuantityError):
         return _structured_pluck_message(qname=qname, error=error)
     return (
-        f"{qname}: combines calendar points unsoundly{detail} — two calendar "
-        f"points cannot be added (subtract them to get a duration) and a point "
-        f"cannot be scaled or mixed across calendar axes; shift a point only by "
-        f"a same-axis duration (GEP 10)."
+        f"{qname}: combines a calendar point unsoundly{detail} — a point cannot "
+        f"be added to another point (subtract them to get a duration), scaled, or "
+        f"combined with a non-duration quantity; shift a point only by a same-axis "
+        f"duration (GEP 10)."
     )
 
 
@@ -2345,8 +2454,8 @@ def _verify_one_body(
             # Truncating exploration must not pass silently: a wrong-unit branch
             # first reached past the cap would otherwise go unchecked.
             return _opt_out_required_error(
-                qname,
-                f"it explores more than {_MAX_PATHS} branch paths — too many to "
+                qname=qname,
+                reason=f"it explores more than {_MAX_PATHS} branch paths — too many to "
                 "check exhaustively",
             )
         paths += 1
@@ -2393,14 +2502,15 @@ def _run_one_path(
         result: Any = function(**kwargs)
     except _PathBudgetExceededError:
         return _opt_out_required_error(
-            qname,
-            f"it makes more than {_MAX_DECISIONS_PER_RUN} branch decisions "
+            qname=qname,
+            reason=f"it makes more than {_MAX_DECISIONS_PER_RUN} branch decisions "
             "in one run — a data-driven loop?",
         ), True
     except (
         _UnitMixError,
         _StructuredValueUsedAsQuantityError,
         pint.OffsetUnitCalculusError,
+        pint.DimensionalityError,
     ) as err:
         return _arithmetic_misuse_message(
             qname=qname, error=err, detail=explorer.branch_detail()
@@ -2411,8 +2521,8 @@ def _run_one_path(
         raise
     except Exception:  # noqa: BLE001
         return _opt_out_required_error(
-            qname,
-            "it uses an operation pint cannot evaluate symbolically — a "
+            qname=qname,
+            reason="it uses an operation pint cannot evaluate symbolically — a "
             "piecewise polynomial, a lookup table, `join`, or a raw `xnp` op",
         ), True
     return _inferred_result_error(
@@ -2460,8 +2570,8 @@ def _non_quantity_result_error(
             f"dataclass field or tag it with `cast_unit` at the pluck (GEP 10)."
         )
     return _opt_out_required_error(
-        qname,
-        "it returns a value the dry-run cannot unit-check — a dataclass, "
+        qname=qname,
+        reason="it returns a value the dry-run cannot unit-check — a dataclass, "
         "a tuple, or another non-scalar",
     )
 

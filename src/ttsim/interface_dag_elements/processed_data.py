@@ -49,7 +49,7 @@ def _canonicalize_input_dtype(
     """
     if isinstance(arr, pint.Quantity):
         arr = strip_input_quantity_at_boundary(
-            arr, run_currency=run_currency, column_label=column_label
+            quantity=arr, run_currency=run_currency, column_label=column_label
         )
     if isinstance(arr, pd.Series):
         return _canonicalize_series(arr=arr, xnp=xnp, column_label=column_label)

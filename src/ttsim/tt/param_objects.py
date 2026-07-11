@@ -81,10 +81,10 @@ def _coerce_declared_unit(
             key: _coerce_declared_unit(declared=sub, obj=obj)
             if isinstance(sub, dict)
             # Present leaves are tokens (``DIMENSIONLESS`` for a dimensionless leaf).
-            else coerce_unit_token(sub, where=f"{where} (unit of leaf {key!r})")
+            else coerce_unit_token(value=sub, where=f"{where} (unit of leaf {key!r})")
             for key, sub in declared.items()
         }
-    return coerce_unit_token(declared, where=where)
+    return coerce_unit_token(value=declared, where=where)
 
 
 @dataclass(frozen=True)

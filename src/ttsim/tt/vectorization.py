@@ -185,14 +185,17 @@ def recompile_with_logical_ops_as_calls(
     module_obj: Any,  # noqa: ANN401
     extra_globals: Mapping[str, Any] | None = None,
 ) -> Callable[..., Any]:
-    """Return a copy of ``func`` with ``and``/``or`` as ``{module}.logical_*`` calls.
+    """Return a copy of ``func`` with ``and``/``or``/``not`` as ``{module}.logical_*``
+    calls.
 
     Python ``and``/``or`` short-circuit through ``__bool__`` and yield one operand
-    whole, so they cannot combine two custom objects. The unit-check dry-run reuses
-    the array vectorizer's :func:`_boolop_to_call` rewrite, binding ``module`` to
-    ``module_obj`` (an ``xnp`` shim whose ``logical_*`` route through the
-    leveled-boolean combine) so author-written ``and``/``or`` are checked the way
-    they run. The numeric runtime is untouched.
+    whole, and ``not`` consumes ``__bool__`` and returns a plain ``bool``, so none
+    of them can combine or preserve a custom object. The unit-check dry-run reuses
+    the array vectorizer's :func:`_boolop_to_call` / :func:`_not_to_call` rewrites,
+    binding ``module`` to ``module_obj`` (an ``xnp`` shim whose ``logical_*`` route
+    through the leveled-boolean combine) so author-written ``and``/``or``/``not``
+    are checked the way they run — a ``not`` on a leveled boolean keeps its level,
+    exactly as ``~`` does. The numeric runtime is untouched.
 
     ``extra_globals`` rebinds module-level names in the recompiled body's scope —
     the dry-run uses it to swap ``piecewise_polynomial``/``join`` for unit-only
@@ -212,17 +215,27 @@ def recompile_with_logical_ops_as_calls(
     except (OSError, TypeError):
         return func
     has_boolop = any(isinstance(node, ast.BoolOp) for node in ast.walk(tree))
-    if not has_boolop and not extra_globals:
+    has_not = any(
+        isinstance(node, ast.UnaryOp) and isinstance(node.op, ast.Not)
+        for node in ast.walk(tree)
+    )
+    if not has_boolop and not has_not and not extra_globals:
         return func
 
-    if has_boolop:
+    if has_boolop or has_not:
 
-        class _BoolOpRewriter(ast.NodeTransformer):
+        class _LogicalOpRewriter(ast.NodeTransformer):
             def visit_BoolOp(self, node: ast.BoolOp) -> ast.Call:
                 self.generic_visit(node)
-                return _boolop_to_call(node, module=module)
+                return _boolop_to_call(node=node, module=module)
 
-        _BoolOpRewriter().visit(tree)
+            def visit_UnaryOp(self, node: ast.UnaryOp) -> ast.UnaryOp | ast.Call:
+                self.generic_visit(node)
+                if isinstance(node.op, ast.Not):
+                    return _not_to_call(node=node, module=module)
+                return node
+
+        _LogicalOpRewriter().visit(tree)
         ast.fix_missing_locations(tree)
     scope = dict(func.__globals__)  # ty: ignore[unresolved-attribute]
     if func.__closure__:  # ty: ignore[unresolved-attribute]

@@ -15,7 +15,6 @@ from ttsim.exceptions import (
     PolicyInputDefinitionError,
     UnitConsistencyError,
     UnitDefinitionError,
-    UnitInferenceError,
 )
 from ttsim.interface_dag_elements.automatically_added_functions import (
     create_agg_by_group_functions,
@@ -49,7 +48,6 @@ from ttsim.tt import (
 from ttsim.tt.units import (
     currency_family_root,
     grouping_level_count_unit,
-    infer_function_unit,
     is_calendar_point_unit,
     isolated_currency_registration,
     register_grouping_levels,
@@ -72,6 +70,11 @@ def _registered_levels():
 def _return_one_float() -> float:
     """Helper body for synthesising column functions in tests."""
     return 1.0
+
+
+def _return_true() -> bool:
+    """Helper body for synthesising boolean column functions in tests."""
+    return True
 
 
 # ----------------------------------------------------------------------------
@@ -120,7 +123,7 @@ _BASE_SPELLINGS = [
 
 @pytest.mark.parametrize("spelling", _BASE_SPELLINGS)
 def test_coerce_unit_token_round_trips_base_spellings(spelling):
-    token = coerce_unit_token(spelling, where="test")
+    token = coerce_unit_token(value=spelling, where="test")
     assert isinstance(token, CompositeUnit)
     assert str(token) == spelling
 
@@ -136,7 +139,7 @@ def test_coerce_unit_token_round_trips_base_spellings(spelling):
     ],
 )
 def test_coerce_unit_token_round_trips_compositional_spellings(spelling):
-    token = coerce_unit_token(spelling, where="test")
+    token = coerce_unit_token(value=spelling, where="test")
     assert isinstance(token, CompositeUnit)
     assert str(token) == spelling
 
@@ -146,7 +149,7 @@ def test_coerce_unit_token_rejects_none():
     # `coerce_unit_token` only through an internal bug, so the package claw
     # rejects it before the body runs.
     with pytest.raises(BeartypeCallHintViolation):
-        coerce_unit_token(None, where="test")  # ty: ignore[invalid-argument-type]
+        coerce_unit_token(value=None, where="test")  # ty: ignore[invalid-argument-type]
 
 
 @pytest.mark.parametrize(
@@ -165,7 +168,7 @@ def test_coerce_unit_token_rejects_none():
 )
 def test_coerce_unit_token_rejects_non_members(value):
     with pytest.raises(UnitDefinitionError, match="invalid unit declaration"):
-        coerce_unit_token(value, where="test")
+        coerce_unit_token(value=value, where="test")
 
 
 def test_compositional_flow_is_marked_by_a_period():
@@ -240,7 +243,7 @@ def test_mettsim_base_currency_registered():
 
 
 def test_register_relative_currency_bakes_correct_factor():
-    register_currency("SILVER_PENNY", definition="CASTAR / 4")
+    register_currency(name="SILVER_PENNY", definition="CASTAR / 4")
     factor = (
         UNIT_REGISTRY.Quantity(1.0, "SILVER_PENNY")
         / UNIT_REGISTRY.Quantity(1.0, "CASTAR")
@@ -250,22 +253,22 @@ def test_register_relative_currency_bakes_correct_factor():
 
 def test_register_currency_idempotent():
     # Re-registering with a consistent definition is a no-op, not an error.
-    register_currency("SILVER_PENNY", definition="CASTAR / 4")
+    register_currency(name="SILVER_PENNY", definition="CASTAR / 4")
 
 
 def test_register_currency_with_inconsistent_factor_fails():
     # Re-registering an existing currency with a *different* factor must fail
     # loudly rather than silently keep the original definition (GEP 10).
-    register_currency("SILVER_PENNY", definition="CASTAR / 4")
+    register_currency(name="SILVER_PENNY", definition="CASTAR / 4")
     with pytest.raises(UnitDefinitionError, match="must be consistent"):
-        register_currency("SILVER_PENNY", definition="CASTAR / 5")
+        register_currency(name="SILVER_PENNY", definition="CASTAR / 5")
 
 
 def test_second_base_currency_starts_a_new_family():
     # A second package may register its own base currency: the families
     # coexist in one process and convert only within themselves (GEP 10).
     with isolated_currency_registration():
-        register_currency("mithril_coin", base=True)
+        register_currency(name="mithril_coin", base=True)
         assert currency_family_root("mithril_coin") == "mithril_coin"
         assert currency_family_root("CASTAR") == "CASTAR"
         with pytest.raises(UnitDefinitionError, match="No exchange rate"):
@@ -276,7 +279,7 @@ def test_second_base_currency_starts_a_new_family():
 
 def test_register_currency_requires_exactly_one_of_base_or_definition():
     with pytest.raises(UnitDefinitionError, match="exactly one"):
-        register_currency("bad_coin", base=True, definition="CASTAR")
+        register_currency(name="bad_coin", base=True, definition="CASTAR")
     with pytest.raises(UnitDefinitionError, match="exactly one"):
         register_currency("bad_coin")
 
@@ -296,8 +299,8 @@ def test_register_currency_requires_exactly_one_of_base_or_definition():
     ],
 )
 def test_registered_currency_is_a_compositional_base(spelling, currency, is_flow):
-    register_currency("SILVER_PENNY", definition="CASTAR / 4")
-    token = coerce_unit_token(spelling, where="test")
+    register_currency(name="SILVER_PENNY", definition="CASTAR / 4")
+    token = coerce_unit_token(value=spelling, where="test")
     assert isinstance(token, CompositeUnit)
     assert str(token) == spelling
     assert token_source_currency(token) == currency
@@ -305,15 +308,15 @@ def test_registered_currency_is_a_compositional_base(spelling, currency, is_flow
 
 
 def test_coerce_currency_token_is_idempotent():
-    token = coerce_unit_token("CASTAR", where="test")
-    assert coerce_unit_token(token, where="test") is token
-    assert coerce_unit_token("CASTAR", where="test") == token
+    token = coerce_unit_token(value="CASTAR", where="test")
+    assert coerce_unit_token(value=token, where="test") is token
+    assert coerce_unit_token(value="CASTAR", where="test") == token
 
 
 def test_token_source_currency():
-    assert token_source_currency(coerce_unit_token("CASTAR_PER_MONTH", where="t")) == (
-        "CASTAR"
-    )
+    assert token_source_currency(
+        coerce_unit_token(value="CASTAR_PER_MONTH", where="t")
+    ) == ("CASTAR")
     assert token_source_currency(Unit.CURRENCY.PER_MONTH) is None
     assert token_source_currency(Unit.HECTARE) is None
     assert token_source_currency(None) is None
@@ -321,16 +324,16 @@ def test_token_source_currency():
 
 def test_unregistered_currency_spelling_is_rejected():
     with pytest.raises(UnitDefinitionError, match="invalid unit declaration"):
-        coerce_unit_token("MITHRIL", where="test")
+        coerce_unit_token(value="MITHRIL", where="test")
 
 
 def test_currency_agnostic_base_rejected_on_column_at_resolution():
     # Functions are currency-agnostic by design: a concrete currency base is
     # rejected when a column's compositional unit is resolved (GEP 10).
-    token = coerce_unit_token("CASTAR_PER_MONTH", where="test")
+    token = coerce_unit_token(value="CASTAR_PER_MONTH", where="test")
     with pytest.raises(UnitDefinitionError, match="currency-agnostic"):
         resolve_compositional_column_unit(
-            token, time_unit_id="m", grouping_level="person", where="A column"
+            unit=token, time_unit_id="m", grouping_level="person", where="A column"
         )
 
 
@@ -406,77 +409,6 @@ def test_duration_token_is_equivalent_to_the_plain_time_unit():
         left=resolve_compositional_unit(Unit.MONTHS),
         right=parse_unit("month"),
     )
-
-
-# ----------------------------------------------------------------------------
-# infer_function_unit (the dry-run)
-# ----------------------------------------------------------------------------
-
-
-def test_infer_multiplication_combines_units():
-    def revenue(price_per_area: float, area: float) -> float:
-        return price_per_area * area
-
-    inferred = infer_function_unit(
-        function=revenue,
-        input_units={"price_per_area": "CURRENCY / hectare", "area": "hectare"},
-    )
-    assert units_are_equivalent(left=inferred, right=parse_unit("CURRENCY"))
-
-
-def test_infer_raises_on_dimensional_clash():
-    def bad_sum(rent: float, price_per_area: float) -> float:
-        return rent + price_per_area
-
-    with pytest.raises(UnitInferenceError):
-        infer_function_unit(
-            function=bad_sum,
-            input_units={"rent": "CURRENCY", "price_per_area": "CURRENCY / hectare"},
-        )
-
-
-def test_infer_calendar_point_difference_is_a_duration():
-    # The motivating S1 pattern: subtracting two calendar years yields a
-    # duration in years, not a calendar year.
-    def age(policy_year: int, geburtsjahr: int) -> int:
-        return policy_year - geburtsjahr
-
-    inferred = infer_function_unit(
-        function=age,
-        input_units={"policy_year": "calendar_year", "geburtsjahr": "calendar_year"},
-    )
-    assert units_are_equivalent(
-        left=inferred, right=resolve_compositional_unit(Unit.YEARS)
-    )
-
-
-def test_infer_duration_added_to_calendar_point_is_a_calendar_point():
-    def retirement_year(geburtsjahr: int, statutory_age: int) -> int:
-        return geburtsjahr + statutory_age
-
-    inferred = infer_function_unit(
-        function=retirement_year,
-        input_units={
-            "geburtsjahr": "calendar_year",
-            "statutory_age": "delta_calendar_year",
-        },
-    )
-    assert units_are_equivalent(left=inferred, right=parse_unit("calendar_year"))
-
-
-def test_infer_raises_when_two_calendar_points_are_added():
-    # `point + point` is affine-invalid; pint refuses it and the dry-run reports.
-    def bad(policy_year: int, geburtsjahr: int) -> int:
-        return policy_year + geburtsjahr
-
-    with pytest.raises(UnitInferenceError):
-        infer_function_unit(
-            function=bad,
-            input_units={
-                "policy_year": "calendar_year",
-                "geburtsjahr": "calendar_year",
-            },
-        )
 
 
 # ----------------------------------------------------------------------------
@@ -666,6 +598,31 @@ def test_unit_for_aggregation_preserves_unannotated_source():
     )
 
 
+def test_unit_for_aggregation_sum_over_boolean_is_a_head_count():
+    # A SUM over a boolean counts the persons its flag is true for, so the minted
+    # token is a head count's — the same one a COUNT mints (GEP 10) — not a leveled
+    # DIMENSIONLESS. This keeps the minter in step with the resolver, which derives
+    # the SUM-over-boolean as a head count too, so the build does not reject the
+    # framework's own auto-assigned token.
+    assert (
+        unit_for_aggregation(
+            source_unit=Unit.DIMENSIONLESS,
+            agg_type=AggType.SUM,
+            source_is_boolean=True,
+        )
+        is Unit.PERSON_COUNT
+    )
+    assert (
+        unit_for_aggregation(
+            source_unit=Unit.DIMENSIONLESS,
+            agg_type=AggType.SUM,
+            target_level="fam",
+            source_is_boolean=True,
+        )
+        == Unit.PERSON_COUNT.PER_FAM
+    )
+
+
 def test_time_conversion_variants_rebased_period():
     variants = create_time_conversion_functions(
         qname_policy_environment={
@@ -705,34 +662,31 @@ def test_auto_aggregation_carries_the_target_level():
     )
 
 
-# ----------------------------------------------------------------------------
-# #119: edge-consistency / per-function body check (data-independent)
-# ----------------------------------------------------------------------------
-
-
-def test_bare_literal_in_mixed_unit_arithmetic_fails():
-    """A bare literal added to a unit-carrying value must be tagged (GEP 10)."""
-
-    def regelaltersgrenze(base: float) -> float:
-        return base + 1  # untagged literal added to a [time] quantity
-
-    with pytest.raises(UnitInferenceError):
-        infer_function_unit(function=regelaltersgrenze, input_units={"base": "year"})
-
-
-def test_multiplicative_literal_needs_no_tag():
-    """A purely multiplicative literal preserves the unit and needs no tag."""
-
-    def halved(betrag: float) -> float:
-        return betrag * 0.5
-
-    inferred = infer_function_unit(function=halved, input_units={"betrag": "CURRENCY"})
-    assert units_are_equivalent(left=inferred, right=parse_unit("CURRENCY"))
+def test_auto_aggregation_over_a_boolean_source_mints_a_head_count():
+    # Requesting the group aggregate of a boolean (e.g. `is_adult_fam`) auto-generates
+    # a SUM node. Over a boolean that SUM is a head count, so the framework mints
+    # `PERSON_COUNT_PER_FAM`, matching what the resolver derives — the regression
+    # that used to fail the build on any boolean group aggregate (GEP 10).
+    aggs = create_agg_by_group_functions(
+        column_functions={
+            "is_adult": policy_function(leaf_name="is_adult", unit=Unit.DIMENSIONLESS)(
+                _return_true
+            ),
+        },
+        qname_policy_environment={},
+        input_columns=set(),
+        tt_targets={"is_adult_fam"},
+        grouping_levels=("fam",),
+    )
+    assert (
+        aggs["is_adult_fam"].unit  # ty: ignore[unresolved-attribute]
+        == Unit.PERSON_COUNT.PER_FAM
+    )
 
 
 def test_concrete_currency_per_square_meter_base():
     # A concrete currency divided by an area is a valid compositional unit.
-    token = coerce_unit_token("CASTAR_PER_SQUARE_METER_PER_MONTH", where="test")
+    token = coerce_unit_token(value="CASTAR_PER_SQUARE_METER_PER_MONTH", where="test")
     assert isinstance(token, CompositeUnit)
     assert token_source_currency(token) == "CASTAR"
     assert token.base == "CASTAR"
@@ -747,7 +701,9 @@ def test_token_is_agnostic_currency():
     assert not token_is_agnostic_currency(Unit.HECTARE)
     assert not token_is_agnostic_currency(Unit.DIMENSIONLESS.PER_YEAR)
     assert not token_is_agnostic_currency(None)
-    assert not token_is_agnostic_currency(coerce_unit_token("CASTAR", where="test"))
+    assert not token_is_agnostic_currency(
+        coerce_unit_token(value="CASTAR", where="test")
+    )
 
 
 # ----------------------------------------------------------------------------
@@ -784,7 +740,7 @@ def test_strip_at_boundary_converts_to_run_currency():
     # silver_penny tag, castar run -> divide by four.
     tagged = UNIT_REGISTRY.Quantity(np.array([4.0]), "SILVER_PENNY")
     bare = strip_input_quantity_at_boundary(
-        tagged, run_currency="CASTAR", column_label="wealth"
+        quantity=tagged, run_currency="CASTAR", column_label="wealth"
     )
     assert not isinstance(bare, UNIT_REGISTRY.Quantity)
     assert bare == pytest.approx([1.0])
@@ -795,7 +751,7 @@ def test_strip_at_boundary_converts_flow_currency_preserving_period():
     # tag's /month matches the column's `_m` suffix.
     tagged = UNIT_REGISTRY.Quantity(np.array([4.0]), "SILVER_PENNY / month")
     bare = strip_input_quantity_at_boundary(
-        tagged, run_currency="CASTAR", column_label="income_m"
+        quantity=tagged, run_currency="CASTAR", column_label="income_m"
     )
     assert bare == pytest.approx([1.0])
 
@@ -805,7 +761,7 @@ def test_strip_at_boundary_fails_on_missing_period():
     tagged = UNIT_REGISTRY.Quantity(np.array([4.0]), "SILVER_PENNY")
     with pytest.raises(UnitConsistencyError, match="must match the column's suffix"):
         strip_input_quantity_at_boundary(
-            tagged, run_currency="CASTAR", column_label="income_m"
+            quantity=tagged, run_currency="CASTAR", column_label="income_m"
         )
 
 
@@ -814,7 +770,7 @@ def test_strip_at_boundary_fails_on_wrong_period():
     tagged = UNIT_REGISTRY.Quantity(np.array([4.0]), "SILVER_PENNY / year")
     with pytest.raises(UnitConsistencyError, match="month"):
         strip_input_quantity_at_boundary(
-            tagged, run_currency="CASTAR", column_label="income_m"
+            quantity=tagged, run_currency="CASTAR", column_label="income_m"
         )
 
 
@@ -823,7 +779,7 @@ def test_strip_at_boundary_fails_on_period_for_unsuffixed_column():
     tagged = UNIT_REGISTRY.Quantity(np.array([4.0]), "SILVER_PENNY / month")
     with pytest.raises(UnitConsistencyError, match="no time suffix"):
         strip_input_quantity_at_boundary(
-            tagged, run_currency="CASTAR", column_label="wealth"
+            quantity=tagged, run_currency="CASTAR", column_label="wealth"
         )
 
 
@@ -832,7 +788,7 @@ def test_strip_at_boundary_does_not_flag_numerator_time_unit():
     # unsuffixed column is fine. Nothing to convert (no currency).
     tagged = UNIT_REGISTRY.Quantity(np.array([30.0]), "year")
     bare = strip_input_quantity_at_boundary(
-        tagged, run_currency="CASTAR", column_label="age"
+        quantity=tagged, run_currency="CASTAR", column_label="age"
     )
     assert bare == pytest.approx([30.0])
 
@@ -843,14 +799,14 @@ def test_strip_at_boundary_keys_period_off_denominator_for_hours_flow():
     # matches the `_w` suffix; there is no currency, so the value passes through.
     tagged = UNIT_REGISTRY.Quantity(np.array([40.0]), "working_hour / week")
     bare = strip_input_quantity_at_boundary(
-        tagged, run_currency="CASTAR", column_label="arbeitsstunden_w"
+        quantity=tagged, run_currency="CASTAR", column_label="arbeitsstunden_w"
     )
     assert bare == pytest.approx([40.0])
 
     # A wrong period is still caught (month != week).
     with pytest.raises(UnitConsistencyError, match="week"):
         strip_input_quantity_at_boundary(
-            UNIT_REGISTRY.Quantity(np.array([40.0]), "working_hour / month"),
+            quantity=UNIT_REGISTRY.Quantity(np.array([40.0]), "working_hour / month"),
             run_currency="CASTAR",
             column_label="arbeitsstunden_w",
         )
@@ -858,7 +814,7 @@ def test_strip_at_boundary_keys_period_off_denominator_for_hours_flow():
 
 def test_strip_at_boundary_strips_matching_currency():
     tagged = UNIT_REGISTRY.Quantity(np.array([3.0]), "CASTAR")
-    bare = strip_input_quantity_at_boundary(tagged, run_currency="CASTAR")
+    bare = strip_input_quantity_at_boundary(quantity=tagged, run_currency="CASTAR")
     assert not isinstance(bare, UNIT_REGISTRY.Quantity)
     assert list(bare) == [3.0]
 
@@ -866,13 +822,13 @@ def test_strip_at_boundary_strips_matching_currency():
 def test_strip_at_boundary_passes_non_currency_tag_through():
     # No currency component -> nothing to convert.
     tagged = UNIT_REGISTRY.Quantity(np.array([5.0]), "working_hour")
-    bare = strip_input_quantity_at_boundary(tagged, run_currency="CASTAR")
+    bare = strip_input_quantity_at_boundary(quantity=tagged, run_currency="CASTAR")
     assert bare == pytest.approx([5.0])
 
 
 def test_strip_at_boundary_without_run_currency_just_strips():
     tagged = UNIT_REGISTRY.Quantity(np.array([3.0]), "SILVER_PENNY")
-    bare = strip_input_quantity_at_boundary(tagged, run_currency=None)
+    bare = strip_input_quantity_at_boundary(quantity=tagged, run_currency=None)
     assert list(bare) == [3.0]
 
 
@@ -961,11 +917,9 @@ def test_builder_rejects_non_canonical_order():
         _ = Unit.CURRENCY.PER_MONTH.PER_YEAR
 
 
-def test_is_flow_and_carries_level_properties():
+def test_is_flow_property():
     assert Unit.CURRENCY.PER_MONTH.is_flow
     assert not parse_compositional_unit("CURRENCY").is_flow
-    assert Unit.CURRENCY.PER_BG.carries_level
-    assert not Unit.CURRENCY.PER_MONTH.carries_level
 
 
 @pytest.mark.parametrize(
@@ -1039,39 +993,6 @@ def test_bare_time_hour_is_no_longer_an_admissible_token():
         parse_unit("working_hour / hour")
 
 
-def test_adding_working_hours_to_a_share_is_caught():
-    def total(hours: float, share: float) -> float:
-        return hours + share
-
-    with pytest.raises(UnitInferenceError):
-        infer_function_unit(
-            function=total,
-            input_units={
-                "hours": resolve_compositional_unit(Unit.HOURS.PER_WEEK),
-                "share": UNIT_REGISTRY.dimensionless,
-            },
-        )
-
-
-def test_wage_per_working_hour_times_hours_is_a_currency_flow():
-    # A wage per working hour is `CURRENCY / working_hour`; multiplying it by
-    # working hours per month cancels the `[hours]` and yields `CURRENCY / month`.
-    def income(wage: float, hours_m: float) -> float:
-        return wage * hours_m
-
-    inferred = infer_function_unit(
-        function=income,
-        input_units={
-            # A per-working-hour wage: `CURRENCY / working_hour`. The `[hours]`
-            # dimension has no compositional period denominator, so this internal
-            # pint surface is built directly (GEP 10).
-            "wage": "CURRENCY / working_hour",
-            "hours_m": resolve_compositional_unit(Unit.HOURS.PER_MONTH),
-        },
-    )
-    assert units_are_equivalent(left=inferred, right=parse_unit("CURRENCY / month"))
-
-
 def test_hours_per_week_rebases_period_only():
     # The one conversion working hours admit: re-basing the [time] period
     # (week -> month) leaves the [hours] numerator untouched.
@@ -1106,24 +1027,26 @@ def test_cast_target_resolves_like_a_column_declaration():
     # The cast states a unit in the declaration vocabulary: the person leaf is
     # implied for a level-carrying base, an intensive base stays bare.
     assert units_are_equivalent(
-        left=resolve_compositional_cast_unit(Unit.CURRENCY.PER_MONTH, where="test"),
+        left=resolve_compositional_cast_unit(
+            unit=Unit.CURRENCY.PER_MONTH, where="test"
+        ),
         right=resolve_compositional_column_unit(
-            Unit.CURRENCY.PER_MONTH,
+            unit=Unit.CURRENCY.PER_MONTH,
             time_unit_id="m",
             grouping_level="person",
             where="test",
         ),
     )
     assert units_are_equivalent(
-        left=resolve_compositional_cast_unit(Unit.MONTHS, where="test"),
+        left=resolve_compositional_cast_unit(unit=Unit.MONTHS, where="test"),
         right=resolve_compositional_unit(Unit.MONTHS),
     )
 
 
 def test_cast_target_must_be_currency_agnostic():
-    token = coerce_unit_token("CASTAR_PER_MONTH", where="test")
+    token = coerce_unit_token(value="CASTAR_PER_MONTH", where="test")
     with pytest.raises(UnitDefinitionError, match="currency-agnostic"):
-        resolve_compositional_cast_unit(token, where="test")
+        resolve_compositional_cast_unit(unit=token, where="test")
 
 
 def test_area_denominator_suppresses_the_implied_person_leaf():
@@ -1133,7 +1056,7 @@ def test_area_denominator_suppresses_the_implied_person_leaf():
     expected = parse_unit("CURRENCY / meter ** 2 / month")
     assert units_are_equivalent(
         left=resolve_compositional_column_unit(
-            Unit.CURRENCY.PER_SQUARE_METER.PER_MONTH,
+            unit=Unit.CURRENCY.PER_SQUARE_METER.PER_MONTH,
             time_unit_id="m",
             grouping_level="person",
             where="test",
@@ -1142,7 +1065,9 @@ def test_area_denominator_suppresses_the_implied_person_leaf():
     )
     assert units_are_equivalent(
         left=resolve_compositional_param_unit(
-            coerce_unit_token("CASTAR_PER_SQUARE_METER_PER_MONTH", where="test"),
+            unit=coerce_unit_token(
+                value="CASTAR_PER_SQUARE_METER_PER_MONTH", where="test"
+            ),
             where="test",
         ),
         right=expected,
@@ -1154,7 +1079,7 @@ def test_bare_area_base_still_carries_the_person_leaf():
     # SQUARE_METER base takes the implied person leaf as any owned amount does.
     assert units_are_equivalent(
         left=resolve_compositional_column_unit(
-            Unit.SQUARE_METER,
+            unit=Unit.SQUARE_METER,
             time_unit_id=None,
             grouping_level="person",
             where="test",

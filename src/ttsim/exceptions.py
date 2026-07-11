@@ -77,14 +77,6 @@ class UnitDefinitionError(TTSIMError):
     """
 
 
-class UnitInferenceError(TTSIMError):
-    """Raised when the build-time unit dry-run of a function body fails.
-
-    Includes a dimensionally invalid operation inside the body (e.g. adding a
-    currency to a currency-per-area).
-    """
-
-
 class UnitConsistencyError(TTSIMError):
     """Raised when a declared unit disagrees with the inferred or producer unit.
 
@@ -112,5 +104,4 @@ __all__ = [
     "TTTargetsError",
     "UnitConsistencyError",
     "UnitDefinitionError",
-    "UnitInferenceError",
 ]

@@ -75,19 +75,17 @@ def qname() -> QNameData:
 def tree_with_unit_annotations() -> NestedData:
     """The input data as a nested dict of :class:`UnitAnnotatedColumn` leaves.
 
-    Like :func:`tree`, but every leaf is a
-    ``UnitAnnotatedColumn(values=…, unit=Unit.…)`` carrying the column's unit (a
-    dimensionless column — an id, a boolean — is tagged
-    ``unit=Unit.DIMENSIONLESS``). As for a parameter, a currency column must name
-    a **concrete** currency (``Unit.EUR``), and the tag's grouping level must
-    equal the column's *declared* level — a group-owned column spells it
-    (``Unit.EUR.PER_MONTH.PER_BG``), a person property is tagged without one,
-    even at a group suffix. Selecting this node opts into full-coverage boundary
-    unit validation: each tag's currency is converted to the run currency, its
-    period is screened against the name suffix and its level against the
-    declared level, and ``fail_if__input_units_are_inconsistent`` rejects any
-    tag whose measurement disagrees with the column's declared unit. Use bare
-    :func:`tree` for untagged data.
+    Like :func:`tree`, but each leaf tags its column with a concrete unit, opting
+    into boundary unit validation against the DAG (currency converted, tag checked
+    against the declared unit). Use bare :func:`tree` for untagged data.
+
+    Example::
+
+        {
+            "wage_m": UnitAnnotatedColumn(values, unit=Unit.EUR.PER_MONTH),
+            "rent_m_bg": UnitAnnotatedColumn(values, unit=Unit.EUR.PER_MONTH.PER_BG),
+            "p_id": UnitAnnotatedColumn(values, unit=Unit.DIMENSIONLESS),
+        }
     """
 
 
@@ -204,14 +202,10 @@ def flat_from_tree_with_unit_annotations(
     currency: str | None,
 ) -> FlatData:
     """The input data as a flat dictionary of arrays."""
-    # Every leaf is a UnitAnnotatedColumn (fail_if__not_all_input_leaves_are_unit_
-    # annotated_columns runs first and rejects bare leaves). Each is resolved to
-    # its concrete pint unit and stripped at the boundary: the currency is
-    # converted to the run currency and the period is screened against the suffix.
     flat = dt.flatten_to_tree_paths(tree_with_unit_annotations)
     return {
         path: strip_input_quantity_at_boundary(
-            UNIT_REGISTRY.Quantity(col.values, input_strip_unit(col.unit)),
+            quantity=UNIT_REGISTRY.Quantity(col.values, input_strip_unit(col.unit)),
             run_currency=currency,
             column_label=dt.qname_from_tree_path(path),
         )
@@ -226,18 +220,17 @@ def flat_from_tree_with_unit_annotations(
 def units_from_tree_with_unit_annotations(
     tree_with_unit_annotations: NestedData,
 ) -> dict[str, pint.Unit]:
-    """Each input column's measurement unit (agnostic, level-free), by qname.
+    """Each input column's resolved (agnostic) tag, with its grouping level, by qname.
 
     Resolved off every :class:`UnitAnnotatedColumn`'s tag so
-    ``fail_if__input_units_are_inconsistent`` can compare it — on the measurement
-    axis, currency / period / level factored out — against the column's declared
-    unit. The level a tag spells is screened separately, against the column's
-    declared level, by ``fail_if__input_levels_disagree_with_declaration``.
+    ``fail_if__input_units_are_inconsistent`` can compare it against the column's
+    declared unit on all three axes — currency presence, grouping level, and the
+    residual measurement.
     """
     flat = dt.flatten_to_tree_paths(tree_with_unit_annotations)
     return {
         dt.qname_from_tree_path(path): resolve_compositional_unit(
-            col.unit, with_level=False
+            unit=col.unit, with_level=True
         )
         for path, col in flat.items()
     }

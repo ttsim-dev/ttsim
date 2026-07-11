@@ -16,7 +16,6 @@ import pytest
 from ttsim.exceptions import UnitConsistencyError, UnitDefinitionError
 from ttsim.interface_dag_elements.fail_if import (
     input_currency_is_not_concrete,
-    input_levels_disagree_with_declaration,
 )
 from ttsim.interface_dag_elements.input_data import (
     flat_from_tree_with_unit_annotations,
@@ -138,14 +137,14 @@ def test_input_level_must_match_declared():
     # A `_hh` column declares the hh level; a person-leaf (level-less) tag contradicts
     # it. Compared against the declared resolved unit, not the name suffix directly.
     register_grouping_levels(["hh"])
-    with pytest.raises(UnitConsistencyError, match="disagrees with the column"):
-        input_levels_disagree_with_declaration(
-            input_data__tree_with_unit_annotations={
-                "miete_m_hh": UnitAnnotatedColumn(
-                    values=numpy.array([1.0]), unit=Unit.CURRENCY.PER_MONTH
+    with pytest.raises(UnitConsistencyError, match="level"):
+        fail_if_input_units_are_inconsistent(
+            input_units={
+                "miete_m_hh": UNIT_REGISTRY.parse_units(
+                    "CURRENCY / month / grouping_level_person"
                 )
             },
-            unit_checks__resolved_units={
+            resolved_units={
                 "miete_m_hh": UNIT_REGISTRY.parse_units(
                     "CURRENCY / month / grouping_level_hh"
                 )
@@ -155,16 +154,16 @@ def test_input_level_must_match_declared():
 
 def test_input_level_matching_declared_passes():
     register_grouping_levels(["hh"])
-    input_levels_disagree_with_declaration(
-        input_data__tree_with_unit_annotations={
-            "miete_m_hh": UnitAnnotatedColumn(
-                values=numpy.array([1.0]), unit=Unit.CURRENCY.PER_MONTH.PER_LEVEL("hh")
+    fail_if_input_units_are_inconsistent(
+        input_units={
+            "miete_m_hh": UNIT_REGISTRY.parse_units(
+                "CURRENCY / month / grouping_level_hh"
             ),
-            "wage_m": UnitAnnotatedColumn(
-                values=numpy.array([1.0]), unit=Unit.CURRENCY.PER_MONTH
+            "wage_m": UNIT_REGISTRY.parse_units(
+                "CURRENCY / month / grouping_level_person"
             ),
         },
-        unit_checks__resolved_units={
+        resolved_units={
             "miete_m_hh": UNIT_REGISTRY.parse_units(
                 "CURRENCY / month / grouping_level_hh"
             ),
@@ -178,15 +177,9 @@ def test_input_level_matching_declared_passes():
 def test_input_share_at_group_suffix_stays_level_less():
     # A group suffix must not force a level onto a level-less quantity.
     register_grouping_levels(["hh"])
-    input_levels_disagree_with_declaration(
-        input_data__tree_with_unit_annotations={
-            "rate_hh": UnitAnnotatedColumn(
-                values=numpy.array([0.5]), unit=Unit.DIMENSIONLESS
-            )
-        },
-        unit_checks__resolved_units={
-            "rate_hh": UNIT_REGISTRY.parse_units("dimensionless")
-        },
+    fail_if_input_units_are_inconsistent(
+        input_units={"rate_hh": UNIT_REGISTRY.parse_units("dimensionless")},
+        resolved_units={"rate_hh": UNIT_REGISTRY.parse_units("dimensionless")},
     )
 
 
@@ -241,6 +234,30 @@ def test_input_units_period_mismatch_is_left_to_the_suffix_guard():
         input_units={"wage_m": UNIT_REGISTRY.parse_units("CURRENCY / year")},
         resolved_units=resolved,
     )
+
+
+def test_input_units_currency_tag_on_non_currency_column_raises():
+    # A currency tag on a non-currency (dimensionless) column: dividing currency
+    # out of both sides used to leave equal residuals and pass, while the boundary
+    # would silently rescale the data by the currency factor on a non-base run.
+    # The currency-presence mismatch is now rejected (defect #3, GEP 10).
+    resolved = {"flag": UNIT_REGISTRY.parse_units("")}
+    with pytest.raises(UnitConsistencyError, match="one carries a currency"):
+        fail_if_input_units_are_inconsistent(
+            input_units={"flag": UNIT_REGISTRY.parse_units("CURRENCY")},
+            resolved_units=resolved,
+        )
+
+
+def test_input_units_non_currency_tag_on_currency_column_raises():
+    # The converse: a dimensionless tag on a declared-currency column would skip
+    # the currency conversion the column needs (defect #3, GEP 10).
+    resolved = {"wage": UNIT_REGISTRY.parse_units("CURRENCY")}
+    with pytest.raises(UnitConsistencyError, match="one carries a currency"):
+        fail_if_input_units_are_inconsistent(
+            input_units={"wage": UNIT_REGISTRY.parse_units("")},
+            resolved_units=resolved,
+        )
 
 
 def test_input_units_skips_columns_without_a_scalar_declared_unit():

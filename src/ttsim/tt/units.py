@@ -6,8 +6,9 @@ machinery that performs the check.
 
 pint never wraps a live array: a :class:`pint.Quantity` is not a JAX pytree and
 does not trace under ``jit``. pint is used only at build time — to run the
-dry-run dimensionality check (:func:`infer_function_unit`) and to source time-
-and currency-conversion factors baked into the numeric workers. The runtime path
+dry-run dimensionality check (in
+:mod:`ttsim.interface_dag_elements.unit_checks`) and to source time- and
+currency-conversion factors baked into the numeric workers. The runtime path
 stays pure arrays, single currency, JAX-safe.
 
 Every declaration is a fully-spelled :class:`CompositeUnit`: a base optionally
@@ -28,7 +29,7 @@ from __future__ import annotations
 
 import math
 import re
-from collections.abc import Callable, Iterable, Iterator, Mapping
+from collections.abc import Iterable, Iterator, Mapping
 from contextlib import contextmanager
 from dataclasses import dataclass, replace
 from typing import TYPE_CHECKING, Any, TypeVar
@@ -39,19 +40,23 @@ from pint.util import to_units_container
 from ttsim.exceptions import (
     UnitConsistencyError,
     UnitDefinitionError,
-    UnitInferenceError,
 )
 from ttsim.tt.aggregation import AggType
 
 #: Maps a GEP-1 time-unit suffix id (``_y``/``_q``/``_m``/``_w``/``_d``) to the
 #: pint unit naming its period.
-TIME_UNIT_ID_TO_PINT_NAME = {
-    "y": "year",
-    "q": "quarter_year",
-    "m": "month",
-    "w": "week",
-    "d": "day",
-}
+#: The GEP-1 periods, the single source of truth from which the directional lookups
+#: below derive: (name-suffix id, compositional period token, pint unit name).
+_PERIODS: tuple[tuple[str, str, str], ...] = (
+    ("y", "YEAR", "year"),
+    ("q", "QUARTER", "quarter_year"),
+    ("m", "MONTH", "month"),
+    ("w", "WEEK", "week"),
+    ("d", "DAY", "day"),
+)
+TIME_UNIT_ID_TO_PINT_NAME = {suffix_id: pint for suffix_id, _, pint in _PERIODS}
+TIME_UNIT_ID_TO_PERIOD_TOKEN = {suffix_id: token for suffix_id, token, _ in _PERIODS}
+_PERIOD_TOKEN_TO_PINT = {token: pint for _, token, pint in _PERIODS}
 
 #: Matches a trailing GEP-1 time-unit suffix (``…_m``) on a column's qualified
 #: name, naming the column's flow period. Used at the input boundary to check a
@@ -83,14 +88,6 @@ PERSON_LEVEL = "person"
 _PER = "_PER_"
 
 #: The closed *period* denominators and the pint unit each names.
-_PERIOD_TOKEN_TO_PINT: dict[str, str] = {
-    "MONTH": "month",
-    "YEAR": "year",
-    "QUARTER": "quarter_year",
-    "WEEK": "week",
-    "DAY": "day",
-}
-
 #: The closed *area* denominators (physical) and the pint unit each names.
 _AREA_TOKEN_TO_PINT: dict[str, str] = {
     "SQUARE_METER": "meter ** 2",
@@ -160,11 +157,6 @@ class CompositeUnit:
     def is_flow(self) -> bool:
         """Whether this unit is a flow — i.e. has a period denominator."""
         return self.period is not None
-
-    @property
-    def carries_level(self) -> bool:
-        """Whether this unit carries a grouping-level denominator."""
-        return self.level is not None
 
     def _with_area(self, area: str) -> CompositeUnit:
         if self.area is not None or self.period is not None or self.level is not None:
@@ -293,16 +285,6 @@ def parse_compositional_unit(spelling: str) -> CompositeUnit:
     return unit
 
 
-#: Maps a GEP-1 time-unit suffix id to the compositional *period* token, so a
-#: column's spelled period can be checked against its name suffix.
-TIME_UNIT_ID_TO_PERIOD_TOKEN: dict[str, str] = {
-    "y": "YEAR",
-    "q": "QUARTER",
-    "m": "MONTH",
-    "w": "WEEK",
-    "d": "DAY",
-}
-
 #: Compositional bases that carry a grouping level by default (currency is added
 #: separately); every other base is level-less. Booleans also carry a level but are
 #: dimensionless, so they ride the ``is_boolean`` flag rather than appear here. See
@@ -312,7 +294,7 @@ _LEVEL_CARRYING_BASES: frozenset[str] = frozenset(
 )
 
 
-def composite_base_is_level_carrying(base: str) -> bool:
+def base_is_level_carrying(base: str) -> bool:
     """Whether a compositional base carries a grouping level by default."""
     return _is_currency_base(base) or base in _LEVEL_CARRYING_BASES
 
@@ -347,11 +329,11 @@ def resolve_compositional_unit(
         )
     if unit.area is not None:
         resolved = _divide_by_period(
-            resolved, period_pint_name=_AREA_TOKEN_TO_PINT[unit.area]
+            non_time_unit=resolved, period_pint_name=_AREA_TOKEN_TO_PINT[unit.area]
         )
     if unit.period is not None:
         resolved = _divide_by_period(
-            resolved, period_pint_name=_PERIOD_TOKEN_TO_PINT[unit.period]
+            non_time_unit=resolved, period_pint_name=_PERIOD_TOKEN_TO_PINT[unit.period]
         )
     if with_level and unit.level is not None:
         resolved = divide_by_grouping_level(unit=resolved, level=unit.level.lower())
@@ -377,9 +359,7 @@ def _attach_implied_person_leaf(
     """
     if unit.level is not None:
         return resolved
-    if is_boolean or (
-        composite_base_is_level_carrying(unit.base) and unit.area is None
-    ):
+    if is_boolean or (base_is_level_carrying(unit.base) and unit.area is None):
         return divide_by_grouping_level(unit=resolved, level=PERSON_LEVEL)
     return resolved
 
@@ -430,14 +410,14 @@ def resolve_compositional_column_unit(
             f"aggregation suffix implies {grouping_level.upper()!r}; a spelled "
             f"group level must not contradict the suffix (GEP 10)."
         )
-    resolved = resolve_compositional_unit(unit, with_level=True)
-    return _attach_implied_person_leaf(resolved, unit, is_boolean=is_boolean)
+    resolved = resolve_compositional_unit(unit=unit, with_level=True)
+    return _attach_implied_person_leaf(
+        resolved=resolved, unit=unit, is_boolean=is_boolean
+    )
 
 
-def composite_with_rebased_period(
-    unit: CompositeUnit, time_unit_id: str
-) -> CompositeUnit:
-    """Re-base a flow compositional unit to a new period.
+def unit_with_rebased_period(unit: CompositeUnit, time_unit_id: str) -> CompositeUnit:
+    """Re-base a flow unit to a new period.
 
     A time-conversion variant of a flow (``betrag_m`` → ``betrag_y``) carries the
     same quantity per a *different* period, so only the period denominator
@@ -458,9 +438,8 @@ def resolve_compositional_param_unit(
     """Resolve a parameter's compositional unit.
 
     A parameter spells its period and any *group* level (it has no name suffix to
-    read them off), but — exactly as for a column — the **person leaf is implied,
-    never spelled**: a level-carrying base with no spelled group level is at the
-    individual level. So ``SILVER_PENNY_PER_MONTH`` is a per-person amount,
+    read them off); an omitted group level is the individual level, exactly as for
+    a column. So ``SILVER_PENNY_PER_MONTH`` is a per-person amount,
     ``SILVER_PENNY_PER_FAM`` a per-family one, and a level-less base
     (``DIMENSIONLESS``, ``YEARS``) stays level-less. A concrete-currency base is
     allowed — parameters pin the currency their numbers are written in. A scalar
@@ -478,62 +457,44 @@ def resolve_compositional_param_unit(
                 f"{where}: the unit spells period {unit.period!r} but the name's "
                 f"time suffix implies {expected_period!r}; they must agree (GEP 10)."
             )
-    resolved = resolve_compositional_unit(unit, with_level=True)
-    return _attach_implied_person_leaf(resolved, unit)
+    resolved = resolve_compositional_unit(unit=unit, with_level=True)
+    return _attach_implied_person_leaf(resolved=resolved, unit=unit)
 
 
-def resolve_compositional_cast_unit(
-    unit: CompositeUnit,
-    *,
-    where: str,
+def _resolve_agnostic_body_unit(
+    unit: CompositeUnit, *, where: str, what: str
 ) -> pint.Unit:
-    """Resolve the target unit of a :func:`cast_unit` call inside a body.
+    """Resolve a code-side compositional unit with no name to validate against.
 
-    A cast states a full unit in the declaration vocabulary but has no name to
-    validate suffixes against: the spelled period and group level stand as
-    given. Exactly as for a column declaration, the base must stay
-    currency-agnostic — bodies compute in the run currency — and the person
-    leaf is implied, never spelled.
+    Shared by the :func:`cast_unit` target and a parameter dataclass field
+    annotation: both state a full unit whose spelled period and group level stand
+    as given, both must stay currency-agnostic (the concrete denomination lives in
+    the parameter YAML), and both resolve like a column declaration.
 
     Raises:
         UnitDefinitionError: If the base pins a concrete currency.
     """
     if token_source_currency(unit) is not None:
         raise UnitDefinitionError(
-            f"{where}: a cast inside a body pins the concrete currency "
-            f"{unit.base!r}; bodies are currency-agnostic and must use "
-            f"{CURRENCY_TOKEN} (GEP 10)."
+            f"{where}: {what} pins the concrete currency {unit.base!r}; code is "
+            f"currency-agnostic and must use {CURRENCY_TOKEN} (GEP 10)."
         )
-    resolved = resolve_compositional_unit(unit, with_level=True)
-    return _attach_implied_person_leaf(resolved, unit)
+    resolved = resolve_compositional_unit(unit=unit, with_level=True)
+    return _attach_implied_person_leaf(resolved=resolved, unit=unit)
 
 
-def resolve_compositional_field_unit(
-    unit: CompositeUnit,
-    *,
-    where: str,
-) -> pint.Unit:
-    """Resolve a parameter dataclass field annotation's compositional unit.
+def resolve_compositional_cast_unit(unit: CompositeUnit, *, where: str) -> pint.Unit:
+    """Resolve the target unit of a :func:`cast_unit` call inside a body."""
+    return _resolve_agnostic_body_unit(
+        unit=unit, where=where, what="a cast inside a body"
+    )
 
-    A parameter dataclass states each scalar field's unit in its ``Annotated``
-    type (GEP 10). Like a ``cast_unit`` target, the annotation has no name to
-    validate suffixes against: the spelled period and group level stand as
-    given, and the person leaf is implied, never spelled. The base must stay
-    currency-agnostic — the concrete denomination the raw numbers are written
-    in lives in the parameter YAML, which drives the numeric conversion.
 
-    Raises:
-        UnitDefinitionError: If the base pins a concrete currency.
-    """
-    if token_source_currency(unit) is not None:
-        raise UnitDefinitionError(
-            f"{where}: a field annotation pins the concrete currency "
-            f"{unit.base!r}; code is currency-agnostic and must use "
-            f"{CURRENCY_TOKEN} — the concrete denomination lives in the "
-            f"parameter YAML (GEP 10)."
-        )
-    resolved = resolve_compositional_unit(unit, with_level=True)
-    return _attach_implied_person_leaf(resolved, unit)
+def resolve_compositional_field_unit(unit: CompositeUnit, *, where: str) -> pint.Unit:
+    """Resolve a parameter dataclass field annotation's compositional unit (GEP 10)."""
+    return _resolve_agnostic_body_unit(
+        unit=unit, where=where, what="a field annotation"
+    )
 
 
 def register_unit_builder_levels(names: Iterable[str]) -> None:
@@ -1267,11 +1228,6 @@ def _token_base_unit(token: CompositeUnit) -> pint.Unit:
     return resolve_compositional_unit(replace(token, period=None, level=None))
 
 
-def _function_name(function: Callable[..., Any]) -> str:
-    """A human-readable function name for error messages."""
-    return getattr(function, "__qualname__", getattr(function, "__name__", "?"))
-
-
 def units_are_equivalent(left: pint.Unit, right: pint.Unit) -> bool:
     """Whether two units are interchangeable on a DAG edge.
 
@@ -1327,11 +1283,6 @@ def is_calendar_point_unit(unit: pint.Unit) -> bool:
     return False
 
 
-def _as_unit(unit: str | pint.Unit) -> pint.Unit:
-    """Coerce a declared unit (string or already-resolved pint unit) to a unit."""
-    return parse_unit(unit) if isinstance(unit, str) else unit
-
-
 def currency_conversion_factor(source_currency: str, run_currency: str) -> float:
     """Build-time factor converting a value from ``source_currency`` to the run one.
 
@@ -1384,6 +1335,11 @@ def _currency_component_of(units: pint.Unit) -> pint.Unit | None:
         ):
             return candidate
     return None
+
+
+def unit_has_currency_component(units: pint.Unit) -> bool:
+    """Whether a (possibly composite) unit carries a currency component."""
+    return _currency_component_of(units) is not None
 
 
 #: The dimensionality-key prefix of a grouping-level dimension: the internal pint
@@ -1476,7 +1432,7 @@ def output_unit_in_run_currency(
             f"Cannot restate '{units}' without a run currency: a run that uses "
             f"currency quantities must pin down a concrete currency (GEP 10)."
         )
-    return _substitute_currency(units, run_currency)
+    return _substitute_currency(units=units, currency=run_currency)
 
 
 #: Reverse of the forward token→pint maps, for :func:`composite_from_resolved_unit`.
@@ -1629,9 +1585,13 @@ def input_strip_unit(unit: CompositeUnit) -> pint.Unit:
     is screened against the name suffix. Grouping levels do not affect the
     magnitude and are omitted, so this needs no registered level dimension.
     """
-    resolved = resolve_compositional_unit(unit, with_level=False)
+    resolved = resolve_compositional_unit(unit=unit, with_level=False)
     concrete = token_source_currency(unit)
-    return resolved if concrete is None else _substitute_currency(resolved, concrete)
+    return (
+        resolved
+        if concrete is None
+        else _substitute_currency(units=resolved, currency=concrete)
+    )
 
 
 def strip_input_quantity_at_boundary(
@@ -1669,7 +1629,9 @@ def strip_input_quantity_at_boundary(
     except UnitDefinitionError as e:
         where = f" on input column {column_label!r}" if column_label else ""
         raise UnitDefinitionError(f"pint-tagged input{where}: {e}") from e
-    _fail_if_tag_period_disagrees_with_suffix(quantity.units, column_label=column_label)
+    _fail_if_tag_period_disagrees_with_suffix(
+        units=quantity.units, column_label=column_label
+    )
     if run_currency is None:
         return quantity.magnitude
     source_currency = _currency_component_of(quantity.units)
@@ -1692,90 +1654,56 @@ def strip_input_quantity_at_boundary(
     return quantity.to(target).magnitude
 
 
-def infer_function_unit(
-    function: Callable[..., Any],
-    input_units: Mapping[str, str | pint.Unit],
-    *,
-    non_unit_kwargs: Mapping[str, Any] | None = None,
-) -> pint.Unit:
-    """Infer the output unit of a scalar function body via a pint dry-run.
+def head_count_from_boolean_sum(
+    agg_type: AggType, *, source_is_boolean: bool
+) -> AggType:
+    """Normalise a ``SUM`` over a boolean to a ``COUNT`` for unit purposes.
 
-    Each declared input is wrapped in a representative ``Quantity(1.0, unit)``
-    and the scalar body is executed in NumPy+pint. pint propagates units
-    through the arithmetic and raises on a dimensionally invalid operation
-    (e.g. adding a currency to a currency-per-area). The output unit is read
-    off the result.
-
-    This never runs on user data values and never under ``jit``.
-
-    Args:
-        function: The scalar function body to dry-run.
-        input_units: Maps each unit-carrying parameter name to its declared
-            unit string.
-        non_unit_kwargs: Extra keyword arguments passed through verbatim (e.g.
-            ``xnp`` for functions that take the array module). These are *not*
-            wrapped in quantities.
-
-    Returns:
-        The inferred output unit. A function returning a bare (dimensionless)
-        Python number yields the dimensionless unit.
-
-    Raises:
-        UnitInferenceError: If the body performs a dimensionally invalid
-            operation or otherwise fails to dry-run.
+    Summing a boolean counts the persons its flag is true for, so its unit is a
+    head count's — the same :attr:`Unit.PERSON_COUNT` a ``COUNT`` mints. Every
+    other aggregation keeps its own type. This is the single source of truth used
+    by both the declared-token minter (:func:`unit_for_aggregation`) and the
+    resolved-unit deriver
+    (:func:`ttsim.interface_dag_elements.unit_checks._resolve_agg_by_group_unit`),
+    so the two cannot drift.
     """
-    func_name = _function_name(function)
-    quantities: dict[str, Any] = {
-        name: UNIT_REGISTRY.Quantity(1.0, _as_unit(unit))
-        for name, unit in input_units.items()
-    }
-    if non_unit_kwargs:
-        quantities.update(non_unit_kwargs)
-    try:
-        result = function(**quantities)
-    except pint.DimensionalityError as e:
-        raise UnitInferenceError(
-            f"Dimensionally invalid operation while inferring the unit of "
-            f"{func_name!r}: {e}"
-        ) from e
-    except Exception as e:
-        raise UnitInferenceError(
-            f"Could not dry-run {func_name!r} to infer its unit: "
-            f"{type(e).__name__}: {e}"
-        ) from e
-    if isinstance(result, pint.Quantity):
-        return result.units
-    return UNIT_REGISTRY.dimensionless
+    if agg_type is AggType.SUM and source_is_boolean:
+        return AggType.COUNT
+    return agg_type
 
 
 def unit_for_aggregation(
     source_unit: CompositeUnit,
     agg_type: AggType,
     target_level: str = PERSON_LEVEL,
+    *,
+    source_is_boolean: bool = False,
 ) -> CompositeUnit:
     """Auto-assign the *declared* unit of an aggregation node.
 
     The single source of truth for an aggregation node's auto-assigned token,
     consumed by both ``agg_by_group_function`` and ``agg_by_p_id_function``:
 
-    - ``SUM`` / ``MIN`` / ``MAX`` results are properties of the **target** group
-      whatever the source's base (GEP 10): they keep the source's physical token
-      and take the target level — spelled for a group
+    - a **head count** — ``COUNT``, or a ``SUM`` over a boolean source
+      (``source_is_boolean``, counting the persons its flag is true for) — is the
+      ``[person]`` count base at its target level: :attr:`Unit.PERSON_COUNT` per
+      ``target_level``;
+    - ``SUM`` / ``MIN`` / ``MAX`` over a non-boolean source are properties of the
+      **target** group whatever the source's base (GEP 10): they keep the
+      source's physical token and take the target level — spelled for a group
       (``CURRENCY_PER_MONTH_PER_FAM``, ``MONTHS_PER_FG`` for an ``_fg`` extreme of
       a bare duration), stripped for the person-level result of an
       ``agg_by_p_id`` (the person leaf is implied, never spelled);
     - ``MEAN`` is the exception — a per-head average belongs to the **person**
       (``MEAN = SUM / COUNT`` cancels the group), so it takes the individual
       spelling: the source token with any group level stripped;
-    - ``COUNT`` is a head count — the ``[person]`` count base at its target group
-      level: :attr:`Unit.PERSON_COUNT` per ``target_level``
-      (``PERSON_COUNT_PER_HH`` for an ``_hh`` node). For an ``agg_by_p_id`` node
-      ``target_level`` is the individual :data:`PERSON_LEVEL`, so the token is the
-      bare :attr:`Unit.PERSON_COUNT`, which resolves to ``[person] / [person]`` =
-      dimensionless;
     - ``ANY`` / ``ALL`` yield a boolean, a leveled dimensionless quantity at the
       target level: bare :attr:`Unit.DIMENSIONLESS` for an individual result,
       ``DIMENSIONLESS_PER_<target_level>`` for a group one.
+
+    A ``PERSON_COUNT`` head count at the individual :data:`PERSON_LEVEL` (an
+    ``agg_by_p_id`` ``COUNT``) is the bare :attr:`Unit.PERSON_COUNT`, which
+    resolves to ``[person] / [person]`` = dimensionless.
 
     Args:
         source_unit: The source column's ``unit`` — a :class:`CompositeUnit`
@@ -1783,6 +1711,9 @@ def unit_for_aggregation(
         agg_type: The :class:`ttsim.tt.aggregation.AggType` of the aggregation.
         target_level: The group level the node aggregates to (read off its name
             suffix); :data:`PERSON_LEVEL` for an individual-level result.
+        source_is_boolean: Whether the aggregated source column is boolean — a
+            ``SUM`` over it is then minted as a head count (see
+            :func:`head_count_from_boolean_sum`).
 
     Returns:
         The auto-assigned unit. ``PERSON_COUNT_PER_<target_level>`` for a ``COUNT`` head
@@ -1794,6 +1725,9 @@ def unit_for_aggregation(
         declaration, which the mandatory-units check then reports against the
         source).
     """
+    agg_type = head_count_from_boolean_sum(
+        agg_type=agg_type, source_is_boolean=source_is_boolean
+    )
     if agg_type is AggType.COUNT:
         return (
             Unit.PERSON_COUNT

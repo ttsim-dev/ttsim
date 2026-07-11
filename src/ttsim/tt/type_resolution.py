@@ -98,6 +98,11 @@ _COLUMN_KINDS: frozenset[ResolvedKind] = frozenset(
     },
 )
 
+#: The `ResolvedKind`s of a boolean node (scalar or column).
+BOOL_KINDS: frozenset[ResolvedKind] = frozenset(
+    {ResolvedKind.BOOL_SCALAR, ResolvedKind.BOOL_COLUMN},
+)
+
 # Map a `ResolvedKind` to the canonical column-type alias name. Used to
 # stamp a concrete return annotation onto a synthesized wrapper via
 # `dags.with_signature`.

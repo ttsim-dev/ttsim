@@ -729,6 +729,7 @@ class AggByGroupFunction(ColumnFunction):
             warn_msg_if_included=self.warn_msg_if_included,
             fail_msg_if_included=self.fail_msg_if_included,
             unit=self.unit,
+            verify_units=self.verify_units,
             agg_type=self.agg_type,
         )
 
@@ -743,6 +744,7 @@ def agg_by_group_function(
     warn_msg_if_included: str | None = None,
     fail_msg_if_included: str | None = None,
     unit: CompositeUnit = UNSET_UNIT,
+    verify_units: bool = True,
 ) -> Callable[[Callable[..., Any]], AggByGroupFunction]:
     start_date, end_date = _convert_and_validate_dates(
         start_date=start_date, end_date=end_date
@@ -811,6 +813,7 @@ def agg_by_group_function(
             warn_msg_if_included=warn_msg_if_included,
             fail_msg_if_included=fail_msg_if_included,
             unit=node_unit,
+            verify_units=verify_units,
             agg_type=agg_type,
         )
 

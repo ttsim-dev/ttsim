@@ -65,9 +65,9 @@ def test_currency_override_threads_through_to_param_conversion(backend):
     base = _policy_environment(backend)["payroll_tax"][
         "wealth_threshold_for_reduced_tax_rate"
     ].value
-    silver = _policy_environment(backend, currency="SILVER_PENNY")["payroll_tax"][
-        "wealth_threshold_for_reduced_tax_rate"
-    ].value
+    silver = _policy_environment(backend=backend, currency="SILVER_PENNY")[
+        "payroll_tax"
+    ]["wealth_threshold_for_reduced_tax_rate"].value
     assert silver == pytest.approx(base * 4)
 
 
@@ -80,7 +80,7 @@ def test_param_unchanged_in_base_currency(backend):
 
 def test_param_converted_to_run_currency(backend):
     """A silver-penny run converts the castar-denominated threshold at build."""
-    env = _policy_environment(backend, currency="SILVER_PENNY")
+    env = _policy_environment(backend=backend, currency="SILVER_PENNY")
     threshold = env["payroll_tax"]["wealth_threshold_for_reduced_tax_rate"]
     # 12_500 castar = 50_000 silver pennies (silver_penny = castar / 4).
     assert threshold.value == pytest.approx(50000)
@@ -96,7 +96,7 @@ def test_changeover_is_a_pure_redenomination(backend):
             backend=backend,
             currency=currency,
         )["payroll_tax"]["wealth_threshold_for_reduced_tax_rate"]
-        after = _policy_environment(backend, currency=currency)["payroll_tax"][
+        after = _policy_environment(backend=backend, currency=currency)["payroll_tax"][
             "wealth_threshold_for_reduced_tax_rate"
         ]
         assert before.value == pytest.approx(after.value)
@@ -443,6 +443,53 @@ def test_dict_param_converts_currency_leaves_only():
     )
     assert param.value["child_amount_y"] == pytest.approx(25.0)
     assert param.value["max_age"] == 18
+    # The non-currency leaf keeps its int type — a factor-1.0 scaling must not
+    # coerce a GEP-3 integer threshold to float (defect #6, GEP 10).
+    assert isinstance(param.value["max_age"], int)
+
+
+def test_dict_param_with_int_keys_converts_per_leaf():
+    # GEP-3 allows int dict keys (e.g. satz_nach_kindanzahl); the per-leaf unit
+    # walk must accept an int in the path rather than tripping the beartype claw
+    # on a `tuple[str, ...]` annotation (defect #4, GEP 10).
+    spec = {
+        **_HEADER,
+        "unit": {1: "SILVER_PENNY_PER_MONTH", 2: "SILVER_PENNY_PER_MONTH"},
+        "type": "dict",
+        datetime.date(1900, 1, 1): {1: 100.0, 2: 200.0},
+    }
+    param = _load(
+        leaf_name="satz_nach_kindanzahl",
+        spec=spec,
+        policy_date=POLICY_DATE,
+        currency="CASTAR",
+    )
+    assert param.value[1] == pytest.approx(25.0)
+    assert param.value[2] == pytest.approx(50.0)
+
+
+def test_lookup_table_keeps_int_values_int_when_not_converted():
+    # A non-currency lookup table's int values survive conversion untouched
+    # (output_factor 1.0): no float coercion, no in-place mutation (defect #6, GEP 10).
+    spec = {
+        **_HEADER,
+        "input_unit": "YEARS",
+        "output_unit": "YEARS",
+        "type": "sparse_to_consecutive_int_lookup_table",
+        datetime.date(1900, 1, 1): {
+            1950: 65,
+            "min_int_in_table": 1900,
+            "max_int_in_table": 2050,
+        },
+    }
+    param = _load(
+        leaf_name="retirement_age_by_year",
+        spec=spec,
+        policy_date=POLICY_DATE,
+        currency="CASTAR",
+    )
+    assert param.value.look_up(1950) == 65
+    assert np.issubdtype(param.value.values_to_look_up.dtype, np.integer)
 
 
 def test_require_converter_converts_currency_leaves_only():
@@ -641,8 +688,8 @@ def test_unknown_annotation_is_rejected_at_load():
 @pytest.fixture
 def second_currency_family():
     with isolated_currency_registration():
-        register_currency("GOLD_DRAGON", base=True)
-        register_currency("COPPER_STAR", definition="GOLD_DRAGON / 56")
+        register_currency(name="GOLD_DRAGON", base=True)
+        register_currency(name="COPPER_STAR", definition="GOLD_DRAGON / 56")
         yield
 
 
@@ -671,16 +718,14 @@ def test_conversion_across_families_is_rejected():
 
 
 @pytest.mark.usefixtures("second_currency_family")
-def test_default_currency_follows_the_policy_objects(backend):
-    # The mixed-process scenario: with two families registered, the default
-    # run currency is read off the parameters' declarations, not the process
-    # registry — mettsim's parameters are denominated in the CASTAR family.
-    assert (
+def test_default_currency_is_ambiguous_across_families(backend):
+    # The currency is never inferred from the policy objects: with base currencies
+    # of more than one family registered in the process there is no default, so the
+    # user must pass `currency=` explicitly (GEP 10).
+    with pytest.raises(UnitDefinitionError, match="different families"):
         main(
             main_target=MainTarget.currency,
             orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
             policy_date=POLICY_DATE,
             backend=backend,
         )
-        == "CASTAR"
-    )
