@@ -71,6 +71,7 @@ def test_add_jahresanfang(xnp: ModuleType):
         orig={("spam.yaml", "foo"): spec},  # ty: ignore[invalid-argument-type]
         policy_date=pd.to_datetime("2020-07-01").date(),
         xnp=xnp,
+        currency="CASTAR",
     )
     assert _active_ttsim_tree_with_params["foo"].value == 2
     assert _active_ttsim_tree_with_params["foo_jahresanfang"].value == 1
@@ -207,10 +208,12 @@ def test_active_tree_with_column_objects_and_param_functions(
     functions_last_day = _active_column_objects_and_param_functions(
         orig=orig,
         policy_date=last_day,
+        currency="CASTAR",
     )
     functions_next_day = _active_column_objects_and_param_functions(
         orig=orig,
         policy_date=last_day + datetime.timedelta(days=1),
+        currency="CASTAR",
     )
 
     accessor = optree.tree_accessors(tree, none_is_leaf=True)[0]  # ty: ignore[invalid-argument-type]
@@ -233,6 +236,7 @@ def test_scalar_updates_previous_raises(xnp: ModuleType):
             orig={("spam.yaml", "foo"): spec},  # ty: ignore[invalid-argument-type]
             policy_date=datetime.date(2021, 6, 1),
             xnp=xnp,
+            currency="CASTAR",
         )
 
 
@@ -249,6 +253,7 @@ def test_piecewise_updates_previous(piecewise_spec_base, xnp: ModuleType):
         orig={("spam.yaml", "foo"): spec},
         policy_date=datetime.date(2021, 6, 1),
         xnp=xnp,
+        currency="CASTAR",
     )
     params = result["foo"].value
     # The first interval's slope should be updated to 0.9
@@ -264,6 +269,7 @@ def test_piecewise_no_updates_previous(piecewise_spec_base, xnp: ModuleType):
         orig={("spam.yaml", "foo"): spec},
         policy_date=datetime.date(2020, 6, 1),
         xnp=xnp,
+        currency="CASTAR",
     )
     params = result["foo"].value
     assert params.coefficients[0][0] == pytest.approx(0.5)
@@ -289,6 +295,7 @@ def test_dict_updates_previous(xnp: ModuleType):
         orig={("spam.yaml", "foo"): spec},  # ty: ignore[invalid-argument-type]
         policy_date=datetime.date(2021, 6, 1),
         xnp=xnp,
+        currency="CASTAR",
     )
     assert result["foo"].value == {"a": 10, "b": 2}
 
@@ -311,6 +318,7 @@ def test_dict_updates_previous_adds_new_key(xnp: ModuleType):
         orig={("spam.yaml", "foo"): spec},  # ty: ignore[invalid-argument-type]
         policy_date=datetime.date(2021, 6, 1),
         xnp=xnp,
+        currency="CASTAR",
     )
     assert result["foo"].value == {"a": 1, "b": 2}
 
@@ -339,6 +347,7 @@ def test_dict_updates_previous_chained(xnp: ModuleType):
         orig={("spam.yaml", "foo"): spec},  # ty: ignore[invalid-argument-type]
         policy_date=datetime.date(2022, 6, 1),
         xnp=xnp,
+        currency="CASTAR",
     )
     assert result["foo"].value == {"a": 10, "b": 20, "c": 3}
 
@@ -361,6 +370,7 @@ def test_dict_updates_previous_nested(xnp: ModuleType):
         orig={("spam.yaml", "foo"): spec},  # ty: ignore[invalid-argument-type]
         policy_date=datetime.date(2021, 6, 1),
         xnp=xnp,
+        currency="CASTAR",
     )
     assert result["foo"].value == {"outer": {"x": 10, "y": 2}}
 
@@ -384,6 +394,7 @@ def test_dict_updates_previous_queries_base_date(xnp: ModuleType):
         orig={("spam.yaml", "foo"): spec},  # ty: ignore[invalid-argument-type]
         policy_date=datetime.date(2020, 6, 1),
         xnp=xnp,
+        currency="CASTAR",
     )
     assert result["foo"].value == {"a": 1, "b": 2}
 
@@ -406,6 +417,7 @@ def test_dict_no_updates_previous(xnp: ModuleType):
         orig={("spam.yaml", "foo"): spec},  # ty: ignore[invalid-argument-type]
         policy_date=datetime.date(2021, 6, 1),
         xnp=xnp,
+        currency="CASTAR",
     )
     assert result["foo"].value == {"c": 3}
 
@@ -429,6 +441,7 @@ def test_piecewise_updates_previous_chained(piecewise_spec_base, xnp: ModuleType
         orig={("spam.yaml", "foo"): spec},
         policy_date=datetime.date(2022, 6, 1),
         xnp=xnp,
+        currency="CASTAR",
     )
     params = result["foo"].value
     # First interval updated in 2021
@@ -453,6 +466,7 @@ def test_updates_previous_on_first_date_raises_dict(xnp: ModuleType):
             orig={("spam.yaml", "foo"): spec},  # ty: ignore[invalid-argument-type]
             policy_date=datetime.date(2020, 6, 1),
             xnp=xnp,
+            currency="CASTAR",
         )
 
 
@@ -473,4 +487,5 @@ def test_updates_previous_on_first_date_raises_piecewise(
             orig={("spam.yaml", "foo"): spec},
             policy_date=datetime.date(2020, 6, 1),
             xnp=xnp,
+            currency="CASTAR",
         )

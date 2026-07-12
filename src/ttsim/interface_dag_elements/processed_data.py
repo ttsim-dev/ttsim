@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from types import ModuleType
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 import dags.tree as dt
 import numpy as np
@@ -48,8 +48,13 @@ def _canonicalize_input_dtype(
             used in error messages when a uint overflow is detected.
     """
     if isinstance(arr, pint.Quantity):
+        # A pint-tagged column only ever reaches here via `processed_data`, which
+        # always has a concrete run currency; the currency-less converter callers
+        # (`data_converters`, plain `pd.Series` leaves) never pass a `Quantity`.
         arr = strip_input_quantity_at_boundary(
-            quantity=arr, run_currency=run_currency, column_label=column_label
+            quantity=arr,
+            run_currency=cast("str", run_currency),
+            column_label=column_label,
         )
     if isinstance(arr, pd.Series):
         return _canonicalize_series(arr=arr, xnp=xnp, column_label=column_label)
@@ -116,7 +121,7 @@ def processed_data(
     input_data__flat: FlatData,
     input_data__sort_indices: IntColumn,
     xnp: ModuleType,
-    currency: str | None,
+    currency: str,
 ) -> QNameData:
     """The internal processed data for use in the taxes and transfers function.
 

@@ -46,7 +46,7 @@ from ttsim.tt.units import (
 
 def currency_conversion_factor_for_token(
     raw_token: Any,  # noqa: ANN401
-    run_currency: str | None,
+    run_currency: str,
 ) -> float:
     """Factor converting a declaration's currency into the run currency (GEP 10).
 
@@ -56,7 +56,7 @@ def currency_conversion_factor_for_token(
     yields ``1.0`` here; the rule that a parameter must name a concrete currency
     is enforced by the unit checks (``_fail_if_param_token_is_agnostic_currency``).
     """
-    if run_currency is None or raw_token is None or raw_token is UNSET_UNIT:
+    if raw_token is None or raw_token is UNSET_UNIT:
         return 1.0
     token = coerce_to_composite_unit(value=raw_token, where="currency conversion")
     source = token_source_currency(token)
@@ -67,7 +67,7 @@ def currency_conversion_factor_for_token(
 
 def axis_factors(
     cleaned_spec: dict[str, Any],
-    run_currency: str | None,
+    run_currency: str,
 ) -> tuple[float, float]:
     """The (input, output) currency conversion factors for a per-axis spec."""
     return (
@@ -120,7 +120,7 @@ def _token_for_leaf(unit: Any, path: tuple[str | int, ...]) -> Any:  # noqa: ANN
 def dict_param_value_in_run_currency(
     value: Any,  # noqa: ANN401
     unit: Any,  # noqa: ANN401
-    run_currency: str | None,
+    run_currency: str,
 ) -> Any:  # noqa: ANN401
     """Restate a dict param's value in the run currency, leaf by leaf (GEP 10).
 
@@ -195,7 +195,7 @@ def function_like_converter_output_in_run_currency(
     *,
     input_unit: Any,  # noqa: ANN401
     output_unit: Any,  # noqa: ANN401
-    run_currency: str | None,
+    run_currency: str,
     xnp: ModuleType,
     leaf_name: str,
 ) -> Any:  # noqa: ANN401
@@ -285,7 +285,7 @@ def restate_converter_outputs_in_run_currency(
     outputs: dict[str, Any],
     params: dict[str, ParamObject],
     param_functions: dict[str, ParamFunction],
-    run_currency: str | None,
+    run_currency: str,
     xnp: ModuleType,
 ) -> None:
     """Restate the outputs of ``require_converter`` schedules in the run currency.

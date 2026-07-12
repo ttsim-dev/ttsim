@@ -35,7 +35,7 @@ def test_processed_data(input_data__flat, xnp):
                     input_data__flat=input_data__flat, xnp=xnp
                 ),
                 xnp=xnp,
-                currency=None,
+                currency="CASTAR",
             )
         ),
         pd.DataFrame(expected),
@@ -63,7 +63,7 @@ def test_processed_data_foreign_key_out_of_bounds(xnp):
                 input_data__flat=input_data__flat,
                 input_data__sort_indices=input_data__sort_indices,
                 xnp=xnp,
-                currency=None,
+                currency="CASTAR",
             )
         ),
         pd.DataFrame(expected),
@@ -91,7 +91,7 @@ def test_processed_data_foreign_key_inside_bounds(xnp):
                 input_data__flat=input_data__flat,
                 input_data__sort_indices=input_data__sort_indices,
                 xnp=xnp,
-                currency=None,
+                currency="CASTAR",
             )
         ),
         pd.DataFrame(expected),
@@ -115,7 +115,7 @@ def test_processed_data_single_column(xnp):
                 input_data__flat=input_data__flat,
                 input_data__sort_indices=input_data__sort_indices,
                 xnp=xnp,
-                currency=None,
+                currency="CASTAR",
             )
         ),
         pd.DataFrame(expected),
@@ -180,7 +180,7 @@ def test_processed_data_coerces_uint_columns_to_signed(xnp):
             input_data__flat=input_data__flat, xnp=xnp
         ),
         xnp=xnp,
-        currency=None,
+        currency="CASTAR",
     )
     assert result["wage"].dtype.kind == "i"
     # Subtraction stays signed instead of underflowing into uint wraparound.
@@ -208,7 +208,7 @@ def test_processed_data_single_row(xnp):
                 input_data__flat=input_data__flat,
                 input_data__sort_indices=input_data__sort_indices,
                 xnp=xnp,
-                currency=None,
+                currency="CASTAR",
             )
         ),
         pd.DataFrame(expected),

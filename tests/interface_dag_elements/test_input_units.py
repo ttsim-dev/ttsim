@@ -13,7 +13,7 @@ import numpy
 import pint
 import pytest
 
-from ttsim.exceptions import UnitConsistencyError, UnitDefinitionError
+from ttsim.exceptions import UnitConsistencyError
 from ttsim.interface_dag_elements.fail_if import (
     input_currency_is_not_concrete,
 )
@@ -54,12 +54,6 @@ def _column(
         grouping_level=grouping_level,
         where="test",
     )
-
-
-def test_output_unit_in_run_currency_without_run_currency_raises():
-    unit = _resolved(Unit.CURRENCY.PER_MONTH)
-    with pytest.raises(UnitDefinitionError, match="without a run currency"):
-        output_unit_in_run_currency(units=unit, run_currency=None)
 
 
 def test_output_unit_in_run_currency_leaves_non_currency_units_untouched():
@@ -109,7 +103,7 @@ def test_flat_from_tree_with_unit_annotations_strips_to_bare_arrays():
         ),
     }
     flat = flat_from_tree_with_unit_annotations(
-        tree_with_unit_annotations=tree, currency=None
+        tree_with_unit_annotations=tree, currency="CURRENCY"
     )
     assert not isinstance(flat[("wage_m",)], pint.Quantity)
     assert not isinstance(flat[("p_id",)], pint.Quantity)
@@ -137,7 +131,7 @@ def test_flat_from_tree_with_unit_annotations_fails_on_period_mismatch():
     }
     with pytest.raises(UnitConsistencyError):
         flat_from_tree_with_unit_annotations(
-            tree_with_unit_annotations=tree, currency=None
+            tree_with_unit_annotations=tree, currency="CURRENCY"
         )
 
 

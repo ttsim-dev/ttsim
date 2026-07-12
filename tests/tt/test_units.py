@@ -40,7 +40,6 @@ from ttsim.tt.units import (
     CURRENCY_TOKEN,
     UNIT_REGISTRY,
     coerce_to_composite_unit,
-    currency_family_root,
     fail_if_units_are_missing,
     grouping_level_count_unit,
     is_calendar_point_unit,
@@ -266,17 +265,14 @@ def test_register_currency_with_inconsistent_factor_fails():
         register_currency(name="SILVER_PENNY", definition="CASTAR / 5")
 
 
-def test_second_base_currency_starts_a_new_family():
-    # A second package may register its own base currency: the families
-    # coexist in one process and convert only within themselves (GEP 10).
-    with isolated_currency_registration():
+def test_second_base_currency_is_rejected():
+    # The process has a single base currency; CASTAR is already the base (from
+    # the mettsim import), so registering another base is an error (GEP 10).
+    with (
+        isolated_currency_registration(),
+        pytest.raises(UnitDefinitionError, match="already the base"),
+    ):
         register_currency(name="mithril_coin", base=True)
-        assert currency_family_root("mithril_coin") == "mithril_coin"
-        assert currency_family_root("CASTAR") == "CASTAR"
-        with pytest.raises(UnitDefinitionError, match="No exchange rate"):
-            currency_conversion_factor(
-                source_currency="CASTAR", run_currency="mithril_coin"
-            )
 
 
 def test_register_currency_requires_exactly_one_of_base_or_definition():
@@ -828,12 +824,6 @@ def test_strip_at_boundary_passes_non_currency_tag_through():
     tagged = UNIT_REGISTRY.Quantity(np.array([5.0]), "working_hour")
     bare = strip_input_quantity_at_boundary(quantity=tagged, run_currency="CASTAR")
     assert bare == pytest.approx([5.0])
-
-
-def test_strip_at_boundary_without_run_currency_just_strips():
-    tagged = UNIT_REGISTRY.Quantity(np.array([3.0]), "SILVER_PENNY")
-    bare = strip_input_quantity_at_boundary(quantity=tagged, run_currency=None)
-    assert list(bare) == [3.0]
 
 
 # ----------------------------------------------------------------------------

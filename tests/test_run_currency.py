@@ -24,13 +24,9 @@ from ttsim.tt.currencies import (
     currency_conversion_factor,
     isolated_currency_registration,
     register_currency,
-    registered_base_currencies,
 )
 from ttsim.tt.param_objects import PiecewisePolynomialParamValue, RawParam
-from ttsim.tt.units import (
-    UNSET_UNIT,
-    currency_family_root,
-)
+from ttsim.tt.units import UNSET_UNIT
 
 POLICY_DATE = datetime.date(2020, 1, 1)
 
@@ -113,7 +109,7 @@ def _load(
     leaf_name: str,
     spec: Any,
     policy_date: datetime.date,
-    currency: str | None,
+    currency: str,
 ) -> Any:
     param = _get_one_param(
         leaf_name=leaf_name,
@@ -153,16 +149,6 @@ def test_scalar_conversion_is_a_no_op_in_the_source_currency():
         spec=_scalar_spec(),
         policy_date=POLICY_DATE,
         currency="SILVER_PENNY",
-    )
-    assert param.value == pytest.approx(100.0)
-
-
-def test_scalar_conversion_is_a_no_op_without_a_run_currency():
-    param = _load(
-        leaf_name="threshold",
-        spec=_scalar_spec(),
-        policy_date=POLICY_DATE,
-        currency=None,
     )
     assert param.value == pytest.approx(100.0)
 
@@ -681,54 +667,42 @@ def test_unknown_annotation_is_rejected_at_load():
 
 
 # --------------------------------------------------------------------------
-# Currency families: two packages' registrations coexist in one process
-# (GEP 10). mettsim's CASTAR family is registered by the import above; these
-# tests register a second family inside `isolated_currency_registration`, so
-# nothing leaks to other tests.
+# A single interconvertible currency system (GEP 10). Every run is denominated
+# in a concrete currency; mettsim registers CASTAR (base) + SILVER_PENNY on the
+# import above, and any two registered currencies convert. Registration rules
+# are exercised inside `isolated_currency_registration`, so nothing leaks.
 # --------------------------------------------------------------------------
 
 
-@pytest.fixture
-def second_currency_family():
-    with isolated_currency_registration():
+def test_base_currency_is_the_registered_base():
+    assert base_currency() == "CASTAR"
+
+
+def test_registered_currencies_are_interconvertible():
+    # silver_penny = castar / 4, so the factors are reciprocal.
+    assert currency_conversion_factor(
+        source_currency="SILVER_PENNY", run_currency="CASTAR"
+    ) == pytest.approx(0.25)
+    assert currency_conversion_factor(
+        source_currency="CASTAR", run_currency="SILVER_PENNY"
+    ) == pytest.approx(4.0)
+
+
+def test_a_second_base_currency_is_rejected():
+    # CASTAR is already the base; the process has a single base currency.
+    with (
+        isolated_currency_registration(),
+        pytest.raises(UnitDefinitionError, match="already the base"),
+    ):
         register_currency(name="GOLD_DRAGON", base=True)
-        register_currency(name="COPPER_STAR", definition="GOLD_DRAGON / 56")
-        yield
 
 
-@pytest.mark.usefixtures("second_currency_family")
-def test_second_currency_family_coexists():
-    assert currency_family_root("COPPER_STAR") == "GOLD_DRAGON"
-    assert currency_family_root("SILVER_PENNY") == "CASTAR"
-    assert set(registered_base_currencies()) >= {"CASTAR", "GOLD_DRAGON"}
-
-
-@pytest.mark.usefixtures("second_currency_family")
-def test_base_currency_is_ambiguous_across_families():
-    with pytest.raises(UnitDefinitionError, match="no process-wide default"):
-        base_currency()
-
-
-@pytest.mark.usefixtures("second_currency_family")
-def test_conversion_across_families_is_rejected():
-    # Both bases sit at factor 1 against the abstract CURRENCY reference, so
-    # pint would relate them 1:1 — a silent wrong number the family check
-    # turns into a loud error.
-    with pytest.raises(UnitDefinitionError, match="No exchange rate connects"):
-        currency_conversion_factor(
-            source_currency="SILVER_PENNY", run_currency="GOLD_DRAGON"
-        )
-
-
-@pytest.mark.usefixtures("second_currency_family")
-def test_default_currency_is_ambiguous_across_families(backend):
-    # The currency is never inferred from the policy objects: with base currencies
-    # of more than one family registered in the process there is no default, so the
-    # user must pass `currency=` explicitly (GEP 10).
-    with pytest.raises(UnitDefinitionError, match="different families"):
-        main(
-            main_target=MainTarget.currency,
-            orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
-            policy_date=POLICY_DATE,
-            backend=backend,
-        )
+def test_definition_referencing_no_registered_currency_is_rejected():
+    # A currency must be defined relative to an already-registered one; a
+    # definition against the abstract CURRENCY reference alone would start a
+    # second, unconnected base.
+    with (
+        isolated_currency_registration(),
+        pytest.raises(UnitDefinitionError, match="no registered currency"),
+    ):
+        register_currency(name="FLOATING", definition="CURRENCY / 2")

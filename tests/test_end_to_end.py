@@ -421,7 +421,12 @@ def test_cloudpickle_round_trip_with_inline_policy_environment(tmp_path):
         import numpy as np
 
         from ttsim import InputData, TTTargets, main
-        from ttsim.tt import Unit, policy_function, policy_input
+        from ttsim.tt import Unit, policy_function, policy_input, register_currency
+
+        # A bare-ttsim run registers no policy package, so it must register a
+        # base currency itself — every run is denominated in a concrete currency
+        # (GEP 10).
+        register_currency(name="euro", base=True)
 
 
         @policy_input(unit=Unit.DIMENSIONLESS)

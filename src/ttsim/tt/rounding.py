@@ -59,17 +59,17 @@ class RoundingSpec:
             msg = f"Additive part must be a number, got {self.to_add_after_rounding!r}"
             raise TypeError(msg)
 
-    def in_run_currency(self, run_currency: str | None) -> "RoundingSpec":
+    def in_run_currency(self, run_currency: str) -> "RoundingSpec":
         """This spec with its magnitudes restated in the run currency (GEP 10).
 
         Keeps the rounding step statutorily exact under a currency changeover:
         rounding down to multiples of 54 DM in a EUR run becomes rounding down
         to multiples of ``54 / 1.95583`` EUR. Returns ``self`` when there is
-        nothing to convert — no run currency, no declared unit, the run
-        currency itself, or a declaration that does not pin down a registered
-        currency (the unit checks reject those; the conversion never guesses).
+        nothing to convert — no declared unit, the run currency itself, or a
+        declaration that does not pin down a registered currency (the unit
+        checks reject those; the conversion never guesses).
         """
-        if run_currency is None or self.unit is None:
+        if self.unit is None:
             return self
         source = token_source_currency(self.unit)
         if source is None or source == run_currency:

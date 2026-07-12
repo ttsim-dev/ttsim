@@ -826,33 +826,8 @@ _ALLOWED_UNIT_TOKENS: set[str] = {
 #: base also names the currency the numbers are written in.
 _registered_currencies: set[str] = set()
 
-#: Each registered currency's *family root*: the base currency its definition
-#: chains to (a base currency roots itself). Currencies convert only within one
-#: family — two packages' families (gettsim's EUR/DM, mettsim's
-#: CASTAR/SILVER_PENNY) can coexist in one process, e.g. two test suites in one
-#: pytest run, but no exchange rate connects them.
-_currency_family_root: dict[str, str] = {}
-
 #: Tolerance for the magnitude part of a unit-equivalence comparison.
 _REL_TOL = 1e-9
-
-
-def currency_family_root(name: str) -> str:
-    """The base currency that ``name``'s definition chains to.
-
-    Currencies convert only within one family: a package's currencies share the
-    base that package registered, and no exchange rate connects two packages'
-    families.
-
-    Raises:
-        UnitDefinitionError: If ``name`` is not a registered currency.
-    """
-    if name not in _currency_family_root:
-        known = ", ".join(sorted(_registered_currencies)) or "(none registered)"
-        raise UnitDefinitionError(
-            f"Unknown currency {name!r}; expected one of {known} (GEP 10)."
-        )
-    return _currency_family_root[name]
 
 
 #: The grouping levels registered so far (the bare names, e.g. ``"person"``,
@@ -1147,9 +1122,7 @@ def _substitute_currency(units: pint.Unit, currency: str) -> pint.Unit:
     return units / component * UNIT_REGISTRY.parse_units(currency)
 
 
-def output_unit_in_run_currency(
-    units: pint.Unit, run_currency: str | None
-) -> pint.Unit:
+def output_unit_in_run_currency(units: pint.Unit, run_currency: str) -> pint.Unit:
     """Restate a resolved (agnostic) DAG unit in the concrete run currency.
 
     Output columns are *computed* in the run currency, so labelling them is pure
@@ -1160,18 +1133,9 @@ def output_unit_in_run_currency(
 
     This is the inverse of the currency move
     :func:`strip_input_quantity_at_boundary` makes on the way in.
-
-    Raises:
-        UnitDefinitionError: If the unit is currency-dimensioned but no run
-            currency is set — a run with currency quantities must pin one down.
     """
     if _currency_component_of(units) is None:
         return units
-    if run_currency is None:
-        raise UnitDefinitionError(
-            f"Cannot restate '{units}' without a run currency: a run that uses "
-            f"currency quantities must pin down a concrete currency (GEP 10)."
-        )
     return _substitute_currency(units=units, currency=run_currency)
 
 
@@ -1341,7 +1305,7 @@ def input_strip_unit(unit: CompositeUnit) -> pint.Unit:
 def strip_input_quantity_at_boundary(
     quantity: Any,  # noqa: ANN401 (a pint Quantity wrapping an input column)
     *,
-    run_currency: str | None,
+    run_currency: str,
     column_label: str | None = None,
 ) -> Any:  # noqa: ANN401
     """Convert a pint-tagged input column to the run currency, then strip it.
@@ -1380,24 +1344,12 @@ def strip_input_quantity_at_boundary(
     _fail_if_tag_period_disagrees_with_suffix(
         units=quantity.units, column_label=column_label
     )
-    if run_currency is None:
-        return quantity.magnitude
     source_currency = _currency_component_of(quantity.units)
     if source_currency is None:
         return quantity.magnitude
     run_unit = UNIT_REGISTRY.parse_units(run_currency)
     if source_currency == run_unit:
         return quantity.magnitude
-    source_root = currency_family_root(str(source_currency))
-    run_root = currency_family_root(run_currency)
-    if source_root != run_root:
-        where = f" on input column {column_label!r}" if column_label else ""
-        raise UnitConsistencyError(
-            f"pint-tagged input{where}: no exchange rate connects "
-            f"{source_currency!s} (family of {source_root!r}) and the run "
-            f"currency {run_currency!r} (family of {run_root!r}); tag the "
-            f"column in a currency of the run's family (GEP 10)."
-        )
     target = quantity.units / source_currency * run_unit
     return quantity.to(target).magnitude
 

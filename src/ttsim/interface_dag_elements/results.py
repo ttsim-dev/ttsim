@@ -61,7 +61,7 @@ def tree(
 def tree_with_unit_annotations(
     tree: NestedResults,
     unit_checks__resolved_units: dict[str, pint.Unit | dict[str | int, Any]],
-    currency: str | None,
+    currency: str,
 ) -> NestedResults:
     """The combined results as a tree of :class:`UnitAnnotatedColumn` leaves.
 

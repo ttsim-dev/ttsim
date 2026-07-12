@@ -536,7 +536,6 @@ def test_in_run_currency_returns_self_when_there_is_nothing_to_convert():
     assert spec_without_unit.in_run_currency("CASTAR") is spec_without_unit
 
     spec = RoundingSpec(base=1, direction="up", unit=Unit.CASTAR.PER_MONTH)
-    assert spec.in_run_currency(None) is spec
     assert spec.in_run_currency("CASTAR") is spec
 
 

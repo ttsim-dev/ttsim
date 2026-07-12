@@ -800,6 +800,7 @@ def test_policy_environment_with_params_and_scalars_is_processed(
         xnp=xnp,
         dnp=dnp,
         evaluation_date=datetime.date(2024, 1, 1),
+        currency="CASTAR",
     )
     expected = {
         "some_converting_params_func": ConvertedParam(

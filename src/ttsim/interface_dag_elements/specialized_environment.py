@@ -152,7 +152,7 @@ def with_processed_params_and_scalars(
     xnp: ModuleType,
     dnp: ModuleType,
     evaluation_date: datetime.date | None,
-    currency: str | None = None,
+    currency: str,
 ) -> SpecEnvWithProcessedParamsAndScalars:
     """
     The policy environment where all parameters and param functions have been processed.

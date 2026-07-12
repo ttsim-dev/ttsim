@@ -189,6 +189,7 @@ def with_processed_params_and_scalars(
     xnp: ModuleType,
     dnp: ModuleType,
     evaluation_date: datetime.date | None,
+    currency: str,
 ) -> SpecEnvWithProcessedParamsAndScalars:
     """The environment where all parameters and param functions have been processed.
 
@@ -196,7 +197,9 @@ def with_processed_params_and_scalars(
     param function making use of it).
 
     The difference to the corresponding function in `specialized_environment` is that
-    policy inputs may be considered like actual inputs.
+    policy inputs may be considered like actual inputs. The run ``currency`` is threaded
+    through so parameter conversion happens here too — this path builds a partial DAG
+    that must still carry the concrete run currency.
     """
     return specialized_environment.with_processed_params_and_scalars(
         without_tree_logic_and_with_derived_functions=without_tree_logic_and_with_derived_functions,
@@ -205,6 +208,7 @@ def with_processed_params_and_scalars(
         xnp=xnp,
         dnp=dnp,
         evaluation_date=evaluation_date,
+        currency=currency,
     )
 
 

@@ -112,12 +112,10 @@ def test_base_is_level_carrying_defaults(base, level_carrying):
 
 
 def test_concrete_currency_base_is_level_carrying():
-    # Defined relative to the always-present CURRENCY reference so the test does
-    # not depend on which base currency the suite registered; such a currency
-    # roots its own family, so the registration is isolated to keep the
-    # process-wide family set unchanged for other tests.
+    # Defined relative to CASTAR, the base currency the mettsim import registers;
+    # the registration is isolated so it does not leak to other tests.
     with isolated_currency_registration():
-        register_currency(name="LEVEL_TEST_COIN", definition=f"{CURRENCY_TOKEN} / 2")
+        register_currency(name="LEVEL_TEST_COIN", definition="CASTAR / 2")
         assert base_is_level_carrying("LEVEL_TEST_COIN")
 
 

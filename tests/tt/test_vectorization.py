@@ -355,6 +355,7 @@ for year in range(1990, 2023):
                         root=middle_earth.ROOT_PATH
                     ),
                     policy_date=datetime.date(year=year, month=1, day=1),
+                    currency="CASTAR",
                 ),
             ).items()
             if not isinstance(

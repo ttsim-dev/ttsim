@@ -94,7 +94,7 @@ def policy_environment(
     orig_policy_objects__param_specs: FlatOrigParamSpecs,
     policy_date: datetime.date,
     xnp: ModuleType,
-    currency: str | None,
+    currency: str,
 ) -> PolicyEnvironment:
     """The policy environment at a particular date."""
     return {
@@ -153,7 +153,7 @@ def policy_environment(
 def _active_column_objects_and_param_functions(
     orig: FlatColumnObjectsParamFunctions,
     policy_date: datetime.date,
-    currency: str | None = None,
+    currency: str,
 ) -> NestedColumnObjectsParamFunctions:
     """Traverse `root` and return all ColumnObjectParamFunctions for a given date.
 
@@ -179,7 +179,7 @@ def _active_column_objects_and_param_functions(
 
 def _with_rounding_spec_in_run_currency(
     obj: Any,  # noqa: ANN401
-    currency: str | None,
+    currency: str,
 ) -> Any:  # noqa: ANN401
     """Restate an object's rounding-spec magnitudes in the run currency (GEP 10).
 
@@ -200,7 +200,7 @@ def _active_param_objects(
     orig: FlatOrigParamSpecs,
     policy_date: datetime.date,
     xnp: ModuleType,
-    currency: str | None = None,
+    currency: str,
 ) -> NestedParamObjects:
     """Parse the original yaml tree."""
     flat_tree_with_params = {}
@@ -236,7 +236,7 @@ def _get_one_param(
     spec: OrigParamSpec,
     policy_date: datetime.date,
     xnp: ModuleType,
-    currency: str | None = None,
+    currency: str,
 ) -> ParamObject | None:
     """Parse the original specification found in the yaml tree to a ParamObject."""
     cleaned_spec = _clean_one_param_spec(

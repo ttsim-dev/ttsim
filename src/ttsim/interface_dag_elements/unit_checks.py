@@ -53,7 +53,7 @@ from ttsim.tt.column_objects_param_function import (
     PolicyFunction,
     PolicyInput,
 )
-from ttsim.tt.currencies import registered_base_currencies
+from ttsim.tt.currencies import base_currency
 from ttsim.tt.grouping_levels import register_grouping_levels
 from ttsim.tt.param_objects import (
     DictParam,
@@ -958,16 +958,14 @@ def _fail_if_param_token_is_agnostic_currency(
 ) -> None:
     """Reject an agnostic currency unit on a parameter.
 
-    Once a concrete currency is registered, a parameter's numbers are
-    written in *some* currency — the declaration must name it
-    (``SILVER_PENNY``, ``DM_PER_YEAR``, …), so the build-time conversion
-    to the run currency knows what to convert from. The agnostic ``CURRENCY``
-    base stays legal — and required — on columns and functions, which are
-    currency-agnostic by design.
+    A parameter's numbers are written in *some* concrete currency — the
+    declaration must name it (``SILVER_PENNY``, ``DM_PER_YEAR``, …), so the
+    build-time conversion to the run currency knows what to convert from. The
+    agnostic ``CURRENCY`` base stays legal — and required — on columns and
+    functions, which are currency-agnostic by design.
     """
-    bases = registered_base_currencies()
-    if bases and token_is_agnostic_currency(token):
-        concrete = f"{bases[0].upper()}{str(token).removeprefix('CURRENCY')}"
+    if token_is_agnostic_currency(token):
+        concrete = f"{base_currency().upper()}{str(token).removeprefix('CURRENCY')}"
         raise UnitDefinitionError(
             f"{where}: parameters must pin down the concrete currency their "
             f"numbers are written in; the agnostic unit {token} is not "
