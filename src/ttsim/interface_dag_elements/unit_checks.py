@@ -30,7 +30,7 @@ import dataclasses
 import inspect
 import re
 import sys
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Iterable, Mapping
 from typing import Any, NoReturn, cast, get_args, get_type_hints
 
 import dags.tree as dt
@@ -634,12 +634,12 @@ def _aggregation_declaration_errors(
         error
         for qname, obj in env.items()
         if isinstance(obj, AggByGroupFunction)
-        for error in [
-            _agg_declaration_inconsistency(
+        and (
+            error := _agg_declaration_inconsistency(
                 qname=qname, obj=obj, resolved_units=resolved_units
             )
-        ]
-        if error is not None
+        )
+        is not None
     ]
 
 
@@ -700,8 +700,8 @@ def _rounding_spec_declaration_errors(
         error
         for qname, obj in env.items()
         if isinstance(obj, ColumnFunction)
-        for error in [_rounding_spec_declaration_inconsistency(qname=qname, obj=obj)]
-        if error is not None
+        and (error := _rounding_spec_declaration_inconsistency(qname=qname, obj=obj))
+        is not None
     ]
 
 
@@ -1268,30 +1268,47 @@ def _structured_field_kinds(cls: type) -> dict[str, pint.Unit | type] | None:
     return kinds
 
 
-def _annotated_field_units(cls: type) -> dict[tuple[str, ...], pint.Unit]:
-    """Flatten a parameter dataclass's annotated field units to field paths."""
+def _flatten_to_paths(
+    node: Any,  # noqa: ANN401
+    *,
+    is_leaf: Callable[[Any], bool],
+    items: Callable[[Any], Iterable[tuple[str, Any]]],
+) -> dict[tuple[str, ...], pint.Unit]:
+    """Flatten a nested ``name -> leaf | subtree`` structure to path tuples.
+
+    ``items`` yields a node's ``(name, child)`` pairs and ``is_leaf`` tells a
+    resolved unit apart from a subtree to recurse into.
+    """
     out: dict[tuple[str, ...], pint.Unit] = {}
-    for name, resolved in (_structured_field_kinds(cls) or {}).items():
-        if isinstance(resolved, pint.Unit):
-            out[(name,)] = resolved
+    for name, child in items(node):
+        if is_leaf(child):
+            out[(name,)] = child
         else:
-            for path, unit in _annotated_field_units(resolved).items():
+            for path, unit in _flatten_to_paths(
+                child, is_leaf=is_leaf, items=items
+            ).items():
                 out[(name, *path)] = unit
     return out
+
+
+def _annotated_field_units(cls: type) -> dict[tuple[str, ...], pint.Unit]:
+    """Flatten a parameter dataclass's annotated field units to field paths."""
+    return _flatten_to_paths(
+        cls,
+        is_leaf=lambda child: isinstance(child, pint.Unit),
+        items=lambda node: (_structured_field_kinds(node) or {}).items(),
+    )
 
 
 def _flattened_unit_mapping(
     units: Mapping[str | int, Any],
 ) -> dict[tuple[str, ...], pint.Unit]:
     """Flatten a resolved per-leaf ``unit:`` mapping to string leaf paths."""
-    out: dict[tuple[str, ...], pint.Unit] = {}
-    for key, value in units.items():
-        if isinstance(value, dict):
-            for path, unit in _flattened_unit_mapping(value).items():
-                out[(str(key), *path)] = unit
-        else:
-            out[(str(key),)] = value
-    return out
+    return _flatten_to_paths(
+        units,
+        is_leaf=lambda child: not isinstance(child, dict),
+        items=lambda node: ((str(key), value) for key, value in node.items()),
+    )
 
 
 def _structured_annotation_drift_errors(
