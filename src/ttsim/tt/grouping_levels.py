@@ -12,12 +12,12 @@ from collections.abc import Iterable
 
 from ttsim.tt.units import (
     _ALLOWED_UNIT_TOKENS,
-    _grouping_level_unit_name,
-    _registered_grouping_levels,
-    _unit_builder_levels,
     PERSON_LEVEL,
     UNIT_REGISTRY,
     CompositeUnit,
+    _grouping_level_unit_name,
+    _registered_grouping_levels,
+    _unit_builder_levels,
 )
 
 
@@ -74,5 +74,3 @@ def register_grouping_levels(names: Iterable[str]) -> None:
     # Packages that use the builder at import time call
     # `register_unit_builder_levels` directly, before their declarations run.
     register_unit_builder_levels(names)
-
-

@@ -29,13 +29,13 @@ import dags.tree as dt
 
 from ttsim.exceptions import UnitDefinitionError
 from ttsim.tt.column_objects_param_function import ParamFunction
+from ttsim.tt.currencies import currency_conversion_factor
 from ttsim.tt.param_objects import (
     ConsecutiveIntLookupTableParamValue,
     ParamObject,
     PiecewisePolynomialParamValue,
     RawParam,
 )
-from ttsim.tt.currencies import currency_conversion_factor
 from ttsim.tt.units import (
     UNSET_UNIT,
     CompositeUnit,

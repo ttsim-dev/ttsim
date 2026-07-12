@@ -19,12 +19,12 @@ from ttsim.exceptions import UnitDefinitionError
 from ttsim.tt.units import (
     _ALLOWED_UNIT_TOKENS,
     _REL_TOL,
-    _currency_family_root,
-    _registered_currencies,
     CURRENCY_TOKEN,
     UNIT_REGISTRY,
     CompositeUnit,
     Unit,
+    _currency_family_root,
+    _registered_currencies,
     currency_family_root,
 )
 
@@ -251,5 +251,3 @@ def currency_conversion_factor(source_currency: str, run_currency: str) -> float
         raise UnitDefinitionError(
             f"Cannot convert {source_currency!r} to {run_currency!r}: {e}"
         ) from e
-
-
