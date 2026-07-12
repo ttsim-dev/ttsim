@@ -63,7 +63,6 @@ from ttsim.tt.type_resolution import (
 from ttsim.tt.units import (
     UNSET_UNIT,
     CompositeUnit,
-    Unit,
     unit_for_aggregation,
 )
 from ttsim.tt.vectorization import vectorize_function
@@ -150,10 +149,6 @@ class PolicyInput(ColumnObject):
     fail_msg_if_included: str | None = None
     docstring: str | None = ""
     unit: CompositeUnit = UNSET_UNIT
-    """The input's compositional unit, e.g. ``Unit.CURRENCY.PER_MONTH``; a flow's
-    period comes from the spelled denominator. ``Unit.DIMENSIONLESS`` declares a
-    dimensionless input. Mandatory: the decorator requires it, so :data:`UNSET_UNIT`
-    is only the unreachable field default."""
 
     def remove_tree_logic(
         self,
@@ -263,16 +258,7 @@ class ColumnFunction(ColumnObject, Generic[FunArgTypes, ReturnType]):
     warn_msg_if_included: str | None = None
     fail_msg_if_included: str | None = None
     unit: CompositeUnit = UNSET_UNIT
-    """The column's compositional unit, e.g. ``Unit.CURRENCY.PER_MONTH`` or
-    ``Unit.SQUARE_METER``; ``Unit.DIMENSIONLESS`` declares a dimensionless column.
-    Mandatory: the decorator requires it, so :data:`UNSET_UNIT` is only the
-    unreachable field default."""
     verify_units: bool = True
-    """Whether the build-time unit check dry-runs this function's body. ``False``
-    opts the body out of unit *inference* — the declared :attr:`unit` still stands
-    as the contract for consumers, so ancestors and descendants stay checked — for
-    the rare body carrying a genuine code-level literal of a real dimension that a
-    parameter would only obscure."""
 
     def __post_init__(self) -> None:
         _fail_if_rounding_has_wrong_type(self.rounding_spec)
@@ -640,6 +626,7 @@ def group_creation_function(
     reorder: bool = True,
     warn_msg_if_included: str | None = None,
     fail_msg_if_included: str | None = None,
+    unit: CompositeUnit,
 ) -> Callable[[Callable[..., Any]], GroupCreationFunction]:
     """Decorate a function to create a group_by function.
 
@@ -649,6 +636,8 @@ def group_creation_function(
         end_date: The date until which the function is active (inclusive).
         reorder: Whether the created Group ID's should be reordered to be
             consecutively numbered starting from 0.
+        unit: The group id's compositional unit. A group id is a dimensionless
+            identifier, so this is ``Unit.DIMENSIONLESS``.
 
     """
     start_date, end_date = _convert_and_validate_dates(
@@ -676,9 +665,7 @@ def group_creation_function(
             description=str(inspect.getdoc(func)),
             warn_msg_if_included=warn_msg_if_included,
             fail_msg_if_included=fail_msg_if_included,
-            # A group id is a dimensionless identifier; the decorator exposes no
-            # `unit=`, so it is set here.
-            unit=Unit.DIMENSIONLESS,
+            unit=unit,
         )
 
     return decorator
@@ -1174,16 +1161,7 @@ class ParamFunction(Generic[FunArgTypes, ReturnType]):
     warn_msg_if_included: str | None = None
     fail_msg_if_included: str | None = None
     unit: CompositeUnit = UNSET_UNIT
-    """The parameter function's compositional unit, e.g. ``Unit.CURRENCY.PER_YEAR``.
-    An explicit ``unit=UNSET_UNIT`` declares a *structured* output — not a
-    quantity: the body is not dry-run, and each plucked value's unit comes from
-    the return dataclass's ``Annotated`` fields or a ``cast_unit`` at the pluck
-    (GEP 10). The decorator requires the argument, so the sentinel is never an
-    omission."""
     verify_units: bool = True
-    """Whether the build-time unit check dry-runs this function's body. ``False``
-    opts the body out of unit *inference*; the declared :attr:`unit` still stands as
-    the contract, so ancestors and descendants stay checked."""
 
     def __post_init__(self) -> None:
         # Expose the signature of the wrapped function for dependency resolution

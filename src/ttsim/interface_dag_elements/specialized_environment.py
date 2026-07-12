@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import datetime
 import functools
-from collections.abc import Callable, Mapping
+from collections.abc import Callable
 from types import ModuleType
-from typing import Any, Literal, cast
+from typing import Literal, cast
 
 import dags.tree as dt
 import networkx as nx
@@ -16,7 +16,6 @@ from dags import (
     with_signature,
 )
 
-from ttsim.exceptions import UnitDefinitionError
 from ttsim.interface_dag_elements.automatically_added_functions import (
     create_agg_by_group_functions,
     create_time_conversion_functions,
@@ -25,8 +24,8 @@ from ttsim.interface_dag_elements.interface_node_objects import (
     interface_function,
     interface_input,
 )
-from ttsim.interface_dag_elements.policy_environment import (
-    function_like_converter_output_in_run_currency,
+from ttsim.interface_dag_elements.param_currency_conversion import (
+    restate_converter_outputs_in_run_currency,
 )
 from ttsim.interface_dag_elements.shared import (
     FRAMEWORK_PARTIAL_ARGUMENTS,
@@ -43,13 +42,10 @@ from ttsim.tt.column_objects_param_function import (
     PolicyInput,
 )
 from ttsim.tt.param_objects import (
-    ConsecutiveIntLookupTableParamValue,
     ParamObject,
-    PiecewisePolynomialParamValue,
     RawParam,
 )
 from ttsim.tt.type_resolution import is_column_annotation
-from ttsim.tt.units import UNSET_UNIT, CompositeUnit, token_source_currency
 from ttsim.typing import (
     OrderedQNames,
     PolicyEnvironment,
@@ -148,106 +144,6 @@ def _add_derived_functions(
     }
 
 
-def _unit_declares_a_currency(unit: Any) -> bool:  # noqa: ANN401
-    """Whether a leaf-scaled ``unit:`` declaration (a single token or a per-leaf
-    mapping) pins down a concrete currency anywhere."""
-    if isinstance(unit, Mapping):
-        return any(_unit_declares_a_currency(sub) for sub in unit.values())
-    return isinstance(unit, CompositeUnit) and token_source_currency(unit) is not None
-
-
-def _fail_if_a_converter_mixes_axes_declaring_blobs(
-    params: dict[str, ParamObject],
-    param_functions: dict[str, ParamFunction],
-) -> None:
-    """Reject a param function fed by several axes-declaring blobs.
-
-    The per-axis conversion of a converter's typed output is defined against
-    exactly one axes declaration; converting once per blob would silently
-    rescale the output several times (GEP 10).
-    """
-    axes_blobs_by_consumer: dict[str, list[str]] = {}
-    for pf_name, pf in param_functions.items():
-        for raw_qname in pf.dependencies:
-            raw = params.get(raw_qname)
-            if isinstance(raw, RawParam) and (
-                raw.input_unit is not UNSET_UNIT or raw.output_unit is not UNSET_UNIT
-            ):
-                axes_blobs_by_consumer.setdefault(pf_name, []).append(raw_qname)
-    for pf_name, blob_qnames in axes_blobs_by_consumer.items():
-        if len(blob_qnames) > 1:
-            names = ", ".join(f"{qname!r}" for qname in sorted(blob_qnames))
-            raise UnitDefinitionError(
-                f"Param function {pf_name!r} consumes {len(blob_qnames)} "
-                f"axes-declaring require_converter parameters ({names}); the "
-                f"per-axis conversion of a converter's typed output is defined "
-                f"against exactly one (GEP 10)."
-            )
-
-
-def _convert_function_like_converter_outputs(
-    *,
-    outputs: dict[str, Any],
-    params: dict[str, ParamObject],
-    param_functions: dict[str, ParamFunction],
-    run_currency: str | None,
-    xnp: ModuleType,
-) -> None:
-    """Restate function-like ``require_converter`` outputs in the run currency.
-
-    A ``require_converter`` declaring ``input_unit:`` / ``output_unit:`` is left
-    raw at build time; once its converter has produced the typed value (a
-    schedule or lookup table), that *output* is converted per axis here — the
-    only place that knows both the converted structure and the run currency.
-
-    A *leaf-scaled* ``require_converter`` (a currency ``unit:``, single token or
-    per-leaf mapping) that nonetheless produces such a function-like value was
-    scaled leaf by leaf — which silently mis-states polynomial coefficients (the
-    order-``j`` term must scale by ``f_out / f_in**j``, not by a single factor).
-    That is rejected, pointing the author at the per-axis declaration. A
-    converter fed by *several* axes-declaring blobs is rejected too
-    (:func:`_fail_if_a_converter_mixes_axes_declaring_blobs`): the loop below
-    would rescale its output once per blob (GEP 10).
-    """
-    _fail_if_a_converter_mixes_axes_declaring_blobs(
-        params=params, param_functions=param_functions
-    )
-    for raw_qname, raw in params.items():
-        if not isinstance(raw, RawParam):
-            continue
-        declares_axes = (
-            raw.input_unit is not UNSET_UNIT or raw.output_unit is not UNSET_UNIT
-        )
-        consumers = [
-            pf_name
-            for pf_name, pf in param_functions.items()
-            if raw_qname in pf.dependencies
-        ]
-        for pf_name in consumers:
-            if declares_axes:
-                outputs[pf_name] = function_like_converter_output_in_run_currency(
-                    value=outputs[pf_name],
-                    input_unit=raw.input_unit,
-                    output_unit=raw.output_unit,
-                    run_currency=run_currency,
-                    xnp=xnp,
-                    leaf_name=raw_qname,
-                )
-            elif _unit_declares_a_currency(raw.unit) and isinstance(
-                outputs[pf_name],
-                PiecewisePolynomialParamValue | ConsecutiveIntLookupTableParamValue,
-            ):
-                raise UnitDefinitionError(
-                    f"require_converter {raw_qname!r} declares a leaf-scaled "
-                    f"currency `unit:` ({raw.unit}), but its converter "
-                    f"{pf_name!r} produces a {type(outputs[pf_name]).__name__} "
-                    f"— a function whose coefficients do not all scale by one "
-                    f"factor. Scaling them leaf by leaf silently mis-states the "
-                    f"schedule; declare `input_unit:` / `output_unit:` on the "
-                    f"require_converter so each axis converts correctly (GEP 10)."
-                )
-
-
 @interface_function()
 def with_processed_params_and_scalars(
     without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
@@ -331,7 +227,7 @@ def with_processed_params_and_scalars(
         dnp=dnp,
         backend=backend,
     )
-    _convert_function_like_converter_outputs(
+    restate_converter_outputs_in_run_currency(
         outputs=processed_param_functions,
         params=params,
         param_functions=param_functions,

@@ -1,25 +1,28 @@
 """The pint-based unit framework.
 
-This module establishes the closed unit vocabulary used to check the
-dimensional soundness of the taxes-and-transfers DAG, plus the build-time
-machinery that performs the check.
+Establishes the closed unit vocabulary that checks the dimensional soundness of
+the taxes-and-transfers DAG, plus the build-time machinery that runs the check.
 
-pint never wraps a live array: a :class:`pint.Quantity` is not a JAX pytree and
-does not trace under ``jit``. pint is used only at build time — to run the
-dry-run dimensionality check (in
-:mod:`ttsim.interface_dag_elements.unit_checks`) and to source time- and
-currency-conversion factors baked into the numeric workers. The runtime path
-stays pure arrays, single currency, JAX-safe.
+pint is a build-time tool only — it never wraps a live array (a
+:class:`pint.Quantity` is not a JAX pytree and does not trace under ``jit``). It
+serves two build-time jobs:
 
-Every declaration is a fully-spelled :class:`CompositeUnit`: a base optionally
-divided by an area, a period, and a grouping level, in that canonical order.
-Code builds one fluently off the :class:`Unit` namespace
-(``Unit.CURRENCY.PER_MONTH.PER_BG``); YAML spells the flat canonical string
-(``CURRENCY_PER_MONTH_PER_BG``); the two round-trip through
-:func:`parse_compositional_unit` and :func:`str`.
+- the dry-run dimensionality check (:mod:`ttsim.interface_dag_elements.unit_checks`);
+- sourcing the time- and currency-conversion factors baked into the numeric
+  workers.
 
-The base is ``CURRENCY`` on columns and functions, and a registered concrete
-currency (``SILVER_PENNY``, ``DM``, …) on parameters — where it also names the
+The runtime path stays pure arrays, single currency, JAX-safe.
+
+Every declaration is a fully-spelled :class:`CompositeUnit` — a base optionally
+divided by an area, a period, and a grouping level, in that canonical order. It
+has two round-tripping spellings (via :func:`parse_compositional_unit` /
+:func:`str`):
+
+- fluent, off the :class:`Unit` namespace (``Unit.CURRENCY.PER_MONTH.PER_BG``);
+- flat canonical string, in YAML (``CURRENCY_PER_MONTH_PER_BG``).
+
+The base is ``CURRENCY`` on columns and functions; on parameters it is a
+registered concrete currency (``SILVER_PENNY``, ``DM``, …) that also names the
 currency the numbers are written in, so the build-time conversion to the run
 currency can read it off. For dimensionality a concrete currency means exactly
 what ``CURRENCY`` means.
@@ -29,8 +32,7 @@ from __future__ import annotations
 
 import math
 import re
-from collections.abc import Iterable, Iterator, Mapping
-from contextlib import contextmanager
+from collections.abc import Iterator, Mapping
 from dataclasses import dataclass, replace
 from typing import TYPE_CHECKING, Any, TypeVar
 
@@ -122,17 +124,18 @@ _unit_builder_levels: set[str] = set()
 
 @dataclass(frozen=True)
 class CompositeUnit:
-    """A fully-spelled compositional unit.
+    """A fully-spelled compositional unit — *the* declaration type.
 
-    Built fluently off a base (``Unit.CURRENCY.PER_MONTH.PER_BG``) or parsed
-    from the flat canonical string (``parse_compositional_unit`` of
-    ``"CURRENCY_PER_MONTH_PER_BG"``); the two round-trip through :func:`str`.
-    The denominators are held in canonical order — at most one *area*, one
-    *period*, one *level* — and the builder methods enforce that order, so a
-    non-canonical chain (``.PER_BG.PER_MONTH``) is a definition error.
+    A base divided by at most one *area*, one *period*, and one *level*, held in
+    that canonical order; the builder methods enforce the order, so a
+    non-canonical chain (``.PER_BG.PER_MONTH``) is a definition error. Two
+    round-tripping spellings (via :func:`str`):
 
-    A :class:`CompositeUnit` is *the* declaration type; it resolves to a pint
-    unit via :func:`resolve_compositional_unit`.
+    - fluent, off a base (``Unit.CURRENCY.PER_MONTH.PER_BG``);
+    - flat canonical string, parsed by :func:`parse_compositional_unit`
+      (``"CURRENCY_PER_MONTH_PER_BG"``).
+
+    It resolves to a pint unit via :func:`resolve_compositional_unit`.
     """
 
     base: str
@@ -304,8 +307,11 @@ def resolve_compositional_unit(
 ) -> pint.Unit:
     """Resolve a compositional unit to its pint unit.
 
-    The denominators divide the base in turn: a period divides by its pint
-    period, an area by ``meter ** 2``, a level by its grouping-level dimension.
+    Each denominator divides the base in turn:
+
+    - a period by its pint period;
+    - an area by ``meter ** 2``;
+    - a level by its grouping-level dimension.
 
     A currency base resolves to the agnostic :data:`CURRENCY_TOKEN` dimension —
     for dimensionality a concrete currency means exactly what ``CURRENCY`` means
@@ -348,14 +354,16 @@ def _attach_implied_person_leaf(
 ) -> pint.Unit:
     """Attach the implied ``[person]`` leaf where the vocabulary calls for it.
 
-    An omitted group level means a person property, and whether that attaches
-    the ``[person]`` leaf is fixed per spelling (GEP 10): a boolean always
-    carries its level; a level-carrying base (currency, area, working hours,
-    the ``[person]`` count) carries the leaf unless an *area denominator* makes
-    the unit a price or a density — owned by nobody, so a rent cap
-    (``CURRENCY_PER_SQUARE_METER_PER_MONTH``) stays leaf-less and cancels
-    cleanly against an area. Intensive bases (a duration, a share, a calendar
-    point) stay bare.
+    An omitted group level means a person property; whether that attaches the
+    ``[person]`` leaf is fixed per spelling (GEP 10):
+
+    - a boolean always carries its level;
+    - a level-carrying base (currency, area, working hours, the ``[person]``
+      count) carries the leaf — unless an *area denominator* makes the unit a
+      price or a density, owned by nobody: a rent cap
+      (``CURRENCY_PER_SQUARE_METER_PER_MONTH``) stays leaf-less so it cancels
+      cleanly against an area;
+    - an intensive base (a duration, a share, a calendar point) stays bare.
     """
     if unit.level is not None:
         return resolved
@@ -374,16 +382,20 @@ def resolve_compositional_column_unit(
 ) -> pint.Unit:
     """Resolve a column/function's compositional unit, validating the name suffix.
 
-    The spelled period must match the name's time suffix. The grouping level is
-    **declared, not read off the suffix** (GEP 10): a quantity carries a group
-    level iff it is a property of the group as a whole. A spelled group level must
-    equal the name's aggregation suffix, but may be omitted at *any* suffix — the
-    column is then a *person* property: the implied person leaf for a
-    level-carrying base (currency, area, working hours, the ``[person]`` count) or
-    a boolean, simply level-less for an intensive base (a duration, a share, a
-    calendar point). So ``betrag_m_hh`` may declare ``CURRENCY_PER_MONTH_PER_HH``
-    (the household's amount) or ``CURRENCY_PER_MONTH`` (each member's, constant
-    within the household), never ``…_PER_BG``.
+    Two rules tie the unit to the name (GEP 10):
+
+    - the spelled period must match the name's time suffix;
+    - the grouping level is **declared, not read off the suffix** — a quantity
+      carries a group level iff it is a property of the group as a whole. A
+      spelled group level must equal the name's aggregation suffix, but may be
+      omitted at *any* suffix.
+
+    An omitted group level makes the column a *person* property: the implied
+    person leaf for a level-carrying base (currency, area, working hours, the
+    ``[person]`` count) or a boolean, simply level-less for an intensive base (a
+    duration, a share, a calendar point). So ``betrag_m_hh`` may declare
+    ``CURRENCY_PER_MONTH_PER_HH`` (the household's amount) or ``CURRENCY_PER_MONTH``
+    (each member's, constant within the household), never ``…_PER_BG``.
 
     Columns are currency-agnostic, so a concrete-currency base is rejected.
 
@@ -438,13 +450,16 @@ def resolve_compositional_param_unit(
     """Resolve a parameter's compositional unit.
 
     A parameter spells its period and any *group* level (it has no name suffix to
-    read them off); an omitted group level is the individual level, exactly as for
-    a column. So ``SILVER_PENNY_PER_MONTH`` is a per-person amount,
-    ``SILVER_PENNY_PER_FAM`` a per-family one, and a level-less base
-    (``DIMENSIONLESS``, ``YEARS``) stays level-less. A concrete-currency base is
-    allowed — parameters pin the currency their numbers are written in. A scalar
-    parameter additionally takes a time suffix on its *name*; where one is present
-    the spelled period must agree with it.
+    read them off); an omitted group level is the individual level, exactly as
+    for a column:
+
+    - ``SILVER_PENNY_PER_MONTH`` — a per-person amount;
+    - ``SILVER_PENNY_PER_FAM`` — a per-family amount;
+    - a level-less base (``DIMENSIONLESS``, ``YEARS``) stays level-less.
+
+    A concrete-currency base is allowed — parameters pin the currency their
+    numbers are written in. A scalar parameter additionally takes a time suffix
+    on its *name*; where one is present the spelled period must agree with it.
 
     Raises:
         UnitDefinitionError: If a present name time suffix disagrees with the
@@ -495,25 +510,6 @@ def resolve_compositional_field_unit(unit: CompositeUnit, *, where: str) -> pint
     return _resolve_agnostic_body_unit(
         unit=unit, where=where, what="a field annotation"
     )
-
-
-def register_unit_builder_levels(names: Iterable[str]) -> None:
-    """Give the fluent builder a ``per_<level>`` attribute for each level.
-
-    The level vocabulary is open and discovered per build, so the builder cannot
-    hard-wire the level step the way it does the closed area/period steps. Each
-    package registers its levels at import, before its declarations run. The
-    person leaf is always registered. Idempotent.
-    """
-    for name in (PERSON_LEVEL, *names):
-        if name in _unit_builder_levels:
-            continue
-        _unit_builder_levels.add(name)
-        setattr(
-            CompositeUnit,
-            f"PER_{name.upper()}",
-            property(lambda self, level=name: self.PER_LEVEL(level)),
-        )
 
 
 class _UnitNamespaceMeta(type):
@@ -628,20 +624,21 @@ def cast_unit(
 ) -> _CastValueT:
     """Re-tag ``value`` with ``unit`` for the build-time unit check (GEP 10).
 
-    The expression-level escape hatch of the dry-run: like ``typing.cast``,
-    this is the identity at run time — ``value`` comes back unchanged, scalar
-    or column, so the numeric path and JAX tracing are untouched. Only the
-    dry-run gives the call meaning: the stand-in flowing through it is
-    re-tagged with the stated unit, wholesale — dimension, flow period, and
-    grouping level, resolved like a declaration (currency-agnostic, the person
-    leaf implied). The rest of the body stays checked, and every override is
-    visible at the expression that needs it.
+    The expression-level escape hatch of the dry-run. Like ``typing.cast``, it
+    is the identity at run time — ``value`` comes back unchanged, scalar or
+    column, so the numeric path and JAX tracing are untouched. Only the dry-run
+    gives the call meaning: the stand-in flowing through it is re-tagged with the
+    stated unit wholesale — dimension, flow period, and grouping level, resolved
+    like a declaration (currency-agnostic, the person leaf implied). The rest of
+    the body stays checked, and every override is visible at the expression that
+    needs it.
 
     Use it where a single operation is dimensionally irregular but deliberate:
-    policy-mandated cross-level arithmetic (a group extreme against a person
-    threshold, a group share times a group total), a granularity conversion on
-    the calendar axes, or a genuine dimensioned constant that cannot be
-    promoted to a parameter.
+
+    - policy-mandated cross-level arithmetic (a group extreme against a person
+      threshold, a group share times a group total);
+    - a granularity conversion on the calendar axes;
+    - a genuine dimensioned constant that cannot be promoted to a parameter.
 
     Args:
         value: The expression to re-tag; returned unchanged.
@@ -654,16 +651,18 @@ def cast_unit(
     return value
 
 
-#: Sentinel with two readings, told apart by the node type (GEP 10). On a
-#: ``@param_function``, ``unit=UNSET_UNIT`` is the *explicit* declaration of a
-#: structured output — a dataclass of related parameters, a converter-built
-#: schedule — that is not a quantity: the body is not dry-run and consumers
-#: state each plucked value's unit with ``cast_unit``. Everywhere else a real
-#: unit is mandatory, so the sentinel only survives as a dataclass field
-#: default (the ``unit`` field needs one for field-ordering) marking an
-#: *omitted* declaration, which the mandatory-units check reports. It is a
-#: :class:`CompositeUnit` so the field type is clean; its base never resolves
-#: and it is only ever compared by identity.
+#: Sentinel with two readings, told apart by the node type (GEP 10):
+#:
+#: - on a ``@param_function``, ``unit=UNSET_UNIT`` is the *explicit* declaration
+#:   of a structured output (a dataclass of related parameters, a converter-built
+#:   schedule) that is not a quantity: the body is not dry-run and consumers
+#:   state each plucked value's unit with ``cast_unit``;
+#: - everywhere else a real unit is mandatory, so the sentinel only survives as a
+#:   dataclass field default (the ``unit`` field needs one for field-ordering),
+#:   marking an *omitted* declaration that the mandatory-units check reports.
+#:
+#: It is a :class:`CompositeUnit` so the field type is clean; its base never
+#: resolves and it is only ever compared by identity.
 UNSET_UNIT: CompositeUnit = CompositeUnit(base="__UNSET__")
 
 
@@ -693,7 +692,7 @@ def token_source_currency(token: CompositeUnit | None) -> str | None:
     )
 
 
-def unit_for_derived_node(token: CompositeUnit) -> CompositeUnit:
+def replace_concrete_with_agnostic_currency(token: CompositeUnit) -> CompositeUnit:
     """The unit a node *derived* from a source with this unit carries.
 
     Derived nodes — time-conversion variants and aggregations — are functions,
@@ -709,7 +708,7 @@ def unit_for_derived_node(token: CompositeUnit) -> CompositeUnit:
     )
 
 
-def coerce_unit_token(
+def coerce_to_composite_unit(
     value: str | CompositeUnit,
     *,
     where: str,
@@ -838,36 +837,6 @@ _currency_family_root: dict[str, str] = {}
 _REL_TOL = 1e-9
 
 
-def base_currency() -> str | None:
-    """The single registered base currency, or ``None`` if none is registered.
-
-    With more than one currency *family* registered in the process — two
-    packages imported into one test run — there is no meaningful process-wide
-    base: the default run currency must then come from the policy objects (the
-    ``currency`` interface node derives it from the parameters' declarations)
-    or from an explicit ``currency=`` argument.
-
-    Raises:
-        UnitDefinitionError: If base currencies of more than one family are
-            registered.
-    """
-    roots = registered_base_currencies()
-    if not roots:
-        return None
-    if len(roots) == 1:
-        return roots[0]
-    raise UnitDefinitionError(
-        f"Base currencies of {len(roots)} different families are registered "
-        f"({', '.join(roots)}), so there is no process-wide default currency. "
-        f"Pass `currency=...` explicitly (GEP 10)."
-    )
-
-
-def registered_base_currencies() -> tuple[str, ...]:
-    """The registered currency-family roots (the base currencies), sorted."""
-    return tuple(sorted(set(_currency_family_root.values())))
-
-
 def currency_family_root(name: str) -> str:
     """The base currency that ``name``'s definition chains to.
 
@@ -886,165 +855,6 @@ def currency_family_root(name: str) -> str:
     return _currency_family_root[name]
 
 
-def _definition_family_root(name: str, definition: str) -> str:
-    """The family root of a currency defined relative to another.
-
-    A definition referencing one registered currency joins that currency's
-    family. A definition against the abstract :data:`CURRENCY_TOKEN` reference
-    alone roots its *own* family: like a base currency it chains to no other,
-    only at a factor other than 1.
-
-    Raises:
-        UnitDefinitionError: If the definition references an unregistered unit
-            or more than one registered currency.
-    """
-    try:
-        parsed_definition = UNIT_REGISTRY.parse_expression(definition)
-    except pint.UndefinedUnitError as error:
-        raise UnitDefinitionError(
-            f"Currency {name!r} is defined as {definition!r}, which "
-            f"references an unregistered unit. Define a currency relative "
-            f"to an already-registered one (GEP 10)."
-        ) from error
-    referenced = sorted(
-        str(token)
-        for token in to_units_container(parsed_definition.units)
-        if str(token) in _registered_currencies
-    )
-    if len(referenced) > 1:
-        raise UnitDefinitionError(
-            f"Currency {name!r} must be defined relative to at most one "
-            f"registered currency; {definition!r} references "
-            f"{', '.join(referenced)} (GEP 10)."
-        )
-    if not referenced:
-        return name
-    return _currency_family_root[referenced[0]]
-
-
-@contextmanager
-def isolated_currency_registration() -> Iterator[None]:
-    """Restore the currency bookkeeping on exit (a test isolation tool).
-
-    Registrations made inside the block do not leak: the currency set, the
-    family roots, and the token vocabulary are restored. The pint definitions
-    created inside the block cannot be removed, but without the bookkeeping
-    they are inert, and a later *consistent* re-registration is tolerated
-    (:func:`register_currency`).
-    """
-    saved_currencies = set(_registered_currencies)
-    saved_roots = dict(_currency_family_root)
-    saved_tokens = set(_ALLOWED_UNIT_TOKENS)
-    try:
-        yield
-    finally:
-        _registered_currencies.clear()
-        _registered_currencies.update(saved_currencies)
-        _currency_family_root.clear()
-        _currency_family_root.update(saved_roots)
-        _ALLOWED_UNIT_TOKENS.clear()
-        _ALLOWED_UNIT_TOKENS.update(saved_tokens)
-
-
-def register_currency(
-    name: str,
-    *,
-    base: bool = False,
-    definition: str | None = None,
-) -> None:
-    """Register a concrete currency in the ``[currency]`` dimension.
-
-    Downstream packages call this on import. Exactly one currency per *family*
-    is the *base* currency (factor 1 against the abstract
-    :data:`CURRENCY_TOKEN` reference); every other currency is defined relative
-    to an already-known currency of the same family. Families from different
-    packages coexist in one process — conversion is possible only within a
-    family (:func:`currency_conversion_factor`), and the default run currency
-    follows the policy objects in play (the ``currency`` interface node) once
-    more than one family is registered.
-
-    The registered currency becomes a valid compositional *base* — its
-    upper-cased name (``register_currency("DM", ...)`` makes ``DM``,
-    ``DM_PER_MONTH``, … parseable) — so parameters can pin down the concrete
-    currency their numbers are written in.
-
-    Args:
-        name: The currency's unit name (e.g. ``"euro"``, ``"DM"``).
-        base: Whether this is a base currency. Mutually exclusive with
-            ``definition``.
-        definition: A pint-parseable definition relative to another currency
-            (e.g. ``"euro / 1.95583"``). Mutually exclusive with ``base``.
-
-    Raises:
-        UnitDefinitionError: If the arguments are inconsistent, if the
-            definition does not resolve to the ``[currency]`` dimension, or if
-            it does not reference exactly one registered currency.
-    """
-    if base == (definition is not None):
-        raise UnitDefinitionError(
-            "register_currency requires exactly one of `base=True` or "
-            f"`definition=...`; got base={base!r}, definition={definition!r}."
-        )
-    family_root = (
-        _definition_family_root(name=name, definition=definition)
-        if definition is not None
-        else name
-    )
-
-    currency_dim = UNIT_REGISTRY.Quantity(1.0, CURRENCY_TOKEN).dimensionality
-    if name in UNIT_REGISTRY:
-        # Idempotent re-registration (e.g. a re-imported module). Tolerate it
-        # only if the existing definition is consistent with this call — same
-        # dimension *and* same conversion factor: checking the dimension alone
-        # would silently keep the old factor and invalidate later conversions.
-        existing_dim = UNIT_REGISTRY.Quantity(1.0, name).dimensionality
-        if existing_dim != currency_dim:
-            raise UnitDefinitionError(
-                f"Cannot register currency {name!r}: a non-currency unit of "
-                f"that name already exists ({existing_dim})."
-            )
-        existing_factor = UNIT_REGISTRY.Quantity(1.0, name).to(CURRENCY_TOKEN).magnitude
-        if definition is not None:
-            requested_factor = (
-                UNIT_REGISTRY.parse_expression(definition).to(CURRENCY_TOKEN).magnitude
-            )
-        else:
-            requested_factor = 1.0
-        if not math.isclose(existing_factor, requested_factor, rel_tol=_REL_TOL):
-            requested_desc = "base (factor 1)" if base else f"{definition!r}"
-            raise UnitDefinitionError(
-                f"Cannot re-register currency {name!r}: it already converts to "
-                f"{existing_factor} {CURRENCY_TOKEN}, but this call ({requested_desc}) "
-                f"requests {requested_factor}. A currency's factor against "
-                f"{CURRENCY_TOKEN} must be consistent across registrations (GEP 10)."
-            )
-        existing_root = _currency_family_root.get(name)
-        if existing_root is not None and existing_root != family_root:
-            raise UnitDefinitionError(
-                f"Cannot re-register currency {name!r} into the family of "
-                f"{family_root!r}: it belongs to the family of "
-                f"{existing_root!r} (GEP 10)."
-            )
-    else:
-        UNIT_REGISTRY.define(
-            f"{name} = {CURRENCY_TOKEN}" if base else f"{name} = {definition}"
-        )
-        if UNIT_REGISTRY.Quantity(1.0, name).dimensionality != currency_dim:
-            raise UnitDefinitionError(
-                f"Currency {name!r} defined as {definition!r} does not resolve "
-                f"to the [currency] dimension."
-            )
-
-    _ALLOWED_UNIT_TOKENS.add(name)
-    _registered_currencies.add(name)
-    _currency_family_root[name] = family_root
-    # Surface the concrete currency on the `Unit` builder (`Unit.EUR`, `Unit.DM`,
-    # `Unit.SILVER_PENNY`) so it can tag a `UnitAnnotatedColumn` of input data.
-    # A column/function declaration still rejects a concrete base
-    # (`resolve_compositional_column_unit`); this only makes it reachable.
-    setattr(Unit, name.upper(), CompositeUnit(base=name.upper()))
-
-
 #: The grouping levels registered so far (the bare names, e.g. ``"person"``,
 #: ``"hh"``), populated by :func:`register_grouping_levels`. ``person`` (the
 #: individual leaf, doubling as the ``[person]`` count dimension) is always
@@ -1056,42 +866,6 @@ _registered_grouping_levels: set[str] = set()
 def _grouping_level_unit_name(name: str) -> str:
     """The internal pint unit name anchoring a grouping level's dimension."""
     return f"{_GROUPING_LEVEL_PREFIX}{name}"
-
-
-def register_grouping_levels(names: Iterable[str]) -> None:
-    """Register grouping levels as base dimensions in the registry.
-
-    Each grouping level — the individual ``person`` (the leaf, identified by
-    ``p_id``) and one per ``*_id`` group column (``hh``, ``bg``, ``fg``, …) — is
-    its *own* pint base dimension with no conversion to any other: a household
-    holds a variable number of persons, so the levels are not units of one shared
-    dimension (the way ``month`` and ``year`` are units of ``[time]``) but
-    distinct, non-interconvertible base dimensions. The level set is discovered
-    per build from the policy environment's ``*_id`` columns.
-
-    ``person`` (the leaf level) is always registered: it doubles as the
-    ``[person]`` *count* dimension, the conversion factor between levels that lets
-    head counts and per-person amounts cancel.
-
-    Each level is defined under an internal :data:`_GROUPING_LEVEL_PREFIX`-prefixed
-    pint name anchoring a fresh base dimension and added to the closed pint-token
-    vocabulary. Re-registering an already-known level is a tolerated no-op,
-    mirroring :func:`register_currency`.
-
-    Args:
-        names: The grouping-level names to register (e.g. ``["hh", "bg"]``).
-            ``person`` is added unconditionally.
-    """
-    for name in (PERSON_LEVEL, *names):
-        if name in _registered_grouping_levels:
-            continue
-        unit_name = _grouping_level_unit_name(name)
-        UNIT_REGISTRY.define(f"{unit_name} = [{unit_name}]")
-        _ALLOWED_UNIT_TOKENS.add(unit_name)
-        _registered_grouping_levels.add(name)
-    # Packages that use the builder at import time call
-    # `register_unit_builder_levels` directly, before their declarations run.
-    register_unit_builder_levels(names)
 
 
 def _fail_if_grouping_level_is_unknown(name: str) -> None:
@@ -1231,22 +1005,23 @@ def _token_base_unit(token: CompositeUnit) -> pint.Unit:
 def units_are_equivalent(left: pint.Unit, right: pint.Unit) -> bool:
     """Whether two units are interchangeable on a DAG edge.
 
-    Two units are equivalent iff they share a dimensionality *and* a magnitude
-    (i.e. their ratio is dimensionless and equal to 1). This is stricter than
-    pint's compatibility: ``euro / month`` and ``euro / year`` are both
-    ``[currency] / [time]`` but are *not* equivalent (ratio 12), so a monthly
-    node feeding a yearly consumer is caught.
+    Equivalent iff they share a dimensionality *and* a magnitude (their ratio is
+    dimensionless and equal to 1) — stricter than pint's compatibility:
+    ``euro / month`` and ``euro / year`` are both ``[currency] / [time]`` but are
+    *not* equivalent (ratio 12), so a monthly node feeding a yearly consumer is
+    caught.
 
-    The base currency is defined as factor 1 against the :data:`CURRENCY_TOKEN`
-    reference, so a ``"CURRENCY"`` declaration is equivalent to a value inferred
-    in the base currency. Cross-currency magnitudes (e.g. ``DM``) are reconciled
-    by the currency knob before this check runs.
+    Two wrinkles:
 
-    A calendar-point (affine offset) unit cannot be divided, so equivalence of
-    such units is decided by *identity* rather than by magnitude: two
-    ``calendar_year`` points are equivalent, but a ``calendar_year`` point is
-    *not* equivalent to a ``year`` / ``delta_calendar_year`` duration nor to a
-    ``calendar_month`` point on another axis.
+    - the base currency is factor 1 against the :data:`CURRENCY_TOKEN` reference,
+      so a ``"CURRENCY"`` declaration is equivalent to a value inferred in the
+      base currency; cross-currency magnitudes (e.g. ``DM``) are reconciled by
+      the build-time currency conversion before this check runs;
+    - a calendar-point (affine offset) unit cannot be divided, so such units are
+      compared by *identity*, not magnitude: two ``calendar_year`` points are
+      equivalent, but a ``calendar_year`` point is *not* equivalent to a
+      ``year`` / ``delta_calendar_year`` duration nor to a ``calendar_month``
+      point on another axis.
     """
     left_quantity = UNIT_REGISTRY.Quantity(1.0, left)
     right_quantity = UNIT_REGISTRY.Quantity(1.0, right)
@@ -1264,16 +1039,18 @@ def is_calendar_point_unit(unit: pint.Unit) -> bool:
 
     A calendar point (``calendar_year`` and its month/day siblings) is a pint
     offset unit: it obeys affine algebra, not the magnitude algebra of a
-    duration. Two points *subtract* to a duration and a duration *shifts* a
-    point, but two points cannot be added, a point cannot be scaled, and points
-    on different calendar axes cannot be combined — pint raises an
-    :class:`pint.OffsetUnitCalculusError` on any of these.
+    duration. pint raises an :class:`pint.OffsetUnitCalculusError` on any illegal
+    operation, so:
+
+    - two points *subtract* to a duration, and a duration *shifts* a point;
+    - two points cannot be added, a point cannot be scaled, and points on
+      different calendar axes cannot be combined.
 
     Callers that implement the affine ``+``/``-`` rules (the build-time dry-run)
     detect a point this way and delegate the operation to pint rather than to the
     magnitude-equivalence check, which would wrongly reject the valid
-    ``point + duration``. Detection is by the very property that defines an
-    offset unit: it cannot be divided by itself.
+    ``point + duration``. Detection is by the very property that defines an offset
+    unit: it cannot be divided by itself.
     """
     quantity = UNIT_REGISTRY.Quantity(1.0, unit)
     try:
@@ -1281,43 +1058,6 @@ def is_calendar_point_unit(unit: pint.Unit) -> bool:
     except pint.OffsetUnitCalculusError:
         return True
     return False
-
-
-def currency_conversion_factor(source_currency: str, run_currency: str) -> float:
-    """Build-time factor converting a value from ``source_currency`` to the run one.
-
-    Used to bake historical parameters denominated in their legal currency (e.g.
-    DM) into the run currency at environment-build time. pint is the single
-    source of truth for the rate. Both currencies must be registered and belong
-    to the same *family*: two packages' families share no exchange rate, and
-    their pint factors would relate them 1:1 through the abstract
-    :data:`CURRENCY_TOKEN` reference — a silent wrong number, so it is rejected
-    here.
-
-    Raises:
-        UnitDefinitionError: If either currency is unknown, not a currency, or
-            of another family than the other.
-    """
-    for name in (source_currency, run_currency):
-        if name not in UNIT_REGISTRY:
-            raise UnitDefinitionError(
-                f"Cannot convert currency: {name!r} is not a registered currency."
-            )
-    source_root = currency_family_root(source_currency)
-    run_root = currency_family_root(run_currency)
-    if source_root != run_root:
-        raise UnitDefinitionError(
-            f"No exchange rate connects {source_currency!r} (family of "
-            f"{source_root!r}) and {run_currency!r} (family of {run_root!r}): "
-            f"they were registered by different packages. Use a run currency "
-            f"from the family the parameters are denominated in (GEP 10)."
-        )
-    try:
-        return UNIT_REGISTRY.Quantity(1.0, source_currency).to(run_currency).magnitude
-    except pint.DimensionalityError as e:
-        raise UnitDefinitionError(
-            f"Cannot convert {source_currency!r} to {run_currency!r}: {e}"
-        ) from e
 
 
 def _currency_component_of(units: pint.Unit) -> pint.Unit | None:
@@ -1448,13 +1188,17 @@ def composite_from_resolved_unit(units: pint.Unit) -> CompositeUnit:
     """Reconstruct the compositional spelling of a *resolved* pint unit.
 
     The output-side inverse of :func:`resolve_compositional_unit`: it labels a
-    result-tree leaf with a :class:`CompositeUnit` (so the result tree is the same
-    shape as the input tree, GEP 10). A resolved unit obeys the grammar, so each
-    component maps back to one slot — the currency / count / area / duration
-    numerator base, the flow period, and the spelled group level. The implied
-    person leaf (a ``grouping_level_person`` denominator) is dropped, as a
-    spelling never spells it; a person-leaf *numerator* is the ``PERSON_COUNT``
-    base of a head count.
+    result-tree leaf with a :class:`CompositeUnit`, so the result tree is the
+    same shape as the input tree (GEP 10). A resolved unit obeys the grammar, so
+    each component maps back to one slot:
+
+    - the currency / count / area / duration numerator → the base;
+    - the flow period → the period;
+    - the spelled group level → the level.
+
+    The implied person leaf (a ``grouping_level_person`` denominator) is dropped,
+    as a spelling never spells it; a person-leaf *numerator* is the
+    ``PERSON_COUNT`` base of a head count.
 
     Apply it to a unit already restated in the run currency
     (:func:`output_unit_in_run_currency`) so the base is the concrete run
@@ -1602,14 +1346,18 @@ def strip_input_quantity_at_boundary(
 ) -> Any:  # noqa: ANN401
     """Convert a pint-tagged input column to the run currency, then strip it.
 
-    A user *may* attach a pint ``Quantity`` to an input column. The tag may only
-    combine units TTSIM knows about, and its flow period must match the column's
-    GEP-1 time suffix exactly (a ``_m`` column needs a ``/month`` tag; an
-    unsuffixed column needs a tag with no period). Its currency component is then
-    *converted* to the run currency — so a DM-tagged column can feed a euro run,
-    rescaled at the boundary — while its period and area are left untouched. A tag
-    already in the run currency, or with no currency component, is stripped
-    unchanged. The bare magnitude is returned for the numeric runtime path.
+    A user *may* attach a pint ``Quantity`` to an input column. At the boundary:
+
+    - the tag may only combine units TTSIM knows about;
+    - its flow period must match the column's GEP-1 time suffix exactly (a
+      ``_m`` column needs a ``/month`` tag; an unsuffixed column a tag with no
+      period);
+    - its currency component is *converted* to the run currency — so a DM-tagged
+      column can feed a euro run, rescaled here — while period and area are left
+      untouched; a tag already in the run currency, or with no currency
+      component, is stripped unchanged.
+
+    The bare magnitude is returned for the numeric runtime path.
 
     The period check is the only mismatch the boundary can catch on its own: the
     column's *declared* unit (its dimension, the numerator) is not threaded here,

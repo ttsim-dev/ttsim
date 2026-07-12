@@ -38,15 +38,12 @@ from ttsim.tt import (
     Unit,
     agg_by_group_function,
     cast_unit,
-    coerce_unit_token,
     group_creation_function,
     join,
     param_function,
-    parse_unit,
     piecewise_polynomial,
     policy_function,
     policy_input,
-    units_are_equivalent,
 )
 from ttsim.tt.param_objects import (
     ConsecutiveIntLookupTableParam,
@@ -59,7 +56,10 @@ from ttsim.tt.param_objects import (
 )
 from ttsim.tt.units import (
     PERSON_LEVEL,
+    coerce_to_composite_unit,
     divide_by_grouping_level,
+    parse_unit,
+    units_are_equivalent,
 )
 from ttsim.typing import BoolColumn, FloatColumn, IntColumn, RawParamValue
 from ttsim.unit_converters import m_to_y, per_m_to_per_y, y_to_m
@@ -74,9 +74,11 @@ _END = datetime.date(2030, 12, 31)
 
 # Parameters must pin down the concrete currency their numbers are written in
 # (GEP 10); these are mettsim's concrete (castar) compositional spellings.
-CASTAR_PER_YEAR = coerce_unit_token(value="CASTAR_PER_YEAR", where="test setup")
-CASTAR_PER_MONTH = coerce_unit_token(value="CASTAR_PER_MONTH", where="test setup")
-CASTAR = coerce_unit_token(value="CASTAR", where="test setup")
+CASTAR_PER_YEAR = coerce_to_composite_unit(value="CASTAR_PER_YEAR", where="test setup")
+CASTAR_PER_MONTH = coerce_to_composite_unit(
+    value="CASTAR_PER_MONTH", where="test setup"
+)
+CASTAR = coerce_to_composite_unit(value="CASTAR", where="test setup")
 
 
 # ----------------------------------------------------------------------------
@@ -109,9 +111,9 @@ def unannotated_income_y() -> float:
     """Carries the UNSET sentinel; the missing-units check must report it."""
 
 
-@group_creation_function()
+@group_creation_function(unit=Unit.DIMENSIONLESS)
 def fam_id(p_id: IntColumn, xnp: object) -> IntColumn:  # noqa: ARG001
-    """Group creation; auto-assigned DIMENSIONLESS (GEP 10)."""
+    """Group creation (a dimensionless id)."""
     return p_id
 
 
@@ -2754,13 +2756,13 @@ def test_container_field_annotation_is_rejected():
 
 @param_function(unit=UNSET_UNIT)
 def built_schedule(
-    raw_schedule_blob: RawParamValue, xnp: ModuleType
+    raw_schedule: RawParamValue, xnp: ModuleType
 ) -> PiecewisePolynomialParamValue:
     """A converter-built schedule: opaque to the dry-run (GEP 10)."""
     return PiecewisePolynomialParamValue(
-        thresholds=xnp.asarray(raw_schedule_blob["thresholds"]),
-        intercepts=xnp.asarray(raw_schedule_blob["intercepts"]),
-        coefficients=xnp.asarray(raw_schedule_blob["coefficients"]),
+        thresholds=xnp.asarray(raw_schedule["thresholds"]),
+        intercepts=xnp.asarray(raw_schedule["intercepts"]),
+        coefficients=xnp.asarray(raw_schedule["coefficients"]),
     )
 
 
@@ -2803,8 +2805,8 @@ def test_piecewise_call_on_converter_built_schedule_without_cast_is_caught():
 
 
 # ----------------------------------------------------------------------------
-# Converter-built schedules from axes-declaring blobs screen like
-# parameter-declared ones (GEP 10)
+# Converter-built schedules from input/output-unit require_converters screen
+# like parameter-declared ones (GEP 10)
 # ----------------------------------------------------------------------------
 
 
@@ -2822,7 +2824,7 @@ def make_raw_levy_schedule() -> RawParam:
 def levy_schedule(
     raw_levy_schedule: RawParamValue, xnp: ModuleType
 ) -> PiecewisePolynomialParamValue:
-    """A converter whose blob declares axes: consumers screen against them."""
+    """A converter with input/output units declared: consumers screen against them."""
     return PiecewisePolynomialParamValue(
         thresholds=xnp.asarray([0.0, raw_levy_schedule["ceiling"]]),
         intercepts=xnp.asarray([0.0, 0.0]),
@@ -2922,7 +2924,7 @@ def test_axes_consumer_with_quantity_unit_is_rejected():
         )
 
 
-def test_converter_of_two_axes_blobs_is_rejected():
+def test_converter_of_two_input_output_unit_params_is_rejected():
     @param_function(unit=UNSET_UNIT)
     def merged_schedule(
         raw_levy_schedule: RawParamValue,

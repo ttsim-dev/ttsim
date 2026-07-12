@@ -21,38 +21,40 @@ from ttsim.interface_dag_elements.automatically_added_functions import (
     create_time_conversion_functions,
 )
 from ttsim.tt import (
-    CURRENCY_TOKEN,
-    UNIT_REGISTRY,
     UNSET_UNIT,
     AggType,
     CompositeUnit,
     Unit,
     cast_unit,
-    coerce_unit_token,
-    currency_conversion_factor,
-    fail_if_units_are_missing,
-    parse_compositional_unit,
-    parse_unit,
     policy_function,
     policy_input,
     register_currency,
     register_unit_builder_levels,
+)
+from ttsim.tt.currencies import (
+    currency_conversion_factor,
+    isolated_currency_registration,
+)
+from ttsim.tt.grouping_levels import register_grouping_levels
+from ttsim.tt.units import (
+    CURRENCY_TOKEN,
+    UNIT_REGISTRY,
+    coerce_to_composite_unit,
+    currency_family_root,
+    fail_if_units_are_missing,
+    grouping_level_count_unit,
+    is_calendar_point_unit,
+    parse_compositional_unit,
+    parse_unit,
+    resolve_compositional_cast_unit,
     resolve_compositional_column_unit,
+    resolve_compositional_param_unit,
     resolve_compositional_unit,
     strip_input_quantity_at_boundary,
     token_is_agnostic_currency,
     token_source_currency,
     unit_for_aggregation,
     units_are_equivalent,
-)
-from ttsim.tt.units import (
-    currency_family_root,
-    grouping_level_count_unit,
-    is_calendar_point_unit,
-    isolated_currency_registration,
-    register_grouping_levels,
-    resolve_compositional_cast_unit,
-    resolve_compositional_param_unit,
 )
 
 
@@ -122,8 +124,8 @@ _BASE_SPELLINGS = [
 
 
 @pytest.mark.parametrize("spelling", _BASE_SPELLINGS)
-def test_coerce_unit_token_round_trips_base_spellings(spelling):
-    token = coerce_unit_token(value=spelling, where="test")
+def test_coerce_to_composite_unit_round_trips_base_spellings(spelling):
+    token = coerce_to_composite_unit(value=spelling, where="test")
     assert isinstance(token, CompositeUnit)
     assert str(token) == spelling
 
@@ -138,18 +140,18 @@ def test_coerce_unit_token_round_trips_base_spellings(spelling):
         "HOURS_PER_WEEK",
     ],
 )
-def test_coerce_unit_token_round_trips_compositional_spellings(spelling):
-    token = coerce_unit_token(value=spelling, where="test")
+def test_coerce_to_composite_unit_round_trips_compositional_spellings(spelling):
+    token = coerce_to_composite_unit(value=spelling, where="test")
     assert isinstance(token, CompositeUnit)
     assert str(token) == spelling
 
 
-def test_coerce_unit_token_rejects_none():
+def test_coerce_to_composite_unit_rejects_none():
     # `None` is no longer a dimensionless declaration (GEP 10): it reaches
-    # `coerce_unit_token` only through an internal bug, so the package claw
+    # `coerce_to_composite_unit` only through an internal bug, so the package claw
     # rejects it before the body runs.
     with pytest.raises(BeartypeCallHintViolation):
-        coerce_unit_token(value=None, where="test")  # ty: ignore[invalid-argument-type]
+        coerce_to_composite_unit(value=None, where="test")  # ty: ignore[invalid-argument-type]
 
 
 @pytest.mark.parametrize(
@@ -166,9 +168,9 @@ def test_coerce_unit_token_rejects_none():
         "kelvin",
     ],
 )
-def test_coerce_unit_token_rejects_non_members(value):
+def test_coerce_to_composite_unit_rejects_non_members(value):
     with pytest.raises(UnitDefinitionError, match="invalid unit declaration"):
-        coerce_unit_token(value=value, where="test")
+        coerce_to_composite_unit(value=value, where="test")
 
 
 def test_compositional_flow_is_marked_by_a_period():
@@ -300,7 +302,7 @@ def test_register_currency_requires_exactly_one_of_base_or_definition():
 )
 def test_registered_currency_is_a_compositional_base(spelling, currency, is_flow):
     register_currency(name="SILVER_PENNY", definition="CASTAR / 4")
-    token = coerce_unit_token(value=spelling, where="test")
+    token = coerce_to_composite_unit(value=spelling, where="test")
     assert isinstance(token, CompositeUnit)
     assert str(token) == spelling
     assert token_source_currency(token) == currency
@@ -308,14 +310,14 @@ def test_registered_currency_is_a_compositional_base(spelling, currency, is_flow
 
 
 def test_coerce_currency_token_is_idempotent():
-    token = coerce_unit_token(value="CASTAR", where="test")
-    assert coerce_unit_token(value=token, where="test") is token
-    assert coerce_unit_token(value="CASTAR", where="test") == token
+    token = coerce_to_composite_unit(value="CASTAR", where="test")
+    assert coerce_to_composite_unit(value=token, where="test") is token
+    assert coerce_to_composite_unit(value="CASTAR", where="test") == token
 
 
 def test_token_source_currency():
     assert token_source_currency(
-        coerce_unit_token(value="CASTAR_PER_MONTH", where="t")
+        coerce_to_composite_unit(value="CASTAR_PER_MONTH", where="t")
     ) == ("CASTAR")
     assert token_source_currency(Unit.CURRENCY.PER_MONTH) is None
     assert token_source_currency(Unit.HECTARE) is None
@@ -324,13 +326,13 @@ def test_token_source_currency():
 
 def test_unregistered_currency_spelling_is_rejected():
     with pytest.raises(UnitDefinitionError, match="invalid unit declaration"):
-        coerce_unit_token(value="MITHRIL", where="test")
+        coerce_to_composite_unit(value="MITHRIL", where="test")
 
 
 def test_currency_agnostic_base_rejected_on_column_at_resolution():
     # Functions are currency-agnostic by design: a concrete currency base is
     # rejected when a column's compositional unit is resolved (GEP 10).
-    token = coerce_unit_token(value="CASTAR_PER_MONTH", where="test")
+    token = coerce_to_composite_unit(value="CASTAR_PER_MONTH", where="test")
     with pytest.raises(UnitDefinitionError, match="currency-agnostic"):
         resolve_compositional_column_unit(
             unit=token, time_unit_id="m", grouping_level="person", where="A column"
@@ -686,7 +688,9 @@ def test_auto_aggregation_over_a_boolean_source_mints_a_head_count():
 
 def test_concrete_currency_per_square_meter_base():
     # A concrete currency divided by an area is a valid compositional unit.
-    token = coerce_unit_token(value="CASTAR_PER_SQUARE_METER_PER_MONTH", where="test")
+    token = coerce_to_composite_unit(
+        value="CASTAR_PER_SQUARE_METER_PER_MONTH", where="test"
+    )
     assert isinstance(token, CompositeUnit)
     assert token_source_currency(token) == "CASTAR"
     assert token.base == "CASTAR"
@@ -702,7 +706,7 @@ def test_token_is_agnostic_currency():
     assert not token_is_agnostic_currency(Unit.DIMENSIONLESS.PER_YEAR)
     assert not token_is_agnostic_currency(None)
     assert not token_is_agnostic_currency(
-        coerce_unit_token(value="CASTAR", where="test")
+        coerce_to_composite_unit(value="CASTAR", where="test")
     )
 
 
@@ -1044,7 +1048,7 @@ def test_cast_target_resolves_like_a_column_declaration():
 
 
 def test_cast_target_must_be_currency_agnostic():
-    token = coerce_unit_token(value="CASTAR_PER_MONTH", where="test")
+    token = coerce_to_composite_unit(value="CASTAR_PER_MONTH", where="test")
     with pytest.raises(UnitDefinitionError, match="currency-agnostic"):
         resolve_compositional_cast_unit(unit=token, where="test")
 
@@ -1065,7 +1069,7 @@ def test_area_denominator_suppresses_the_implied_person_leaf():
     )
     assert units_are_equivalent(
         left=resolve_compositional_param_unit(
-            unit=coerce_unit_token(
+            unit=coerce_to_composite_unit(
                 value="CASTAR_PER_SQUARE_METER_PER_MONTH", where="test"
             ),
             where="test",

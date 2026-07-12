@@ -1,4 +1,4 @@
-"""The currency knob and build-time parameter conversion (GEP 10)."""
+"""The run currency and build-time parameter conversion (GEP 10)."""
 
 from __future__ import annotations
 
@@ -11,23 +11,25 @@ from mettsim import middle_earth
 
 from ttsim import MainTarget, OrigPolicyObjects, main
 from ttsim.exceptions import UnitDefinitionError
+from ttsim.interface_dag_elements.param_currency_conversion import (
+    function_like_converter_output_in_run_currency,
+    restate_converter_outputs_in_run_currency,
+)
 from ttsim.interface_dag_elements.policy_environment import (
     _get_one_param,
-    function_like_converter_output_in_run_currency,
-)
-from ttsim.interface_dag_elements.specialized_environment import (
-    _convert_function_like_converter_outputs,
 )
 from ttsim.tt import Unit, param_function
-from ttsim.tt.param_objects import PiecewisePolynomialParamValue, RawParam
-from ttsim.tt.units import (
-    UNSET_UNIT,
+from ttsim.tt.currencies import (
     base_currency,
     currency_conversion_factor,
-    currency_family_root,
     isolated_currency_registration,
     register_currency,
     registered_base_currencies,
+)
+from ttsim.tt.param_objects import PiecewisePolynomialParamValue, RawParam
+from ttsim.tt.units import (
+    UNSET_UNIT,
+    currency_family_root,
 )
 
 POLICY_DATE = datetime.date(2020, 1, 1)
@@ -61,7 +63,7 @@ def test_currency_defaults_to_registered_base(backend):
 
 
 def test_currency_override_threads_through_to_param_conversion(backend):
-    """Overriding the knob changes how parameters are converted at build time."""
+    """Overriding the run currency changes how parameters are converted at build."""
     base = _policy_environment(backend)["payroll_tax"][
         "wealth_threshold_for_reduced_tax_rate"
     ].value
@@ -419,7 +421,7 @@ def test_lookup_table_rejects_currency_input_axis():
             "max_int_in_table": 10,
         },
     }
-    with pytest.raises(UnitDefinitionError, match="integer-keyed"):
+    with pytest.raises(UnitDefinitionError, match="cannot be a currency"):
         _load(
             leaf_name="table",
             spec=spec,
@@ -551,7 +553,7 @@ def test_function_like_converter_output_converts_polynomial_per_order():
 def test_require_converter_with_axes_is_left_raw_for_its_converter():
     """A function-like require_converter is not uniform-scaled at load (GEP 10).
 
-    Its raw blob passes through unchanged; the conversion happens later, on the
+    Its raw value passes through unchanged; the conversion happens later, on the
     converter's typed output, per axis.
     """
     spec = {
@@ -585,7 +587,7 @@ def test_homogeneous_require_converter_producing_a_schedule_is_rejected():
         )
     }
     with pytest.raises(UnitDefinitionError, match="input_unit"):
-        _convert_function_like_converter_outputs(
+        restate_converter_outputs_in_run_currency(
             outputs=outputs,
             params={"raw_schedule": raw},
             param_functions={"schedule": schedule},
@@ -614,7 +616,7 @@ def test_mapping_require_converter_producing_a_schedule_is_rejected():
         )
     }
     with pytest.raises(UnitDefinitionError, match="input_unit"):
-        _convert_function_like_converter_outputs(
+        restate_converter_outputs_in_run_currency(
             outputs=outputs,
             params={"raw_schedule": raw},
             param_functions={"schedule": schedule},
@@ -633,9 +635,10 @@ def test_require_converter_unit_and_axes_are_mutually_exclusive():
         )
 
 
-def test_converter_of_two_axes_blobs_is_rejected_at_conversion():
-    """Two axes-declaring blobs into one converter would rescale its typed
-    output once per blob — rejected before any conversion runs (GEP 10)."""
+def test_converter_of_two_input_output_unit_params_is_rejected_at_conversion():
+    """Reading two input/output-unit require_converters into one param function
+    would rescale its output once for each — rejected before any conversion runs
+    (GEP 10)."""
 
     @param_function(unit=UNSET_UNIT)
     def schedule(raw_a: Any, raw_b: Any) -> Any:
@@ -654,8 +657,8 @@ def test_converter_of_two_axes_blobs_is_rejected_at_conversion():
             coefficients=np.array([[0.0]]),
         )
     }
-    with pytest.raises(UnitDefinitionError, match="exactly one"):
-        _convert_function_like_converter_outputs(
+    with pytest.raises(UnitDefinitionError, match="at most one is allowed"):
+        restate_converter_outputs_in_run_currency(
             outputs=outputs,
             params={"raw_a": raw_a, "raw_b": raw_b},
             param_functions={"schedule": schedule},

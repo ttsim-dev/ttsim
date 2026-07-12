@@ -53,6 +53,8 @@ from ttsim.tt.column_objects_param_function import (
     PolicyFunction,
     PolicyInput,
 )
+from ttsim.tt.currencies import registered_base_currencies
+from ttsim.tt.grouping_levels import register_grouping_levels
 from ttsim.tt.param_objects import (
     DictParam,
     ParamMappingObject,
@@ -78,13 +80,12 @@ from ttsim.tt.units import (
     _grouping_levels_with_exponent,
     _unit_level_denominator,
     _unit_without_grouping_levels,
-    coerce_unit_token,
+    coerce_to_composite_unit,
     fail_if_units_are_missing,
     head_count_from_boolean_sum,
     is_calendar_point_unit,
     parse_unit,
-    register_grouping_levels,
-    registered_base_currencies,
+    replace_concrete_with_agnostic_currency,
     resolve_compositional_cast_unit,
     resolve_compositional_column_unit,
     resolve_compositional_field_unit,
@@ -92,7 +93,6 @@ from ttsim.tt.units import (
     resolved_unit_for_aggregation,
     token_is_agnostic_currency,
     token_source_currency,
-    unit_for_derived_node,
     unit_has_currency_component,
     unit_residual_excluding_currency_and_flow_period,
     units_are_equivalent,
@@ -104,15 +104,8 @@ from ttsim.typing import (
 )
 from ttsim.unit_converters import TIME_UNIT_IDS_TO_LABELS
 
-#: Units of the date nodes the framework injects into every policy environment
-#: (see ``policy_environment.policy_environment``); their units live here rather
-#: than in downstream annotations. The *year* nodes are calendar **points** —
-#: they run without bound, so ``policy_year - geburtsjahr`` is a duration in
-#: years and adding two points is rejected. The month/day nodes carry a
-#: month-of-year (1-12) / day-of-month (1-31): **cyclic ordinals** that wrap and
-#: pin nothing on a running calendar, hence ``DIMENSIONLESS`` (GEP 10) — exactly
-#: like ``geburtsmonat``, so ``policy_month >= geburtsmonat`` screens as plain
-#: dimensionless arithmetic.
+#: The units injected for the framework's date nodes (see
+#: ``policy_environment.policy_environment``).
 FRAMEWORK_DATE_NODE_UNITS: Mapping[str, str] = {
     "policy_year": "calendar_year",
     "policy_month": "dimensionless",
@@ -124,19 +117,22 @@ FRAMEWORK_DATE_NODE_UNITS: Mapping[str, str] = {
 
 
 class _DryRunXnp:
-    """The dry-run's ``xnp``: NumPy, but with the unit-bearing ops routed through
-    ``_DryRunQuantity``'s checks so a vectorized (``not_required``) body is checked
+    """The dry-run's ``xnp``: NumPy with the unit-bearing ops routed through
+    ``_DryRunQuantity``'s checks, so a vectorized (``not_required``) body is checked
     at full parity with a scalar one.
 
     ``_DryRunQuantity`` sets ``__array_ufunc__ = None`` to force ``+``/``-``/… onto
     its checking dunders, which also stops NumPy ufuncs (``numpy.maximum`` …) from
-    running. So the array ops a body actually calls are intercepted here and routed
-    to the *same* checking primitives the operators use — ``maximum``/``minimum``
-    screen like an ordering comparison (the scalar ``max``/``min`` the vectorizer
-    rewrote), ``where`` like ``+`` (its two branches become one column), reductions
-    and unary shape ops preserve the unit. An op not modelled here falls through to
-    raw NumPy, raises, and is reported as needing ``verify_units=False`` — never
-    silently passed through.
+    running. So the array ops a body calls are intercepted here and routed to the
+    *same* checking primitives the operators use:
+
+    - ``maximum``/``minimum`` screen like an ordering comparison (the scalar
+      ``max``/``min`` the vectorizer rewrote);
+    - ``where`` screens like ``+`` (its two branches become one column);
+    - reductions and unary shape ops preserve the unit.
+
+    An op not modelled here falls through to raw NumPy, raises, and is reported as
+    needing ``verify_units=False`` — never silently passed through.
     """
 
     @staticmethod
@@ -245,14 +241,14 @@ def resolve_environment_units(
 ) -> dict[str, pint.Unit | dict[str | int, Any]]:
     """Resolve the complete unit of every annotated node in the environment.
 
-    Columns and param functions resolve their fully-spelled compositional
-    ``unit`` against the time-unit and aggregation suffixes of their leaf name;
-    parameters spell their period and level in the unit string.
-    Dict parameters with per-leaf units resolve to nested dicts of pint units. The
-    framework-injected date nodes resolve via
-    :data:`FRAMEWORK_DATE_NODE_UNITS`. A node that declares no unit (still
-    :data:`UNSET_UNIT`) is absent from the result; the mandatory-units check
-    reports it.
+    - **Columns and param functions** resolve their fully-spelled compositional
+      ``unit`` against the time-unit and aggregation suffixes of their leaf name.
+    - **Parameters** spell their period and level in the unit string; dict
+      parameters with per-leaf units resolve to nested dicts of pint units.
+    - **Framework date nodes** resolve via :data:`FRAMEWORK_DATE_NODE_UNITS`.
+
+    A node that declares no unit (still :data:`UNSET_UNIT`) is absent from the
+    result; the mandatory-units check reports it.
     """
     register_grouping_levels(grouping_levels)
     pattern = get_re_pattern_for_all_time_units_and_groupings(
@@ -376,16 +372,16 @@ def _resolve_agg_by_group_unit(
       **individual** level — a per-head average belongs to the person (GEP 10);
     - ``ANY`` / ``ALL`` yield a dimensionless boolean at the target level.
 
-    The value source is the function's own summed/averaged argument — read off the
-    signature, not by stripping the name suffix, so a hand-written aggregation
-    (``number_of_adults_fam`` sums ``adult``, not ``number_of_adults``) resolves
-    correctly. Returns ``None`` if a value source carries no resolvable unit — the
-    mandatory-units check reports the source.
+    The value source is the function's summed/averaged argument, read off the
+    signature rather than by stripping the name suffix — a hand-written
+    aggregation (``number_of_adults_fam`` sums ``adult``, not ``number_of_adults``)
+    resolves correctly. An opted-out aggregation (``verify_units=False``) is
+    resolved from its *declared* unit like a column: the declaration is the
+    consumer contract even where the derivation cannot express it (a ``MEAN`` the
+    author states ``PER_KIN``).
 
-    An opted-out aggregation (``verify_units=False``) is resolved from its
-    *declared* unit like a column, not derived from the source: the declaration
-    stands as the contract for consumers even where the derivation cannot express
-    it (a ``MEAN`` the author states ``PER_KIN``).
+    Returns ``None`` if a value source carries no resolvable unit — the
+    mandatory-units check reports the source.
     """
     match = pattern.fullmatch(dt.tree_path_from_qname(qname)[-1])
     if not obj.verify_units:
@@ -514,18 +510,17 @@ def fail_if_environment_units_are_missing(
 ) -> None:
     """Mandatory-units check over a fully assembled environment.
 
-    Every active node must declare a unit — where ``unit=Unit.DIMENSIONLESS``
-    / ``unit: DIMENSIONLESS`` *is* a declaration (a dimensionless quantity).
-    For a dict or require_converter parameter with per-leaf units, every leaf
-    of the value active at the policy date must be covered. A ``@param_function``
-    declaring ``unit=UNSET_UNIT`` is exempt: its output is a structured value,
-    not a quantity, and the decorator requires the argument, so the sentinel is
-    never an omission (GEP 10).
+    Every active node must declare a unit, where ``unit=Unit.DIMENSIONLESS`` /
+    ``unit: DIMENSIONLESS`` *is* a declaration (a dimensionless quantity):
 
-    A rounding spec on a currency-valued function must declare its own unit:
-    its magnitudes are statutory numbers written in a concrete currency,
-    exactly like a parameter's (GEP 10). A missing one is reported as
-    ``<qname> (rounding_spec)``.
+    - a dict or require_converter parameter with per-leaf units must cover every
+      leaf of the value active at the policy date;
+    - a ``@param_function`` declaring ``unit=UNSET_UNIT`` is exempt — its output
+      is a structured value, not a quantity, and the decorator requires the
+      argument, so the sentinel is never an omission (GEP 10);
+    - a rounding spec on a currency-valued function must declare its own unit (its
+      magnitudes are statutory numbers in a concrete currency, like a parameter's
+      — GEP 10); a missing one is reported as ``<qname> (rounding_spec)``.
 
     Raises:
         UnitDefinitionError: If any node (or per-leaf-mapping leaf) lacks a unit
@@ -540,18 +535,13 @@ def fail_if_environment_units_are_missing(
         declared_unit = getattr(obj, "unit", UNSET_UNIT)
         if isinstance(obj, ParamFunction) and declared_unit is UNSET_UNIT:
             continue
-        if isinstance(obj, ParamMappingObject):
-            units_by_qname[f"{qname} (input_unit)"] = cast(
-                "CompositeUnit", obj.input_unit
-            )
-            units_by_qname[f"{qname} (output_unit)"] = cast(
-                "CompositeUnit", obj.output_unit
-            )
-            continue
-        if isinstance(obj, RawParam) and (
-            obj.input_unit is not UNSET_UNIT or obj.output_unit is not UNSET_UNIT
+        if isinstance(obj, ParamMappingObject | RawParam) and (
+            isinstance(obj, ParamMappingObject)
+            or obj.input_unit is not UNSET_UNIT
+            or obj.output_unit is not UNSET_UNIT
         ):
-            # A require_converter declares per-axis units instead of a single `unit:`.
+            # A schedule/lookup or a per-axis require_converter declares per-axis
+            # units instead of a single `unit:`.
             units_by_qname[f"{qname} (input_unit)"] = cast(
                 "CompositeUnit", obj.input_unit
             )
@@ -596,17 +586,18 @@ def _agg_declaration_inconsistency(
     derived unit in full — physical kind, flow period, *and* grouping level — with
     no implicit matching of time units or group levels. The author spells the group
     level (``CURRENCY_PER_YEAR_PER_HH``, ``PERSON_COUNT_PER_BG``, even
-    ``MONTHS_PER_FG``); only the ``[person]`` leaf is implied, never spelled. So a
-    ``SUM`` over a boolean declared ``DIMENSIONLESS`` rather than
-    ``PERSON_COUNT_PER_BG`` is rejected, and a ``_hh`` sum declared
-    ``CURRENCY_PER_YEAR`` (omitting the level) or ``CURRENCY_PER_YEAR_PER_BG``
-    (wrong level) is rejected too.
+    ``MONTHS_PER_FG``); only the ``[person]`` leaf is implied. So both of these are
+    rejected:
 
-    A *purely derived* aggregation (a ``COUNT`` / ``ANY`` with no hand-written
-    declaration) carries the derived unit directly and has nothing to check.
-    Returns ``None`` when there is nothing to check: the derivation could not
-    resolve the source, or no unit is declared (the mandatory-units check reports
-    either).
+    - a ``SUM`` over a boolean declared ``DIMENSIONLESS`` rather than
+      ``PERSON_COUNT_PER_BG``;
+    - a ``_hh`` sum declared ``CURRENCY_PER_YEAR`` (omitting the level) or
+      ``CURRENCY_PER_YEAR_PER_BG`` (wrong level).
+
+    Returns ``None`` when there is nothing to check: a *purely derived*
+    aggregation (a ``COUNT`` / ``ANY`` with no hand-written declaration) carries
+    the derived unit directly, the derivation could not resolve the source, or no
+    unit is declared (the mandatory-units check reports the last two).
     """
     if not obj.verify_units:
         # An opted-out aggregation keeps its declared unit as the contract for
@@ -658,14 +649,17 @@ def _rounding_spec_declaration_inconsistency(
 ) -> str | None:
     """Error message if a rounding spec's unit disagrees with its function's.
 
-    A rounding spec's magnitudes are statutory numbers written in a concrete
-    currency, exactly like a parameter's — so on a currency-valued function the
-    spec pins down a registered currency and spells the full composite, which
-    must equal the function's declared unit with the agnostic base swapped for
-    the concrete one. On a non-currency function the magnitudes are in the
-    function's own unit and there is nothing to convert, so a declaration is
-    rejected (GEP 10). The *missing* declaration on a currency-valued function
-    is the mandatory-units check's to report, as is a function without a unit.
+    A rounding spec's magnitudes are statutory numbers in a concrete currency,
+    exactly like a parameter's (GEP 10), so:
+
+    - on a **currency-valued** function the spec pins down a registered currency
+      and spells the full composite, which must equal the function's declared unit
+      with the agnostic base swapped for the concrete one;
+    - on a **non-currency** function the magnitudes are in the function's own unit
+      and there is nothing to convert, so a declaration is rejected.
+
+    A *missing* declaration on a currency-valued function — and a function without
+    a unit — is the mandatory-units check's to report, not this one.
     """
     spec = getattr(obj, "rounding_spec", None)
     declared = getattr(obj, "unit", UNSET_UNIT)
@@ -688,7 +682,7 @@ def _rounding_spec_declaration_inconsistency(
             f"{qname}: the rounding spec's unit `{spec.unit}` does not pin down a "
             f"registered currency (GEP 10)."
         )
-    if unit_for_derived_node(spec.unit) != declared:
+    if replace_concrete_with_agnostic_currency(spec.unit) != declared:
         return (
             f"{qname}: the rounding spec's unit `{spec.unit}` must equal the "
             f"function's declared `{declared}` with the agnostic base swapped for "
@@ -718,18 +712,22 @@ def fail_if_environment_units_are_inconsistent(
 ) -> None:
     """Conservative body/edge verification over an assembled environment.
 
-    Each ``@policy_function`` / ``@param_function`` body is dry-run on
-    representative values built from its producers' resolved units (the DAG
-    edges) — see the module docstring for the conservative rules and the
-    boolean-enumeration strategy. An aggregation has no scalar body, but it
-    *derives* a unit from its source and agg_type; its declared token is checked
-    against that derivation here, the same declared-vs-produced contract a body is
-    held to. A rounding spec's declared unit is checked against its function's
-    (:func:`_rounding_spec_declaration_inconsistency`), and a converter of an
-    axes-declaring ``require_converter`` blob against the axes contract
-    (:func:`_axes_converter_contract_errors`). Time-conversion variants
-    and group-creation functions are unit-assigned by construction and need no
-    check.
+    Each kind of node is checked against its declaration:
+
+    - a ``@policy_function`` / ``@param_function`` **body** is dry-run on
+      representative values built from its producers' resolved units (the DAG
+      edges) — see the module docstring for the conservative rules and the
+      branch-exploration strategy;
+    - an **aggregation** has no scalar body but *derives* a unit from its source
+      and agg_type; its declared token is checked against that derivation, the same
+      declared-vs-produced contract a body is held to;
+    - a **rounding spec** is checked against its function's unit
+      (:func:`_rounding_spec_declaration_inconsistency`), and a **converter** of an
+      input/output-unit ``require_converter`` against the axes contract
+      (:func:`_axes_converter_contract_errors`).
+
+    Time-conversion variants and group-creation functions are unit-assigned by
+    construction and need no check.
 
     In the interface DAG the resolved units are supplied by the
     :func:`resolved_units` node, so the environment walk runs once per build
@@ -849,30 +847,33 @@ def fail_if_input_units_are_inconsistent(
     input_units: Mapping[str, pint.Unit],
     resolved_units: Mapping[str, Any],
 ) -> None:
-    """Fail if a tagged input column's unit disagrees with its declared unit.
+    """Fail if an input column's tag disagrees with the unit declared for it.
 
-    One check of every input tag against the DAG, on three axes:
+    Two units meet here: the input column's **tag** (the unit the user attaches
+    to the data, ``UnitAnnotatedColumn(..., unit=Unit.EUR.PER_MONTH)``) and the
+    unit **declared for that column in the policy environment** (its ``unit=`` /
+    ``unit:``). They must agree, checked on three axes:
 
     - **currency presence** — the boundary only rescales a column it thinks is
       currency, so a ``DM`` tag on a ``DIMENSIONLESS`` column (or the converse)
       would silently rescale — or skip rescaling — the data; both sides must agree
       on whether a currency component is present;
     - **grouping level** — the tag spells its level (``EUR.PER_MONTH.PER_BG``, the
-      person leaf implied), which must equal the level the column's declared unit
-      carries (declared, not read off the suffix — GEP 10);
+      person leaf implied), which must equal the level the declared unit carries
+      (declared, not read off the suffix — GEP 10);
     - **measurement** — with currency (converted at the boundary) and flow period
       (screened against the name suffix by the dedicated period guard) factored
       out, the remaining numerator scale must match *exactly*: a ``HECTARES``
       column tagged ``m²`` (a 10,000-fold error) or a ``YEARS`` age tagged
       ``month`` is rejected here rather than silently mis-stripped.
 
-    ``input_units`` maps each tagged input column to its resolved pint tag
-    (carrying its grouping level); ``resolved_units`` maps every declared node to
-    its resolved DAG unit.
+    ``input_units`` maps each tagged input column to its resolved pint tag;
+    ``resolved_units`` maps every node to the unit declared for it in the policy
+    environment.
 
     Raises:
-        UnitConsistencyError: If any tagged column disagrees with its declared
-            unit. All offending columns are reported together.
+        UnitConsistencyError: If any tagged column disagrees with the unit
+            declared for it. All offending columns are reported together.
     """
     errors: list[str] = []
     for qname, tag in input_units.items():
@@ -1159,7 +1160,7 @@ def _axes_declaring_raw_dependencies(
     obj: ParamFunction,
     env: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
 ) -> list[tuple[str, RawParam]]:
-    """The axes-declaring ``require_converter`` blobs a param function consumes."""
+    """The input/output-unit ``require_converter`` parameters a param function reads."""
     out: list[tuple[str, RawParam]] = []
     for dep in sorted(obj.dependencies):
         raw = env.get(dep)
@@ -1174,7 +1175,7 @@ def _resolved_raw_param_axis(
     token: Any,  # noqa: ANN401
     qname: str,
 ) -> pint.Unit | None:
-    """Resolve one declared axis of an axes-declaring ``require_converter`` blob."""
+    """Resolve one declared axis of an input/output-unit ``require_converter``."""
     if token is UNSET_UNIT:
         return None
     where = f"Parameter {qname!r}"
@@ -1214,13 +1215,15 @@ _STRUCTURED_FIELD_KINDS: dict[type, dict[str, pint.Unit | type] | None] = {}
 def _structured_field_kinds(cls: type) -> dict[str, pint.Unit | type] | None:
     """Resolve a parameter dataclass's field annotations for the dry-run.
 
-    Maps each field to what its pluck yields: the resolved unit of an
-    ``Annotated[<scalar>, Unit…]`` field, or the class of a nested-dataclass
-    field (whose plucks resolve recursively). Fields that are neither — a bare
-    scalar, a dict, an array, a schedule value — are absent: their plucks stay
-    opaque and are cast at the site (GEP 10). ``None`` when the annotations do
-    not resolve at runtime (a name imported only under ``TYPE_CHECKING``), in
-    which case every pluck stays opaque.
+    Maps each field to what its pluck yields:
+
+    - an ``Annotated[<scalar>, Unit…]`` field → the resolved unit;
+    - a nested-dataclass field → its class (whose plucks resolve recursively);
+    - anything else (a bare scalar, dict, array, schedule value) is absent — the
+      pluck stays opaque and is cast at the site (GEP 10).
+
+    Returns ``None`` when the annotations do not resolve at runtime (a name
+    imported only under ``TYPE_CHECKING``), leaving every pluck opaque.
 
     Raises:
         UnitDefinitionError: If a field annotates several units, annotates a
@@ -1348,14 +1351,16 @@ def _param_function_stand_in(
 ) -> _DryRunSchedule | _DryRunStructuredValue:
     """The dry-run stand-in for a structured param-function output (GEP 10).
 
-    A converter of a single axes-declaring ``require_converter`` blob that is
-    annotated as returning a schedule type gets a :class:`_DryRunSchedule`
-    carrying the blob's axes: the per-axis currency conversion already assumes
-    the declared axes describe the typed output, so consumers screen against
-    them exactly as for a parameter-declared schedule — no cast at the call.
-    Everything else stays a :class:`_DryRunStructuredValue`, typed with the
-    return dataclass where one resolves so that annotated plucks carry their
-    field units; a converter that breaks the axes contract is reported by
+    - A converter of a **single** input/output-unit ``require_converter`` that is
+      annotated as returning a schedule type gets a :class:`_DryRunSchedule`
+      carrying its input and output units: the per-axis conversion already assumes
+      the declared units describe the typed output, so consumers screen against
+      them as for a parameter-declared schedule — no cast at the call.
+    - **Everything else** stays a :class:`_DryRunStructuredValue`, typed with the
+      return dataclass where one resolves so annotated plucks carry their field
+      units.
+
+    A converter that breaks the axes contract is reported by
     :func:`_axes_converter_contract_errors`.
     """
     axes_deps = _axes_declaring_raw_dependencies(obj=obj, env=env)
@@ -1377,19 +1382,33 @@ def _param_function_stand_in(
     )
 
 
+def _token_declares_a_currency(token: Any) -> bool:  # noqa: ANN401
+    """Whether a coerced unit token carries a currency base (agnostic or concrete)."""
+    return isinstance(token, CompositeUnit) and (
+        token_is_agnostic_currency(token) or token_source_currency(token) is not None
+    )
+
+
 def _axes_converter_contract_errors(
     env: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
 ) -> list[str]:
-    """The axes contract: declared axes must reach a schedule-typed output.
+    """Check the promise a parameter with input/output units makes about its output.
 
-    A ``require_converter`` declaring ``input_unit:``/``output_unit:`` axes
-    promises that its converters build a schedule, which the framework
-    converts per axis and screens call sites against. A converter that is not
-    annotated as returning one of the two schedule types, that declares a
-    quantity unit, or that mixes several axes-declaring blobs (the per-axis
-    conversion would scale its output once per blob) breaks that promise — at
-    build time, independent of whether a currency conversion is active in this
-    run (GEP 10).
+    A ``require_converter`` that declares ``input_unit:`` / ``output_unit:``
+    promises that the param function reading it builds a schedule (a piecewise
+    polynomial or a lookup table), which the framework restates in the run
+    currency per axis and screens call sites against. The promise is broken —
+    reported at build time, whether or not a currency conversion runs — when the
+    param function:
+
+    - reads more than one such parameter (its output would be rescaled once per
+      parameter);
+    - declares a quantity ``unit=`` (a schedule is a structured value, so it must
+      declare ``unit=UNSET_UNIT``);
+    - is not annotated as returning a ``PiecewisePolynomialParamValue`` or a
+      ``ConsecutiveIntLookupTableParamValue``;
+    - builds a lookup table from a currency ``input_unit:`` (a lookup table is
+      keyed by consecutive integers, so its input axis is never a currency).
     """
     errors: list[str] = []
     for qname, obj in env.items():
@@ -1399,28 +1418,34 @@ def _axes_converter_contract_errors(
         if not axes_deps:
             continue
         names = ", ".join(f"'{dep}'" for dep, _ in axes_deps)
+        return_type = _return_annotation_name(obj.function)
         if len(axes_deps) > 1:
             errors.append(
-                f"{qname}: consumes {len(axes_deps)} axes-declaring "
-                f"require_converter parameters ({names}); the per-axis "
-                f"conversion of a converter's typed output is defined against "
-                f"exactly one (GEP 10)."
+                f"{qname}: reads {len(axes_deps)} parameters that map between an "
+                f"input and an output unit ({names}); the per-axis conversion of "
+                f"the built schedule is defined against exactly one (GEP 10)."
             )
         elif obj.unit is not UNSET_UNIT:
             errors.append(
-                f"{qname}: consumes the axes-declaring require_converter "
-                f"parameter {names} but declares a quantity unit; a converter "
-                f"of an axes-declaring blob builds a schedule, a structured "
-                f"value — declare `unit=UNSET_UNIT` (GEP 10)."
+                f"{qname}: reads the input/output-unit parameter {names} but "
+                f"declares a quantity `unit={obj.unit}`; it builds a schedule (a "
+                f"structured value), so it must declare `unit=UNSET_UNIT` (GEP 10)."
             )
-        elif _return_annotation_name(obj.function) not in _SCHEDULE_RETURN_TYPE_NAMES:
+        elif return_type not in _SCHEDULE_RETURN_TYPE_NAMES:
             errors.append(
-                f"{qname}: consumes the axes-declaring require_converter "
-                f"parameter {names}, so it must be annotated as returning a "
-                f"PiecewisePolynomialParamValue or a "
-                f"ConsecutiveIntLookupTableParamValue — the declared axes "
-                f"describe that typed output, and its call sites are screened "
-                f"against them (GEP 10)."
+                f"{qname}: reads the input/output-unit parameter {names}, so it "
+                f"must be annotated as returning a PiecewisePolynomialParamValue or "
+                f"a ConsecutiveIntLookupTableParamValue — the declared input and "
+                f"output units describe that schedule, and its call sites are "
+                f"screened against them (GEP 10)."
+            )
+        elif return_type == "ConsecutiveIntLookupTableParamValue" and (
+            _token_declares_a_currency(axes_deps[0][1].input_unit)
+        ):
+            errors.append(
+                f"{qname}: builds a lookup table from {names}, whose `input_unit:` "
+                f"is a currency; a lookup table is keyed by consecutive integers, "
+                f"so its input axis is never rescaled between currencies (GEP 10)."
             )
     return errors
 
@@ -1445,14 +1470,16 @@ def _representative_values_by_qname(
 ) -> dict[str, Any]:
     """Representative dry-run values for every unit-resolved node.
 
-    A ``piecewise_*``/lookup-table parameter becomes a :class:`_DryRunSchedule`
-    carrying its input/output axes, so a consumer's ``piecewise_polynomial`` /
-    ``look_up`` call resolves to the output unit. A dict parameter with a scalar
-    ``unit:`` declaration becomes a dict of uniform representative quantities
-    mirroring its value structure, so that subscripting works inside a consumer's
-    dry-run. A structured param function (``unit=UNSET_UNIT``) becomes its
-    :func:`_param_function_stand_in` — a schedule where a ``require_converter``
-    blob declares axes for it, a :class:`_DryRunStructuredValue` otherwise.
+    - A ``piecewise_*``/lookup-table parameter becomes a :class:`_DryRunSchedule`
+      carrying its input/output axes, so a consumer's ``piecewise_polynomial`` /
+      ``look_up`` call resolves to the output unit.
+    - A dict parameter with a scalar ``unit:`` declaration becomes a dict of
+      uniform representative quantities mirroring its value structure, so
+      subscripting works inside a consumer's dry-run.
+    - A structured param function (``unit=UNSET_UNIT``) becomes its
+      :func:`_param_function_stand_in` — a schedule where a ``require_converter``
+      declares input and output units for it, a :class:`_DryRunStructuredValue`
+      otherwise.
     """
     out: dict[str, Any] = {}
     for qname, unit in resolved_units.items():
@@ -2129,7 +2156,7 @@ class _DryRunSchedule:
     ``piecewise_polynomial(x, parameters=…)`` or ``….look_up(idx)`` on it and gets
     an array. The dry-run needs only the unit that falls out. This stand-in
     carries the resolved ``input_unit``/``output_unit`` axes — a schedule
-    parameter's own, or those a ``require_converter`` blob declares for its
+    parameter's own, or those a ``require_converter`` declares for its
     converter's typed output: it screens each domain argument against
     ``input_unit`` (as ``+`` screens an operand) and produces the
     ``output_unit``. ``input_unit`` is ``None`` when the parameter left it
@@ -2171,9 +2198,9 @@ def _piecewise_polynomial_dry_run(x: Any, parameters: Any, xnp: Any) -> Any:  # 
     """Dry-run shim for ``piecewise_polynomial``.
 
     Screen ``x`` against the schedule's ``input_unit`` and produce its
-    ``output_unit``. A schedule built from an axes-declaring
-    ``require_converter`` blob arrives as a :class:`_DryRunSchedule` too and
-    screens the same way; only an axis-less converter-built schedule stays
+    ``output_unit``. A schedule built from an input/output-unit
+    ``require_converter`` arrives as a :class:`_DryRunSchedule` too and
+    screens the same way; only a unit-less converter-built schedule stays
     opaque — the caller casts the result. Anything else is not dry-runnable
     here.
     """
@@ -2214,7 +2241,7 @@ def _cast_unit_dry_run(value: Any, unit: str | CompositeUnit) -> Any:  # noqa: A
     :class:`UnitDefinitionError`, which :func:`_verify_one_body` re-raises
     rather than misreporting as an un-evaluable body.
     """
-    token = coerce_unit_token(value=unit, where="A `cast_unit` call")
+    token = coerce_to_composite_unit(value=unit, where="A `cast_unit` call")
     resolved = resolve_compositional_cast_unit(unit=token, where="A `cast_unit` call")
     quantity = UNIT_REGISTRY.Quantity(1.0, resolved)
     if isinstance(value, _DryRunQuantity):

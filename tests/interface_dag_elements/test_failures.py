@@ -164,7 +164,9 @@ def mettsim_environment(backend) -> PolicyEnvironment:
 
 
 @group_creation_function(
-    leaf_name="sp_id", fail_msg_if_included="""This should fail."""
+    leaf_name="sp_id",
+    fail_msg_if_included="""This should fail.""",
+    unit=Unit.DIMENSIONLESS,
 )
 def should_fail_sp_id(
     p_id: IntColumn, p_id_spouse: IntColumn, xnp: ModuleType
@@ -182,7 +184,7 @@ def p_id_spouse() -> IntColumn:
     """Just to test that we can pass a policy input with `fail_msg_if_included` set."""
 
 
-@group_creation_function(leaf_name="fam_id")
+@group_creation_function(leaf_name="fam_id", unit=Unit.DIMENSIONLESS)
 def dummy_fam_id(sp_id: IntColumn, xnp: ModuleType) -> IntColumn:  # noqa: ARG001
     """
     Just want to use this as a drop-in replacement for `fam_id` from METTSIM with

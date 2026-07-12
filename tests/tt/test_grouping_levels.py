@@ -14,26 +14,28 @@ import pytest
 
 from ttsim.exceptions import UnitDefinitionError
 from ttsim.tt import (
-    UNIT_REGISTRY,
     AggType,
     Unit,
-    parse_unit,
-    units_are_equivalent,
 )
+from ttsim.tt.currencies import (
+    isolated_currency_registration,
+    register_currency,
+)
+from ttsim.tt.grouping_levels import register_grouping_levels
 from ttsim.tt.units import (
     CURRENCY_TOKEN,
     PERSON_LEVEL,
+    UNIT_REGISTRY,
     base_is_level_carrying,
     divide_by_grouping_level,
     grouping_level_count_unit,
-    isolated_currency_registration,
-    register_currency,
-    register_grouping_levels,
+    parse_unit,
     resolve_compositional_column_unit,
     resolve_compositional_param_unit,
     resolve_compositional_unit,
     resolved_unit_for_aggregation,
     unit_for_aggregation,
+    units_are_equivalent,
 )
 
 # ----------------------------------------------------------------------------

@@ -8,10 +8,10 @@ from typing import Literal, ParamSpec, get_args
 from beartype import beartype
 
 from ttsim._beartype_conf import ROUNDING_SPEC_CONF
+from ttsim.tt.currencies import currency_conversion_factor
 from ttsim.tt.type_resolution import build_beartype_checkable_wrapper
 from ttsim.tt.units import (
     CompositeUnit,
-    currency_conversion_factor,
     token_source_currency,
 )
 from ttsim.typing import FloatColumn
@@ -40,12 +40,6 @@ class RoundingSpec:
     to_add_after_rounding: int | float = 0
     reference: str | None = None
     unit: CompositeUnit | None = None
-    """The fully-spelled unit ``base`` and ``to_add_after_rounding`` are written
-    in. Mandatory for a spec on a currency-valued function — the magnitudes are
-    statutory numbers written in a concrete currency, exactly like a parameter's
-    (``Unit.DM.PER_YEAR``) — and its composite must equal the function's declared
-    unit with the agnostic base swapped for the concrete currency. Stays ``None``
-    on a non-currency function: there is nothing to convert (GEP 10)."""
 
     def __post_init__(self) -> None:
         """Validate the types of base and to_add_after_rounding."""

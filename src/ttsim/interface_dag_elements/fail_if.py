@@ -50,7 +50,6 @@ from ttsim.tt.param_objects import (
 from ttsim.tt.units import (
     UNSET_UNIT,
     CompositeUnit,
-    registered_base_currencies,
     token_is_agnostic_currency,
 )
 from ttsim.typing import (
@@ -992,9 +991,6 @@ def tt_units_are_missing(
 
 
 @fail_function(
-    # Gate on the always-present args, not on `unit_checks__resolved_units`: that
-    # node is not pulled by a plain run, so a no-condition gate would silently drop
-    # the check. Gating here pulls the node whenever the check runs.
     include_if_all_elements_present=[
         "specialized_environment__without_tree_logic_and_with_derived_functions",
         "labels__grouping_levels",
@@ -1053,14 +1049,10 @@ def input_currency_is_not_concrete(
     column must name one (``Unit.EUR``, ``Unit.DM``), never the agnostic
     ``Unit.CURRENCY`` — which would leave the run unable to tell what the numbers
     are denominated in. (Columns and functions are the opposite: agnostic only.)
-    Only meaningful once a concrete currency exists to demand, mirroring the
-    parameter guard ``_fail_if_param_token_is_agnostic_currency``.
 
     Raises:
         UnitConsistencyError: If any input column's tag is an agnostic currency.
     """
-    if not registered_base_currencies():
-        return
     agnostic = sorted(
         dt.qname_from_tree_path(path)
         for path, col in dt.flatten_to_tree_paths(

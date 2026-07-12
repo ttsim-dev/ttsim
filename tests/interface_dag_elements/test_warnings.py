@@ -47,7 +47,9 @@ def mettsim_environment(backend) -> PolicyEnvironment:
 
 
 @group_creation_function(
-    leaf_name="sp_id", warn_msg_if_included="""You should pass `sp_id` as an input."""
+    leaf_name="sp_id",
+    warn_msg_if_included="""You should pass `sp_id` as an input.""",
+    unit=Unit.DIMENSIONLESS,
 )
 def should_warn_sp_id(
     p_id: IntColumn, p_id_spouse: IntColumn, xnp: ModuleType
@@ -60,7 +62,7 @@ def should_warn_sp_id(
     return xnp.maximum(p_id, p_id_spouse) + xnp.minimum(p_id, p_id_spouse) * n
 
 
-@group_creation_function(leaf_name="fam_id")
+@group_creation_function(leaf_name="fam_id", unit=Unit.DIMENSIONLESS)
 def dummy_fam_id(sp_id: IntColumn, xnp: ModuleType) -> IntColumn:  # noqa: ARG001
     """
     Just want to use this as a drop-in replacement for `fam_id` from METTSIM with

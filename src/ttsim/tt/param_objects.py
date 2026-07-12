@@ -11,7 +11,9 @@ from ttsim.exceptions import UnitDefinitionError
 from ttsim.tt.units import (
     UNSET_UNIT,
     CompositeUnit,
-    coerce_unit_token,
+    coerce_to_composite_unit,
+    token_is_agnostic_currency,
+    token_source_currency,
 )
 from ttsim.typing import DictParamValue, NestedLookupDict
 
@@ -44,14 +46,6 @@ class ParamObject:
     start_date: datetime.date | None = None
     end_date: datetime.date | None = None
     unit: CompositeUnit | str | dict[str | int, Any] = UNSET_UNIT
-    """The parameter's compositional unit, e.g. ``CURRENCY_PER_MONTH``,
-    ``SILVER_PENNY_PER_FAM``, or a bare base ``DIMENSIONLESS``. A parameter
-    spells period *and* level fully. A dict parameter with heterogeneous leaves
-    declares a mapping from leaf names to units instead. A concrete currency base
-    (``SILVER_PENNY``, ``DM``, …) also names the currency the numbers are written
-    in, which the build-time currency conversion reads off. YAML strings are
-    coerced to :class:`CompositeUnit` at construction; :data:`UNSET_UNIT` until
-    annotated."""
     name: dict[Literal["de", "en"], str] | None = None
     description: dict[Literal["de", "en"], str] | None = None
 
@@ -62,11 +56,11 @@ class ParamObject:
             )
         # object.__setattr__ because the dataclass is frozen.
         object.__setattr__(
-            self, "unit", _coerce_declared_unit(declared=self.unit, obj=self)
+            self, "unit", _coerce_unit_declaration(declared=self.unit, obj=self)
         )
 
 
-def _coerce_declared_unit(
+def _coerce_unit_declaration(
     declared: Any,  # noqa: ANN401 (raw YAML value)
     obj: ParamObject,
 ) -> CompositeUnit | dict[str | int, Any]:
@@ -78,13 +72,15 @@ def _coerce_declared_unit(
         return UNSET_UNIT
     if isinstance(declared, dict):
         return {
-            key: _coerce_declared_unit(declared=sub, obj=obj)
+            key: _coerce_unit_declaration(declared=sub, obj=obj)
             if isinstance(sub, dict)
             # Present leaves are tokens (``DIMENSIONLESS`` for a dimensionless leaf).
-            else coerce_unit_token(value=sub, where=f"{where} (unit of leaf {key!r})")
+            else coerce_to_composite_unit(
+                value=sub, where=f"{where} (unit of leaf {key!r})"
+            )
             for key, sub in declared.items()
         }
-    return coerce_unit_token(value=declared, where=where)
+    return coerce_to_composite_unit(value=declared, where=where)
 
 
 @dataclass(frozen=True)
@@ -128,11 +124,7 @@ class ParamMappingObject(ParamObject):
     """
 
     input_unit: CompositeUnit | str = UNSET_UNIT
-    """The unit of the input axis (what the parameter is evaluated at), e.g.
-    ``CURRENCY_PER_YEAR`` or ``HECTARE``. :data:`UNSET_UNIT` until annotated."""
     output_unit: CompositeUnit | str = UNSET_UNIT
-    """The unit of the output axis (what the parameter yields).
-    :data:`UNSET_UNIT` until annotated."""
 
     def __post_init__(self) -> None:
         super().__post_init__()
@@ -150,7 +142,7 @@ class ParamMappingObject(ParamObject):
                     f"tokens, not mappings (GEP 10); got {axis}={raw!r}."
                 )
             object.__setattr__(
-                self, axis, _coerce_declared_unit(declared=raw, obj=self)
+                self, axis, _coerce_unit_declaration(declared=raw, obj=self)
             )
 
 
@@ -178,6 +170,19 @@ class ConsecutiveIntLookupTableParam(ParamMappingObject):
     value: ConsecutiveIntLookupTableParamValue = PLACEHOLDER_FIELD
     note: str | None = None
     reference: str | None = None
+
+    def __post_init__(self) -> None:
+        super().__post_init__()
+        input_unit = cast("CompositeUnit", self.input_unit)
+        if input_unit is not UNSET_UNIT and (
+            token_is_agnostic_currency(input_unit)
+            or token_source_currency(input_unit) is not None
+        ):
+            raise UnitDefinitionError(
+                f"A lookup table is keyed by consecutive integers, so its "
+                f"`input_unit:` cannot be a currency (got {input_unit}); the "
+                f"integer keys are never rescaled between currencies (GEP 10)."
+            )
 
 
 class ConsecutiveIntLookupTableParamValue:
@@ -269,11 +274,7 @@ class RawParam(ParamObject):
     note: str | None = None
     reference: str | None = None
     input_unit: CompositeUnit | str = UNSET_UNIT
-    """The input-axis unit of a function-like converter's output; mutually
-    exclusive with :attr:`unit`. :data:`UNSET_UNIT` until annotated."""
     output_unit: CompositeUnit | str = UNSET_UNIT
-    """The output-axis unit of a function-like converter's output; mutually
-    exclusive with :attr:`unit`. :data:`UNSET_UNIT` until annotated."""
 
     def __post_init__(self) -> None:
         super().__post_init__()
@@ -296,7 +297,7 @@ class RawParam(ParamObject):
             object.__setattr__(
                 self,
                 axis,
-                _coerce_declared_unit(declared=getattr(self, axis), obj=self),
+                _coerce_unit_declaration(declared=getattr(self, axis), obj=self),
             )
 
 

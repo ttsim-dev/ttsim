@@ -26,11 +26,11 @@ from ttsim.tt import (
     Unit,
     agg_by_group_function,
     agg_by_p_id_function,
-    coerce_unit_token,
     param_function,
     policy_function,
     policy_input,
 )
+from ttsim.tt.units import coerce_to_composite_unit
 
 if TYPE_CHECKING:
     from ttsim.typing import IntColumn, RawParamValue
@@ -309,9 +309,6 @@ def return_n1__x_kin(n1__x_kin: int) -> int:
                 "kin_id": kin_id,
                 "p_id": p_id,
                 "n1": {
-                    # `f` reads the `_kin` aggregate at the person level — a
-                    # genuine cross-level read, so it opts out of unit inference
-                    # (GEP 10, T8): a group SUM now carries the `[kin]` level.
                     "f": policy_function(
                         leaf_name="f", unit=Unit.DIMENSIONLESS, verify_units=False
                     )(return_n1__x_kin),
@@ -331,8 +328,6 @@ def return_n1__x_kin(n1__x_kin: int) -> int:
                 "kin_id": kin_id,
                 "p_id": p_id,
                 "n1": {
-                    # Cross-level read of a `_kin` aggregate at the person level
-                    # (GEP 10, T8) — opt out of unit inference.
                     "f": policy_function(
                         leaf_name="f", unit=Unit.DIMENSIONLESS, verify_units=False
                     )(return_x_kin),
@@ -391,8 +386,6 @@ def return_n1__x_kin(n1__x_kin: int) -> int:
                 "kin_id": kin_id,
                 "p_id": p_id,
                 "n1": {
-                    # Cross-level read of a `_kin` aggregate at the person level
-                    # (GEP 10, T8) — opt out of unit inference.
                     "f": policy_function(
                         leaf_name="f", unit=Unit.DIMENSIONLESS, verify_units=False
                     )(return_y_kin),
@@ -457,7 +450,7 @@ def test_params_target_is_allowed(minimal_input_data):
             end_date=datetime.date(2025, 12, 31),
             # Parameters pin down the concrete currency (GEP 10); a complete
             # currency stock takes no period.
-            unit=coerce_unit_token(value="CASTAR", where="test setup"),
+            unit=coerce_to_composite_unit(value="CASTAR", where="test setup"),
             name={"de": "Ein Parameter", "en": "Some parameter"},
             description={"de": "Ein Parameter", "en": "Some parameter"},
             note=None,
@@ -489,7 +482,7 @@ def test_function_without_data_dependency_is_not_mistaken_for_data(
         leaf_name="a",
         vectorization_strategy="not_required",
         unit=Unit.DIMENSIONLESS,
-        verify_units=False,  # not_required body returns a column, not a scalar
+        verify_units=False,
     )
     def a() -> IntColumn:
         return xnp.array(minimal_input_data["p_id"])
@@ -753,7 +746,7 @@ def test_user_provided_aggregate_by_p_id_specs(
         leaf_name=leaf_name,
         vectorization_strategy="not_required",
         unit=source_unit,
-        verify_units=False,  # not_required body returns a column, not a scalar
+        verify_units=False,
     )
     def source() -> IntColumn:
         return xnp.array([100, 200, 300])

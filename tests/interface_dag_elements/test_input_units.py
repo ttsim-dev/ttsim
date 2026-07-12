@@ -25,24 +25,46 @@ from ttsim.interface_dag_elements.unit_checks import (
     fail_if_input_units_are_inconsistent,
     fail_if_not_all_leaves_are_unit_annotated_columns,
 )
+from ttsim.tt.grouping_levels import register_grouping_levels
 from ttsim.tt.units import (
-    UNIT_REGISTRY,
+    CompositeUnit,
     Unit,
     UnitAnnotatedColumn,
     output_unit_in_run_currency,
-    register_grouping_levels,
+    resolve_compositional_column_unit,
+    resolve_compositional_unit,
 )
 
 
+def _resolved(unit: CompositeUnit) -> pint.Unit:
+    """Resolve a CompositeUnit to its pint unit (no implied person leaf)."""
+    return resolve_compositional_unit(unit=unit)
+
+
+def _column(
+    unit: CompositeUnit,
+    *,
+    time_unit_id: str | None = None,
+    grouping_level: str = "person",
+) -> pint.Unit:
+    """A column's resolved unit exactly as the DAG builds it (person leaf attached)."""
+    return resolve_compositional_column_unit(
+        unit=unit,
+        time_unit_id=time_unit_id,
+        grouping_level=grouping_level,
+        where="test",
+    )
+
+
 def test_output_unit_in_run_currency_without_run_currency_raises():
-    unit = UNIT_REGISTRY.parse_units("CURRENCY / month")
+    unit = _resolved(Unit.CURRENCY.PER_MONTH)
     with pytest.raises(UnitDefinitionError, match="without a run currency"):
         output_unit_in_run_currency(units=unit, run_currency=None)
 
 
 def test_output_unit_in_run_currency_leaves_non_currency_units_untouched():
-    for spelling in ("year", "hectare", "dimensionless"):
-        unit = UNIT_REGISTRY.parse_units(spelling)
+    for composite in (Unit.YEARS, Unit.HECTARE, Unit.DIMENSIONLESS):
+        unit = _resolved(composite)
         assert output_unit_in_run_currency(units=unit, run_currency="CURRENCY") == unit
 
 
@@ -140,13 +162,13 @@ def test_input_level_must_match_declared():
     with pytest.raises(UnitConsistencyError, match="level"):
         fail_if_input_units_are_inconsistent(
             input_units={
-                "miete_m_hh": UNIT_REGISTRY.parse_units(
-                    "CURRENCY / month / grouping_level_person"
-                )
+                "miete_m_hh": _column(Unit.CURRENCY.PER_MONTH, time_unit_id="m")
             },
             resolved_units={
-                "miete_m_hh": UNIT_REGISTRY.parse_units(
-                    "CURRENCY / month / grouping_level_hh"
+                "miete_m_hh": _column(
+                    Unit.CURRENCY.PER_MONTH.PER_HH,
+                    time_unit_id="m",
+                    grouping_level="hh",
                 )
             },
         )
@@ -154,23 +176,13 @@ def test_input_level_must_match_declared():
 
 def test_input_level_matching_declared_passes():
     register_grouping_levels(["hh"])
+    miete = _column(
+        Unit.CURRENCY.PER_MONTH.PER_HH, time_unit_id="m", grouping_level="hh"
+    )
+    wage = _column(Unit.CURRENCY.PER_MONTH, time_unit_id="m")
     fail_if_input_units_are_inconsistent(
-        input_units={
-            "miete_m_hh": UNIT_REGISTRY.parse_units(
-                "CURRENCY / month / grouping_level_hh"
-            ),
-            "wage_m": UNIT_REGISTRY.parse_units(
-                "CURRENCY / month / grouping_level_person"
-            ),
-        },
-        resolved_units={
-            "miete_m_hh": UNIT_REGISTRY.parse_units(
-                "CURRENCY / month / grouping_level_hh"
-            ),
-            "wage_m": UNIT_REGISTRY.parse_units(
-                "CURRENCY / month / grouping_level_person"
-            ),
-        },
+        input_units={"miete_m_hh": miete, "wage_m": wage},
+        resolved_units={"miete_m_hh": miete, "wage_m": wage},
     )
 
 
@@ -178,27 +190,27 @@ def test_input_share_at_group_suffix_stays_level_less():
     # A group suffix must not force a level onto a level-less quantity.
     register_grouping_levels(["hh"])
     fail_if_input_units_are_inconsistent(
-        input_units={"rate_hh": UNIT_REGISTRY.parse_units("dimensionless")},
-        resolved_units={"rate_hh": UNIT_REGISTRY.parse_units("dimensionless")},
+        input_units={"rate_hh": _resolved(Unit.DIMENSIONLESS)},
+        resolved_units={"rate_hh": _resolved(Unit.DIMENSIONLESS)},
     )
 
 
 def test_input_units_consistent_passes():
     resolved = {
-        "wage_m": UNIT_REGISTRY.parse_units("CURRENCY / month"),
-        "alter": UNIT_REGISTRY.parse_units("year"),
+        "wage_m": _resolved(Unit.CURRENCY.PER_MONTH),
+        "alter": _resolved(Unit.YEARS),
     }
     fail_if_input_units_are_inconsistent(
-        input_units={"wage_m": UNIT_REGISTRY.parse_units("CURRENCY / month")},
+        input_units={"wage_m": _resolved(Unit.CURRENCY.PER_MONTH)},
         resolved_units=resolved,
     )
 
 
 def test_input_units_dimension_mismatch_raises():
-    resolved = {"alter": UNIT_REGISTRY.parse_units("year")}
+    resolved = {"alter": _resolved(Unit.YEARS)}
     with pytest.raises(UnitConsistencyError, match="inconsistent with the DAG"):
         fail_if_input_units_are_inconsistent(
-            input_units={"alter": UNIT_REGISTRY.parse_units("CURRENCY")},
+            input_units={"alter": _resolved(Unit.CURRENCY)},
             resolved_units=resolved,
         )
 
@@ -206,20 +218,20 @@ def test_input_units_dimension_mismatch_raises():
 def test_input_units_compatible_but_differently_scaled_area_raises():
     # A HECTARES column tagged in m² shares the area dimension but is a
     # 10,000-fold level error — rejected, not silently mis-stripped (S4, GEP 10).
-    resolved = {"land": UNIT_REGISTRY.parse_units("hectare")}
+    resolved = {"land": _resolved(Unit.HECTARE)}
     with pytest.raises(UnitConsistencyError, match="not equivalent"):
         fail_if_input_units_are_inconsistent(
-            input_units={"land": UNIT_REGISTRY.parse_units("meter ** 2")},
+            input_units={"land": _resolved(Unit.SQUARE_METER)},
             resolved_units=resolved,
         )
 
 
 def test_input_units_compatible_but_differently_scaled_time_raises():
     # A YEARS age tagged in months is a 12-fold level error (S4, GEP 10).
-    resolved = {"alter": UNIT_REGISTRY.parse_units("year")}
+    resolved = {"alter": _resolved(Unit.YEARS)}
     with pytest.raises(UnitConsistencyError, match="not equivalent"):
         fail_if_input_units_are_inconsistent(
-            input_units={"alter": UNIT_REGISTRY.parse_units("month")},
+            input_units={"alter": _resolved(Unit.MONTHS)},
             resolved_units=resolved,
         )
 
@@ -229,9 +241,9 @@ def test_input_units_period_mismatch_is_left_to_the_suffix_guard():
     # guard, not here: once currency and period are factored out, a `_m` flow
     # tagged per year has an equivalent (bare) residual, so this check passes and
     # the period guard owns the mismatch (S4, GEP 10).
-    resolved = {"wage_m": UNIT_REGISTRY.parse_units("CURRENCY / month")}
+    resolved = {"wage_m": _resolved(Unit.CURRENCY.PER_MONTH)}
     fail_if_input_units_are_inconsistent(
-        input_units={"wage_m": UNIT_REGISTRY.parse_units("CURRENCY / year")},
+        input_units={"wage_m": _resolved(Unit.CURRENCY.PER_YEAR)},
         resolved_units=resolved,
     )
 
@@ -241,10 +253,10 @@ def test_input_units_currency_tag_on_non_currency_column_raises():
     # out of both sides used to leave equal residuals and pass, while the boundary
     # would silently rescale the data by the currency factor on a non-base run.
     # The currency-presence mismatch is now rejected (defect #3, GEP 10).
-    resolved = {"flag": UNIT_REGISTRY.parse_units("")}
+    resolved = {"flag": _resolved(Unit.DIMENSIONLESS)}
     with pytest.raises(UnitConsistencyError, match="one carries a currency"):
         fail_if_input_units_are_inconsistent(
-            input_units={"flag": UNIT_REGISTRY.parse_units("CURRENCY")},
+            input_units={"flag": _resolved(Unit.CURRENCY)},
             resolved_units=resolved,
         )
 
@@ -252,10 +264,10 @@ def test_input_units_currency_tag_on_non_currency_column_raises():
 def test_input_units_non_currency_tag_on_currency_column_raises():
     # The converse: a dimensionless tag on a declared-currency column would skip
     # the currency conversion the column needs (defect #3, GEP 10).
-    resolved = {"wage": UNIT_REGISTRY.parse_units("CURRENCY")}
+    resolved = {"wage": _resolved(Unit.CURRENCY)}
     with pytest.raises(UnitConsistencyError, match="one carries a currency"):
         fail_if_input_units_are_inconsistent(
-            input_units={"wage": UNIT_REGISTRY.parse_units("")},
+            input_units={"wage": _resolved(Unit.DIMENSIONLESS)},
             resolved_units=resolved,
         )
 
@@ -263,11 +275,11 @@ def test_input_units_non_currency_tag_on_currency_column_raises():
 def test_input_units_skips_columns_without_a_scalar_declared_unit():
     # A dict-parameter style entry (nested dict, not a single pint.Unit) and an
     # unknown column are both skipped rather than raising.
-    resolved = {"some_dict_param": {"a": UNIT_REGISTRY.parse_units("CURRENCY")}}
+    resolved = {"some_dict_param": {"a": _resolved(Unit.CURRENCY)}}
     fail_if_input_units_are_inconsistent(
         input_units={
-            "some_dict_param": UNIT_REGISTRY.parse_units("CURRENCY"),
-            "not_in_env": UNIT_REGISTRY.parse_units("year"),
+            "some_dict_param": _resolved(Unit.CURRENCY),
+            "not_in_env": _resolved(Unit.YEARS),
         },
         resolved_units=resolved,
     )

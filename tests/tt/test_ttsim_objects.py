@@ -366,7 +366,7 @@ def test_agg_by_p_id_function_rejects_missing_annotation() -> None:
 def test_group_creation_function_rejects_missing_annotation() -> None:
     with pytest.raises(GroupCreationDefinitionError, match="missing: return"):
 
-        @group_creation_function()
+        @group_creation_function(unit=Unit.DIMENSIONLESS)
         def unannotated_group_creation(p_id: int):
             return p_id
 

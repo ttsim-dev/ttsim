@@ -9,7 +9,7 @@ from ttsim.interface_dag_elements.processed_data import (
     _canonicalize_input_dtype,
     processed_data,
 )
-from ttsim.tt import UNIT_REGISTRY
+from ttsim.tt.units import UNIT_REGISTRY
 
 
 @pytest.fixture

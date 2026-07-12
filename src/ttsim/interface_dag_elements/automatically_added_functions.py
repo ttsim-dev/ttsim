@@ -38,8 +38,8 @@ from ttsim.tt.type_resolution import (
 from ttsim.tt.units import (
     UNSET_UNIT,
     CompositeUnit,
+    replace_concrete_with_agnostic_currency,
     unit_for_aggregation,
-    unit_for_derived_node,
     unit_with_rebased_period,
 )
 from ttsim.typing import (
@@ -287,7 +287,9 @@ def _create_one_set_of_time_conversion_functions(
                 f"from per {time_unit} to per {target_time_unit}"
             ),
             unit=unit_with_rebased_period(
-                unit=unit_for_derived_node(getattr(element, "unit", UNSET_UNIT)),
+                unit=replace_concrete_with_agnostic_currency(
+                    getattr(element, "unit", UNSET_UNIT)
+                ),
                 time_unit_id=target_time_unit,
             ),
         )
@@ -396,9 +398,6 @@ def create_agg_by_group_functions(
                 column_functions=column_functions,
                 qname_policy_environment=qname_policy_environment,
             )
-            # A sum aggregation preserves the source's physical token and takes
-            # the target group level; over a boolean source it is a head count
-            # (GEP 10), so `unit_for_aggregation` needs the source's kind.
             source_unit = _resolve_source_unit(
                 source_name=base_name_with_time_unit,
                 column_functions=column_functions,
@@ -446,14 +445,9 @@ def _resolve_source_unit(
     Mirrors `_resolve_source_column_kind`: the source is a column function, a
     `PolicyInput` declared at `source_name`, or a user-supplied input at a
     different time unit than its declared `PolicyInput` sibling (e.g. caller
-    passes `bonus_y` against a `bonus_m` declaration). A flow token is
-    period-invariant, so a sibling's token applies verbatim — only the
-    period (taken from the name suffix) differs.
-
-    A boolean source declares ``DIMENSIONLESS`` like any other node, so its
-    token flows through unchanged. Returns ``UNSET_UNIT`` if the source is
-    unannotated; the environment-level mandatory-units check reports the
-    source itself in that case.
+    passes `bonus_y` against a `bonus_m` declaration). Returns ``UNSET_UNIT`` if
+    the source is unannotated; the environment-level mandatory-units check
+    reports the source itself in that case.
     """
     source = column_functions.get(source_name) or qname_policy_environment.get(
         source_name
@@ -462,7 +456,7 @@ def _resolve_source_unit(
         declared = getattr(source, "unit", UNSET_UNIT)
         # A derived function computes on already-converted values, so a
         # concrete currency token passes its agnostic counterpart on.
-        return unit_for_derived_node(declared)
+        return replace_concrete_with_agnostic_currency(declared)
     sibling = _find_sibling_policy_input_at_other_time_unit(
         source_name=source_name,
         qname_policy_environment=qname_policy_environment,
