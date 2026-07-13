@@ -617,6 +617,7 @@ def test_fail_if_data_paths_are_missing_in_paths_to_mapped_column_names(
         main_target="results__tree",
         input_data=InputData.tree(tree=minimal_data_tree),
         policy_environment=environment,
+        policy_date=datetime.date(2024, 1, 1),
         evaluation_date=datetime.date(2024, 1, 1),
         tt_targets=TTTargets.tree(tt_targets__tree),
         rounding=False,
@@ -851,6 +852,7 @@ def test_fail_if_non_convertible_objects_in_results_tree_because_of_object_type(
             main_target=MainTarget.results.df_with_nested_columns,
             input_data=InputData.tree(tree=minimal_data_tree),
             policy_environment=env_factory(xnp),
+            policy_date=datetime.date(2024, 1, 1),
             evaluation_date=datetime.date(2024, 1, 1),
             tt_targets=TTTargets.tree(tt_targets__tree),
             rounding=False,
@@ -886,6 +888,7 @@ def test_fail_if_non_convertible_objects_in_results_tree_because_of_object_lengt
             main_target=MainTarget.results.df_with_nested_columns,
             input_data=InputData.tree(tree=minimal_data_tree),
             policy_environment=environment,
+            policy_date=datetime.date(2024, 1, 1),
             evaluation_date=datetime.date(2024, 1, 1),
             tt_targets=TTTargets.tree(tt_targets__tree),
             rounding=False,
@@ -915,6 +918,8 @@ def test_fail_if_non_convertible_objects_in_results_tree_passes_with_correct_len
     processed_data = main(
         main_target=MainTarget.processed_data,
         input_data=InputData.tree(tree=minimal_data_tree),
+        policy_environment={},
+        policy_date=datetime.date(2024, 1, 1),
         tt_targets=TTTargets.tree({}),
         backend=backend,
     )
@@ -937,6 +942,8 @@ def test_fail_if_non_convertible_objects_in_results_tree_passes_with_unsized_jax
     processed_data = main(
         main_target=MainTarget.processed_data,
         input_data=InputData.tree(tree=minimal_data_tree),
+        policy_environment={},
+        policy_date=datetime.date(2024, 1, 1),
         tt_targets=TTTargets.tree({}),
         backend=backend,
     )
@@ -1114,6 +1121,7 @@ def test_fail_if_tt_root_nodes_are_missing_via_main(minimal_input_data, backend)
             main_targets=["results__tree", "fail_if__tt_root_nodes_are_missing"],
             input_data=InputData.tree(tree=minimal_input_data),
             policy_environment=policy_environment,
+            policy_date=datetime.date(2024, 1, 1),
             evaluation_date=datetime.date(2024, 1, 1),
             tt_targets=TTTargets.tree({"c": None}),
             rounding=False,
@@ -1146,6 +1154,7 @@ def test_fail_if_tt_root_nodes_are_missing_asks_for_individual_level_columns(
             main_targets=["results__tree", "fail_if__tt_root_nodes_are_missing"],
             input_data=InputData.tree(tree=minimal_input_data),
             policy_environment=policy_environment,
+            policy_date=datetime.date(2024, 1, 1),
             evaluation_date=datetime.date(2024, 1, 1),
             tt_targets=TTTargets.tree({"b": None}),
             include_warn_nodes=False,
@@ -1201,6 +1210,7 @@ def test_fail_if_targets_are_not_in_specialized_environment_or_data_via_main(
             main_target="fail_if__targets_are_not_in_specialized_environment_or_data",
             input_data=InputData.tree(tree=minimal_input_data),
             policy_environment={},
+            policy_date=datetime.date(2025, 1, 1),
             tt_targets=TTTargets.tree({"unknown_target": None}),
             evaluation_date=datetime.date(2025, 1, 1),
             rounding=False,
@@ -1660,6 +1670,7 @@ def test_fail_if_name_of_last_branch_element_is_not_the_functions_leaf_name(
         main(
             main_target=MainTarget.results.df_with_nested_columns,
             policy_environment=policy_environment,
+            policy_date=datetime.date(2025, 1, 1),
             tt_targets=TTTargets.tree({"p_id": None}),
             input_data=InputData.tree(tree={"p_id": xnp.array([0, 1, 2])}),
         )
@@ -1718,6 +1729,7 @@ def test_fail_if_tt_dag_includes_function_with_fail_msg_if_included_set(
         main(
             main_target=MainTarget.results.df_with_mapper,
             policy_environment=env,
+            policy_date=datetime.date(2025, 1, 1),
             tt_targets=TTTargets.tree({"fam_id": None}),
             input_data=InputData.tree(tree=minimal_data_tree),
             include_warn_nodes=False,
@@ -1740,6 +1752,7 @@ def test_fail_if_tt_dag_includes_policy_input_with_fail_msg_if_included_set(
         main(
             main_target=MainTarget.results.df_with_mapper,
             policy_environment=env,
+            policy_date=datetime.date(2025, 1, 1),
             tt_targets=TTTargets.tree({"fam_id": None}),
             input_data=InputData.tree(tree=minimal_data_tree),
             include_warn_nodes=False,
@@ -1761,6 +1774,7 @@ def test_fail_if_tt_dag_includes_policy_input_with_fail_msg_if_included_set_does
     main(
         main_target=MainTarget.results.df_with_mapper,
         policy_environment=env,
+        policy_date=datetime.date(2025, 1, 1),
         tt_targets=TTTargets.tree({"fam_id": None}),
         input_data=InputData.tree(tree=minimal_data_tree),
         include_warn_nodes=False,
@@ -1789,6 +1803,7 @@ def test_backend_has_changed_from_jax_to_numpy_passes():
         main_target=MainTarget.results.df_with_nested_columns,
         input_data=input_data,
         policy_environment=policy_environment,
+        policy_date_str="2000-01-01",
         tt_targets=TTTargets.tree({"property_tax": {"amount_y": None}}),
         backend="numpy",
     )
@@ -1807,6 +1822,8 @@ def test_backend_has_changed_from_numpy_for_processed_data_to_jax_passes():
     processed_data = main(
         main_target=MainTarget.processed_data,
         backend="numpy",
+        policy_date_str="2000-01-01",
+        orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
         input_data=input_data,
         tt_targets=TTTargets.tree({"property_tax": {"amount_y": None}}),
     )
@@ -1844,6 +1861,7 @@ def test_backend_has_changed_from_numpy_for_policy_environment_to_jax_raises(
             main_target=MainTarget.results.df_with_nested_columns,
             input_data=input_data,
             policy_environment=policy_environment,
+            policy_date_str="2000-01-01",
             tt_targets=TTTargets.tree({"property_tax": {"amount_y": None}}),
             backend="jax",
         )

@@ -17,7 +17,7 @@ from ttsim.tt.column_objects_param_function import (
     policy_function,
     policy_input,
 )
-from ttsim.tt.currencies import register_currency
+from ttsim.tt.currencies import register_currency, register_statutory_currencies
 from ttsim.tt.grouping_levels import register_unit_builder_levels
 from ttsim.tt.interval_utils import intervals_to_thresholds, merge_piecewise_intervals
 from ttsim.tt.param_objects import (
@@ -94,5 +94,6 @@ __all__ = [
     "policy_function",
     "policy_input",
     "register_currency",
+    "register_statutory_currencies",
     "register_unit_builder_levels",
 ]

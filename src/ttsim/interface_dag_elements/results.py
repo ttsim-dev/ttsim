@@ -13,10 +13,15 @@ from ttsim.interface_dag_elements.data_converters import (
     nested_data_to_df_with_qname_columns,
 )
 from ttsim.interface_dag_elements.interface_node_objects import interface_function
+from ttsim.interface_dag_elements.processed_data import (
+    boundary_currency_conversion,
+    value_in_target_currency,
+)
 from ttsim.tt.units import (
     UnitAnnotatedColumn,
     composite_from_resolved_unit,
-    output_unit_in_run_currency,
+    echoed_input_unit_in_data_currency,
+    output_unit_in_data_currency,
 )
 from ttsim.typing import (
     FlatData,
@@ -24,6 +29,8 @@ from ttsim.typing import (
     IntColumn,
     NestedResults,
     NestedStrings,
+    OrderedQNames,
+    PolicyEnvironment,
     QNameData,
     QNameResults,
 )
@@ -35,8 +42,27 @@ def tree(
     raw_results__params: QNameResults,
     raw_results__from_input_data: QNameData,
     input_data__sort_indices: IntColumn,
+    policy_environment: PolicyEnvironment,
+    labels__grouping_levels: OrderedQNames,
+    data_currency: str,
+    computation_currency: str,
 ) -> NestedResults:
-    """The combined results as a tree with original row order restored."""
+    """The combined results as a tree with original row order restored.
+
+    Computed columns cross the column boundary here: every column whose
+    declared unit carries the agnostic ``CURRENCY`` component is converted from
+    the computation currency to the data currency (GEP 10). Requested
+    parameters keep their statutory values, and echoed input columns are
+    returned as provided — already in the data currency.
+    """
+    factor, currency_qnames = boundary_currency_conversion(
+        qnames=raw_results__columns_with_original_p_ids,
+        policy_environment=policy_environment,
+        grouping_levels=labels__grouping_levels,
+        source_currency=computation_currency,
+        target_currency=data_currency,
+    )
+
     restore_order = numpy.empty(len(input_data__sort_indices), dtype=int)
     restore_order[input_data__sort_indices] = numpy.arange(
         len(input_data__sort_indices)
@@ -50,7 +76,12 @@ def tree(
             **raw_results__params,
             **raw_results__from_input_data,
             **{
-                k: reorder_arrays(v)
+                k: value_in_target_currency(
+                    value=reorder_arrays(v),
+                    qname=k,
+                    currency_qnames=currency_qnames,
+                    factor=factor,
+                )
                 for k, v in raw_results__columns_with_original_p_ids.items()
             },
         }
@@ -60,30 +91,38 @@ def tree(
 @interface_function()
 def tree_with_unit_annotations(
     tree: NestedResults,
+    raw_results__from_input_data: QNameData,
     unit_checks__resolved_units: dict[str, pint.Unit | dict[str | int, Any]],
-    currency: str,
+    data_currency: str,
 ) -> NestedResults:
     """The combined results as a tree of :class:`UnitAnnotatedColumn` leaves.
 
     Like :func:`tree`, but every leaf is wrapped in a ``UnitAnnotatedColumn`` —
-    the same shape as the unit-annotated input tree (GEP 10) — whose ``unit`` is
-    the node's resolved unit restated in the concrete run currency
-    (``Unit.EUR.PER_MONTH``, never the agnostic ``CURRENCY``). A node with no
-    resolved unit is left bare.
+    the same shape as the unit-annotated input tree (GEP 10). Each label follows
+    its value: a *computed column's* unit is its resolved unit restated in the
+    concrete data currency (``Unit.EUR.PER_MONTH``, never the agnostic
+    ``CURRENCY``) — the currency it was converted to at the boundary; an
+    *echoed input column* is returned as provided, so any currency component of
+    its label is the data currency, even where the declaration pins down a
+    concrete one (a data override of a parameter); a *parameter* keeps its
+    statutory values, so its label keeps the declared statutory currency. A
+    node with no resolved unit is left bare.
     """
     resolved = unit_checks__resolved_units
     tagged: dict[str, Any] = {}
     for qname, value in dt.flatten_to_qnames(tree).items():
         unit = resolved.get(qname)
-        tagged[qname] = (
-            UnitAnnotatedColumn(
-                values=value,
-                unit=composite_from_resolved_unit(
-                    output_unit_in_run_currency(units=unit, run_currency=currency)
-                ),
-            )
-            if isinstance(unit, pint.Unit)
-            else value
+        if not isinstance(unit, pint.Unit):
+            tagged[qname] = value
+            continue
+        in_data_currency = (
+            echoed_input_unit_in_data_currency(units=unit, data_currency=data_currency)
+            if qname in raw_results__from_input_data
+            else output_unit_in_data_currency(units=unit, data_currency=data_currency)
+        )
+        tagged[qname] = UnitAnnotatedColumn(
+            values=value,
+            unit=composite_from_resolved_unit(in_data_currency),
         )
     return dt.unflatten_from_qnames(tagged)
 

@@ -600,7 +600,8 @@ class UnitAnnotatedColumn:
     a currency column must name a **concrete** currency (``Unit.EUR``,
     ``Unit.DM``), exactly as a parameter does; the agnostic ``Unit.CURRENCY`` is
     rejected at the boundary. On the way out, each result leaf is wrapped the same
-    way, its ``unit`` the node's resolved unit in the concrete run currency.
+    way, its ``unit`` the node's resolved unit — a column's in the concrete data
+    currency, a parameter's in its statutory currency.
 
     The wrapper is resolved to bare arrays (and its unit validated) at the
     build-time boundary; it never flows through the numeric runtime.
@@ -696,10 +697,10 @@ def replace_concrete_with_agnostic_currency(token: CompositeUnit) -> CompositeUn
     """The unit a node *derived* from a source with this unit carries.
 
     Derived nodes — time-conversion variants and aggregations — are functions,
-    and a function is currency-agnostic by design: it computes on values already
-    converted to the run currency. So a source that pins down a concrete currency
-    (a parameter) hands on the agnostic counterpart of its declaration; every
-    other unit passes through unchanged.
+    and a function is currency-agnostic by design: it computes on values in the
+    computation currency, whichever that is. So a source that pins down a
+    concrete currency (a parameter) hands on the agnostic counterpart of its
+    declaration; every other unit passes through unchanged.
     """
     return (
         replace(token, base=CURRENCY_TOKEN)
@@ -1039,7 +1040,7 @@ def _currency_component_of(units: pint.Unit) -> pint.Unit | None:
     """Return the currency component of a (possibly composite) unit, or ``None``.
 
     Used at the input boundary to convert a pint-tagged column's currency to the
-    run currency while leaving its period and area untouched: e.g. the ``DM`` in
+    data currency while leaving its period and area untouched: e.g. the ``DM`` in
     ``DM / month``.
     """
     for token in to_units_container(units):
@@ -1055,6 +1056,20 @@ def _currency_component_of(units: pint.Unit) -> pint.Unit | None:
 def unit_has_currency_component(units: pint.Unit) -> bool:
     """Whether a (possibly composite) unit carries a currency component."""
     return _currency_component_of(units) is not None
+
+
+def unit_has_agnostic_currency_component(units: pint.Unit) -> bool:
+    """Whether a unit's currency component is the agnostic ``CURRENCY`` token.
+
+    Distinguishes the two currency spellings at the column boundary: a column
+    resolves to the agnostic ``CURRENCY`` (it is computed in the computation
+    currency and converted to the data currency), a parameter to its concrete
+    statutory currency (never converted, labelled as declared) — GEP 10.
+    """
+    component = _currency_component_of(units)
+    return component is not None and component == UNIT_REGISTRY.parse_units(
+        CURRENCY_TOKEN
+    )
 
 
 #: The dimensionality-key prefix of a grouping-level dimension: the internal pint
@@ -1112,8 +1127,8 @@ def _substitute_currency(units: pint.Unit, currency: str) -> pint.Unit:
     """Swap a unit's currency component for ``currency``; a no-op if it has none.
 
     The one currency move both boundaries make: the period, area and levels are
-    left untouched. On the way *out* ``currency`` is the run currency
-    (:func:`output_unit_in_run_currency`); on the way *in* it is the tag's
+    left untouched. On the way *out* ``currency`` is the data currency
+    (:func:`output_unit_in_data_currency`); on the way *in* it is the tag's
     concrete currency (:func:`input_strip_unit`).
     """
     component = _currency_component_of(units)
@@ -1122,21 +1137,33 @@ def _substitute_currency(units: pint.Unit, currency: str) -> pint.Unit:
     return units / component * UNIT_REGISTRY.parse_units(currency)
 
 
-def output_unit_in_run_currency(units: pint.Unit, run_currency: str) -> pint.Unit:
-    """Restate a resolved (agnostic) DAG unit in the concrete run currency.
+def echoed_input_unit_in_data_currency(
+    units: pint.Unit, data_currency: str
+) -> pint.Unit:
+    """Restate an *echoed input column's* resolved unit in the data currency.
 
-    Output columns are *computed* in the run currency, so labelling them is pure
-    naming, not conversion: the agnostic ``CURRENCY`` component of the resolved
-    unit is swapped for the run currency (``CURRENCY / month`` → ``euro / month``)
-    while period and area are left untouched. A unit with no currency component
-    (``year``, ``hectare``, dimensionless) is returned unchanged.
-
-    This is the inverse of the currency move
-    :func:`strip_input_quantity_at_boundary` makes on the way in.
+    An input column requested as a target is returned exactly as provided — in
+    the data currency — whatever currency its declaration pins down, agnostic
+    (an ordinary column) or concrete (a data override of a parameter). Its
+    label follows the value, so any currency component is substituted (GEP 10).
     """
-    if _currency_component_of(units) is None:
+    return _substitute_currency(units=units, currency=data_currency)
+
+
+def output_unit_in_data_currency(units: pint.Unit, data_currency: str) -> pint.Unit:
+    """Restate a resolved agnostic DAG unit in the concrete data currency.
+
+    Result *columns* are converted to the data currency at the output boundary,
+    so their labels swap the agnostic ``CURRENCY`` component for it
+    (``CURRENCY / month`` → ``euro / month``) while period and area are left
+    untouched. A unit with no agnostic currency component is returned
+    unchanged: that is a unit with no currency at all (``year``, ``hectare``,
+    dimensionless) — or a *parameter's* concrete statutory currency, which
+    keeps its statutory label because the value is never converted (GEP 10).
+    """
+    if not unit_has_agnostic_currency_component(units):
         return units
-    return _substitute_currency(units=units, currency=run_currency)
+    return _substitute_currency(units=units, currency=data_currency)
 
 
 #: Reverse of the forward token→pint maps, for :func:`composite_from_resolved_unit`.
@@ -1164,9 +1191,9 @@ def composite_from_resolved_unit(units: pint.Unit) -> CompositeUnit:
     as a spelling never spells it; a person-leaf *numerator* is the
     ``PERSON_COUNT`` base of a head count.
 
-    Apply it to a unit already restated in the run currency
-    (:func:`output_unit_in_run_currency`) so the base is the concrete run
-    currency (``EUR``), never the agnostic ``CURRENCY``.
+    Apply it to a unit already restated in the data currency
+    (:func:`output_unit_in_data_currency`) so the base is a concrete currency
+    (``EUR``), never the agnostic ``CURRENCY``.
     """
     currency = _currency_component_of(units)
     period = _flow_period_of(units)
@@ -1223,7 +1250,7 @@ def unit_residual_excluding_currency_and_flow_period(units: pint.Unit) -> pint.U
 
     The input check screens measurement (the numerator scale — area, intrinsic
     time, plain counts) on its own axis, leaving the other three to the boundary:
-    the currency is converted to the run currency, the flow period is screened
+    the currency is converted at the boundary, the flow period is screened
     against the column's name suffix, and the **grouping level** is screened
     against the column's declared level (the level is declared, not read off
     the suffix — GEP 10). So this
@@ -1289,7 +1316,7 @@ def input_strip_unit(unit: CompositeUnit) -> pint.Unit:
     """The concrete pint unit used to strip a :class:`UnitAnnotatedColumn`.
 
     Resolves the tag with its concrete currency and flow period — the two axes the
-    boundary acts on: the currency is converted to the run currency and the period
+    boundary acts on: the currency is converted at the boundary and the period
     is screened against the name suffix. Grouping levels do not affect the
     magnitude and are omitted, so this needs no registered level dimension.
     """
@@ -1305,10 +1332,10 @@ def input_strip_unit(unit: CompositeUnit) -> pint.Unit:
 def strip_input_quantity_at_boundary(
     quantity: Any,  # noqa: ANN401 (a pint Quantity wrapping an input column)
     *,
-    run_currency: str,
+    data_currency: str,
     column_label: str | None = None,
 ) -> Any:  # noqa: ANN401
-    """Convert a pint-tagged input column to the run currency, then strip it.
+    """Convert a pint-tagged input column to the data currency, then strip it.
 
     A user *may* attach a pint ``Quantity`` to an input column. At the boundary:
 
@@ -1316,12 +1343,15 @@ def strip_input_quantity_at_boundary(
     - its flow period must match the column's GEP-1 time suffix exactly (a
       ``_m`` column needs a ``/month`` tag; an unsuffixed column a tag with no
       period);
-    - its currency component is *converted* to the run currency — so a DM-tagged
-      column can feed a euro run, rescaled here — while period and area are left
-      untouched; a tag already in the run currency, or with no currency
-      component, is stripped unchanged.
+    - its currency component is *converted* to the data currency — the tag
+      overrides the blanket "untagged data is in the data currency" assumption
+      per column, so a DM-tagged column can ride along EUR data — while period
+      and area are left untouched; a tag already in the data currency, or with
+      no currency component, is stripped unchanged.
 
-    The bare magnitude is returned for the numeric runtime path.
+    The bare magnitude is returned. The uniform crossing from the data currency
+    into the computation currency happens later, in ``processed_data``, for
+    tagged and untagged columns alike (GEP 10).
 
     The period check is the only mismatch the boundary can catch on its own: the
     column's *declared* unit (its dimension, the numerator) is not threaded here,
@@ -1347,10 +1377,10 @@ def strip_input_quantity_at_boundary(
     source_currency = _currency_component_of(quantity.units)
     if source_currency is None:
         return quantity.magnitude
-    run_unit = UNIT_REGISTRY.parse_units(run_currency)
-    if source_currency == run_unit:
+    data_currency_unit = UNIT_REGISTRY.parse_units(data_currency)
+    if source_currency == data_currency_unit:
         return quantity.magnitude
-    target = quantity.units / source_currency * run_unit
+    target = quantity.units / source_currency * data_currency_unit
     return quantity.to(target).magnitude
 
 

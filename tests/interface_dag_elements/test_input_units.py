@@ -30,7 +30,7 @@ from ttsim.tt.units import (
     CompositeUnit,
     Unit,
     UnitAnnotatedColumn,
-    output_unit_in_run_currency,
+    output_unit_in_data_currency,
     resolve_compositional_column_unit,
     resolve_compositional_unit,
 )
@@ -56,10 +56,12 @@ def _column(
     )
 
 
-def test_output_unit_in_run_currency_leaves_non_currency_units_untouched():
+def test_output_unit_in_data_currency_leaves_non_currency_units_untouched():
     for composite in (Unit.YEARS, Unit.HECTARE, Unit.DIMENSIONLESS):
         unit = _resolved(composite)
-        assert output_unit_in_run_currency(units=unit, run_currency="CURRENCY") == unit
+        assert (
+            output_unit_in_data_currency(units=unit, data_currency="CURRENCY") == unit
+        )
 
 
 def test_units_from_tree_with_unit_annotations_extracts_each_tag():
@@ -103,7 +105,7 @@ def test_flat_from_tree_with_unit_annotations_strips_to_bare_arrays():
         ),
     }
     flat = flat_from_tree_with_unit_annotations(
-        tree_with_unit_annotations=tree, currency="CURRENCY"
+        tree_with_unit_annotations=tree, data_currency="CURRENCY"
     )
     assert not isinstance(flat[("wage_m",)], pint.Quantity)
     assert not isinstance(flat[("p_id",)], pint.Quantity)
@@ -131,7 +133,7 @@ def test_flat_from_tree_with_unit_annotations_fails_on_period_mismatch():
     }
     with pytest.raises(UnitConsistencyError):
         flat_from_tree_with_unit_annotations(
-            tree_with_unit_annotations=tree, currency="CURRENCY"
+            tree_with_unit_annotations=tree, data_currency="CURRENCY"
         )
 
 

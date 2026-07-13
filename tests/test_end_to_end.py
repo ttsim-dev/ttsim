@@ -421,12 +421,18 @@ def test_cloudpickle_round_trip_with_inline_policy_environment(tmp_path):
         import numpy as np
 
         from ttsim import InputData, TTTargets, main
-        from ttsim.tt import Unit, policy_function, policy_input, register_currency
+        from ttsim.tt import (
+            Unit,
+            policy_function,
+            policy_input,
+            register_currency,
+            register_statutory_currencies,
+        )
 
         # A bare-ttsim run registers no policy package, so it must register a
-        # base currency itself — every run is denominated in a concrete currency
-        # (GEP 10).
+        # base currency and the statutory-currency mapping itself (GEP 10).
         register_currency(name="euro", base=True)
+        register_statutory_currencies({"0001-01-01": "euro"})
 
 
         @policy_input(unit=Unit.DIMENSIONLESS)
@@ -452,6 +458,7 @@ def test_cloudpickle_round_trip_with_inline_policy_environment(tmp_path):
                 "income_m": np.array([1000.0, 2000.0, 3000.0]),
             }),
             tt_targets=TTTargets.tree({"benefit_m": None}),
+            policy_date=datetime.date(2025, 1, 1),
             evaluation_date=datetime.date(2025, 1, 1),
             rounding=False,
             backend="numpy",
@@ -505,6 +512,7 @@ def test_modify_evaluation_date_after_creating_policy_environment(
     result = main(
         main_target=MainTarget.results.df_with_mapper,
         policy_environment=policy_environment,
+        policy_date_str="2000-01-01",
         # acre_size capped starting in 2020
         evaluation_date_str="2020-01-01",
         input_data=input_data,
@@ -515,8 +523,9 @@ def test_modify_evaluation_date_after_creating_policy_environment(
     )
     expected = pd.DataFrame(
         {
-            # The 1900 schedule is denominated in silver pennies; a default
-            # (castar) run converts it at build: 1000 pennies = 250 castar.
+            # The 2000 policy computes in silver pennies (1000 for the largest
+            # acreage); the boundary converts the result to the default data
+            # currency: 1000 pennies = 250 castar.
             "property_tax_amount_y": [250.0, 0.0, 250.0],
         },
         index=pd.Index([2, 0, 1], name="p_id"),
@@ -538,6 +547,7 @@ def test_different_evaluation_dates_across_data_rows(
         policy_environment={
             "f": f,
         },
+        policy_date_str="2025-01-01",
         input_data=InputData.tree(
             tree={
                 "p_id": xnp.array([3, 1, 2]),

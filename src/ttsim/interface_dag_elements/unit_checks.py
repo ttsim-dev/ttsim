@@ -53,7 +53,6 @@ from ttsim.tt.column_objects_param_function import (
     PolicyFunction,
     PolicyInput,
 )
-from ttsim.tt.currencies import base_currency
 from ttsim.tt.grouping_levels import register_grouping_levels
 from ttsim.tt.param_objects import (
     DictParam,
@@ -960,16 +959,17 @@ def _fail_if_param_token_is_agnostic_currency(
 
     A parameter's numbers are written in *some* concrete currency — the
     declaration must name it (``SILVER_PENNY``, ``DM_PER_YEAR``, …), so the
-    build-time conversion to the run currency knows what to convert from. The
-    agnostic ``CURRENCY`` base stays legal — and required — on columns and
-    functions, which are currency-agnostic by design.
+    statutory-currency guard can hold it against the policy date's statutory
+    currency. The agnostic ``CURRENCY`` base stays legal — and required — on
+    columns and functions, which are currency-agnostic by design.
     """
     if token_is_agnostic_currency(token):
-        concrete = f"{base_currency().upper()}{str(token).removeprefix('CURRENCY')}"
+        suffixes = str(token).removeprefix("CURRENCY")
         raise UnitDefinitionError(
             f"{where}: parameters must pin down the concrete currency their "
             f"numbers are written in; the agnostic unit {token} is not "
-            f"allowed here. Declare e.g. {concrete} (GEP 10)."
+            f"allowed here. Declare the statutory currency at the parameter's "
+            f"dates, e.g. DM{suffixes} or EUR{suffixes} (GEP 10)."
         )
 
 
@@ -1411,13 +1411,12 @@ def _axes_converter_contract_errors(
 
     A ``require_converter`` that declares ``input_unit:`` / ``output_unit:``
     promises that the param function reading it builds a schedule (a piecewise
-    polynomial or a lookup table), which the framework restates in the run
-    currency per axis and screens call sites against. The promise is broken —
-    reported at build time, whether or not a currency conversion runs — when the
-    param function:
+    polynomial or a lookup table), whose call sites the framework screens
+    against the declared axes. The promise is broken — reported at build
+    time — when the param function:
 
-    - reads more than one such parameter (its output would be rescaled once per
-      parameter);
+    - reads more than one such parameter (the schedule's axes are defined
+      against exactly one);
     - declares a quantity ``unit=`` (a schedule is a structured value, so it must
       declare ``unit=UNSET_UNIT``);
     - is not annotated as returning a ``PiecewisePolynomialParamValue`` or a
@@ -1437,8 +1436,8 @@ def _axes_converter_contract_errors(
         if len(axes_deps) > 1:
             errors.append(
                 f"{qname}: reads {len(axes_deps)} parameters that map between an "
-                f"input and an output unit ({names}); the per-axis conversion of "
-                f"the built schedule is defined against exactly one (GEP 10)."
+                f"input and an output unit ({names}); the built schedule's axes "
+                f"are defined against exactly one (GEP 10)."
             )
         elif obj.unit is not UNSET_UNIT:
             errors.append(
@@ -1460,7 +1459,7 @@ def _axes_converter_contract_errors(
             errors.append(
                 f"{qname}: builds a lookup table from {names}, whose `input_unit:` "
                 f"is a currency; a lookup table is keyed by consecutive integers, "
-                f"so its input axis is never rescaled between currencies (GEP 10)."
+                f"so its input axis is never a currency (GEP 10)."
             )
     return errors
 

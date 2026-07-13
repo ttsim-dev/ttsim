@@ -4,9 +4,10 @@ import datetime
 import inspect
 from typing import Any, cast
 
-# Importing the mettsim package registers the castar (the base currency) and
-# the silver penny, so concrete currency tokens exist for the run-currency
-# conversion tests regardless of test-collection order (GEP 10).
+# Importing the mettsim package registers the castar (the base currency), the
+# silver penny, and the statutory-currency mapping, so concrete currency tokens
+# exist for the statutory-guard tests regardless of test-collection order
+# (GEP 10).
 import mettsim.middle_earth  # noqa: F401
 import numpy
 import pandas as pd
@@ -15,7 +16,11 @@ from beartype.roar import BeartypeCallHintViolation
 from pandas._testing import assert_series_equal
 
 from ttsim import InputData, TTTargets, main
-from ttsim.exceptions import PolicyFunctionDefinitionError, RoundingSpecError
+from ttsim.exceptions import (
+    PolicyFunctionDefinitionError,
+    RoundingSpecError,
+    UnitDefinitionError,
+)
 from ttsim.interface_dag_elements.policy_environment import (
     _active_column_objects_and_param_functions,
 )
@@ -130,6 +135,7 @@ def test_rounding(rounding_spec, input_values, exp_output, backend):
         main_target="results__tree",
         input_data=InputData.tree(input_data__tree),
         policy_environment=policy_environment,
+        policy_date=datetime.date(2024, 1, 1),
         evaluation_date=datetime.date(2024, 1, 1),
         tt_targets=TTTargets.tree({"namespace": {"test_func": None}}),
         rounding=True,
@@ -170,6 +176,7 @@ def test_rounding_with_time_conversion(backend, xnp):
         main_target="results__tree",
         input_data=InputData.tree(data),
         policy_environment=policy_environment,
+        policy_date=datetime.date(2024, 1, 1),
         evaluation_date=datetime.date(2024, 1, 1),
         tt_targets=TTTargets.tree({"test_func_y": None}),
         rounding=True,
@@ -212,6 +219,7 @@ def test_no_rounding(
         main_target="results__tree",
         input_data=InputData.tree(data),
         policy_environment=policy_environment,
+        policy_date=datetime.date(2024, 1, 1),
         evaluation_date=datetime.date(2024, 1, 1),
         tt_targets=TTTargets.tree({"test_func": None}),
         include_fail_nodes=False,
@@ -509,37 +517,12 @@ def test_beartype_catches_structural_misuse_at_rounded_boundary(xnp) -> None:
 
 # ----------------------------------------------------------------------------
 # Currency-denominated rounding specs (GEP 10): the magnitudes are statutory
-# numbers written in a concrete currency and restated in the run currency.
+# numbers written in a concrete currency and never converted — the declared
+# currency must be the statutory one at the policy date.
 # ----------------------------------------------------------------------------
 
 
-def test_in_run_currency_restates_statutory_magnitudes():
-    # 1 silver penny = 1/4 castar, so rounding to multiples of 4 silver pennies
-    # (plus 2) becomes rounding to multiples of 1 castar (plus 0.5).
-    spec = RoundingSpec(
-        base=4,
-        direction="down",
-        to_add_after_rounding=2,
-        reference="§ 4 Gondorian Housing Benefit Law",
-        unit=Unit.SILVER_PENNY.PER_MONTH,
-    )
-    converted = spec.in_run_currency("CASTAR")
-    assert converted.base == pytest.approx(1.0)
-    assert converted.to_add_after_rounding == pytest.approx(0.5)
-    assert converted.unit == Unit.CASTAR.PER_MONTH
-    assert converted.direction == spec.direction
-    assert converted.reference == spec.reference
-
-
-def test_in_run_currency_returns_self_when_there_is_nothing_to_convert():
-    spec_without_unit = RoundingSpec(base=1, direction="up")
-    assert spec_without_unit.in_run_currency("CASTAR") is spec_without_unit
-
-    spec = RoundingSpec(base=1, direction="up", unit=Unit.CASTAR.PER_MONTH)
-    assert spec.in_run_currency("CASTAR") is spec
-
-
-def test_policy_environment_restates_rounding_spec_in_run_currency():
+def test_policy_environment_rejects_non_statutory_rounding_spec_currency():
     @policy_function(
         rounding_spec=RoundingSpec(
             base=4, direction="down", unit=Unit.SILVER_PENNY.PER_MONTH
@@ -549,16 +532,31 @@ def test_policy_environment_restates_rounding_spec_in_run_currency():
     def amount_m(x: float) -> float:
         return x
 
+    # mettsim's statutory currency at 2024 is the castar; a silver-penny spec
+    # must be restated by splitting the function at the changeover.
+    with pytest.raises(UnitDefinitionError, match="never converted"):
+        _active_column_objects_and_param_functions(
+            orig={("income.py", "amount_m"): amount_m},
+            policy_date=datetime.date(2024, 1, 1),
+            computation_currency="CASTAR",
+        )
+
+
+def test_policy_environment_accepts_statutory_rounding_spec_currency():
+    spec = RoundingSpec(base=4, direction="down", unit=Unit.SILVER_PENNY.PER_MONTH)
+
+    @policy_function(
+        rounding_spec=spec,
+        unit=Unit.CURRENCY.PER_MONTH,
+    )
+    def amount_m(x: float) -> float:
+        return x
+
     active = _active_column_objects_and_param_functions(
         orig={("income.py", "amount_m"): amount_m},
-        policy_date=datetime.date(2024, 1, 1),
-        currency="CASTAR",
+        policy_date=datetime.date(1950, 1, 1),
+        computation_currency="SILVER_PENNY",
     )
-    converted = active["amount_m"].rounding_spec
-    assert converted.base == pytest.approx(1.0)
-    assert converted.unit == Unit.CASTAR.PER_MONTH
-    # The orig object is shared across builds and must stay untouched.
-    orig_spec = amount_m.rounding_spec
-    assert orig_spec is not None
-    assert orig_spec.base == 4
-    assert orig_spec.unit == Unit.SILVER_PENNY.PER_MONTH
+    # The spec passes through untouched: rounding happens in the statutory
+    # currency natively.
+    assert active["amount_m"].rounding_spec is spec

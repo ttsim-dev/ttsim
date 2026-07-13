@@ -1,21 +1,24 @@
-"""Concrete-currency registration and build-time conversion (GEP 10).
+"""Concrete-currency registration and boundary conversion (GEP 10).
 
 The registration and conversion *operations* of the ``[currency]`` dimension.
 The currency vocabulary itself — the ``CURRENCY`` token, the ``Unit`` builder,
 and the state a declaration is resolved against — lives in
 :mod:`ttsim.tt.units`; this module reads and mutates that shared state.
 
-Every run is denominated in a single concrete currency. A downstream package
-registers its currencies on import: one base currency (factor 1 against the
-abstract :data:`CURRENCY_TOKEN` reference) and any number of others defined
-relative to an already-registered one. All currencies are interconvertible, so
-conversion between any two is always well-defined.
+A downstream package registers its currencies on import: one base currency
+(factor 1 against the abstract :data:`CURRENCY_TOKEN` reference), any number of
+others defined relative to an already-registered one, and the dated
+statutory-currency mapping. All currencies are interconvertible, so conversion
+between any two is always well-defined. The computation for a policy date runs
+in the statutory currency at that date; parameters keep their statutory values,
+and user data is converted at the column boundary only.
 """
 
 from __future__ import annotations
 
+import datetime
 import math
-from collections.abc import Iterator
+from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
 
 import pint
@@ -37,25 +40,112 @@ from ttsim.tt.units import (
 #: the linter). Empty until a downstream package registers its base.
 _base_currency: list[str] = []
 
+#: The statutory-currency mapping: ``(start_date, currency)`` pairs sorted by
+#: start date, each applying from its start date until the next entry's. Empty
+#: until a downstream package registers its mapping.
+_statutory_currencies: list[tuple[datetime.date, str]] = []
+
 
 def base_currency() -> str:
-    """The registered base currency the whole run is denominated in.
+    """The registered base currency — the default data currency.
 
     A downstream package registers its base currency on import (gettsim's
-    ``euro``, mettsim's ``CASTAR``), and that is the run's default — users need
-    not pass ``currency=`` themselves.
+    ``euro``, mettsim's ``CASTAR``), and user data is assumed to arrive in it —
+    users need not pass ``data_currency=`` themselves.
 
     Raises:
-        UnitDefinitionError: If no base currency is registered — a run must be
-            denominated in a concrete currency (GEP 10).
+        UnitDefinitionError: If no base currency is registered — the data
+            currency must be a concrete currency (GEP 10).
     """
     if not _base_currency:
         raise UnitDefinitionError(
-            "No base currency is registered, so the run currency is undefined. "
+            "No base currency is registered, so the data currency is undefined. "
             "A package must register one with `register_currency(name=..., "
             "base=True)` before the system can run (GEP 10)."
         )
     return _base_currency[0]
+
+
+def register_statutory_currencies(currency_by_start_date: Mapping[str, str]) -> None:
+    """Declare the currency the statutes are denominated in, by date (GEP 10).
+
+    A downstream package calls this on import, after registering the currencies
+    it references. Each entry applies from its start date (a dashed ISO string)
+    until the next entry's start date; the computation for a policy date runs in
+    the statutory currency at that date (:func:`statutory_currency`), and the
+    build guard requires every parameter to be declared in it. gettsim's
+    changeover::
+
+        register_statutory_currencies({"1948-06-21": "DM", "2002-01-01": "EUR"})
+
+    The mapping is mandatory: a run for a policy date with no registered
+    statutory currency fails.
+
+    Raises:
+        UnitDefinitionError: If the mapping is empty, references an unregistered
+            currency, or a different mapping is already registered.
+    """
+    if not currency_by_start_date:
+        raise UnitDefinitionError(
+            "register_statutory_currencies requires at least one entry; got an "
+            "empty mapping (GEP 10)."
+        )
+    unregistered = sorted(
+        {
+            name
+            for name in currency_by_start_date.values()
+            if name not in _registered_currencies
+        }
+    )
+    if unregistered:
+        raise UnitDefinitionError(
+            f"register_statutory_currencies references "
+            f"{', '.join(repr(name) for name in unregistered)}, which "
+            f"{'is' if len(unregistered) == 1 else 'are'} not registered. "
+            f"Register every statutory currency with `register_currency` first "
+            f"(GEP 10)."
+        )
+    entries = sorted(
+        (datetime.date.fromisoformat(start_date), name)
+        for start_date, name in currency_by_start_date.items()
+    )
+    if _statutory_currencies and _statutory_currencies != entries:
+        raise UnitDefinitionError(
+            f"A different statutory-currency mapping is already registered "
+            f"({_statutory_currencies}). A process has a single statutory-"
+            f"currency mapping (GEP 10)."
+        )
+    _statutory_currencies[:] = entries
+
+
+def statutory_currency(policy_date: datetime.date) -> str:
+    """The currency the statutes denominate their numbers in at ``policy_date``.
+
+    Read off the dated mapping a downstream package registers on import
+    (:func:`register_statutory_currencies`). This is the currency the
+    computation for ``policy_date`` runs in: parameters keep their statutory
+    values, and user data is converted at the column boundary only (GEP 10).
+
+    Raises:
+        UnitDefinitionError: If no mapping is registered, or ``policy_date``
+            lies before the mapping's first entry.
+    """
+    if not _statutory_currencies:
+        raise UnitDefinitionError(
+            "No statutory-currency mapping is registered, so the computation "
+            "currency is undefined. A package must register one with "
+            "`register_statutory_currencies({start_date: currency, ...})` "
+            "before the system can run (GEP 10)."
+        )
+    for start_date, name in reversed(_statutory_currencies):
+        if policy_date >= start_date:
+            return name
+    raise UnitDefinitionError(
+        f"The statutory-currency mapping starts at "
+        f"{_statutory_currencies[0][0].isoformat()}, so the statutory currency "
+        f"at {policy_date.isoformat()} is undefined. Extend the mapping "
+        f"registered with `register_statutory_currencies` (GEP 10)."
+    )
 
 
 def _fail_if_definition_references_no_registered_currency(
@@ -104,13 +194,15 @@ def isolated_currency_registration() -> Iterator[None]:
     """Restore the currency bookkeeping on exit (a test isolation tool).
 
     Registrations made inside the block do not leak: the currency set, the base
-    currency, and the token vocabulary are restored. The pint definitions
+    currency, the statutory-currency mapping, and the token vocabulary are
+    restored. The pint definitions
     created inside the block cannot be removed, but without the bookkeeping
     they are inert, and a later *consistent* re-registration is tolerated
     (:func:`register_currency`).
     """
     saved_currencies = set(_registered_currencies)
     saved_base = list(_base_currency)
+    saved_statutory = list(_statutory_currencies)
     saved_tokens = set(_ALLOWED_UNIT_TOKENS)
     try:
         yield
@@ -118,6 +210,7 @@ def isolated_currency_registration() -> Iterator[None]:
         _registered_currencies.clear()
         _registered_currencies.update(saved_currencies)
         _base_currency[:] = saved_base
+        _statutory_currencies[:] = saved_statutory
         _ALLOWED_UNIT_TOKENS.clear()
         _ALLOWED_UNIT_TOKENS.update(saved_tokens)
 
@@ -134,7 +227,7 @@ def register_currency(
     currency (factor 1 against the abstract :data:`CURRENCY_TOKEN` reference);
     every other currency is defined relative to an already-known currency. All
     currencies are interconvertible (:func:`currency_conversion_factor`), and the
-    base is the default run currency (the ``currency`` interface node).
+    base is the default data currency (the ``data_currency`` interface node).
 
     The registered currency becomes a valid compositional *base* — its
     upper-cased name (``register_currency("DM", ...)`` makes ``DM``,
@@ -218,25 +311,28 @@ def register_currency(
     setattr(Unit, name.upper(), CompositeUnit(base=name.upper()))
 
 
-def currency_conversion_factor(source_currency: str, run_currency: str) -> float:
-    """Build-time factor converting a value from ``source_currency`` to the run one.
+def currency_conversion_factor(source_currency: str, target_currency: str) -> float:
+    """The factor converting a value from ``source_currency`` to ``target_currency``.
 
-    Used to bake historical parameters denominated in their legal currency (e.g.
-    DM) into the run currency at environment-build time. pint is the single
+    Used at the column boundary only: input columns convert from the data
+    currency into the computation currency on the way in, currency-denominated
+    result columns convert back on the way out (GEP 10). pint is the single
     source of truth for the rate. Both currencies must be registered; all
     registered currencies are interconvertible.
 
     Raises:
         UnitDefinitionError: If either currency is unknown or not a currency.
     """
-    for name in (source_currency, run_currency):
+    for name in (source_currency, target_currency):
         if name not in UNIT_REGISTRY:
             raise UnitDefinitionError(
                 f"Cannot convert currency: {name!r} is not a registered currency."
             )
     try:
-        return UNIT_REGISTRY.Quantity(1.0, source_currency).to(run_currency).magnitude
+        return (
+            UNIT_REGISTRY.Quantity(1.0, source_currency).to(target_currency).magnitude
+        )
     except pint.DimensionalityError as e:
         raise UnitDefinitionError(
-            f"Cannot convert {source_currency!r} to {run_currency!r}: {e}"
+            f"Cannot convert {source_currency!r} to {target_currency!r}: {e}"
         ) from e

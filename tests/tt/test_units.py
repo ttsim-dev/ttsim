@@ -714,20 +714,20 @@ def test_token_is_agnostic_currency():
 def test_currency_conversion_factor():
     # silver_penny = castar / 4, registered by mettsim on import.
     assert currency_conversion_factor(
-        source_currency="CASTAR", run_currency="SILVER_PENNY"
+        source_currency="CASTAR", target_currency="SILVER_PENNY"
     ) == pytest.approx(4.0)
     assert currency_conversion_factor(
-        source_currency="SILVER_PENNY", run_currency="CASTAR"
+        source_currency="SILVER_PENNY", target_currency="CASTAR"
     ) == pytest.approx(0.25)
     assert currency_conversion_factor(
-        source_currency="CASTAR", run_currency="CASTAR"
+        source_currency="CASTAR", target_currency="CASTAR"
     ) == pytest.approx(1.0)
 
 
 def test_currency_conversion_factor_rejects_unknown_currency():
     with pytest.raises(UnitDefinitionError, match="not a registered currency"):
         currency_conversion_factor(
-            source_currency="CASTAR", run_currency="dragon_hoard"
+            source_currency="CASTAR", target_currency="dragon_hoard"
         )
 
 
@@ -736,11 +736,11 @@ def test_currency_conversion_factor_rejects_unknown_currency():
 # ----------------------------------------------------------------------------
 
 
-def test_strip_at_boundary_converts_to_run_currency():
-    # silver_penny tag, castar run -> divide by four.
+def test_strip_at_boundary_converts_to_data_currency():
+    # silver_penny tag, castar data currency -> divide by four.
     tagged = UNIT_REGISTRY.Quantity(np.array([4.0]), "SILVER_PENNY")
     bare = strip_input_quantity_at_boundary(
-        quantity=tagged, run_currency="CASTAR", column_label="wealth"
+        quantity=tagged, data_currency="CASTAR", column_label="wealth"
     )
     assert not isinstance(bare, UNIT_REGISTRY.Quantity)
     assert bare == pytest.approx([1.0])
@@ -751,7 +751,7 @@ def test_strip_at_boundary_converts_flow_currency_preserving_period():
     # tag's /month matches the column's `_m` suffix.
     tagged = UNIT_REGISTRY.Quantity(np.array([4.0]), "SILVER_PENNY / month")
     bare = strip_input_quantity_at_boundary(
-        quantity=tagged, run_currency="CASTAR", column_label="income_m"
+        quantity=tagged, data_currency="CASTAR", column_label="income_m"
     )
     assert bare == pytest.approx([1.0])
 
@@ -761,7 +761,7 @@ def test_strip_at_boundary_fails_on_missing_period():
     tagged = UNIT_REGISTRY.Quantity(np.array([4.0]), "SILVER_PENNY")
     with pytest.raises(UnitConsistencyError, match="must match the column's suffix"):
         strip_input_quantity_at_boundary(
-            quantity=tagged, run_currency="CASTAR", column_label="income_m"
+            quantity=tagged, data_currency="CASTAR", column_label="income_m"
         )
 
 
@@ -770,7 +770,7 @@ def test_strip_at_boundary_fails_on_wrong_period():
     tagged = UNIT_REGISTRY.Quantity(np.array([4.0]), "SILVER_PENNY / year")
     with pytest.raises(UnitConsistencyError, match="month"):
         strip_input_quantity_at_boundary(
-            quantity=tagged, run_currency="CASTAR", column_label="income_m"
+            quantity=tagged, data_currency="CASTAR", column_label="income_m"
         )
 
 
@@ -779,7 +779,7 @@ def test_strip_at_boundary_fails_on_period_for_unsuffixed_column():
     tagged = UNIT_REGISTRY.Quantity(np.array([4.0]), "SILVER_PENNY / month")
     with pytest.raises(UnitConsistencyError, match="no time suffix"):
         strip_input_quantity_at_boundary(
-            quantity=tagged, run_currency="CASTAR", column_label="wealth"
+            quantity=tagged, data_currency="CASTAR", column_label="wealth"
         )
 
 
@@ -788,7 +788,7 @@ def test_strip_at_boundary_does_not_flag_numerator_time_unit():
     # unsuffixed column is fine. Nothing to convert (no currency).
     tagged = UNIT_REGISTRY.Quantity(np.array([30.0]), "year")
     bare = strip_input_quantity_at_boundary(
-        quantity=tagged, run_currency="CASTAR", column_label="age"
+        quantity=tagged, data_currency="CASTAR", column_label="age"
     )
     assert bare == pytest.approx([30.0])
 
@@ -799,7 +799,7 @@ def test_strip_at_boundary_keys_period_off_denominator_for_hours_flow():
     # matches the `_w` suffix; there is no currency, so the value passes through.
     tagged = UNIT_REGISTRY.Quantity(np.array([40.0]), "working_hour / week")
     bare = strip_input_quantity_at_boundary(
-        quantity=tagged, run_currency="CASTAR", column_label="arbeitsstunden_w"
+        quantity=tagged, data_currency="CASTAR", column_label="arbeitsstunden_w"
     )
     assert bare == pytest.approx([40.0])
 
@@ -807,14 +807,14 @@ def test_strip_at_boundary_keys_period_off_denominator_for_hours_flow():
     with pytest.raises(UnitConsistencyError, match="week"):
         strip_input_quantity_at_boundary(
             quantity=UNIT_REGISTRY.Quantity(np.array([40.0]), "working_hour / month"),
-            run_currency="CASTAR",
+            data_currency="CASTAR",
             column_label="arbeitsstunden_w",
         )
 
 
 def test_strip_at_boundary_strips_matching_currency():
     tagged = UNIT_REGISTRY.Quantity(np.array([3.0]), "CASTAR")
-    bare = strip_input_quantity_at_boundary(quantity=tagged, run_currency="CASTAR")
+    bare = strip_input_quantity_at_boundary(quantity=tagged, data_currency="CASTAR")
     assert not isinstance(bare, UNIT_REGISTRY.Quantity)
     assert list(bare) == [3.0]
 
@@ -822,7 +822,7 @@ def test_strip_at_boundary_strips_matching_currency():
 def test_strip_at_boundary_passes_non_currency_tag_through():
     # No currency component -> nothing to convert.
     tagged = UNIT_REGISTRY.Quantity(np.array([5.0]), "working_hour")
-    bare = strip_input_quantity_at_boundary(quantity=tagged, run_currency="CASTAR")
+    bare = strip_input_quantity_at_boundary(quantity=tagged, data_currency="CASTAR")
     assert bare == pytest.approx([5.0])
 
 

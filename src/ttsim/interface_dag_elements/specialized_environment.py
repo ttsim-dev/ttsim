@@ -24,9 +24,6 @@ from ttsim.interface_dag_elements.interface_node_objects import (
     interface_function,
     interface_input,
 )
-from ttsim.interface_dag_elements.param_currency_conversion import (
-    restate_converter_outputs_in_run_currency,
-)
 from ttsim.interface_dag_elements.shared import (
     FRAMEWORK_PARTIAL_ARGUMENTS,
     merge_trees,
@@ -152,7 +149,6 @@ def with_processed_params_and_scalars(
     xnp: ModuleType,
     dnp: ModuleType,
     evaluation_date: datetime.date | None,
-    currency: str,
 ) -> SpecEnvWithProcessedParamsAndScalars:
     """
     The policy environment where all parameters and param functions have been processed.
@@ -226,13 +222,6 @@ def with_processed_params_and_scalars(
         xnp=xnp,
         dnp=dnp,
         backend=backend,
-    )
-    restate_converter_outputs_in_run_currency(
-        outputs=processed_param_functions,
-        params=params,
-        param_functions=param_functions,
-        run_currency=currency,
-        xnp=xnp,
     )
     processed_params = merge_trees(
         left={k: v.value for k, v in params.items() if not isinstance(v, RawParam)},

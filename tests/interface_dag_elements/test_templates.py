@@ -101,6 +101,7 @@ def test_template_all_outputs_with_inputs(backend, xnp):
                 "z": z,
             },
         },
+        policy_date_str="2025-01-01",
         evaluation_date_str="2025-01-01",
         input_data=InputData.tree(
             tree={
@@ -164,6 +165,7 @@ def test_template_output_x_with_inputs(backend, xnp):
             },
         },
         rounding=True,
+        policy_date_str="2025-01-01",
         evaluation_date_str="2025-01-01",
         backend=backend,
     )
@@ -191,6 +193,7 @@ def test_template_all_outputs_no_input_for_root_of_derived_function(backend, xnp
             }
         ),
         tt_targets=TTTargets.tree({"a": {"x": None, "y": None}, "b": {"z": None}}),
+        policy_date_str="2025-01-01",
         evaluation_date_str="2025-01-01",
         backend=backend,
     )

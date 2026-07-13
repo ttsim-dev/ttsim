@@ -411,6 +411,7 @@ def test_create_agg_by_group_functions(
     main(
         main_target="results__tree",
         policy_environment=policy_environment,
+        policy_date=datetime.date(2024, 1, 1),
         input_data=InputData.tree(tree=input_data__tree),
         evaluation_date=datetime.date(2024, 1, 1),
         tt_targets=TTTargets.tree(tt_targets__tree),
@@ -428,6 +429,7 @@ def test_output_is_tree(minimal_input_data, backend, xnp):
     out = main(
         main_target="results__tree",
         policy_environment=policy_environment,
+        policy_date=datetime.date(2024, 1, 1),
         input_data=InputData.tree(tree=minimal_input_data),
         evaluation_date=datetime.date(2024, 1, 1),
         tt_targets=TTTargets.tree({"module": {"some_func": None}}),
@@ -461,6 +463,7 @@ def test_params_target_is_allowed(minimal_input_data):
     out = main(
         main_target="results__tree",
         policy_environment=policy_environment,
+        policy_date=datetime.date(2024, 1, 1),
         input_data=InputData.tree(tree=minimal_input_data),
         evaluation_date=datetime.date(2024, 1, 1),
         tt_targets=TTTargets.tree({"some_param": None, "module": {"some_func": None}}),
@@ -498,6 +501,7 @@ def test_function_without_data_dependency_is_not_mistaken_for_data(
     results__tree = main(
         main_target="results__tree",
         policy_environment=policy_environment,
+        policy_date=datetime.date(2024, 1, 1),
         input_data=InputData.tree(tree=minimal_input_data),
         evaluation_date=datetime.date(2024, 1, 1),
         tt_targets=TTTargets.tree({"b": None}),
@@ -569,6 +573,7 @@ def test_user_provided_aggregate_by_group_specs(backend):
     actual = main(
         main_target="results__df_with_nested_columns",
         policy_environment=policy_environment,
+        policy_date=datetime.date(2024, 1, 1),
         input_data=InputData.tree(tree=data),
         evaluation_date=datetime.date(2024, 1, 1),
         tt_targets=TTTargets.tree({"module_name": {"betrag_m_fam": None}}),
@@ -615,6 +620,7 @@ def test_user_provided_aggregation(backend):
     actual = main(
         main_target="results__df_with_nested_columns",
         policy_environment=policy_environment,
+        policy_date=datetime.date(2024, 1, 1),
         input_data=InputData.tree(tree=data),
         evaluation_date=datetime.date(2024, 1, 1),
         tt_targets=TTTargets.tree({"module_name": {"betrag_double_m_fam": None}}),
@@ -667,6 +673,7 @@ def test_user_provided_aggregation_with_time_conversion(backend):
     actual = main(
         main_target="results__df_with_nested_columns",
         policy_environment=policy_environment,
+        policy_date=datetime.date(2024, 1, 1),
         input_data=InputData.tree(tree=data),
         evaluation_date=datetime.date(2024, 1, 1),
         tt_targets=TTTargets.tree({"module_name": {"max_betrag_double_y_fam": None}}),
@@ -764,6 +771,7 @@ def test_user_provided_aggregate_by_p_id_specs(
         main_target="results__df_with_nested_columns",
         input_data=InputData.tree(tree=minimal_input_data_shared_fam),
         policy_environment=policy_environment,
+        policy_date=datetime.date(2024, 1, 1),
         evaluation_date=datetime.date(2024, 1, 1),
         tt_targets=TTTargets.tree(target_tree),
         rounding=False,
@@ -800,7 +808,6 @@ def test_policy_environment_with_params_and_scalars_is_processed(
         xnp=xnp,
         dnp=dnp,
         evaluation_date=datetime.date(2024, 1, 1),
-        currency="CASTAR",
     )
     expected = {
         "some_converting_params_func": ConvertedParam(
@@ -885,6 +892,7 @@ def test_can_override_ttsim_objects_with_data(
         main_target="results__tree",
         input_data=InputData.tree(tree={**minimal_input_data, **overriding_data}),
         policy_environment=nested_policy_environment,
+        policy_date=datetime.date(2024, 1, 1),
         evaluation_date=datetime.date(2024, 1, 1),
         tt_targets=TTTargets.tree(tt_targets__tree),
         include_warn_nodes=False,
@@ -913,9 +921,9 @@ def test_scalars_in_input_data_become_part_of_specialized_environment(xnp, backe
     root_nodes = main(
         main_target=MainTarget.labels.root_nodes,
         policy_environment=policy_environment,
+        policy_date=datetime.date(2024, 1, 1),
         input_data=InputData.tree(input_data),
         tt_targets=TTTargets.tree({"identity_plus_one": None}),
-        policy_date=datetime.date(2024, 1, 1),
         evaluation_date_str="2024-01-01",
         backend=backend,
         include_warn_nodes=False,

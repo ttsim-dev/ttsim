@@ -77,7 +77,9 @@ def _set_single_field(cls: type[T], field_name: str, field_value: Any) -> T:  # 
 @dataclass(frozen=True)
 class MainArg:
     def to_dict(self) -> dict[str, Any]:
-        return self.__dict__
+        # A copy: `_harmonize_inputs` pops entries from the result, which must
+        # not mutate the instance — `main` args may be reused across calls.
+        return dict(self.__dict__)
 
 
 @dataclass(frozen=True)
@@ -88,7 +90,7 @@ class DfAndMapper:
     """A nested dictionary mapping expected inputs to column names in df."""
 
     def to_dict(self) -> dict[str, Any]:
-        return self.__dict__
+        return dict(self.__dict__)
 
 
 @dataclass(frozen=True)
@@ -156,7 +158,7 @@ class InputData(MainArg):
         the column's unit (GEP 10).
 
         Opts into full-coverage boundary unit validation: each tag's currency is
-        converted to the run currency, its period is checked against the column's
+        converted to the data currency, its period is checked against the column's
         time suffix, and its dimension and grouping level are checked against the
         column's declared unit. A currency column names a concrete currency
         (``unit=Unit.EUR.PER_MONTH``, never the agnostic ``Unit.CURRENCY``); tag

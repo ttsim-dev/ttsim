@@ -55,6 +55,7 @@ def test_float_nullable_input_with_na_round_trips_as_nan(
         input_data=InputData.df_with_nested_columns(df),
         tt_targets=TTTargets.tree({"wage_m": None}),
         policy_environment={},
+        policy_date=datetime.date(2025, 1, 1),
         evaluation_date=datetime.date(2025, 1, 1),
         backend=backend,
     )
@@ -142,6 +143,7 @@ def test_int_input_with_na_fails_with_actionable_message(
             input_data=InputData.df_with_nested_columns(df),
             tt_targets=TTTargets.tree({"age": None}),
             policy_environment={},
+            policy_date=datetime.date(2025, 1, 1),
             evaluation_date=_DATE,
             backend=backend,
         )
@@ -164,6 +166,7 @@ def test_bool_input_with_na_fails_with_actionable_message(
             input_data=InputData.df_with_nested_columns(df),
             tt_targets=TTTargets.tree({"is_eligible": None}),
             policy_environment={},
+            policy_date=datetime.date(2025, 1, 1),
             evaluation_date=_DATE,
             backend=backend,
         )
@@ -194,6 +197,7 @@ def test_multiple_int_or_bool_columns_with_na_all_reported(
             input_data=InputData.df_with_nested_columns(df),
             tt_targets=TTTargets.tree({"age": None, "is_eligible": None}),
             policy_environment={},
+            policy_date=datetime.date(2025, 1, 1),
             evaluation_date=_DATE,
             backend=backend,
         )
@@ -215,6 +219,7 @@ def test_pyarrow_int_input_round_trips_as_int(backend: Literal["numpy", "jax"]):
         input_data=InputData.df_with_nested_columns(df),
         tt_targets=TTTargets.tree({"age": None}),
         policy_environment={},
+        policy_date=datetime.date(2025, 1, 1),
         evaluation_date=_DATE,
         backend=backend,
     )
@@ -241,6 +246,7 @@ def test_uint64_overflow_fails_with_actionable_message(
             input_data=InputData.flat(flat),  # ty: ignore[invalid-argument-type]
             tt_targets=TTTargets.tree({"balance": None}),
             policy_environment={},
+            policy_date=datetime.date(2025, 1, 1),
             evaluation_date=_DATE,
             backend=backend,
         )
@@ -267,6 +273,7 @@ def test_uint64_overflow_from_dataframe_fails_with_actionable_message(
             input_data=InputData.df_with_nested_columns(df),
             tt_targets=TTTargets.tree({"balance": None}),
             policy_environment={},
+            policy_date=datetime.date(2025, 1, 1),
             evaluation_date=_DATE,
             backend=backend,
         )
