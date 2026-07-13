@@ -397,7 +397,10 @@ def resolve_compositional_column_unit(
     ``CURRENCY_PER_MONTH_PER_HH`` (the household's amount) or ``CURRENCY_PER_MONTH``
     (each member's, constant within the household), never ``…_PER_BG``.
 
-    Columns are currency-agnostic, so a concrete-currency base is rejected.
+    A concrete-currency base is rejected: a function does not care which
+    currency it computes in — its values are denominated in whatever the
+    statutory currency of the policy date is — so only parameters and rounding
+    specs pin down concrete currencies.
 
     Raises:
         UnitDefinitionError: If the base pins a concrete currency, or the spelled
@@ -405,8 +408,10 @@ def resolve_compositional_column_unit(
     """
     if token_source_currency(unit) is not None:
         raise UnitDefinitionError(
-            f"{where}: a column/function pins the concrete currency {unit.base!r}; "
-            f"columns are currency-agnostic and must use {CURRENCY_TOKEN} (GEP 10)."
+            f"{where}: a column/function pins the concrete currency {unit.base!r}. "
+            f"A function runs in the statutory currency of the policy date, "
+            f"whichever that is: declare the agnostic {CURRENCY_TOKEN} and leave "
+            f"concrete currencies to parameters and rounding specs (GEP 10)."
         )
     expected_period = (
         TIME_UNIT_ID_TO_PERIOD_TOKEN[time_unit_id] if time_unit_id is not None else None
@@ -483,7 +488,7 @@ def _resolve_agnostic_body_unit(
 
     Shared by the :func:`cast_unit` target and a parameter dataclass field
     annotation: both state a full unit whose spelled period and group level stand
-    as given, both must stay currency-agnostic (the concrete denomination lives in
+    as given, both use the agnostic currency (the concrete denomination lives in
     the parameter YAML), and both resolve like a column declaration.
 
     Raises:
@@ -491,8 +496,9 @@ def _resolve_agnostic_body_unit(
     """
     if token_source_currency(unit) is not None:
         raise UnitDefinitionError(
-            f"{where}: {what} pins the concrete currency {unit.base!r}; code is "
-            f"currency-agnostic and must use {CURRENCY_TOKEN} (GEP 10)."
+            f"{where}: {what} pins the concrete currency {unit.base!r}; declare "
+            f"the agnostic {CURRENCY_TOKEN} — only parameters and rounding specs "
+            f"pin down concrete currencies (GEP 10)."
         )
     resolved = resolve_compositional_unit(unit=unit, with_level=True)
     return _attach_implied_person_leaf(resolved=resolved, unit=unit)

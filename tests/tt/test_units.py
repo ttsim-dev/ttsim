@@ -326,10 +326,11 @@ def test_unregistered_currency_spelling_is_rejected():
 
 
 def test_currency_agnostic_base_rejected_on_column_at_resolution():
-    # Functions are currency-agnostic by design: a concrete currency base is
-    # rejected when a column's compositional unit is resolved (GEP 10).
+    # A function runs in the statutory currency of the policy date, so a
+    # concrete currency base is rejected when a column's compositional unit
+    # is resolved (GEP 10).
     token = coerce_to_composite_unit(value="CASTAR_PER_MONTH", where="test")
-    with pytest.raises(UnitDefinitionError, match="currency-agnostic"):
+    with pytest.raises(UnitDefinitionError, match="agnostic CURRENCY"):
         resolve_compositional_column_unit(
             unit=token, time_unit_id="m", grouping_level="person", where="A column"
         )
@@ -1039,7 +1040,7 @@ def test_cast_target_resolves_like_a_column_declaration():
 
 def test_cast_target_must_be_currency_agnostic():
     token = coerce_to_composite_unit(value="CASTAR_PER_MONTH", where="test")
-    with pytest.raises(UnitDefinitionError, match="currency-agnostic"):
+    with pytest.raises(UnitDefinitionError, match="agnostic CURRENCY"):
         resolve_compositional_cast_unit(unit=token, where="test")
 
 
