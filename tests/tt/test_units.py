@@ -40,9 +40,11 @@ from ttsim.tt.units import (
     CURRENCY_TOKEN,
     UNIT_REGISTRY,
     coerce_to_composite_unit,
+    composite_from_resolved_unit,
     fail_if_units_are_missing,
     grouping_level_count_unit,
     is_calendar_point_unit,
+    output_unit_in_data_currency,
     parse_compositional_unit,
     parse_unit,
     resolve_compositional_cast_unit,
@@ -862,6 +864,7 @@ def test_builder_generic_per_level_matches_attribute():
         ("DIMENSIONLESS_PER_YEAR", "DIMENSIONLESS", None, "YEAR", None),
         ("DIMENSIONLESS_PER_BG", "DIMENSIONLESS", None, None, "BG"),
         ("HOURS_PER_WEEK", "HOURS", None, "WEEK", None),
+        ("CURRENCY_PER_HOURS", "CURRENCY", "HOURS", None, None),
         (
             "CURRENCY_PER_SQUARE_METER_PER_MONTH_PER_BG",
             "CURRENCY",
@@ -895,6 +898,8 @@ def test_parse_compositional_unit_accepts_concrete_currency_base():
         "CURRENCY_PER_BG_PER_MONTH",  # non-canonical order (level before period)
         "CURRENCY_PER_MONTH_PER_YEAR",  # two periods
         "CURRENCY_PER_SQUARE_METER_PER_SQUARE_METER",  # two areas
+        "CURRENCY_PER_SQUARE_METER_PER_HOURS",  # two physical denominators
+        "CURRENCY_PER_MONTH_PER_HOURS",  # non-canonical (hours after period)
     ],
 )
 def test_parse_compositional_unit_rejects_bad_spellings(spelling):
@@ -923,6 +928,7 @@ def test_is_flow_property():
         ("CURRENCY_PER_YEAR", "CURRENCY / year"),
         ("DIMENSIONLESS_PER_YEAR", "1 / year"),
         ("HOURS_PER_WEEK", "working_hour / week"),
+        ("CURRENCY_PER_HOURS", "CURRENCY / working_hour"),
         ("CURRENCY_PER_SQUARE_METER_PER_MONTH", "CURRENCY / meter ** 2 / month"),
         ("SQUARE_METER", "meter ** 2"),
         ("HECTARE", "hectare"),
@@ -1041,6 +1047,41 @@ def test_cast_target_must_be_currency_agnostic():
     token = coerce_to_composite_unit(value="CASTAR_PER_MONTH", where="test")
     with pytest.raises(UnitDefinitionError, match="currency-agnostic"):
         resolve_compositional_cast_unit(unit=token, where="test")
+
+
+def test_hours_denominator_suppresses_the_implied_person_leaf():
+    # A wage floor is a price, owned by nobody: the working-hours denominator
+    # keeps the person leaf off, so `floor * hours` cancels to a person-level
+    # amount (GEP 10) — the same rule as areas.
+    expected = parse_unit("CURRENCY / working_hour")
+    assert units_are_equivalent(
+        left=resolve_compositional_column_unit(
+            unit=Unit.CURRENCY.PER_HOURS,
+            time_unit_id=None,
+            grouping_level="person",
+            where="test",
+        ),
+        right=expected,
+    )
+    assert units_are_equivalent(
+        left=resolve_compositional_param_unit(
+            unit=coerce_to_composite_unit(value="CASTAR_PER_HOURS", where="test"),
+            where="test",
+        ),
+        right=expected,
+    )
+
+
+def test_composite_from_resolved_unit_reconstructs_the_hours_denominator():
+    # The output-side label round trip for a wage floor: the working-hour
+    # denominator maps back to the physical-denominator slot.
+    resolved = resolve_compositional_unit(unit=Unit.CURRENCY.PER_HOURS)
+    in_data_currency = output_unit_in_data_currency(
+        units=resolved, data_currency="CASTAR"
+    )
+    assert composite_from_resolved_unit(in_data_currency) == coerce_to_composite_unit(
+        value="CASTAR_PER_HOURS", where="test"
+    )
 
 
 def test_area_denominator_suppresses_the_implied_person_leaf():

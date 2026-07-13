@@ -14,7 +14,8 @@ serves two build-time jobs:
 The runtime path stays pure arrays, single currency, JAX-safe.
 
 Every declaration is a fully-spelled :class:`CompositeUnit` — a base optionally
-divided by an area, a period, and a grouping level, in that canonical order. It
+divided by a physical denominator (an area or working hours), a period, and a
+grouping level, in that canonical order. It
 has two round-tripping spellings (via :func:`parse_compositional_unit` /
 :func:`str`):
 
@@ -90,9 +91,13 @@ PERSON_LEVEL = "person"
 _PER = "_PER_"
 
 #: The closed *period* denominators and the pint unit each names.
-#: The closed *area* denominators (physical) and the pint unit each names.
+#: The closed physical denominators — areas and working hours — and the pint
+#: unit each names. They share one slot of the canonical order: a unit is a
+#: price per at most one physical thing (a rent cap per square meter, a wage
+#: floor per working hour).
 _AREA_TOKEN_TO_PINT: dict[str, str] = {
     "SQUARE_METER": "meter ** 2",
+    "HOURS": "working_hour",
 }
 
 #: The non-currency compositional *bases* and the pint base each resolves to
@@ -126,10 +131,11 @@ _unit_builder_levels: set[str] = set()
 class CompositeUnit:
     """A fully-spelled compositional unit — *the* declaration type.
 
-    A base divided by at most one *area*, one *period*, and one *level*, held in
-    that canonical order; the builder methods enforce the order, so a
-    non-canonical chain (``.PER_BG.PER_MONTH``) is a definition error. Two
-    round-tripping spellings (via :func:`str`):
+    A base divided by at most one *physical denominator* (an area or working
+    hours), one *period*, and one *level*, held in that canonical order; the
+    builder methods enforce the order, so a non-canonical chain
+    (``.PER_BG.PER_MONTH``) is a definition error. Two round-tripping spellings
+    (via :func:`str`):
 
     - fluent, off a base (``Unit.CURRENCY.PER_MONTH.PER_BG``);
     - flat canonical string, parsed by :func:`parse_compositional_unit`
@@ -164,8 +170,9 @@ class CompositeUnit:
     def _with_area(self, area: str) -> CompositeUnit:
         if self.area is not None or self.period is not None or self.level is not None:
             raise UnitDefinitionError(
-                f"Cannot add area '{area}' to '{self}': the canonical order is "
-                f"base _PER_ <area> _PER_ <period> _PER_ <level> (GEP 10)."
+                f"Cannot add the physical denominator '{area}' to '{self}': the "
+                f"canonical order is base _PER_ <area or hours> _PER_ <period> "
+                f"_PER_ <level>, with at most one physical denominator (GEP 10)."
             )
         return replace(self, area=area)
 
@@ -195,6 +202,15 @@ class CompositeUnit:
     def PER_SQUARE_METER(self) -> CompositeUnit:  # noqa: N802 (DSL: mirrors the token)
         """This unit per square meter (the area denominator)."""
         return self._with_area("SQUARE_METER")
+
+    @property
+    def PER_HOURS(self) -> CompositeUnit:  # noqa: N802 (DSL: mirrors the token)
+        """This unit per working hour (``Unit.CURRENCY.PER_HOURS``, a wage floor).
+
+        Shares the physical-denominator slot with the area: a price is per at
+        most one physical thing.
+        """
+        return self._with_area("HOURS")
 
     @property
     def PER_MONTH(self) -> CompositeUnit:  # noqa: N802 (DSL: mirrors the token)
@@ -310,7 +326,7 @@ def resolve_compositional_unit(
     Each denominator divides the base in turn:
 
     - a period by its pint period;
-    - an area by ``meter ** 2``;
+    - a physical denominator by its pint unit (``meter ** 2``, ``working_hour``);
     - a level by its grouping-level dimension.
 
     A currency base resolves to the agnostic :data:`CURRENCY_TOKEN` dimension —
@@ -359,10 +375,11 @@ def _attach_implied_person_leaf(
 
     - a boolean always carries its level;
     - a level-carrying base (currency, area, working hours, the ``[person]``
-      count) carries the leaf — unless an *area denominator* makes the unit a
-      price or a density, owned by nobody: a rent cap
-      (``CURRENCY_PER_SQUARE_METER_PER_MONTH``) stays leaf-less so it cancels
-      cleanly against an area;
+      count) carries the leaf — unless a *physical denominator* (an area or
+      working hours) makes the unit a price or a density, owned by nobody: a
+      rent cap (``CURRENCY_PER_SQUARE_METER_PER_MONTH``) or a wage floor
+      (``CURRENCY_PER_HOURS``) stays leaf-less so it cancels cleanly against
+      the physical quantity;
     - an intensive base (a duration, a share, a calendar point) stays bare.
     """
     if unit.level is not None:
@@ -1213,6 +1230,8 @@ def composite_from_resolved_unit(units: pint.Unit) -> CompositeUnit:
         if token == "meter":  # noqa: S105 (a pint unit token, not a secret)
             base = "SQUARE_METER" if exponent > 0 and currency is None else base
             area = "SQUARE_METER" if exponent < 0 else area
+        elif token == "working_hour" and exponent < 0:  # noqa: S105
+            area = "HOURS"
         elif currency is None and exponent > 0 and token in _PINT_NAME_TO_BASE_TOKEN:
             base = _PINT_NAME_TO_BASE_TOKEN[token]
     return CompositeUnit(
