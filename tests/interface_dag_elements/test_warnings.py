@@ -86,6 +86,7 @@ def test_warn_if_functions_and_data_columns_overlap(backend):
                 "another_func": another_func,
             },
             tt_targets=TTTargets.tree({"another_func": None}),
+            policy_date=datetime.date(2025, 1, 1),
             evaluation_date=datetime.date(2025, 1, 1),
             rounding=False,
             include_fail_nodes=False,
@@ -193,6 +194,7 @@ def test_warn_if_tt_dag_includes_functions_with_warn_msg_if_included_set(
         main(
             main_target=MainTarget.results.df_with_mapper,
             policy_environment=env,
+            policy_date=datetime.date(2025, 1, 1),
             tt_targets=TTTargets.tree({"fam_id": None}),
             input_data=InputData.tree(tree=minimal_data_tree),
             backend=backend,
@@ -207,6 +209,7 @@ def test_warn_if_tt_function_type_annotations_turned_off(
         main(
             main_target=MainTarget.results.df_with_mapper,
             policy_environment=mettsim_environment(backend),
+            policy_date=datetime.date(2025, 1, 1),
             tt_targets=TTTargets.tree({"hh_id": None}),
             input_data=InputData.tree(tree=minimal_data_tree),
             tt_function_set_annotations=False,

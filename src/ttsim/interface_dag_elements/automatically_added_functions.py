@@ -3,7 +3,7 @@ from __future__ import annotations
 import datetime
 import inspect
 from collections.abc import Callable
-from typing import TYPE_CHECKING, cast, overload
+from typing import TYPE_CHECKING, Any, cast, overload
 
 import dags.tree as dt
 from dags import get_annotations, get_free_arguments, rename_arguments
@@ -27,9 +27,11 @@ from ttsim.tt.column_objects_param_function import (
 )
 from ttsim.tt.param_objects import ScalarParam
 from ttsim.tt.type_resolution import (
+    _COLUMN_KIND_TO_TYPE_STRING,
     BOOL_KINDS,
     ResolvedKind,
     TypeResolutionError,
+    resolve_agg_output_kind,
     resolve_kind_of_annotation,
     resolve_kind_of_column_function,
     synthesize_typed_aggregation_wrapper,
@@ -210,11 +212,14 @@ def create_time_conversion_functions(
     for bngs, inputs in bngs_to_time_conversion_inputs.items():
         for col_name in input_columns:
             # If base_name is in provided data, base time conversions on that.
-            if pattern_specific := get_re_pattern_for_specific_time_units_and_groupings(
+            # A grouping-only variant (`income_hh`) carries no period to
+            # convert from, so it cannot serve as the source.
+            pattern_specific = get_re_pattern_for_specific_time_units_and_groupings(
                 base_name=bngs[0],
                 all_time_units=time_units,
                 grouping_levels=grouping_levels,
-            ).fullmatch(col_name):
+            ).fullmatch(col_name)
+            if pattern_specific and pattern_specific.group("time_unit"):
                 inputs["qname_source"] = col_name
                 inputs["time_unit"] = pattern_specific.group("time_unit")
                 break
@@ -540,6 +545,126 @@ def _resolve_source_column_kind(
         f"dtype is required to synthesize a typed aggregation wrapper."
     )
     raise TypeResolutionError(msg)
+
+
+def create_input_column_stubs(
+    env_with_derived_functions: dict[str, Any],
+    input_columns: UnorderedQNames,
+    grouping_levels: OrderedQNames,
+) -> dict[str, PolicyInput]:
+    """`PolicyInput` stubs for input columns supplied at derived names.
+
+    A user may supply data at a name the environment never declares: a
+    time-converted variant (``bonus_y`` for a declared ``bonus_m``) or a group
+    aggregate (``income_m_hh`` for ``income_m``). The derived-function
+    machinery creates no function at such a name — the data would override it
+    anyway — so the name would otherwise carry no unit. The input-side
+    currency conversion and the input-tag checks read units off the
+    environment, so each such column gets a stub carrying the unit the
+    derivation rules imply. A column whose source carries no unit gets no
+    stub (the mandatory-units check reports the source itself).
+
+    Time-variant stubs are minted first so a group aggregate of a
+    time-converted name (``bonus_y_hh`` for a declared ``bonus_m``) can chain
+    off them.
+    """
+    pattern_all = get_re_pattern_for_all_time_units_and_groupings(
+        time_units=tuple(TIME_UNIT_IDS_TO_LABELS),
+        grouping_levels=grouping_levels,
+    )
+    candidates = sorted(set(input_columns) - set(env_with_derived_functions))
+
+    stubs: dict[str, PolicyInput] = {}
+    for qname in candidates:
+        match = pattern_all.fullmatch(qname)
+        if match is not None and match.group("time_unit"):
+            stub = _time_variant_input_stub(
+                qname=qname, match=match, env=env_with_derived_functions
+            )
+            if stub is not None:
+                stubs[qname] = stub
+
+    gp = group_pattern(grouping_levels)
+    lookup = {**env_with_derived_functions, **stubs}
+    for qname in candidates:
+        if qname in stubs:
+            continue
+        match = gp.match(qname)
+        if match is not None:
+            stub = _aggregated_input_stub(qname=qname, match=match, lookup=lookup)
+            if stub is not None:
+                stubs[qname] = stub
+    return stubs
+
+
+def _time_variant_input_stub(
+    qname: str, match: re.Match[str], env: dict[str, Any]
+) -> PolicyInput | None:
+    """A stub for data at a time-converted name, from a sibling's unit."""
+    base_name, grouping_suffix = get_base_name_and_grouping_suffix(match)
+    for other_time_unit in TIME_UNIT_IDS_TO_LABELS:
+        if other_time_unit == match.group("time_unit"):
+            continue
+        sibling = env.get(f"{base_name}_{other_time_unit}{grouping_suffix}")
+        sibling_unit = getattr(sibling, "unit", UNSET_UNIT)
+        if sibling_unit is UNSET_UNIT:
+            continue
+        return _input_column_stub(
+            qname=qname,
+            unit=unit_with_rebased_period(
+                unit=replace_concrete_with_agnostic_currency(sibling_unit),
+                time_unit_id=match.group("time_unit"),
+            ),
+            # The synthesized time converters return floats, so a column
+            # supplied at a converted name is a float column.
+            data_type="FloatColumn",
+        )
+    return None
+
+
+def _aggregated_input_stub(
+    qname: str, match: re.Match[str], lookup: dict[str, Any]
+) -> PolicyInput | None:
+    """A stub for data at a group-aggregate name, from its SUM source's unit."""
+    source_name = match.group("base_name_with_time_unit")
+    source_unit = getattr(lookup.get(source_name), "unit", UNSET_UNIT)
+    if source_unit is UNSET_UNIT:
+        return None
+    try:
+        source_kind = _resolve_source_column_kind(
+            source_name=source_name,
+            column_functions={
+                k: v for k, v in lookup.items() if isinstance(v, ColumnFunction)
+            },
+            qname_policy_environment=lookup,
+        )
+    except TypeResolutionError:
+        return None
+    return _input_column_stub(
+        qname=qname,
+        unit=unit_for_aggregation(
+            source_unit=replace_concrete_with_agnostic_currency(source_unit),
+            agg_type=AggType.SUM,
+            target_level=match.group("group"),
+            source_is_boolean=source_kind in BOOL_KINDS,
+        ),
+        data_type=_COLUMN_KIND_TO_TYPE_STRING[
+            resolve_agg_output_kind(
+                agg_type=AggType.SUM, input_kind=source_kind, node_name=qname
+            )
+        ],
+    )
+
+
+def _input_column_stub(qname: str, unit: CompositeUnit, data_type: str) -> PolicyInput:
+    return PolicyInput(
+        leaf_name=dt.tree_path_from_qname(qname)[-1],
+        data_type=data_type,
+        start_date=DEFAULT_START_DATE,
+        end_date=DEFAULT_END_DATE,
+        description=f"Input data supplied at the derived name {qname!r}.",
+        unit=unit,
+    )
 
 
 def _find_sibling_policy_input_at_other_time_unit(

@@ -199,14 +199,14 @@ def flat_from_qname(
 )
 def flat_from_tree_with_unit_annotations(
     tree_with_unit_annotations: NestedData,
-    currency: str,
+    data_currency: str,
 ) -> FlatData:
     """The input data as a flat dictionary of arrays."""
     flat = dt.flatten_to_tree_paths(tree_with_unit_annotations)
     return {
         path: strip_input_quantity_at_boundary(
             quantity=UNIT_REGISTRY.Quantity(col.values, input_strip_unit(col.unit)),
-            run_currency=currency,
+            data_currency=data_currency,
             column_label=dt.qname_from_tree_path(path),
         )
         for path, col in flat.items()

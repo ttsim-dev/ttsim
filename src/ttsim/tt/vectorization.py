@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, Any, Literal, cast
 import numpy
 from dags.signature import rename_arguments
 
-from ttsim.exceptions import TTSIMError
+from ttsim.exceptions_and_warnings import TTSIMError
 from ttsim.tt.type_resolution import (
     build_beartype_checkable_wrapper,
     create_vectorized_annotations,

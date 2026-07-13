@@ -23,6 +23,9 @@ class WarnIf(MainTargetABC):
     functions_and_data_columns_overlap: str = (
         "warn_if__functions_and_data_columns_overlap"
     )
+    statutory_currency_and_base_currency_differ: str = (
+        "warn_if__statutory_currency_and_base_currency_differ"
+    )
     evaluation_date_set_in_multiple_places: str = (
         "warn_if__evaluation_date_set_in_multiple_places"
     )
@@ -221,7 +224,8 @@ class MainTarget(MainTargetABC):
     tt_targets: type[Targets] = field(default=Targets)
     len_p_id: str = "len_p_id"
     backend: str = "backend"
-    currency: str = "currency"
+    data_currency: str = "data_currency"
+    computation_currency: str = "computation_currency"
     evaluation_date_str: str = "evaluation_date_str"
     evaluation_date: str = "evaluation_date"
     policy_date_str: str = "policy_date_str"

@@ -22,6 +22,7 @@ if TYPE_CHECKING:
     from types import ModuleType
 
     from ttsim.typing import (
+        FlatData,
         PolicyEnvironment,
         QNameData,
         QNameTTTargets,
@@ -108,12 +109,26 @@ def top_level_namespace(
         "input_data__df_with_nested_columns",
         "input_data__df_with_qname_columns",
         "input_data__df_and_mapper__df",
-        "processed_data",
     ],
+    include_if_no_input_present=["processed_data"],
     leaf_name="input_columns",
 )
-def input_columns_from_input_data(processed_data: QNameData) -> UnorderedQNames:
+def input_columns_from_input_data(input_data__flat: FlatData) -> UnorderedQNames:
     """The (qualified) column names in the input data."""
+    # Read off `input_data__flat` rather than `processed_data` so the
+    # specialized environment stays upstream of `processed_data`, which needs
+    # the environment's units for the input-side currency conversion (GEP 10).
+    return {dt.qname_from_tree_path(path) for path in input_data__flat}
+
+
+@input_dependent_interface_function(
+    include_if_any_input_present=["processed_data"],
+    leaf_name="input_columns",
+)
+def input_columns_from_processed_data(processed_data: QNameData) -> UnorderedQNames:
+    """The (qualified) column names in the input data."""
+    # Takes precedence when `processed_data` is supplied alongside input data:
+    # the supplied columns are the ones the computation will use.
     return set(processed_data.keys())
 
 

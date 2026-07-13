@@ -45,14 +45,12 @@ def cached_policy_environment(
     policy_date: datetime.date,
     root: Path,
     backend: Literal["numpy", "jax"],
-    currency: str | None = None,
 ) -> PolicyEnvironment:
     return main(
         main_target="policy_environment",
         policy_date=policy_date,
         orig_policy_objects=OrigPolicyObjects.root(root),
         backend=backend,
-        currency=currency,
         include_fail_nodes=True,
         include_warn_nodes=False,
     )
@@ -105,13 +103,12 @@ def execute_test(
     test: PolicyTest,
     root: Path,
     backend: Literal["numpy", "jax"],
-    default_currency: str | None = None,
+    default_data_currency: str | None = None,
 ) -> None:
     environment = cached_policy_environment(
         policy_date=test.policy_date,
         root=root,
         backend=backend,
-        currency=test.info.get("currency", default_currency),
     )
     if test.target_structure:
         result_df = main(
@@ -122,6 +119,7 @@ def execute_test(
             tt_targets=TTTargets.tree(test.target_structure),
             rounding=True,
             backend=backend,
+            data_currency=test.info.get("data_currency", default_data_currency),
             include_fail_nodes=True,
             include_warn_nodes=False,
         )

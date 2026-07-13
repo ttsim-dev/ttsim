@@ -6,15 +6,12 @@ import datetime
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Annotated, Any
 
-# Importing the mettsim package registers the castar (the base currency), so
-# the concrete currency tokens exist and the params-must-pin-down-their-
-# currency rule is active (GEP 10) regardless of test-collection order.
 import mettsim.middle_earth  # noqa: F401
 import numpy
 import pint
 import pytest
 
-from ttsim.exceptions import (
+from ttsim.exceptions_and_warnings import (
     AggregationDefinitionError,
     UnitConsistencyError,
     UnitDefinitionError,

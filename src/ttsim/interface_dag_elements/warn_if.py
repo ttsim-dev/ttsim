@@ -5,12 +5,14 @@ from typing import TYPE_CHECKING
 
 import dags.tree as dt
 
+from ttsim.exceptions_and_warnings import PotentialCurrencyMismatchWarning
 from ttsim.interface_dag_elements.fail_if import (
     format_errors_and_warnings,
     format_list_linewise,
 )
 from ttsim.interface_dag_elements.interface_node_objects import warn_function
 from ttsim.tt.column_objects_param_function import PolicyInput
+from ttsim.tt.currencies import base_currency
 
 if TYPE_CHECKING:
     import datetime
@@ -23,6 +25,29 @@ if TYPE_CHECKING:
         SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
         UnorderedQNames,
     )
+
+
+@warn_function(
+    include_if_all_elements_present=[
+        "computation_currency",
+        "data_currency",
+        "policy_date",
+    ]
+)
+def statutory_currency_and_base_currency_differ(
+    computation_currency: str,
+    data_currency: str,
+    policy_date: datetime.date,
+) -> None:
+    """Warn if the statutory currency and base currency differ."""
+    if computation_currency != base_currency() and data_currency == base_currency():
+        msg = (
+            f"The statutory currency for {policy_date} is {computation_currency}, "
+            f"but the currency of the input and output data is {data_currency}. Make "
+            f"sure your input data is denominated in {data_currency}. If you want "
+            "to pass data in a different currency, set `data_currency` in `main`."
+        )
+        warnings.warn(PotentialCurrencyMismatchWarning(msg), stacklevel=2)
 
 
 @warn_function()

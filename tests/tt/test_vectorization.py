@@ -30,6 +30,7 @@ from ttsim.tt.column_objects_param_function import (
     AggByGroupFunction,
     AggByPIDFunction,
 )
+from ttsim.tt.currencies import statutory_currency_for_date
 from ttsim.tt.type_resolution import scalar_type_to_array_type
 from ttsim.tt.vectorization import (
     TranslateToVectorizableError,
@@ -355,7 +356,9 @@ for year in range(1990, 2023):
                         root=middle_earth.ROOT_PATH
                     ),
                     policy_date=datetime.date(year=year, month=1, day=1),
-                    currency="CASTAR",
+                    computation_currency=statutory_currency_for_date(
+                        datetime.date(year=year, month=1, day=1)
+                    ),
                 ),
             ).items()
             if not isinstance(

@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Iterable
 from types import ModuleType
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import dags.tree as dt
 import numpy as np
@@ -11,8 +12,19 @@ from jaxtyping import Shaped
 
 from ttsim.interface_dag_elements.interface_node_objects import interface_function
 from ttsim.tt.column_objects_param_function import reorder_ids
-from ttsim.tt.units import strip_input_quantity_at_boundary
-from ttsim.typing import Array, IntColumn
+from ttsim.tt.currencies import currency_conversion_factor
+from ttsim.tt.units import (
+    UNSET_UNIT,
+    CompositeUnit,
+    strip_input_quantity_at_boundary,
+    token_is_agnostic_currency,
+    token_source_currency,
+)
+from ttsim.typing import (
+    Array,
+    IntColumn,
+    SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
+)
 
 if TYPE_CHECKING:
     from ttsim.typing import FlatData, QNameData
@@ -23,7 +35,7 @@ def _canonicalize_input_dtype(
     xnp: ModuleType,
     *,
     column_label: str | None = None,
-    run_currency: str | None = None,
+    data_currency: str | None = None,
 ) -> Shaped[Array | np.ndarray, " n_obs"]:
     """Canonicalize a column to a backend-native dtype the TT DAG can operate on.
 
@@ -49,11 +61,11 @@ def _canonicalize_input_dtype(
     """
     if isinstance(arr, pint.Quantity):
         # A pint-tagged column only ever reaches here via `processed_data`, which
-        # always has a concrete run currency; the currency-less converter callers
+        # always has a concrete data currency; the currency-less converter callers
         # (`data_converters`, plain `pd.Series` leaves) never pass a `Quantity`.
         arr = strip_input_quantity_at_boundary(
             quantity=arr,
-            run_currency=cast("str", run_currency),
+            data_currency=cast("str", data_currency),
             column_label=column_label,
         )
     if isinstance(arr, pd.Series):
@@ -116,26 +128,111 @@ def _fail_if_uint_overflows_int64(
     raise ValueError(msg)
 
 
+def qnames_with_currency_declarations(
+    qnames: Iterable[str],
+    specialized_environment: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
+) -> set[str]:
+    """The subset of ``qnames`` whose declared unit carries a currency component.
+
+    Identifies the columns to convert between the data currency and the
+    computation currency (GEP 10). Every column carries its unit in the
+    specialized environment — its own declaration, the minted unit of a
+    derived function, or a `PolicyInput` stub for data supplied at a derived
+    name — so this is a plain lookup. A *parameter's* concrete statutory
+    currency counts, too: a data column overriding a parameter is still user
+    data, arriving in the data currency. A qname with no unit is not
+    converted (the mandatory-units check reports missing declarations).
+    """
+    out: set[str] = set()
+    for qname in qnames:
+        token = getattr(specialized_environment.get(qname), "unit", UNSET_UNIT)
+        if not isinstance(token, CompositeUnit):
+            continue
+        if token_is_agnostic_currency(token) or token_source_currency(token):
+            out.add(qname)
+    return out
+
+
+def currency_conversion_factor_and_columns(
+    qnames: Iterable[str],
+    specialized_environment: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
+    source_currency: str,
+    target_currency: str,
+) -> tuple[float, set[str]]:
+    """The conversion factor and the columns it applies to.
+
+    The shared setup of the two conversions (GEP 10): ``processed_data``
+    converts input columns from the data currency to the computation currency,
+    ``results`` converts computed columns back. Equal currencies short-circuit
+    to a factor of ``1.0`` with no environment walk.
+    """
+    if source_currency == target_currency:
+        return 1.0, set()
+    factor = currency_conversion_factor(
+        source_currency=source_currency, target_currency=target_currency
+    )
+    currency_qnames = qnames_with_currency_declarations(
+        qnames=qnames,
+        specialized_environment=specialized_environment,
+    )
+    return factor, currency_qnames
+
+
+def value_in_target_currency(
+    value: Any,  # noqa: ANN401 (a column array or an input scalar)
+    qname: str,
+    currency_qnames: set[str],
+    factor: float,
+) -> Any:  # noqa: ANN401
+    """Convert one input or result value into the target currency (GEP 10).
+
+    Multiplies a currency-denominated value by the conversion factor; leaves
+    everything else — including an object-dtype column (int/bool data with
+    missing values, reported by its own fail-if node) — untouched.
+    """
+    if qname not in currency_qnames:
+        return value
+    dtype = getattr(value, "dtype", None)
+    if dtype is not None and dtype.kind == "O":
+        return value
+    return value * factor
+
+
 @interface_function(in_top_level_namespace=True)
 def processed_data(
     input_data__flat: FlatData,
     input_data__sort_indices: IntColumn,
     xnp: ModuleType,
-    currency: str,
+    specialized_environment__without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,  # noqa: E501
+    data_currency: str,
+    computation_currency: str,
 ) -> QNameData:
     """The internal processed data for use in the taxes and transfers function.
 
     We replace identifiers by consecutive integers starting at zero and sort the data
-    according to the original `p_id`.
+    according to the original `p_id`. Currency-denominated inputs are converted
+    from the data currency to the computation currency (GEP 10).
 
     The transformations will be undone when going from raw results to results.
     """
+    factor, currency_qnames = currency_conversion_factor_and_columns(
+        qnames=[
+            dt.qname_from_tree_path(path)
+            for path in input_data__flat
+            if path != ("p_id",)
+        ],
+        specialized_environment=(
+            specialized_environment__without_tree_logic_and_with_derived_functions
+        ),
+        source_currency=data_currency,
+        target_currency=computation_currency,
+    )
 
     orig_p_ids = _canonicalize_input_dtype(
         arr=input_data__flat[("p_id",)],
         xnp=xnp,
         column_label="p_id",
-        run_currency=currency,
+        data_currency=data_currency,
     )
     sorted_orig_p_ids = orig_p_ids[input_data__sort_indices]
     internal_p_ids = xnp.arange(len(orig_p_ids))
@@ -147,14 +244,19 @@ def processed_data(
             continue
         if not hasattr(data, "__len__"):
             # Scalars don't need to be sorted.
-            processed_input_data[qname] = data
+            processed_input_data[qname] = value_in_target_currency(
+                value=data,
+                qname=qname,
+                currency_qnames=currency_qnames,
+                factor=factor,
+            )
             continue
 
         sorted_data = _canonicalize_input_dtype(
             arr=data[input_data__sort_indices],
             xnp=xnp,
             column_label=qname,
-            run_currency=currency,
+            data_currency=data_currency,
         )
 
         if path[-1].endswith("_id"):
@@ -174,6 +276,11 @@ def processed_data(
             )
             processed_input_data[qname] = variable_with_new_ids
         else:
-            processed_input_data[qname] = sorted_data
+            processed_input_data[qname] = value_in_target_currency(
+                value=sorted_data,
+                qname=qname,
+                currency_qnames=currency_qnames,
+                factor=factor,
+            )
 
     return processed_input_data

@@ -10,7 +10,7 @@ import pytest
 from beartype.roar import BeartypeCallHintViolation
 
 from ttsim import unit_converters
-from ttsim.exceptions import (
+from ttsim.exceptions_and_warnings import (
     PolicyFunctionDefinitionError,
     PolicyInputDefinitionError,
     UnitConsistencyError,
@@ -40,9 +40,11 @@ from ttsim.tt.units import (
     CURRENCY_TOKEN,
     UNIT_REGISTRY,
     coerce_to_composite_unit,
+    composite_from_resolved_unit,
     fail_if_units_are_missing,
     grouping_level_count_unit,
     is_calendar_point_unit,
+    output_unit_in_data_currency,
     parse_compositional_unit,
     parse_unit,
     resolve_compositional_cast_unit,
@@ -715,20 +717,20 @@ def test_token_is_agnostic_currency():
 def test_currency_conversion_factor():
     # silver_penny = castar / 4, registered by mettsim on import.
     assert currency_conversion_factor(
-        source_currency="CASTAR", run_currency="SILVER_PENNY"
+        source_currency="CASTAR", target_currency="SILVER_PENNY"
     ) == pytest.approx(4.0)
     assert currency_conversion_factor(
-        source_currency="SILVER_PENNY", run_currency="CASTAR"
+        source_currency="SILVER_PENNY", target_currency="CASTAR"
     ) == pytest.approx(0.25)
     assert currency_conversion_factor(
-        source_currency="CASTAR", run_currency="CASTAR"
+        source_currency="CASTAR", target_currency="CASTAR"
     ) == pytest.approx(1.0)
 
 
 def test_currency_conversion_factor_rejects_unknown_currency():
     with pytest.raises(UnitDefinitionError, match="not a registered currency"):
         currency_conversion_factor(
-            source_currency="CASTAR", run_currency="dragon_hoard"
+            source_currency="CASTAR", target_currency="dragon_hoard"
         )
 
 
@@ -737,11 +739,11 @@ def test_currency_conversion_factor_rejects_unknown_currency():
 # ----------------------------------------------------------------------------
 
 
-def test_strip_at_boundary_converts_to_run_currency():
-    # silver_penny tag, castar run -> divide by four.
+def test_strip_at_boundary_converts_to_data_currency():
+    # silver_penny tag, castar data currency -> divide by four.
     tagged = UNIT_REGISTRY.Quantity(np.array([4.0]), "SILVER_PENNY")
     bare = strip_input_quantity_at_boundary(
-        quantity=tagged, run_currency="CASTAR", column_label="wealth"
+        quantity=tagged, data_currency="CASTAR", column_label="wealth"
     )
     assert not isinstance(bare, UNIT_REGISTRY.Quantity)
     assert bare == pytest.approx([1.0])
@@ -752,7 +754,7 @@ def test_strip_at_boundary_converts_flow_currency_preserving_period():
     # tag's /month matches the column's `_m` suffix.
     tagged = UNIT_REGISTRY.Quantity(np.array([4.0]), "SILVER_PENNY / month")
     bare = strip_input_quantity_at_boundary(
-        quantity=tagged, run_currency="CASTAR", column_label="income_m"
+        quantity=tagged, data_currency="CASTAR", column_label="income_m"
     )
     assert bare == pytest.approx([1.0])
 
@@ -762,7 +764,7 @@ def test_strip_at_boundary_fails_on_missing_period():
     tagged = UNIT_REGISTRY.Quantity(np.array([4.0]), "SILVER_PENNY")
     with pytest.raises(UnitConsistencyError, match="must match the column's suffix"):
         strip_input_quantity_at_boundary(
-            quantity=tagged, run_currency="CASTAR", column_label="income_m"
+            quantity=tagged, data_currency="CASTAR", column_label="income_m"
         )
 
 
@@ -771,7 +773,7 @@ def test_strip_at_boundary_fails_on_wrong_period():
     tagged = UNIT_REGISTRY.Quantity(np.array([4.0]), "SILVER_PENNY / year")
     with pytest.raises(UnitConsistencyError, match="month"):
         strip_input_quantity_at_boundary(
-            quantity=tagged, run_currency="CASTAR", column_label="income_m"
+            quantity=tagged, data_currency="CASTAR", column_label="income_m"
         )
 
 
@@ -780,7 +782,7 @@ def test_strip_at_boundary_fails_on_period_for_unsuffixed_column():
     tagged = UNIT_REGISTRY.Quantity(np.array([4.0]), "SILVER_PENNY / month")
     with pytest.raises(UnitConsistencyError, match="no time suffix"):
         strip_input_quantity_at_boundary(
-            quantity=tagged, run_currency="CASTAR", column_label="wealth"
+            quantity=tagged, data_currency="CASTAR", column_label="wealth"
         )
 
 
@@ -789,7 +791,7 @@ def test_strip_at_boundary_does_not_flag_numerator_time_unit():
     # unsuffixed column is fine. Nothing to convert (no currency).
     tagged = UNIT_REGISTRY.Quantity(np.array([30.0]), "year")
     bare = strip_input_quantity_at_boundary(
-        quantity=tagged, run_currency="CASTAR", column_label="age"
+        quantity=tagged, data_currency="CASTAR", column_label="age"
     )
     assert bare == pytest.approx([30.0])
 
@@ -800,7 +802,7 @@ def test_strip_at_boundary_keys_period_off_denominator_for_hours_flow():
     # matches the `_w` suffix; there is no currency, so the value passes through.
     tagged = UNIT_REGISTRY.Quantity(np.array([40.0]), "working_hour / week")
     bare = strip_input_quantity_at_boundary(
-        quantity=tagged, run_currency="CASTAR", column_label="arbeitsstunden_w"
+        quantity=tagged, data_currency="CASTAR", column_label="arbeitsstunden_w"
     )
     assert bare == pytest.approx([40.0])
 
@@ -808,14 +810,14 @@ def test_strip_at_boundary_keys_period_off_denominator_for_hours_flow():
     with pytest.raises(UnitConsistencyError, match="week"):
         strip_input_quantity_at_boundary(
             quantity=UNIT_REGISTRY.Quantity(np.array([40.0]), "working_hour / month"),
-            run_currency="CASTAR",
+            data_currency="CASTAR",
             column_label="arbeitsstunden_w",
         )
 
 
 def test_strip_at_boundary_strips_matching_currency():
     tagged = UNIT_REGISTRY.Quantity(np.array([3.0]), "CASTAR")
-    bare = strip_input_quantity_at_boundary(quantity=tagged, run_currency="CASTAR")
+    bare = strip_input_quantity_at_boundary(quantity=tagged, data_currency="CASTAR")
     assert not isinstance(bare, UNIT_REGISTRY.Quantity)
     assert list(bare) == [3.0]
 
@@ -823,7 +825,7 @@ def test_strip_at_boundary_strips_matching_currency():
 def test_strip_at_boundary_passes_non_currency_tag_through():
     # No currency component -> nothing to convert.
     tagged = UNIT_REGISTRY.Quantity(np.array([5.0]), "working_hour")
-    bare = strip_input_quantity_at_boundary(quantity=tagged, run_currency="CASTAR")
+    bare = strip_input_quantity_at_boundary(quantity=tagged, data_currency="CASTAR")
     assert bare == pytest.approx([5.0])
 
 
@@ -863,6 +865,7 @@ def test_builder_generic_per_level_matches_attribute():
         ("DIMENSIONLESS_PER_YEAR", "DIMENSIONLESS", None, "YEAR", None),
         ("DIMENSIONLESS_PER_BG", "DIMENSIONLESS", None, None, "BG"),
         ("HOURS_PER_WEEK", "HOURS", None, "WEEK", None),
+        ("CURRENCY_PER_HOURS", "CURRENCY", "HOURS", None, None),
         (
             "CURRENCY_PER_SQUARE_METER_PER_MONTH_PER_BG",
             "CURRENCY",
@@ -896,6 +899,8 @@ def test_parse_compositional_unit_accepts_concrete_currency_base():
         "CURRENCY_PER_BG_PER_MONTH",  # non-canonical order (level before period)
         "CURRENCY_PER_MONTH_PER_YEAR",  # two periods
         "CURRENCY_PER_SQUARE_METER_PER_SQUARE_METER",  # two areas
+        "CURRENCY_PER_SQUARE_METER_PER_HOURS",  # two physical denominators
+        "CURRENCY_PER_MONTH_PER_HOURS",  # non-canonical (hours after period)
     ],
 )
 def test_parse_compositional_unit_rejects_bad_spellings(spelling):
@@ -924,6 +929,7 @@ def test_is_flow_property():
         ("CURRENCY_PER_YEAR", "CURRENCY / year"),
         ("DIMENSIONLESS_PER_YEAR", "1 / year"),
         ("HOURS_PER_WEEK", "working_hour / week"),
+        ("CURRENCY_PER_HOURS", "CURRENCY / working_hour"),
         ("CURRENCY_PER_SQUARE_METER_PER_MONTH", "CURRENCY / meter ** 2 / month"),
         ("SQUARE_METER", "meter ** 2"),
         ("HECTARE", "hectare"),
@@ -1042,6 +1048,41 @@ def test_cast_target_must_be_currency_agnostic():
     token = coerce_to_composite_unit(value="CASTAR_PER_MONTH", where="test")
     with pytest.raises(UnitDefinitionError, match="agnostic CURRENCY"):
         resolve_compositional_cast_unit(unit=token, where="test")
+
+
+def test_hours_denominator_suppresses_the_implied_person_leaf():
+    # A wage floor is a price, owned by nobody: the working-hours denominator
+    # keeps the person leaf off, so `floor * hours` cancels to a person-level
+    # amount (GEP 10) — the same rule as areas.
+    expected = parse_unit("CURRENCY / working_hour")
+    assert units_are_equivalent(
+        left=resolve_compositional_column_unit(
+            unit=Unit.CURRENCY.PER_HOURS,
+            time_unit_id=None,
+            grouping_level="person",
+            where="test",
+        ),
+        right=expected,
+    )
+    assert units_are_equivalent(
+        left=resolve_compositional_param_unit(
+            unit=coerce_to_composite_unit(value="CASTAR_PER_HOURS", where="test"),
+            where="test",
+        ),
+        right=expected,
+    )
+
+
+def test_composite_from_resolved_unit_reconstructs_the_hours_denominator():
+    # The output-side label round trip for a wage floor: the working-hour
+    # denominator maps back to the physical-denominator slot.
+    resolved = resolve_compositional_unit(unit=Unit.CURRENCY.PER_HOURS)
+    in_data_currency = output_unit_in_data_currency(
+        units=resolved, data_currency="CASTAR"
+    )
+    assert composite_from_resolved_unit(in_data_currency) == coerce_to_composite_unit(
+        value="CASTAR_PER_HOURS", where="test"
+    )
 
 
 def test_area_denominator_suppresses_the_implied_person_leaf():

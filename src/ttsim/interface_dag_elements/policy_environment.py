@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import copy
-import dataclasses
 import datetime
 from collections.abc import Callable, Mapping
 from types import ModuleType
@@ -10,16 +9,8 @@ from typing import TYPE_CHECKING, Any
 import dags.tree as dt
 import numpy
 
-from ttsim.exceptions import UnitDefinitionError
+from ttsim.exceptions_and_warnings import UnitDefinitionError
 from ttsim.interface_dag_elements.interface_node_objects import interface_function
-from ttsim.interface_dag_elements.param_currency_conversion import (
-    axis_factors,
-    currency_conversion_factor_for_token,
-    dict_param_value_in_run_currency,
-    lookup_table_value_in_run_currency,
-    piecewise_param_value_in_run_currency,
-    scale_numeric_leaves,
-)
 from ttsim.interface_dag_elements.shared import (
     merge_trees,
     param_has_substantive_content,
@@ -45,6 +36,7 @@ from ttsim.tt.column_objects_param_function import (
 )
 from ttsim.tt.interval_utils import merge_piecewise_intervals
 from ttsim.tt.piecewise_polynomial import PIECEWISE_TYPES, get_piecewise_parameters
+from ttsim.tt.units import coerce_to_composite_unit, token_source_currency
 from ttsim.typing import (
     FlatColumnObjectsParamFunctions,
     FlatOrigParamSpecs,
@@ -94,7 +86,7 @@ def policy_environment(
     orig_policy_objects__param_specs: FlatOrigParamSpecs,
     policy_date: datetime.date,
     xnp: ModuleType,
-    currency: str,
+    computation_currency: str,
 ) -> PolicyEnvironment:
     """The policy environment at a particular date."""
     return {
@@ -138,13 +130,13 @@ def policy_environment(
             left=_active_column_objects_and_param_functions(
                 orig=orig_policy_objects__column_objects_and_param_functions,
                 policy_date=policy_date,
-                currency=currency,
+                computation_currency=computation_currency,
             ),
             right=_active_param_objects(
                 orig=orig_policy_objects__param_specs,
                 policy_date=policy_date,
                 xnp=xnp,
-                currency=currency,
+                computation_currency=computation_currency,
             ),
         ),
     }
@@ -153,54 +145,66 @@ def policy_environment(
 def _active_column_objects_and_param_functions(
     orig: FlatColumnObjectsParamFunctions,
     policy_date: datetime.date,
-    currency: str,
+    computation_currency: str,
 ) -> NestedColumnObjectsParamFunctions:
     """Traverse `root` and return all ColumnObjectParamFunctions for a given date.
 
     Args:
         root: The directory to traverse.
         policy_date: The date for which policy objects should be loaded.
-        currency: The run currency; rounding specs are restated in it.
+        computation_currency: The statutory currency at the policy date;
+            rounding-spec magnitudes must be declared in it.
 
     Returns:
         A tree of active ColumnObjectParamFunctions.
 
     """
-    flat_objects_tree: dict[tuple[str, ...], Any] = {
-        (*orig_path[:-2], obj.leaf_name): _with_rounding_spec_in_run_currency(
-            obj=obj, currency=currency
+    flat_objects_tree: dict[tuple[str, ...], Any] = {}
+    for orig_path, obj in orig.items():
+        if not obj.is_active(policy_date):
+            continue
+        _fail_if_rounding_spec_currency_is_not_statutory(
+            obj=obj,
+            policy_date=policy_date,
+            computation_currency=computation_currency,
         )
-        for orig_path, obj in orig.items()
-        if obj.is_active(policy_date)
-    }
+        flat_objects_tree[(*orig_path[:-2], obj.leaf_name)] = obj
 
     return dt.unflatten_from_tree_paths(flat_objects_tree)
 
 
-def _with_rounding_spec_in_run_currency(
+def _fail_if_rounding_spec_currency_is_not_statutory(
     obj: Any,  # noqa: ANN401
-    currency: str,
-) -> Any:  # noqa: ANN401
-    """Restate an object's rounding-spec magnitudes in the run currency (GEP 10).
+    policy_date: datetime.date,
+    computation_currency: str,
+) -> None:
+    """Reject a rounding spec declared in a non-statutory currency (GEP 10).
 
-    The policy environment is entirely in the run currency: parameters convert
-    their values on parsing, a rounding spec converts its magnitudes here. A
-    fresh object is built because the orig objects are shared across builds.
+    Rounding magnitudes are statutory numbers and are never converted, so a
+    spec surviving past a currency changeover would round in the wrong
+    currency. The author must split the function at the changeover and declare
+    the restated spec.
     """
     spec = getattr(obj, "rounding_spec", None)
-    if spec is None:
-        return obj
-    converted_spec = spec.in_run_currency(currency)
-    if converted_spec is spec:
-        return obj
-    return dataclasses.replace(obj, rounding_spec=converted_spec)
+    if spec is None or spec.unit is None:
+        return
+    source = token_source_currency(spec.unit)
+    if source is None or source == computation_currency:
+        return
+    raise UnitDefinitionError(
+        f"The rounding spec on {obj.leaf_name!r} declares its magnitudes in "
+        f"{source!r}, but the statutory currency at {policy_date.isoformat()} "
+        f"is {computation_currency!r}. Rounding magnitudes are never converted "
+        f"(GEP 10): split the function at the currency changeover and declare "
+        f"the restated spec."
+    )
 
 
 def _active_param_objects(
     orig: FlatOrigParamSpecs,
     policy_date: datetime.date,
     xnp: ModuleType,
-    currency: str,
+    computation_currency: str,
 ) -> NestedParamObjects:
     """Parse the original yaml tree."""
     flat_tree_with_params = {}
@@ -212,7 +216,7 @@ def _active_param_objects(
             spec=orig_params_spec,
             policy_date=policy_date,
             xnp=xnp,
-            currency=currency,
+            computation_currency=computation_currency,
         )
         if param is not None:
             flat_tree_with_params[(*path_to_keep, leaf_name)] = param
@@ -224,11 +228,64 @@ def _active_param_objects(
                 spec=orig_params_spec,
                 policy_date=date_jan1,
                 xnp=xnp,
-                currency=currency,
+                computation_currency=computation_currency,
             )
             if param is not None:
                 flat_tree_with_params[(*path_to_keep, leaf_name_jan1)] = param
     return dt.unflatten_from_tree_paths(flat_tree_with_params)
+
+
+def _collect_currencies_in_param_units(raw_token: Any) -> set[str]:  # noqa: ANN401
+    """The concrete currencies a parameter's ``unit:`` value pins down.
+
+    A scalar spelling contributes at most one currency; a per-leaf mapping is
+    walked recursively: ``{"4": {"betrag": "DM_PER_MONTH"}}`` yields ``{"DM"}``.
+    """
+    if raw_token is None or raw_token is UNSET_UNIT:
+        return set()
+    if isinstance(raw_token, Mapping):
+        return {
+            currency
+            for sub_token in raw_token.values()
+            for currency in _collect_currencies_in_param_units(sub_token)
+        }
+    token = coerce_to_composite_unit(
+        value=raw_token, where="the statutory-currency check"
+    )
+    source = token_source_currency(token)
+    return {source} if source is not None else set()
+
+
+def _fail_if_param_currency_is_not_statutory(
+    leaf_name: str,
+    cleaned_spec: dict[str, Any],
+    policy_date: datetime.date,
+    computation_currency: str,
+) -> None:
+    """Reject a parameter declared in a non-statutory currency (GEP 10).
+
+    Parameters keep their statutory values and are never converted, so every
+    concrete currency a declaration pins down must be the statutory currency at
+    the policy date. This is also the check that forces an explicit, legally
+    rounded restatement at a currency changeover (Euro-Einführungsgesetz style)
+    instead of a mechanical conversion: a pre-changeover value surviving past
+    the changeover fails here.
+    """
+    declared = {
+        currency
+        for key in _UNIT_DECLARATION_KEYS
+        for currency in _collect_currencies_in_param_units(cleaned_spec.get(key))
+    }
+    non_statutory = sorted(declared - {computation_currency})
+    if non_statutory:
+        raise UnitDefinitionError(
+            f"Parameter {leaf_name!r} declares its numbers in "
+            f"{', '.join(repr(c) for c in non_statutory)}, but the statutory "
+            f"currency at {policy_date.isoformat()} is "
+            f"{computation_currency!r}. Parameters are never converted "
+            f"(GEP 10): add a dated entry restating the value in the statutory "
+            f"currency."
+        )
 
 
 def _get_one_param(
@@ -236,7 +293,7 @@ def _get_one_param(
     spec: OrigParamSpec,
     policy_date: datetime.date,
     xnp: ModuleType,
-    currency: str,
+    computation_currency: str,
 ) -> ParamObject | None:
     """Parse the original specification found in the yaml tree to a ParamObject."""
     cleaned_spec = _clean_one_param_spec(
@@ -246,64 +303,32 @@ def _get_one_param(
     if cleaned_spec is None:
         return None
 
+    _fail_if_param_currency_is_not_statutory(
+        leaf_name=leaf_name,
+        cleaned_spec=cleaned_spec,
+        policy_date=policy_date,
+        computation_currency=computation_currency,
+    )
+
     param_type = spec["type"]
 
     if param_type == "scalar":
-        cleaned_spec["value"] = scale_numeric_leaves(
-            value=cleaned_spec["value"],
-            factor=currency_conversion_factor_for_token(
-                raw_token=cleaned_spec.get("unit"), run_currency=currency
-            ),
-        )
         return ScalarParam(**cleaned_spec)
     if param_type == "dict":
-        cleaned_spec["value"] = dict_param_value_in_run_currency(
-            value=cleaned_spec["value"],
-            unit=cleaned_spec.get("unit"),
-            run_currency=currency,
-        )
         return DictParam(**cleaned_spec)
     if param_type == "require_converter":
-        # A plain `unit:` converts here, leaf by leaf. An `input_unit:` /
-        # `output_unit:` one is left in its source currency and converted later
-        # on its built schedule, where the polynomial convention is known
-        # (`_restate_converter_outputs_in_run_currency`).
-        declares_axes = (
-            cleaned_spec.get("input_unit", UNSET_UNIT) is not UNSET_UNIT
-            or cleaned_spec.get("output_unit", UNSET_UNIT) is not UNSET_UNIT
-        )
-        if not declares_axes:
-            cleaned_spec["value"] = dict_param_value_in_run_currency(
-                value=cleaned_spec["value"],
-                unit=cleaned_spec.get("unit"),
-                run_currency=currency,
-            )
         return RawParam(**cleaned_spec)
     if param_type in PIECEWISE_TYPES:
-        input_factor, output_factor = axis_factors(
-            cleaned_spec=cleaned_spec, run_currency=currency
-        )
-        cleaned_spec["value"] = piecewise_param_value_in_run_currency(
-            value=get_piecewise_parameters(
-                leaf_name=leaf_name,
-                func_type=param_type,  # ty: ignore[invalid-argument-type]
-                parameter_list=cleaned_spec["value"],
-                xnp=xnp,
-            ),
-            input_factor=input_factor,
-            output_factor=output_factor,
+        cleaned_spec["value"] = get_piecewise_parameters(
+            leaf_name=leaf_name,
+            func_type=param_type,  # ty: ignore[invalid-argument-type]
+            parameter_list=cleaned_spec["value"],
             xnp=xnp,
         )
         return PiecewisePolynomialParam(**cleaned_spec)
     if param_type in LOOKUP_TABLE_CONVERTERS:
         converter = LOOKUP_TABLE_CONVERTERS[param_type]
-        _, output_factor = axis_factors(
-            cleaned_spec=cleaned_spec, run_currency=currency
-        )
-        cleaned_spec["value"] = lookup_table_value_in_run_currency(
-            value=converter(raw=cleaned_spec["value"], xnp=xnp),
-            output_factor=output_factor,
-        )
+        cleaned_spec["value"] = converter(raw=cleaned_spec["value"], xnp=xnp)
         return ConsecutiveIntLookupTableParam(**cleaned_spec)
 
     raise ValueError(f"Unknown parameter type: {param_type} for {leaf_name}")
@@ -362,6 +387,9 @@ def _forward_fill_unit_fields(
     resolved = _unit_fields_from_spec(spec)
     for date in active_dates:
         entry = spec[date]
+        _fail_if_updates_previous_restates_unit(
+            leaf_name=leaf_name, entry=entry, date=date
+        )
         for unit_key in _UNIT_DECLARATION_KEYS:
             if unit_key not in entry:
                 continue
@@ -398,6 +426,30 @@ def _fail_if_partial_unit_mapping_restatement(
             f"must restate every leaf of the unit it replaces "
             f"(got {sorted(restated)}, expected {sorted(previous)}); a unit "
             f"declaration is replaced as a whole (GEP 10)."
+        )
+
+
+def _fail_if_updates_previous_restates_unit(
+    leaf_name: str,
+    entry: Mapping[str | int, Any],
+    date: datetime.date,
+) -> None:
+    """Reject a dated entry that both merges values and restates the unit.
+
+    ``updates_previous`` merges the entry's leaves onto the previous value, so
+    a leaf it does not restate carries forward from the previous currency yet
+    now wears the restated unit — a silent mis-scaling invisible to the
+    statutory-currency guard. A unit change must restate the value in full
+    (GEP 10).
+    """
+    if entry.get("updates_previous", False) and any(
+        unit_key in entry for unit_key in _UNIT_DECLARATION_KEYS
+    ):
+        raise UnitDefinitionError(
+            f"Parameter {leaf_name!r}: the dated entry at {date} both merges "
+            f"values (`updates_previous: true`) and restates the unit; a merge "
+            f"would carry un-restated leaves forward under the new unit. Restate "
+            f"the value in full at a unit change (GEP 10)."
         )
 
 
@@ -470,10 +522,10 @@ def _strip_unit_overrides(current: dict[str | int, Any]) -> None:
     """Strip a dated entry's unit override keys from its value dict (GEP 10).
 
     The unit is resolved by forward-fill in :func:`_forward_fill_unit_fields`;
-    here it must not leak into the assembled value. ``updates_previous`` (a value
-    merge) and a unit restatement are independent, and combining them is the
-    author's responsibility: a unit-change entry should restate its value in full,
-    since a merge would carry values forward under a different unit (GEP 10).
+    here it must not leak into the assembled value. Combining a unit restatement
+    with a value merge (``updates_previous``) is rejected there
+    (:func:`_fail_if_updates_previous_restates_unit`), so a stripped entry never
+    both merges and changes the unit.
     """
     for unit_key in _UNIT_DECLARATION_KEYS:
         current.pop(unit_key, None)

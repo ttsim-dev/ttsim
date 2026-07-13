@@ -60,6 +60,7 @@ def test_endogenous_p_id_target_returns_user_space_p_ids(
 
     result = main(
         main_target=MainTarget.results.df_with_nested_columns,
+        policy_date=_DATE,
         policy_environment={
             "p_id_recipient": p_id_recipient,
             **_policy_year_month_day(),
@@ -104,6 +105,7 @@ def test_endogenous_p_id_target_collapses_arbitrary_negative_to_sentinel(
 
     result = main(
         main_target=MainTarget.results.df_with_nested_columns,
+        policy_date=_DATE,
         policy_environment={
             "p_id_recipient": p_id_recipient,
             "is_recipient": is_recipient,
@@ -149,6 +151,7 @@ def test_endogenous_p_id_target_preserves_minus_one_sentinel(
 
     result = main(
         main_target=MainTarget.results.df_with_nested_columns,
+        policy_date=_DATE,
         policy_environment={
             "p_id_recipient": p_id_recipient,
             "is_recipient": is_recipient,
@@ -188,6 +191,7 @@ def test_exogenous_p_id_pointer_as_input_target_is_unchanged(
 
     result = main(
         main_target=MainTarget.results.df_with_nested_columns,
+        policy_date=_DATE,
         policy_environment={
             "p_id_parent_1": p_id_parent_1,
             **_policy_year_month_day(),
@@ -240,6 +244,7 @@ def test_endogenous_p_id_target_mixed_with_regular_column(
 
     result = main(
         main_target=MainTarget.results.df_with_nested_columns,
+        policy_date=_DATE,
         policy_environment={
             "p_id_recipient": p_id_recipient,
             "doubled_m": doubled_m,
