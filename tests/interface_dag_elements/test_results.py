@@ -145,8 +145,7 @@ def test_restore_original_row_order(
         raw_results__params=raw_results_params,
         raw_results__from_input_data=raw_results_from_input_data,
         input_data__sort_indices=input_data__sort_indices,
-        policy_environment={},
-        labels__grouping_levels=(),
+        specialized_environment__without_tree_logic_and_with_derived_functions={},
         data_currency="CASTAR",
         computation_currency="CASTAR",
     )

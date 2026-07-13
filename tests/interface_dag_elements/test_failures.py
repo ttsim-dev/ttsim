@@ -12,7 +12,7 @@ import pytest
 from mettsim import middle_earth
 
 from ttsim import InputData, MainTarget, OrigPolicyObjects, TTTargets, main
-from ttsim.exceptions import InputDataError, TTTargetsError
+from ttsim.exceptions_and_warnings import InputDataError, TTTargetsError
 from ttsim.interface_dag_elements.backend import jax
 from ttsim.interface_dag_elements.fail_if import (
     ConflictingActivePeriodsError,

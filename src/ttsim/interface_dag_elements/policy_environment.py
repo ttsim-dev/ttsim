@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any
 import dags.tree as dt
 import numpy
 
-from ttsim.exceptions import UnitDefinitionError
+from ttsim.exceptions_and_warnings import UnitDefinitionError
 from ttsim.interface_dag_elements.interface_node_objects import interface_function
 from ttsim.interface_dag_elements.shared import (
     merge_trees,
@@ -34,7 +34,6 @@ from ttsim.tt import (
 from ttsim.tt.column_objects_param_function import (
     DEFAULT_END_DATE,
 )
-from ttsim.tt.currencies import statutory_currency
 from ttsim.tt.interval_utils import merge_piecewise_intervals
 from ttsim.tt.piecewise_polynomial import PIECEWISE_TYPES, get_piecewise_parameters
 from ttsim.tt.units import coerce_to_composite_unit, token_source_currency
@@ -229,22 +228,18 @@ def _active_param_objects(
                 spec=orig_params_spec,
                 policy_date=date_jan1,
                 xnp=xnp,
-                # The variant is parsed at January 1, so it is held against the
-                # statutory currency at that date — under a mid-year changeover
-                # (the Deutsche Mark started 1948-06-21) the two differ.
-                computation_currency=statutory_currency(date_jan1),
+                computation_currency=computation_currency,
             )
             if param is not None:
                 flat_tree_with_params[(*path_to_keep, leaf_name_jan1)] = param
     return dt.unflatten_from_tree_paths(flat_tree_with_params)
 
 
-def _concrete_currencies_in_unit_declaration(raw_token: Any) -> set[str]:  # noqa: ANN401
-    """The concrete currencies a ``unit:`` declaration pins down, at any depth.
+def _collect_currencies_in_param_units(raw_token: Any) -> set[str]:  # noqa: ANN401
+    """The concrete currencies a parameter's ``unit:`` value pins down.
 
-    A per-leaf mapping is walked; a non-currency or agnostic token contributes
-    nothing (the agnostic-currency rule for parameters is enforced by the unit
-    checks, not here).
+    A scalar spelling contributes at most one currency; a per-leaf mapping is
+    walked recursively: ``{"4": {"betrag": "DM_PER_MONTH"}}`` yields ``{"DM"}``.
     """
     if raw_token is None or raw_token is UNSET_UNIT:
         return set()
@@ -252,7 +247,7 @@ def _concrete_currencies_in_unit_declaration(raw_token: Any) -> set[str]:  # noq
         return {
             currency
             for sub_token in raw_token.values()
-            for currency in _concrete_currencies_in_unit_declaration(sub_token)
+            for currency in _collect_currencies_in_param_units(sub_token)
         }
     token = coerce_to_composite_unit(
         value=raw_token, where="the statutory-currency check"
@@ -279,7 +274,7 @@ def _fail_if_param_currency_is_not_statutory(
     declared = {
         currency
         for key in _UNIT_DECLARATION_KEYS
-        for currency in _concrete_currencies_in_unit_declaration(cleaned_spec.get(key))
+        for currency in _collect_currencies_in_param_units(cleaned_spec.get(key))
     }
     non_statutory = sorted(declared - {computation_currency})
     if non_statutory:

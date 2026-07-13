@@ -1,15 +1,16 @@
-"""The statutory computation currency and the column-boundary conversion (GEP 10).
+"""The statutory computation currency and the input/output conversion (GEP 10).
 
 Parameters are never converted: computation runs in the policy date's statutory
 currency, every parameter must be declared in it (the statutory guard), and
-only the column boundary converts — user data in, currency-denominated results
-out. mettsim registers CASTAR (base), SILVER_PENNY, and the statutory mapping
-(silver pennies through 2019, castar from 2020) on the import below.
+only columns convert — user data on the way in, currency-denominated results on
+the way out. mettsim registers CASTAR (base), SILVER_PENNY, and the statutory
+mapping (silver pennies through 2019, castar from 2020) on the import below.
 """
 
 from __future__ import annotations
 
 import datetime
+import warnings
 from typing import Any
 
 import numpy as np
@@ -17,10 +18,15 @@ import pytest
 from mettsim import middle_earth
 
 from ttsim import MainTarget, OrigPolicyObjects, main
-from ttsim.exceptions import UnitDefinitionError
+from ttsim.exceptions_and_warnings import (
+    PotentialCurrencyMismatchWarning,
+    UnitDefinitionError,
+)
 from ttsim.interface_dag_elements.policy_environment import (
-    _active_param_objects,
     _get_one_param,
+)
+from ttsim.interface_dag_elements.warn_if import (
+    statutory_currency_and_base_currency_differ,
 )
 from ttsim.tt.currencies import (
     _statutory_currencies,
@@ -29,7 +35,7 @@ from ttsim.tt.currencies import (
     isolated_currency_registration,
     register_currency,
     register_statutory_currencies,
-    statutory_currency,
+    statutory_currency_for_date,
 )
 from ttsim.tt.param_objects import RawParam
 from ttsim.tt.units import UNSET_UNIT
@@ -249,31 +255,6 @@ def test_unit_forward_fill_carries_a_changeover_onward():
             policy_date=datetime.date(2015, 1, 1),
             computation_currency="SILVER_PENNY",
         )
-
-
-def test_jahresanfang_variant_is_guarded_against_its_own_parse_date():
-    """A mid-year changeover: the January-1 variant is parsed in the old era,
-    so it is held against the old era's statutory currency, not the run's."""
-    spec = {
-        **_HEADER,
-        "add_jahresanfang": True,
-        "type": "scalar",
-        datetime.date(1900, 1, 1): {"value": 100.0, "unit": "SILVER_PENNY"},
-        datetime.date(2020, 7, 1): {"value": 25.0, "unit": "CASTAR"},
-    }
-    with isolated_currency_registration():
-        _statutory_currencies[:] = [
-            (datetime.date(1900, 1, 1), "SILVER_PENNY"),
-            (datetime.date(2020, 7, 1), "CASTAR"),
-        ]
-        result = _active_param_objects(
-            orig={("spam.yaml", "foo"): spec},  # ty: ignore[invalid-argument-type]
-            policy_date=datetime.date(2020, 8, 1),
-            xnp=np,
-            computation_currency="CASTAR",
-        )
-    assert result["foo"].value == pytest.approx(25.0)
-    assert result["foo_jahresanfang"].value == pytest.approx(100.0)
 
 
 def test_unit_resolution_never_backfills_from_a_later_entry():
@@ -574,23 +555,23 @@ def test_definition_referencing_no_registered_currency_is_rejected():
 
 
 def test_statutory_currency_follows_the_dated_mapping():
-    assert statutory_currency(datetime.date(2019, 12, 31)) == "SILVER_PENNY"
-    assert statutory_currency(datetime.date(2020, 1, 1)) == "CASTAR"
-    assert statutory_currency(datetime.date(2025, 6, 1)) == "CASTAR"
+    assert statutory_currency_for_date(datetime.date(2019, 12, 31)) == "SILVER_PENNY"
+    assert statutory_currency_for_date(datetime.date(2020, 1, 1)) == "CASTAR"
+    assert statutory_currency_for_date(datetime.date(2025, 6, 1)) == "CASTAR"
 
 
 def test_statutory_currency_is_undefined_before_the_first_entry():
     with isolated_currency_registration():
         _statutory_currencies[:] = [(datetime.date(1900, 1, 1), "SILVER_PENNY")]
         with pytest.raises(UnitDefinitionError, match="Extend the mapping"):
-            statutory_currency(datetime.date(1899, 12, 31))
+            statutory_currency_for_date(datetime.date(1899, 12, 31))
 
 
 def test_statutory_currency_requires_a_registered_mapping():
     with isolated_currency_registration():
         _statutory_currencies.clear()
         with pytest.raises(UnitDefinitionError, match="No statutory-currency mapping"):
-            statutory_currency(datetime.date(2020, 1, 1))
+            statutory_currency_for_date(datetime.date(2020, 1, 1))
 
 
 def test_registering_an_empty_statutory_mapping_is_rejected():
@@ -623,4 +604,37 @@ def test_re_registering_the_identical_statutory_mapping_is_tolerated():
     with isolated_currency_registration():
         register_statutory_currencies(
             {"0001-01-01": "SILVER_PENNY", "2020-01-01": "CASTAR"}
+        )
+
+
+def test_warns_when_statutory_currency_differs_from_default_data_currency():
+    """A run whose statutory currency is not the base while the data currency
+    sits at its default (the base) may hold data denominated in the wrong
+    currency — the user gets a nudge."""
+    with pytest.warns(PotentialCurrencyMismatchWarning, match="denominated"):
+        statutory_currency_and_base_currency_differ(
+            computation_currency="SILVER_PENNY",
+            data_currency="CASTAR",
+            policy_date=datetime.date(2019, 1, 1),
+        )
+
+
+def test_no_warning_when_statutory_currency_is_the_base():
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        statutory_currency_and_base_currency_differ(
+            computation_currency="CASTAR",
+            data_currency="CASTAR",
+            policy_date=datetime.date(2025, 1, 1),
+        )
+
+
+def test_no_warning_when_the_data_currency_is_set_off_the_base():
+    # The user chose a data currency explicitly; nothing to nudge about.
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        statutory_currency_and_base_currency_differ(
+            computation_currency="SILVER_PENNY",
+            data_currency="SILVER_PENNY",
+            policy_date=datetime.date(2019, 1, 1),
         )

@@ -10,7 +10,7 @@ import pytest
 from beartype.roar import BeartypeCallHintViolation
 
 from ttsim import unit_converters
-from ttsim.exceptions import (
+from ttsim.exceptions_and_warnings import (
     PolicyFunctionDefinitionError,
     PolicyInputDefinitionError,
     UnitConsistencyError,

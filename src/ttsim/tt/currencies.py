@@ -1,17 +1,13 @@
-"""Concrete-currency registration and boundary conversion (GEP 10).
+"""Currency registration and boundary conversion.
 
-The registration and conversion *operations* of the ``[currency]`` dimension.
-The currency vocabulary itself — the ``CURRENCY`` token, the ``Unit`` builder,
-and the state a declaration is resolved against — lives in
-:mod:`ttsim.tt.units`; this module reads and mutates that shared state.
+The registration and conversion *operations* of the ``[currency]`` dimension. The
+currency vocabulary itself — the ``CURRENCY`` token, the ``Unit`` builder, and the state
+a declaration is resolved against — lives in :mod:`ttsim.tt.units`; this module reads
+and mutates that shared state.
 
-A downstream package registers its currencies on import: one base currency
-(factor 1 against the abstract :data:`CURRENCY_TOKEN` reference), any number of
-others defined relative to an already-registered one, and the dated
-statutory-currency mapping. All currencies are interconvertible, so conversion
-between any two is always well-defined. The computation for a policy date runs
-in the statutory currency at that date; parameters keep their statutory values,
-and user data is converted at the column boundary only.
+A downstream package registers its currencies on import: one base currency, any number
+of others defined relative to an already-registered one, and the dated
+statutory-currency mapping.
 """
 
 from __future__ import annotations
@@ -24,7 +20,7 @@ from contextlib import contextmanager
 import pint
 from pint.util import to_units_container
 
-from ttsim.exceptions import UnitDefinitionError
+from ttsim.exceptions_and_warnings import UnitDefinitionError
 from ttsim.tt.units import (
     _ALLOWED_UNIT_TOKENS,
     _REL_TOL,
@@ -35,9 +31,6 @@ from ttsim.tt.units import (
     _registered_currencies,
 )
 
-#: The registered base currency (a one-element list, not a bare ``str``, so it
-#: can be mutated in place — a module-level ``global`` reassignment is banned by
-#: the linter). Empty until a downstream package registers its base.
 _base_currency: list[str] = []
 
 #: The statutory-currency mapping: ``(start_date, currency)`` pairs sorted by
@@ -67,15 +60,15 @@ def base_currency() -> str:
 
 
 def register_statutory_currencies(currency_by_start_date: Mapping[str, str]) -> None:
-    """Declare the currency the statutes are denominated in, by date (GEP 10).
+    """Declare the statutory currency at each start date.
 
     A downstream package calls this on import, after registering the currencies
     it references. Each entry applies from its start date (a dashed ISO string)
     until the next entry's start date; the computation for a policy date runs in
-    the statutory currency at that date (:func:`statutory_currency`), and the
-    build guard requires every parameter to be declared in it. gettsim's
-    changeover::
+    the statutory currency at that date (:func:`statutory_currency_for_date`),
+    and the build guard requires every parameter to be declared in it.
 
+    Example:
         register_statutory_currencies({"1948-06-21": "DM", "2002-01-01": "EUR"})
 
     The mapping is mandatory: a run for a policy date with no registered
@@ -118,13 +111,8 @@ def register_statutory_currencies(currency_by_start_date: Mapping[str, str]) -> 
     _statutory_currencies[:] = entries
 
 
-def statutory_currency(policy_date: datetime.date) -> str:
-    """The currency the statutes denominate their numbers in at ``policy_date``.
-
-    Read off the dated mapping a downstream package registers on import
-    (:func:`register_statutory_currencies`). This is the currency the
-    computation for ``policy_date`` runs in: parameters keep their statutory
-    values, and user data is converted at the column boundary only (GEP 10).
+def statutory_currency_for_date(policy_date: datetime.date) -> str:
+    """The statutory currency at a given policy date.
 
     Raises:
         UnitDefinitionError: If no mapping is registered, or ``policy_date``
@@ -314,11 +302,11 @@ def register_currency(
 def currency_conversion_factor(source_currency: str, target_currency: str) -> float:
     """The factor converting a value from ``source_currency`` to ``target_currency``.
 
-    Used at the column boundary only: input columns convert from the data
-    currency into the computation currency on the way in, currency-denominated
-    result columns convert back on the way out (GEP 10). pint is the single
-    source of truth for the rate. Both currencies must be registered; all
-    registered currencies are interconvertible.
+    Used only where data enters and leaves the computation: input columns are
+    converted from the data currency to the computation currency, and
+    currency-denominated results are converted back (GEP 10). pint is the
+    single source of truth for the rate. Both currencies must be registered;
+    all registered currencies are interconvertible.
 
     Raises:
         UnitDefinitionError: If either currency is unknown or not a currency.

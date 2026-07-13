@@ -9,6 +9,7 @@ from ttsim.interface_dag_elements.labels import (
     column_targets,
     grouping_levels,
     input_columns_from_input_data,
+    input_columns_from_processed_data,
     input_columns_is_empty_set,
     input_data_targets,
     param_targets,
@@ -111,22 +112,33 @@ def test_grouping_levels_empty_environment():
 
 
 # =============================================================================
-# input_columns_from_input_data tests
+# input_columns_from_input_data / input_columns_from_processed_data tests
 # =============================================================================
-def test_input_columns_from_input_data_returns_processed_data_keys():
+def test_input_columns_from_input_data_returns_qnames():
+    input_data__flat = {
+        ("p_id",): [0, 1, 2],
+        ("n0", "income"): [100, 200, 300],
+    }
+
+    result = input_columns_from_input_data(input_data__flat=input_data__flat)
+
+    assert result == {"p_id", "n0__income"}
+
+
+def test_input_columns_from_input_data_empty():
+    result = input_columns_from_input_data(input_data__flat={})
+    assert result == set()
+
+
+def test_input_columns_from_processed_data_returns_keys():
     processed_data = {
         "p_id": [0, 1, 2],
         "income": [100, 200, 300],
     }
 
-    result = input_columns_from_input_data(processed_data=processed_data)
+    result = input_columns_from_processed_data(processed_data=processed_data)
 
     assert result == {"p_id", "income"}
-
-
-def test_input_columns_from_input_data_empty():
-    result = input_columns_from_input_data(processed_data={})
-    assert result == set()
 
 
 # =============================================================================

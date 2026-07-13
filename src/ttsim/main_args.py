@@ -77,8 +77,6 @@ def _set_single_field(cls: type[T], field_name: str, field_value: Any) -> T:  # 
 @dataclass(frozen=True)
 class MainArg:
     def to_dict(self) -> dict[str, Any]:
-        # A copy: `_harmonize_inputs` pops entries from the result, which must
-        # not mutate the instance — `main` args may be reused across calls.
         return dict(self.__dict__)
 
 

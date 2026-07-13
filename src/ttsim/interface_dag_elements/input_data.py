@@ -202,10 +202,6 @@ def flat_from_tree_with_unit_annotations(
     data_currency: str,
 ) -> FlatData:
     """The input data as a flat dictionary of arrays."""
-    # Each tag's currency is converted to the data currency here — the tag
-    # overrides the "untagged data is in the data currency" assumption per
-    # column. The uniform crossing into the computation currency happens in
-    # `processed_data`, for tagged and untagged data alike (GEP 10).
     flat = dt.flatten_to_tree_paths(tree_with_unit_annotations)
     return {
         path: strip_input_quantity_at_boundary(

@@ -105,12 +105,6 @@ def execute_test(
     backend: Literal["numpy", "jax"],
     default_data_currency: str | None = None,
 ) -> None:
-    if "currency" in test.info:
-        raise ValueError(
-            f"Policy case {test.name!r} sets the removed info key 'currency'; "
-            f"use 'data_currency' — the computation currency is the policy "
-            f"date's statutory currency and not a knob (GEP 10)."
-        )
     environment = cached_policy_environment(
         policy_date=test.policy_date,
         root=root,

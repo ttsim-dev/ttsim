@@ -85,6 +85,15 @@ class UnitConsistencyError(TTSIMError):
     """
 
 
+class PotentialCurrencyMismatchWarning(UserWarning):
+    """Raised when the user may be passing data in the wrong currency.
+
+    Defined here rather than in ``warn_if`` because the interface-DAG loader
+    executes that module under a short name; a class defined there would not
+    survive pickling across processes (e.g. pytest-xdist workers).
+    """
+
+
 # `ConflictingActivePeriodsError` and `TranslateToVectorizableError` subclass
 # `TTSIMError` from their definition sites (`ttsim.interface_dag_elements.fail_if`
 # and `ttsim.tt.vectorization`) — re-importing them here would create an
@@ -99,6 +108,7 @@ __all__ = [
     "ParamFunctionDefinitionError",
     "PolicyFunctionDefinitionError",
     "PolicyInputDefinitionError",
+    "PotentialCurrencyMismatchWarning",
     "RoundingSpecError",
     "TTSIMError",
     "TTTargetsError",

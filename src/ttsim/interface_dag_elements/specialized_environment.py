@@ -18,6 +18,7 @@ from dags import (
 
 from ttsim.interface_dag_elements.automatically_added_functions import (
     create_agg_by_group_functions,
+    create_input_column_stubs,
     create_time_conversion_functions,
 )
 from ttsim.interface_dag_elements.interface_node_objects import (
@@ -105,11 +106,12 @@ def _add_derived_functions(
     input_columns: UnorderedQNames,
     grouping_levels: OrderedQNames,
 ) -> SpecEnvWithoutTreeLogicAndWithDerivedFunctions:
-    """Return a mapping of qualified names to functions operating on columns.
+    """Return the environment extended by derived functions and input stubs.
 
-    Anything that is not a ColumnFunction is filtered out (e.g., ParamFunctions,
-    PolicyInputs). Derived functions are time-converted functions and aggregation
-    functions (aggregate by p_id or by group).
+    Derived functions are time-converted functions and aggregation functions
+    (aggregate by p_id or by group). Input columns supplied at derived names
+    get `PolicyInput` stubs so every column carries a unit declaration
+    (GEP 10).
     """
     # Create functions for different time units
     time_conversion_functions = create_time_conversion_functions(
@@ -134,10 +136,19 @@ def _add_derived_functions(
         tt_targets=tt_targets,
         grouping_levels=grouping_levels,
     )
-    return {
+    env_with_derived_functions = {
         **qname_env_without_tree_logic,
         **time_conversion_functions,
         **aggregate_by_group_functions,
+    }
+    # Stubs so every input column has a unit-carrying declaration (GEP 10).
+    return {
+        **env_with_derived_functions,
+        **create_input_column_stubs(
+            env_with_derived_functions=env_with_derived_functions,
+            input_columns=input_columns,
+            grouping_levels=grouping_levels,
+        ),
     }
 
 

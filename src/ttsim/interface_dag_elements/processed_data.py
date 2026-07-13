@@ -10,11 +10,7 @@ import pandas as pd
 import pint
 from jaxtyping import Shaped
 
-from ttsim.exceptions import UnitDefinitionError
 from ttsim.interface_dag_elements.interface_node_objects import interface_function
-from ttsim.interface_dag_elements.shared import (
-    get_re_pattern_for_all_time_units_and_groupings,
-)
 from ttsim.tt.column_objects_param_function import reorder_ids
 from ttsim.tt.currencies import currency_conversion_factor
 from ttsim.tt.units import (
@@ -24,8 +20,11 @@ from ttsim.tt.units import (
     token_is_agnostic_currency,
     token_source_currency,
 )
-from ttsim.typing import Array, IntColumn, OrderedQNames, PolicyEnvironment
-from ttsim.unit_converters import TIME_UNIT_IDS_TO_LABELS
+from ttsim.typing import (
+    Array,
+    IntColumn,
+    SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
+)
 
 if TYPE_CHECKING:
     from ttsim.typing import FlatData, QNameData
@@ -131,120 +130,39 @@ def _fail_if_uint_overflows_int64(
 
 def qnames_with_currency_declarations(
     qnames: Iterable[str],
-    policy_environment: PolicyEnvironment,
-    grouping_levels: OrderedQNames,
+    specialized_environment: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
 ) -> set[str]:
     """The subset of ``qnames`` whose declared unit carries a currency component.
 
-    Identifies the columns the boundary converts (GEP 10). A qname's own
-    declaration in the policy environment wins. A derived name — an
-    auto-aggregation or time-conversion target provided as data or requested as
-    a target — inherits the currency presence of the declared nodes it can be
-    derived from (same namespace and base name; the grouping suffix stripped or
-    kept; a time suffix only ever rebased, never added or removed), because
-    those derivations never add or remove the currency component. Derivation
-    sources that disagree on currency presence are a loud error rather than a
-    guess. A qname with no declaration and no derivation source is not
+    Identifies the columns to convert between the data currency and the
+    computation currency (GEP 10). Every column carries its unit in the
+    specialized environment — its own declaration, the minted unit of a
+    derived function, or a `PolicyInput` stub for data supplied at a derived
+    name — so this is a plain lookup. A *parameter's* concrete statutory
+    currency counts, too: a data column overriding a parameter is still user
+    data, arriving in the data currency. A qname with no unit is not
     converted (the mandatory-units check reports missing declarations).
-
-    A *parameter's* concrete statutory currency counts, too: a data column
-    overriding a parameter is still user data, arriving in the data currency.
-    Parameter *values* are exempt from conversion not here, but by never
-    passing through this boundary — requested parameters flow through
-    ``raw_results__params``.
     """
-    pattern = get_re_pattern_for_all_time_units_and_groupings(
-        time_units=tuple(TIME_UNIT_IDS_TO_LABELS),
-        grouping_levels=grouping_levels,
-    )
-
-    def parse(qname: str) -> tuple[str, str, str | None, str | None]:
-        path = dt.tree_path_from_qname(qname)
-        match = pattern.fullmatch(path[-1])
-        namespace = dt.qname_from_tree_path(path[:-1]) if len(path) > 1 else ""
-        if match is None:
-            return (namespace, path[-1], None, None)
-        return (
-            namespace,
-            match.group("base_name"),
-            match.group("time_unit"),
-            match.group("grouping"),
-        )
-
-    declared: dict[str, bool] = {}
-    declared_variants: dict[tuple[str, str], list[tuple[str | None, str | None, bool]]]
-    declared_variants = {}
-    for env_qname, obj in dt.flatten_to_qnames(policy_environment).items():
-        token = getattr(obj, "unit", UNSET_UNIT)
-        if token is UNSET_UNIT or not isinstance(token, CompositeUnit):
-            continue
-        has_currency = (
-            token_is_agnostic_currency(token)
-            or token_source_currency(token) is not None
-        )
-        declared[env_qname] = has_currency
-        namespace, base_name, time_unit, grouping = parse(env_qname)
-        declared_variants.setdefault((namespace, base_name), []).append(
-            (time_unit, grouping, has_currency)
-        )
-
     out: set[str] = set()
     for qname in qnames:
-        if qname in declared:
-            if declared[qname]:
-                out.add(qname)
-        elif _inherited_currency_presence(
-            qname=qname, parsed=parse(qname), declared_variants=declared_variants
-        ):
+        token = getattr(specialized_environment.get(qname), "unit", UNSET_UNIT)
+        if not isinstance(token, CompositeUnit):
+            continue
+        if token_is_agnostic_currency(token) or token_source_currency(token):
             out.add(qname)
     return out
 
 
-def _inherited_currency_presence(
-    qname: str,
-    parsed: tuple[str, str, str | None, str | None],
-    declared_variants: dict[tuple[str, str], list[tuple[str | None, str | None, bool]]],
-) -> bool:
-    """Whether a derived qname inherits a currency from its derivation sources.
-
-    Raises:
-        UnitDefinitionError: If the possible sources disagree on carrying a
-            currency.
-    """
-    namespace, base_name, time_unit, grouping = parsed
-    sources = [
-        source_has_currency
-        for source_time_unit, source_grouping, source_has_currency in (
-            declared_variants.get((namespace, base_name), [])
-        )
-        if source_grouping in (grouping, None)
-        and (time_unit is None) == (source_time_unit is None)
-    ]
-    if not sources:
-        return False
-    if all(sources):
-        return True
-    if any(sources):
-        raise UnitDefinitionError(
-            f"Cannot decide whether {qname!r} is currency-denominated: the "
-            f"declared nodes it could be derived from disagree on carrying "
-            f"a currency. Rename the non-currency sibling so the base "
-            f"names differ (GEP 10)."
-        )
-    return False
-
-
-def boundary_currency_conversion(
+def currency_conversion_factor_and_columns(
     qnames: Iterable[str],
-    policy_environment: PolicyEnvironment,
-    grouping_levels: OrderedQNames,
+    specialized_environment: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
     source_currency: str,
     target_currency: str,
 ) -> tuple[float, set[str]]:
-    """The conversion factor and the columns it applies to, for one boundary.
+    """The conversion factor and the columns it applies to.
 
-    The shared setup of both boundary crossings (GEP 10): ``processed_data``
-    converts inputs from the data currency to the computation currency,
+    The shared setup of the two conversions (GEP 10): ``processed_data``
+    converts input columns from the data currency to the computation currency,
     ``results`` converts computed columns back. Equal currencies short-circuit
     to a factor of ``1.0`` with no environment walk.
     """
@@ -255,8 +173,7 @@ def boundary_currency_conversion(
     )
     currency_qnames = qnames_with_currency_declarations(
         qnames=qnames,
-        policy_environment=policy_environment,
-        grouping_levels=grouping_levels,
+        specialized_environment=specialized_environment,
     )
     return factor, currency_qnames
 
@@ -267,7 +184,7 @@ def value_in_target_currency(
     currency_qnames: set[str],
     factor: float,
 ) -> Any:  # noqa: ANN401
-    """Convert one value across the column boundary (GEP 10).
+    """Convert one input or result value into the target currency (GEP 10).
 
     Multiplies a currency-denominated value by the conversion factor; leaves
     everything else — including an object-dtype column (int/bool data with
@@ -286,8 +203,7 @@ def processed_data(
     input_data__flat: FlatData,
     input_data__sort_indices: IntColumn,
     xnp: ModuleType,
-    policy_environment: PolicyEnvironment,
-    labels__grouping_levels: OrderedQNames,
+    specialized_environment__without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,  # noqa: E501
     data_currency: str,
     computation_currency: str,
 ) -> QNameData:
@@ -299,14 +215,15 @@ def processed_data(
 
     The transformations will be undone when going from raw results to results.
     """
-    factor, currency_qnames = boundary_currency_conversion(
+    factor, currency_qnames = currency_conversion_factor_and_columns(
         qnames=[
             dt.qname_from_tree_path(path)
             for path in input_data__flat
             if path != ("p_id",)
         ],
-        policy_environment=policy_environment,
-        grouping_levels=labels__grouping_levels,
+        specialized_environment=(
+            specialized_environment__without_tree_logic_and_with_derived_functions
+        ),
         source_currency=data_currency,
         target_currency=computation_currency,
     )

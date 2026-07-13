@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import pytest
 
-from ttsim.exceptions import UnitDefinitionError
+from ttsim.exceptions_and_warnings import UnitDefinitionError
 from ttsim.tt import (
     AggType,
     Unit,

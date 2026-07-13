@@ -4,7 +4,7 @@ import inspect
 
 import pytest
 
-from ttsim.exceptions import (
+from ttsim.exceptions_and_warnings import (
     AggregationDefinitionError,
     GroupCreationDefinitionError,
     ParamFunctionDefinitionError,

@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any, Literal, cast
 import numpy as np
 from jaxtyping import Bool, Float, Int
 
-from ttsim.exceptions import UnitDefinitionError
+from ttsim.exceptions_and_warnings import UnitDefinitionError
 from ttsim.tt.units import (
     UNSET_UNIT,
     CompositeUnit,

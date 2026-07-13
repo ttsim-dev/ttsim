@@ -13,7 +13,7 @@ import numpy
 import pint
 import pytest
 
-from ttsim.exceptions import UnitConsistencyError
+from ttsim.exceptions_and_warnings import UnitConsistencyError
 from ttsim.interface_dag_elements.fail_if import (
     input_currency_is_not_concrete,
 )

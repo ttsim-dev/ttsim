@@ -38,7 +38,11 @@ import numpy
 import pint
 from dags import get_annotations
 
-from ttsim.exceptions import TTSIMError, UnitConsistencyError, UnitDefinitionError
+from ttsim.exceptions_and_warnings import (
+    TTSIMError,
+    UnitConsistencyError,
+    UnitDefinitionError,
+)
 from ttsim.interface_dag_elements.interface_node_objects import interface_function
 from ttsim.interface_dag_elements.shared import (
     FRAMEWORK_PARTIAL_ARGUMENTS,
@@ -961,7 +965,8 @@ def _fail_if_param_token_is_agnostic_currency(
     declaration must name it (``SILVER_PENNY``, ``DM_PER_YEAR``, …), so the
     statutory-currency guard can hold it against the policy date's statutory
     currency. The agnostic ``CURRENCY`` base stays legal — and required — on
-    columns and functions, which are currency-agnostic by design.
+    columns and functions: they run in the statutory currency of the policy
+    date, whichever that is, so their declarations never pin one down.
     """
     if token_is_agnostic_currency(token):
         suffixes = str(token).removeprefix("CURRENCY")

@@ -4,10 +4,6 @@ import datetime
 import inspect
 from typing import Any, cast
 
-# Importing the mettsim package registers the castar (the base currency), the
-# silver penny, and the statutory-currency mapping, so concrete currency tokens
-# exist for the statutory-guard tests regardless of test-collection order
-# (GEP 10).
 import mettsim.middle_earth  # noqa: F401
 import numpy
 import pandas as pd
@@ -16,7 +12,7 @@ from beartype.roar import BeartypeCallHintViolation
 from pandas._testing import assert_series_equal
 
 from ttsim import InputData, TTTargets, main
-from ttsim.exceptions import (
+from ttsim.exceptions_and_warnings import (
     PolicyFunctionDefinitionError,
     RoundingSpecError,
     UnitDefinitionError,

@@ -40,16 +40,12 @@ from typing import TYPE_CHECKING, Any, TypeVar
 import pint
 from pint.util import to_units_container
 
-from ttsim.exceptions import (
+from ttsim.exceptions_and_warnings import (
     UnitConsistencyError,
     UnitDefinitionError,
 )
 from ttsim.tt.aggregation import AggType
 
-#: Maps a GEP-1 time-unit suffix id (``_y``/``_q``/``_m``/``_w``/``_d``) to the
-#: pint unit naming its period.
-#: The GEP-1 periods, the single source of truth from which the directional lookups
-#: below derive: (name-suffix id, compositional period token, pint unit name).
 _PERIODS: tuple[tuple[str, str, str], ...] = (
     ("y", "YEAR", "year"),
     ("q", "QUARTER", "quarter_year"),
@@ -61,51 +57,23 @@ TIME_UNIT_ID_TO_PINT_NAME = {suffix_id: pint for suffix_id, _, pint in _PERIODS}
 TIME_UNIT_ID_TO_PERIOD_TOKEN = {suffix_id: token for suffix_id, token, _ in _PERIODS}
 _PERIOD_TOKEN_TO_PINT = {token: pint for _, token, pint in _PERIODS}
 
-#: Matches a trailing GEP-1 time-unit suffix (``…_m``) on a column's qualified
-#: name, naming the column's flow period. Used at the input boundary to check a
-#: pint tag's period against the column's suffix.
 _QNAME_TIME_SUFFIX_PATTERN = re.compile(
     rf"_(?P<time_unit>[{''.join(TIME_UNIT_ID_TO_PINT_NAME)}])$"
 )
 
-
-#: The pint unit anchoring the ``[currency]`` dimension, used internally to
-#: resolve a currency unit before any concrete currency is registered. Checks
-#: compare at the dimensionality level; the concrete currency is resolved
-#: separately.
 CURRENCY_TOKEN = "CURRENCY"  # noqa: S105 (a unit token, not a secret)
 
-#: The internal pint-unit-name prefix for a grouping-level dimension. The prefix
-#: stops a bare level name from colliding with a pint built-in or a currency
-#: token: ``hh`` alone is pint's hour unit, ``grouping_level_hh`` is free.
 _GROUPING_LEVEL_PREFIX = "grouping_level_"
 
-#: The individual (leaf) grouping level — the entity identified by ``p_id``. It
-#: always exists and doubles as the ``[person]`` *count* dimension: a person-level
-#: quantity's ``/[person]`` denominator and a ``PERSON_COUNT`` head count's
-#: ``[person]`` numerator are the same dimension, so they cancel.
 PERSON_LEVEL = "person"
 
-
-#: The separator joining a base and its denominators in the flat spelling.
 _PER = "_PER_"
 
-#: The closed *period* denominators and the pint unit each names.
-#: The closed physical denominators — areas and working hours — and the pint
-#: unit each names. They share one slot of the canonical order: a unit is a
-#: price per at most one physical thing (a rent cap per square meter, a wage
-#: floor per working hour).
 _AREA_TOKEN_TO_PINT: dict[str, str] = {
     "SQUARE_METER": "meter ** 2",
     "HOURS": "working_hour",
 }
 
-#: The non-currency compositional *bases* and the pint base each resolves to
-#: (``None`` is the dimensionless base). The currency bases — agnostic
-#: :data:`CURRENCY_TOKEN` and the registered concrete currencies — are handled
-#: separately because they share the ``[currency]`` dimension. ``PERSON_COUNT``
-#: resolves to the ``[person]`` leaf level (registered with the grouping levels),
-#: so it is also handled separately in :func:`resolve_compositional_unit`.
 _COMPOSITIONAL_BASE_TO_PINT: dict[str, str | None] = {
     "DIMENSIONLESS": None,
     "PERSON_COUNT": f"{_GROUPING_LEVEL_PREFIX}{PERSON_LEVEL}",
@@ -714,9 +682,9 @@ def replace_concrete_with_agnostic_currency(token: CompositeUnit) -> CompositeUn
     """The unit a node *derived* from a source with this unit carries.
 
     Derived nodes — time-conversion variants and aggregations — are functions,
-    and a function is currency-agnostic by design: it computes on values in the
-    computation currency, whichever that is. So a source that pins down a
-    concrete currency (a parameter) hands on the agnostic counterpart of its
+    and a function never pins down a concrete currency: it runs in the
+    statutory currency of the policy date, whichever that is. So a source that
+    pins one down (a parameter) hands on the agnostic counterpart of its
     declaration; every other unit passes through unchanged.
     """
     return (
@@ -1078,10 +1046,11 @@ def unit_has_currency_component(units: pint.Unit) -> bool:
 def unit_has_agnostic_currency_component(units: pint.Unit) -> bool:
     """Whether a unit's currency component is the agnostic ``CURRENCY`` token.
 
-    Distinguishes the two currency spellings at the column boundary: a column
-    resolves to the agnostic ``CURRENCY`` (it is computed in the computation
-    currency and converted to the data currency), a parameter to its concrete
-    statutory currency (never converted, labelled as declared) — GEP 10.
+    Distinguishes the two currency spellings when results are returned: a
+    column resolves to the agnostic ``CURRENCY`` (it is computed in the
+    computation currency and converted to the data currency), a parameter to
+    its concrete statutory currency (never converted, labelled as declared) —
+    GEP 10.
     """
     component = _currency_component_of(units)
     return component is not None and component == UNIT_REGISTRY.parse_units(
@@ -1143,10 +1112,10 @@ def _unit_level_denominator(unit: pint.Unit) -> str | None:
 def _substitute_currency(units: pint.Unit, currency: str) -> pint.Unit:
     """Swap a unit's currency component for ``currency``; a no-op if it has none.
 
-    The one currency move both boundaries make: the period, area and levels are
-    left untouched. On the way *out* ``currency`` is the data currency
-    (:func:`output_unit_in_data_currency`); on the way *in* it is the tag's
-    concrete currency (:func:`input_strip_unit`).
+    The one currency move input and output handling share: the period, area
+    and levels are left untouched. For results ``currency`` is the data
+    currency (:func:`output_unit_in_data_currency`); for tagged input data it
+    is the tag's concrete currency (:func:`input_strip_unit`).
     """
     component = _currency_component_of(units)
     if component is None:
@@ -1154,15 +1123,16 @@ def _substitute_currency(units: pint.Unit, currency: str) -> pint.Unit:
     return units / component * UNIT_REGISTRY.parse_units(currency)
 
 
-def echoed_input_unit_in_data_currency(
+def input_target_unit_in_data_currency(
     units: pint.Unit, data_currency: str
 ) -> pint.Unit:
-    """Restate an *echoed input column's* resolved unit in the data currency.
+    """Restate the unit of an input column requested as a target.
 
-    An input column requested as a target is returned exactly as provided — in
-    the data currency — whatever currency its declaration pins down, agnostic
-    (an ordinary column) or concrete (a data override of a parameter). Its
-    label follows the value, so any currency component is substituted (GEP 10).
+    Such a column is returned exactly as provided — in the data currency —
+    whatever currency its declaration pins down: agnostic (an ordinary column)
+    or concrete (a data override of a parameter, declared ``DM_PER_MONTH`` but
+    holding the user's euro values). The label follows the value, so any
+    currency component is substituted with the data currency (GEP 10).
     """
     return _substitute_currency(units=units, currency=data_currency)
 
@@ -1170,7 +1140,7 @@ def echoed_input_unit_in_data_currency(
 def output_unit_in_data_currency(units: pint.Unit, data_currency: str) -> pint.Unit:
     """Restate a resolved agnostic DAG unit in the concrete data currency.
 
-    Result *columns* are converted to the data currency at the output boundary,
+    Result *columns* are converted to the data currency before being returned,
     so their labels swap the agnostic ``CURRENCY`` component for it
     (``CURRENCY / month`` → ``euro / month``) while period and area are left
     untouched. A unit with no agnostic currency component is returned

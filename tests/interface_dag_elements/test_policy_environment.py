@@ -18,7 +18,7 @@ from ttsim.interface_dag_elements.policy_environment import (
     _active_param_objects,
 )
 from ttsim.tt import ScalarParam, Unit, policy_function
-from ttsim.tt.currencies import statutory_currency
+from ttsim.tt.currencies import statutory_currency_for_date
 
 if TYPE_CHECKING:
     from types import ModuleType
@@ -210,12 +210,12 @@ def test_active_tree_with_column_objects_and_param_functions(
     functions_last_day = _active_column_objects_and_param_functions(
         orig=orig,
         policy_date=last_day,
-        computation_currency=statutory_currency(last_day),
+        computation_currency=statutory_currency_for_date(last_day),
     )
     functions_next_day = _active_column_objects_and_param_functions(
         orig=orig,
         policy_date=next_day,
-        computation_currency=statutory_currency(next_day),
+        computation_currency=statutory_currency_for_date(next_day),
     )
 
     accessor = optree.tree_accessors(tree, none_is_leaf=True)[0]  # ty: ignore[invalid-argument-type]

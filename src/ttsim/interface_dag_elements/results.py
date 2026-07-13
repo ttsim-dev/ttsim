@@ -14,13 +14,13 @@ from ttsim.interface_dag_elements.data_converters import (
 )
 from ttsim.interface_dag_elements.interface_node_objects import interface_function
 from ttsim.interface_dag_elements.processed_data import (
-    boundary_currency_conversion,
+    currency_conversion_factor_and_columns,
     value_in_target_currency,
 )
 from ttsim.tt.units import (
     UnitAnnotatedColumn,
     composite_from_resolved_unit,
-    echoed_input_unit_in_data_currency,
+    input_target_unit_in_data_currency,
     output_unit_in_data_currency,
 )
 from ttsim.typing import (
@@ -29,10 +29,9 @@ from ttsim.typing import (
     IntColumn,
     NestedResults,
     NestedStrings,
-    OrderedQNames,
-    PolicyEnvironment,
     QNameData,
     QNameResults,
+    SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
 )
 
 
@@ -42,23 +41,22 @@ def tree(
     raw_results__params: QNameResults,
     raw_results__from_input_data: QNameData,
     input_data__sort_indices: IntColumn,
-    policy_environment: PolicyEnvironment,
-    labels__grouping_levels: OrderedQNames,
+    specialized_environment__without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,  # noqa: E501
     data_currency: str,
     computation_currency: str,
 ) -> NestedResults:
     """The combined results as a tree with original row order restored.
 
-    Computed columns cross the column boundary here: every column whose
-    declared unit carries the agnostic ``CURRENCY`` component is converted from
-    the computation currency to the data currency (GEP 10). Requested
-    parameters keep their statutory values, and echoed input columns are
-    returned as provided — already in the data currency.
+    Currency-denominated computed columns are converted from the computation
+    currency to the data currency here (GEP 10). Requested parameters keep
+    their statutory values; input columns requested as targets are returned
+    exactly as provided, hence already in the data currency.
     """
-    factor, currency_qnames = boundary_currency_conversion(
+    factor, currency_qnames = currency_conversion_factor_and_columns(
         qnames=raw_results__columns_with_original_p_ids,
-        policy_environment=policy_environment,
-        grouping_levels=labels__grouping_levels,
+        specialized_environment=(
+            specialized_environment__without_tree_logic_and_with_derived_functions
+        ),
         source_currency=computation_currency,
         target_currency=data_currency,
     )
@@ -98,15 +96,8 @@ def tree_with_unit_annotations(
     """The combined results as a tree of :class:`UnitAnnotatedColumn` leaves.
 
     Like :func:`tree`, but every leaf is wrapped in a ``UnitAnnotatedColumn`` —
-    the same shape as the unit-annotated input tree (GEP 10). Each label follows
-    its value: a *computed column's* unit is its resolved unit restated in the
-    concrete data currency (``Unit.EUR.PER_MONTH``, never the agnostic
-    ``CURRENCY``) — the currency it was converted to at the boundary; an
-    *echoed input column* is returned as provided, so any currency component of
-    its label is the data currency, even where the declaration pins down a
-    concrete one (a data override of a parameter); a *parameter* keeps its
-    statutory values, so its label keeps the declared statutory currency. A
-    node with no resolved unit is left bare.
+    the same shape as the unit-annotated input tree. Note that *parameters* keep their
+    statutory currency values, i.e. they are not converted to the data currency.
     """
     resolved = unit_checks__resolved_units
     tagged: dict[str, Any] = {}
@@ -116,7 +107,7 @@ def tree_with_unit_annotations(
             tagged[qname] = value
             continue
         in_data_currency = (
-            echoed_input_unit_in_data_currency(units=unit, data_currency=data_currency)
+            input_target_unit_in_data_currency(units=unit, data_currency=data_currency)
             if qname in raw_results__from_input_data
             else output_unit_in_data_currency(units=unit, data_currency=data_currency)
         )
