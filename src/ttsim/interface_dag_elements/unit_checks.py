@@ -559,7 +559,11 @@ def fail_if_environment_units_are_missing(
                 cast("Mapping[str, Any]", declared_unit)
             )
             for leaf_qname in dt.flatten_to_qnames(value_tree):
-                leaf_path = dt.tree_path_from_qname(leaf_qname)
+                # A flat int-keyed dict (GEP 3 allows them, e.g. a Satz keyed by
+                # child count) leaves its key an int, which has no `.split`; the
+                # per-leaf unit mapping is keyed the same way, so look it up with
+                # the original key and stringify only for the display path.
+                leaf_path = dt.tree_path_from_qname(str(leaf_qname))
                 display = f"{qname}[{']['.join(leaf_path)}]"
                 # A leaf absent from the mapping defaults to :data:`UNSET_UNIT`,
                 # which the mandatory-units check reports.
