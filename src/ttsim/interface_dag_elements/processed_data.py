@@ -190,7 +190,7 @@ def value_in_target_currency(
     everything else — including an object-dtype column (int/bool data with
     missing values, reported by its own fail-if node) — untouched.
     """
-    if factor == 1.0 or qname not in currency_qnames:
+    if qname not in currency_qnames:
         return value
     dtype = getattr(value, "dtype", None)
     if dtype is not None and dtype.kind == "O":

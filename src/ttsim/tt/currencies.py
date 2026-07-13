@@ -312,7 +312,7 @@ def currency_conversion_factor(source_currency: str, target_currency: str) -> fl
         UnitDefinitionError: If either currency is unknown or not a currency.
     """
     for name in (source_currency, target_currency):
-        if name not in UNIT_REGISTRY:
+        if name not in _registered_currencies:
             raise UnitDefinitionError(
                 f"Cannot convert currency: {name!r} is not a registered currency."
             )

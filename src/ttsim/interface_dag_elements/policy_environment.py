@@ -387,6 +387,9 @@ def _forward_fill_unit_fields(
     resolved = _unit_fields_from_spec(spec)
     for date in active_dates:
         entry = spec[date]
+        _fail_if_updates_previous_restates_unit(
+            leaf_name=leaf_name, entry=entry, date=date
+        )
         for unit_key in _UNIT_DECLARATION_KEYS:
             if unit_key not in entry:
                 continue
@@ -423,6 +426,30 @@ def _fail_if_partial_unit_mapping_restatement(
             f"must restate every leaf of the unit it replaces "
             f"(got {sorted(restated)}, expected {sorted(previous)}); a unit "
             f"declaration is replaced as a whole (GEP 10)."
+        )
+
+
+def _fail_if_updates_previous_restates_unit(
+    leaf_name: str,
+    entry: Mapping[str | int, Any],
+    date: datetime.date,
+) -> None:
+    """Reject a dated entry that both merges values and restates the unit.
+
+    ``updates_previous`` merges the entry's leaves onto the previous value, so
+    a leaf it does not restate carries forward from the previous currency yet
+    now wears the restated unit — a silent mis-scaling invisible to the
+    statutory-currency guard. A unit change must restate the value in full
+    (GEP 10).
+    """
+    if entry.get("updates_previous", False) and any(
+        unit_key in entry for unit_key in _UNIT_DECLARATION_KEYS
+    ):
+        raise UnitDefinitionError(
+            f"Parameter {leaf_name!r}: the dated entry at {date} both merges "
+            f"values (`updates_previous: true`) and restates the unit; a merge "
+            f"would carry un-restated leaves forward under the new unit. Restate "
+            f"the value in full at a unit change (GEP 10)."
         )
 
 
@@ -495,10 +522,10 @@ def _strip_unit_overrides(current: dict[str | int, Any]) -> None:
     """Strip a dated entry's unit override keys from its value dict (GEP 10).
 
     The unit is resolved by forward-fill in :func:`_forward_fill_unit_fields`;
-    here it must not leak into the assembled value. ``updates_previous`` (a value
-    merge) and a unit restatement are independent, and combining them is the
-    author's responsibility: a unit-change entry should restate its value in full,
-    since a merge would carry values forward under a different unit (GEP 10).
+    here it must not leak into the assembled value. Combining a unit restatement
+    with a value merge (``updates_previous``) is rejected there
+    (:func:`_fail_if_updates_previous_restates_unit`), so a stripped entry never
+    both merges and changes the unit.
     """
     for unit_key in _UNIT_DECLARATION_KEYS:
         current.pop(unit_key, None)

@@ -24,9 +24,9 @@ has two round-tripping spellings (via :func:`parse_compositional_unit` /
 
 The base is ``CURRENCY`` on columns and functions; on parameters it is a
 registered concrete currency (``SILVER_PENNY``, ``DM``, …) that also names the
-currency the numbers are written in, so the build-time conversion to the run
-currency can read it off. For dimensionality a concrete currency means exactly
-what ``CURRENCY`` means.
+currency the numbers are written in, so the build-time guard can hold it
+against the policy date's statutory currency. For dimensionality a concrete
+currency means exactly what ``CURRENCY`` means.
 """
 
 from __future__ import annotations
@@ -1144,19 +1144,33 @@ def input_target_unit_in_data_currency(
 
 
 def output_unit_in_data_currency(units: pint.Unit, data_currency: str) -> pint.Unit:
-    """Restate a resolved agnostic DAG unit in the concrete data currency.
+    """Restate a computed result column's resolved unit in the data currency.
 
-    Result *columns* are converted to the data currency before being returned,
-    so their labels swap the agnostic ``CURRENCY`` component for it
+    A computed column is converted to the data currency before being returned,
+    so its label swaps the agnostic ``CURRENCY`` component for it
     (``CURRENCY / month`` → ``euro / month``) while period and area are left
-    untouched. A unit with no agnostic currency component is returned
-    unchanged: that is a unit with no currency at all (``year``, ``hectare``,
-    dimensionless) — or a *parameter's* concrete statutory currency, which
-    keeps its statutory label because the value is never converted (GEP 10).
+    untouched. A unit with no agnostic currency component — ``year``,
+    ``hectare``, dimensionless — is returned unchanged. Requested parameters do
+    not pass through here: their value is never converted, so they keep their
+    statutory currency (:func:`param_unit_in_computation_currency`).
     """
     if not unit_has_agnostic_currency_component(units):
         return units
     return _substitute_currency(units=units, currency=data_currency)
+
+
+def param_unit_in_computation_currency(
+    units: pint.Unit, computation_currency: str
+) -> pint.Unit:
+    """Restate a requested parameter's resolved unit in its statutory currency.
+
+    A parameter keeps its statutory value — never converted to the data
+    currency — and that value is denominated in the computation currency (the
+    build guard pins every parameter's currency to it). So the resolved
+    agnostic ``CURRENCY`` component is spelled in the computation currency, not
+    the data currency; a non-currency unit is returned unchanged (GEP 10).
+    """
+    return _substitute_currency(units=units, currency=computation_currency)
 
 
 #: Reverse of the forward token→pint maps, for :func:`composite_from_resolved_unit`.

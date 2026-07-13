@@ -22,6 +22,7 @@ from ttsim.tt.units import (
     composite_from_resolved_unit,
     input_target_unit_in_data_currency,
     output_unit_in_data_currency,
+    param_unit_in_computation_currency,
 )
 from ttsim.typing import (
     FlatData,
@@ -90,14 +91,22 @@ def tree(
 def tree_with_unit_annotations(
     tree: NestedResults,
     raw_results__from_input_data: QNameData,
+    raw_results__params: QNameResults,
     unit_checks__resolved_units: dict[str, pint.Unit | dict[str | int, Any]],
     data_currency: str,
+    computation_currency: str,
 ) -> NestedResults:
     """The combined results as a tree of :class:`UnitAnnotatedColumn` leaves.
 
-    Like :func:`tree`, but every leaf is wrapped in a ``UnitAnnotatedColumn`` —
-    the same shape as the unit-annotated input tree. Note that *parameters* keep their
-    statutory currency values, i.e. they are not converted to the data currency.
+    Like :func:`tree`, but every leaf is wrapped in a ``UnitAnnotatedColumn``
+    whose unit is spelled in the currency its value is denominated in:
+
+    - an input column returned as a target and a computed column carry the data
+      currency (the value crossed to it at the boundary);
+    - a requested parameter keeps its statutory value, so it carries the
+      computation currency and is never relabelled to the data currency (GEP 10).
+
+    A leaf with no resolved unit is left bare.
     """
     resolved = unit_checks__resolved_units
     tagged: dict[str, Any] = {}
@@ -106,14 +115,21 @@ def tree_with_unit_annotations(
         if not isinstance(unit, pint.Unit):
             tagged[qname] = value
             continue
-        in_data_currency = (
-            input_target_unit_in_data_currency(units=unit, data_currency=data_currency)
-            if qname in raw_results__from_input_data
-            else output_unit_in_data_currency(units=unit, data_currency=data_currency)
-        )
+        if qname in raw_results__from_input_data:
+            result_unit = input_target_unit_in_data_currency(
+                units=unit, data_currency=data_currency
+            )
+        elif qname in raw_results__params:
+            result_unit = param_unit_in_computation_currency(
+                units=unit, computation_currency=computation_currency
+            )
+        else:
+            result_unit = output_unit_in_data_currency(
+                units=unit, data_currency=data_currency
+            )
         tagged[qname] = UnitAnnotatedColumn(
             values=value,
-            unit=composite_from_resolved_unit(in_data_currency),
+            unit=composite_from_resolved_unit(result_unit),
         )
     return dt.unflatten_from_qnames(tagged)
 

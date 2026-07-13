@@ -25,6 +25,7 @@ from ttsim.exceptions_and_warnings import (
 from ttsim.interface_dag_elements.policy_environment import (
     _get_one_param,
 )
+from ttsim.interface_dag_elements.results import tree_with_unit_annotations
 from ttsim.interface_dag_elements.warn_if import (
     statutory_currency_and_base_currency_differ,
 )
@@ -38,7 +39,7 @@ from ttsim.tt.currencies import (
     statutory_currency_for_date,
 )
 from ttsim.tt.param_objects import RawParam
-from ttsim.tt.units import UNSET_UNIT
+from ttsim.tt.units import UNIT_REGISTRY, UNSET_UNIT
 
 POLICY_DATE = datetime.date(2020, 1, 1)
 
@@ -276,13 +277,12 @@ def test_unit_resolution_never_backfills_from_a_later_entry():
     assert param.unit is UNSET_UNIT
 
 
-def test_updates_previous_may_cross_a_unit_change_at_the_authors_risk():
-    """``updates_previous`` (a value merge) and a unit restatement are independent
-    mechanisms. Combining them merges old-currency leaves forward under the new
-    unit — silently wrong by the conversion factor and invisible to the guard
-    (the declared unit is the new, statutory one). A documented sharp edge, the
-    author's responsibility: a unit-change entry should restate its values in
-    full."""
+def test_updates_previous_combined_with_a_unit_restatement_is_rejected():
+    """A dated entry cannot both merge values (``updates_previous``) and restate
+    the unit. The merge would carry un-restated leaves (``b`` here) forward from
+    the silver-penny era under the new castar label — a silent mis-scaling by the
+    conversion factor, invisible to the statutory-currency guard. A unit change
+    must restate the value in full."""
     spec = {
         **_HEADER,
         "unit": "SILVER_PENNY",
@@ -294,15 +294,13 @@ def test_updates_previous_may_cross_a_unit_change_at_the_authors_risk():
             "updates_previous": True,
         },
     }
-    param = _load(
-        leaf_name="amounts",
-        spec=spec,
-        policy_date=POLICY_DATE,
-        computation_currency="CASTAR",
-    )
-    # `a` was restated in castar; `b` is silently carried from the silver-penny
-    # era yet now labelled castar — the sharp edge, not an error.
-    assert param.value == {"a": pytest.approx(25.0), "b": pytest.approx(8.0)}
+    with pytest.raises(UnitDefinitionError, match="carry un-restated leaves"):
+        _load(
+            leaf_name="amounts",
+            spec=spec,
+            policy_date=POLICY_DATE,
+            computation_currency="CASTAR",
+        )
 
 
 def test_mapping_unit_restatement_must_be_complete():
@@ -532,6 +530,36 @@ def test_registered_currencies_are_interconvertible():
     assert currency_conversion_factor(
         source_currency="CASTAR", target_currency="SILVER_PENNY"
     ) == pytest.approx(4.0)
+
+
+def test_currency_conversion_rejects_the_abstract_currency_token():
+    # The agnostic CURRENCY token is a pint unit but not a registered currency;
+    # conversion (and hence `data_currency=`) requires a concrete registered one.
+    with pytest.raises(UnitDefinitionError, match="not a registered currency"):
+        currency_conversion_factor(source_currency="CURRENCY", target_currency="CASTAR")
+
+
+def test_annotated_results_label_a_parameter_in_the_statutory_currency():
+    """`tree_with_unit_annotations` labels a requested parameter in the
+    computation (statutory) currency and a computed column in the data currency,
+    even when the two differ (CASTAR data over a silver-penny computation). A
+    parameter and a column both resolve to the agnostic CURRENCY, so the label
+    must follow the result category, not the resolved unit: the parameter's value
+    is never converted, the column's is (GEP 10)."""
+    with isolated_currency_registration():
+        register_currency(name="CASTAR", base=True)
+        register_currency(name="SILVER_PENNY", definition="CASTAR / 4")
+        agnostic = UNIT_REGISTRY.parse_units("CURRENCY / month")
+        annotated = tree_with_unit_annotations(
+            tree={"a_param_m": 25.0, "a_column_m": np.array([1.0, 2.0])},
+            raw_results__from_input_data={},
+            raw_results__params={"a_param_m": 25.0},
+            unit_checks__resolved_units={"a_param_m": agnostic, "a_column_m": agnostic},
+            data_currency="CASTAR",
+            computation_currency="SILVER_PENNY",
+        )
+        labels = {qname: leaf.unit.base for qname, leaf in annotated.items()}
+        assert labels == {"a_param_m": "SILVER_PENNY", "a_column_m": "CASTAR"}
 
 
 def test_a_second_base_currency_is_rejected():
