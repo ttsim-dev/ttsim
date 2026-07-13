@@ -1737,14 +1737,15 @@ def test_cast_in_a_vectorized_body_is_screened_identically():
 
 
 def test_cast_to_a_concrete_currency_is_rejected():
-    """Bodies are currency-agnostic, so a cast pinning a concrete currency is a
-    definition error — reported as such, not as an un-evaluable body (GEP 10)."""
+    """Only parameters and rounding specs pin down concrete currencies, so a
+    cast pinning one is a definition error — reported as such, not as an
+    un-evaluable body (GEP 10)."""
 
     @policy_function(unit=Unit.CURRENCY.PER_MONTH)
     def pinned_m(income_m: float) -> float:
         return cast_unit(value=income_m, unit="CASTAR_PER_MONTH")
 
-    with pytest.raises(UnitDefinitionError, match="currency-agnostic"):
+    with pytest.raises(UnitDefinitionError, match="agnostic CURRENCY"):
         fail_if_environment_units_are_inconsistent(
             env={"income_m": income_m, "pinned_m": pinned_m},
             grouping_levels=GROUPING_LEVELS,

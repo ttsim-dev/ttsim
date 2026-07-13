@@ -450,9 +450,10 @@ def _resolve_source_unit(
     Mirrors `_resolve_source_column_kind`: the source is a column function, a
     `PolicyInput` declared at `source_name`, or a user-supplied input at a
     different time unit than its declared `PolicyInput` sibling (e.g. caller
-    passes `bonus_y` against a `bonus_m` declaration). Returns ``UNSET_UNIT`` if
-    the source is unannotated; the environment-level mandatory-units check
-    reports the source itself in that case.
+    passes `bonus_y` against a `bonus_m` declaration; the sibling's unit is
+    re-based to the source's period). Returns ``UNSET_UNIT`` if the source is
+    unannotated; the environment-level mandatory-units check reports the
+    source itself in that case.
     """
     source = column_functions.get(source_name) or qname_policy_environment.get(
         source_name
@@ -466,7 +467,12 @@ def _resolve_source_unit(
         source_name=source_name,
         qname_policy_environment=qname_policy_environment,
     )
-    return sibling.unit if sibling is not None else UNSET_UNIT
+    if sibling is None or sibling.unit is UNSET_UNIT:
+        return UNSET_UNIT
+    return unit_with_rebased_period(
+        unit=replace_concrete_with_agnostic_currency(sibling.unit),
+        time_unit_id=source_name.rpartition("_")[2],
+    )
 
 
 def _resolve_source_column_kind(
