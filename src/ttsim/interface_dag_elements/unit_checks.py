@@ -773,6 +773,11 @@ def fail_if_environment_units_are_inconsistent(
         # by construction.
         if not isinstance(obj, PolicyFunction | ParamFunction):
             continue
+        if getattr(obj, "fail_msg_if_included", None) is not None:
+            # A placeholder for an unimplemented period: it raises when reached, so
+            # its stub body carries no unit semantics. The declared unit still stands
+            # as the edge contract (like an explicit opt-out).
+            continue
         if qname not in resolved_units:
             # Still UNSET — the mandatory-units check reports it.
             continue
