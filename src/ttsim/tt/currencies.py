@@ -20,7 +20,7 @@ from contextlib import contextmanager
 import pint
 from pint.util import to_units_container
 
-from ttsim.exceptions_and_warnings import UnitDefinitionError
+from ttsim.exceptions import UnitDefinitionError
 from ttsim.tt.units import (
     _ALLOWED_UNIT_TOKENS,
     _REL_TOL,

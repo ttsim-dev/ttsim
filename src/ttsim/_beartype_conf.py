@@ -10,7 +10,7 @@ The remaining confs (`ENTRY_POINT_CONF`, `INPUT_DATA_CONF`,
 `PARAM_FUNCTION_CONF`, `AGGREGATION_CONF`, `GROUP_CREATION_CONF`,
 `ROUNDING_SPEC_CONF`) are used by explicit `@beartype(conf=...)` decorators
 on user-facing constructors and entry points. They map type violations to
-the relevant `ttsim.exceptions_and_warnings.*` class, preserving the documented
+the relevant `ttsim.exceptions.*` class, preserving the documented
 exception hierarchy at the user boundary. The decorators stack on top of
 the package claw and take precedence at the call sites they cover.
 """
@@ -19,7 +19,7 @@ import os
 
 from beartype import BeartypeConf, BeartypeStrategy
 
-from ttsim.exceptions_and_warnings import (
+from ttsim.exceptions import (
     AggregationDefinitionError,
     EntryPointError,
     GroupCreationDefinitionError,

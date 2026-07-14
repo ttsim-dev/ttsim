@@ -38,7 +38,7 @@ from jaxtyping import Bool, Float, Int
 
 from ttsim import typing as ttsim_typing
 from ttsim._beartype_conf import INTERNAL_CONF
-from ttsim.exceptions_and_warnings import TTSIMError
+from ttsim.exceptions import TTSIMError
 from ttsim.tt.aggregation import AggType
 
 # Backend-agnostic array type: union the (optional) JAX `Array` with

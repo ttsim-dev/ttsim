@@ -21,7 +21,7 @@ import pint
 from dags import get_free_arguments
 from dags.tree.validation import fail_if_paths_are_invalid
 
-from ttsim.exceptions_and_warnings import TTSIMError, UnitConsistencyError
+from ttsim.exceptions import TTSIMError, UnitConsistencyError
 from ttsim.interface_dag_elements.backend import jax
 from ttsim.interface_dag_elements.interface_node_objects import fail_function
 from ttsim.interface_dag_elements.shared import (

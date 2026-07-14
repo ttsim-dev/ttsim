@@ -28,7 +28,7 @@ from ttsim._beartype_conf import (
     POLICY_FUNCTION_CONF,
     POLICY_INPUT_CONF,
 )
-from ttsim.exceptions_and_warnings import (
+from ttsim.exceptions import (
     AggregationDefinitionError,
     GroupCreationDefinitionError,
     ParamFunctionDefinitionError,

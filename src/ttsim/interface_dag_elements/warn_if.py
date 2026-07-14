@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING
 
 import dags.tree as dt
 
-from ttsim.exceptions_and_warnings import PotentialCurrencyMismatchWarning
 from ttsim.interface_dag_elements.fail_if import (
     format_errors_and_warnings,
     format_list_linewise,
@@ -13,6 +12,7 @@ from ttsim.interface_dag_elements.fail_if import (
 from ttsim.interface_dag_elements.interface_node_objects import warn_function
 from ttsim.tt.column_objects_param_function import PolicyInput
 from ttsim.tt.currencies import base_currency
+from ttsim.warnings import PotentialCurrencyMismatchWarning
 
 if TYPE_CHECKING:
     import datetime

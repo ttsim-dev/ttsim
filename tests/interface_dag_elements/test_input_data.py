@@ -14,7 +14,7 @@ from typing import Any
 import pytest
 
 from ttsim import InputData
-from ttsim.exceptions_and_warnings import InputDataError
+from ttsim.exceptions import InputDataError
 
 
 def test_input_data_tree_accepts_scalar_only_leaves() -> None:

@@ -12,7 +12,7 @@ from beartype.roar import BeartypeCallHintViolation
 from pandas._testing import assert_series_equal
 
 from ttsim import InputData, TTTargets, main
-from ttsim.exceptions_and_warnings import (
+from ttsim.exceptions import (
     PolicyFunctionDefinitionError,
     RoundingSpecError,
     UnitDefinitionError,

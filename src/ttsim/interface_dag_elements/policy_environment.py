@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any
 import dags.tree as dt
 import numpy
 
-from ttsim.exceptions_and_warnings import UnitDefinitionError
+from ttsim.exceptions import UnitDefinitionError
 from ttsim.interface_dag_elements.interface_node_objects import interface_function
 from ttsim.interface_dag_elements.shared import (
     merge_trees,

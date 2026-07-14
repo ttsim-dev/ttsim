@@ -18,10 +18,7 @@ import pytest
 from mettsim import middle_earth
 
 from ttsim import MainTarget, OrigPolicyObjects, main
-from ttsim.exceptions_and_warnings import (
-    PotentialCurrencyMismatchWarning,
-    UnitDefinitionError,
-)
+from ttsim.exceptions import UnitDefinitionError
 from ttsim.interface_dag_elements.policy_environment import (
     _get_one_param,
 )
@@ -40,6 +37,7 @@ from ttsim.tt.currencies import (
 )
 from ttsim.tt.param_objects import RawParam
 from ttsim.tt.units import UNIT_REGISTRY, UNSET_UNIT
+from ttsim.warnings import PotentialCurrencyMismatchWarning
 
 POLICY_DATE = datetime.date(2020, 1, 1)
 

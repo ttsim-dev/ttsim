@@ -38,7 +38,7 @@ import numpy
 import pint
 from dags import get_annotations
 
-from ttsim.exceptions_and_warnings import (
+from ttsim.exceptions import (
     TTSIMError,
     UnitConsistencyError,
     UnitDefinitionError,

@@ -14,7 +14,7 @@ import numpy as np
 import pytest
 from dags import get_annotations
 
-from ttsim.exceptions_and_warnings import TTSIMError
+from ttsim.exceptions import TTSIMError
 from ttsim.interface_dag_elements.automatically_added_functions import (
     create_agg_by_group_functions,
 )

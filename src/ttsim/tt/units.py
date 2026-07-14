@@ -40,7 +40,7 @@ from typing import TYPE_CHECKING, Any, TypeVar
 import pint
 from pint.util import to_units_container
 
-from ttsim.exceptions_and_warnings import (
+from ttsim.exceptions import (
     UnitConsistencyError,
     UnitDefinitionError,
 )
