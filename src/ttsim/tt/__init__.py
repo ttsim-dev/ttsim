@@ -17,7 +17,7 @@ from ttsim.tt.column_objects_param_function import (
     policy_function,
     policy_input,
 )
-from ttsim.tt.currencies import register_currency, register_statutory_currencies
+from ttsim.tt.currencies import UnitSystem
 from ttsim.tt.grouping_levels import register_unit_builder_levels
 from ttsim.tt.interval_utils import intervals_to_thresholds, merge_piecewise_intervals
 from ttsim.tt.param_objects import (
@@ -45,7 +45,7 @@ from ttsim.tt.shared import join
 from ttsim.tt.units import (
     UNSET_UNIT,
     CompositeUnit,
-    Unit,
+    TTSIMUnit,
     UnitAnnotatedColumn,
     cast_unit,
 )
@@ -74,9 +74,10 @@ __all__ = [
     "RawParam",
     "RoundingSpec",
     "ScalarParam",
+    "TTSIMUnit",
     "TimeConversionFunction",
-    "Unit",
     "UnitAnnotatedColumn",
+    "UnitSystem",
     "agg_by_group_function",
     "agg_by_p_id_function",
     "cast_unit",
@@ -93,7 +94,5 @@ __all__ = [
     "piecewise_polynomial",
     "policy_function",
     "policy_input",
-    "register_currency",
-    "register_statutory_currencies",
     "register_unit_builder_levels",
 ]

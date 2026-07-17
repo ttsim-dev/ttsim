@@ -20,8 +20,8 @@ from ttsim.interface_dag_elements.interface_node_objects import (
 from ttsim.interface_dag_elements.processed_data import (
     _canonicalize_input_dtype,
 )
+from ttsim.tt.currencies import UnitSystem
 from ttsim.tt.units import (
-    UNIT_REGISTRY,
     input_strip_unit,
     resolve_compositional_unit,
     strip_input_quantity_at_boundary,
@@ -82,9 +82,11 @@ def tree_with_unit_annotations() -> NestedData:
     Example::
 
         {
-            "wage_m": UnitAnnotatedColumn(values, unit=Unit.EUR.PER_MONTH),
-            "rent_m_bg": UnitAnnotatedColumn(values, unit=Unit.EUR.PER_MONTH.PER_BG),
-            "p_id": UnitAnnotatedColumn(values, unit=Unit.DIMENSIONLESS),
+            "wage_m": UnitAnnotatedColumn(values, unit=TTSIMUnit.EUR.PER_MONTH),
+            "rent_m_bg": UnitAnnotatedColumn(
+                values, unit=TTSIMUnit.EUR.PER_MONTH.PER_BG
+            ),
+            "p_id": UnitAnnotatedColumn(values, unit=TTSIMUnit.DIMENSIONLESS),
         }
     """
 
@@ -200,13 +202,18 @@ def flat_from_qname(
 def flat_from_tree_with_unit_annotations(
     tree_with_unit_annotations: NestedData,
     data_currency: str,
+    unit_system: UnitSystem,
 ) -> FlatData:
     """The input data as a flat dictionary of arrays."""
+    registry = unit_system.registry
     flat = dt.flatten_to_tree_paths(tree_with_unit_annotations)
     return {
         path: strip_input_quantity_at_boundary(
-            quantity=UNIT_REGISTRY.Quantity(col.values, input_strip_unit(col.unit)),
+            quantity=registry.Quantity(
+                col.values, input_strip_unit(unit=col.unit, registry=registry)
+            ),
             data_currency=data_currency,
+            registry=registry,
             column_label=dt.qname_from_tree_path(path),
         )
         for path, col in flat.items()
@@ -219,6 +226,7 @@ def flat_from_tree_with_unit_annotations(
 )
 def units_from_tree_with_unit_annotations(
     tree_with_unit_annotations: NestedData,
+    unit_system: UnitSystem,
 ) -> dict[str, pint.Unit]:
     """Each input column's resolved (agnostic) tag, with its grouping level, by qname.
 
@@ -230,7 +238,7 @@ def units_from_tree_with_unit_annotations(
     flat = dt.flatten_to_tree_paths(tree_with_unit_annotations)
     return {
         dt.qname_from_tree_path(path): resolve_compositional_unit(
-            unit=col.unit, with_level=True
+            unit=col.unit, registry=unit_system.registry, with_level=True
         )
         for path, col in flat.items()
     }

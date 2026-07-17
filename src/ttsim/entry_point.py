@@ -39,6 +39,7 @@ from ttsim.main_args import (
     TTTargets,
 )
 from ttsim.main_target import MainTarget, MainTargetABC
+from ttsim.tt.currencies import UnitSystem
 from ttsim.typing import (
     DashedISOString,
     FlatInterfaceObjects,
@@ -68,6 +69,7 @@ def main(
     tt_targets: TTTargets | None = None,
     rounding: bool = True,
     backend: Literal["numpy", "jax"] = "numpy",
+    unit_system: UnitSystem | None = None,
     data_currency: str | None = None,
     evaluation_date_str: DashedISOString | None = None,
     include_fail_nodes: bool = True,

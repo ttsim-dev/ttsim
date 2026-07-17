@@ -26,17 +26,9 @@ from ttsim.interface_dag_elements.results import tree_with_unit_annotations
 from ttsim.interface_dag_elements.warn_if import (
     statutory_currency_and_base_currency_differ,
 )
-from ttsim.tt.currencies import (
-    _statutory_currencies,
-    base_currency,
-    currency_conversion_factor,
-    isolated_currency_registration,
-    register_currency,
-    register_statutory_currencies,
-    statutory_currency_for_date,
-)
+from ttsim.tt.currencies import UnitSystem
 from ttsim.tt.param_objects import RawParam
-from ttsim.tt.units import UNIT_REGISTRY, UNSET_UNIT
+from ttsim.tt.units import UNSET_UNIT
 from ttsim.warnings import PotentialCurrencyMismatchWarning
 
 POLICY_DATE = datetime.date(2020, 1, 1)
@@ -51,6 +43,7 @@ def _policy_environment(backend, policy_date=POLICY_DATE):
     return main(
         main_target=MainTarget.policy_environment,
         orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+        unit_system=middle_earth.UNIT_SYSTEM,
         policy_date=policy_date,
         backend=backend,
     )
@@ -61,6 +54,7 @@ def test_data_currency_defaults_to_registered_base(backend):
         main(
             main_target=MainTarget.data_currency,
             orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+            unit_system=middle_earth.UNIT_SYSTEM,
             policy_date=POLICY_DATE,
             backend=backend,
         )
@@ -82,6 +76,7 @@ def test_computation_currency_is_the_statutory_currency_at_the_policy_date(
         main(
             main_target=MainTarget.computation_currency,
             orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+            unit_system=middle_earth.UNIT_SYSTEM,
             policy_date=policy_date,
             backend=backend,
         )
@@ -510,31 +505,44 @@ def test_unknown_annotation_is_rejected_at_load():
 
 
 # --------------------------------------------------------------------------
-# A single interconvertible currency system plus the statutory mapping
-# (GEP 10). Registration rules are exercised inside
-# `isolated_currency_registration`, so nothing leaks.
+# A policy system's interconvertible currencies plus its statutory mapping
+# (GEP 10). Middle Earth's system is `middle_earth.UNIT_SYSTEM`; the rule tests
+# construct throwaway systems.
 # --------------------------------------------------------------------------
 
 
-def test_base_currency_is_the_registered_base():
-    assert base_currency() == "CASTAR"
+def _fresh_system(**overrides: Any) -> UnitSystem:
+    """A Middle-Earth-shaped system, with fields overridable per test."""
+    kwargs: dict[str, Any] = {
+        "base_currency": "CASTAR",
+        "other_currencies": {"SILVER_PENNY": "CASTAR / 4"},
+        "statutory_currencies": {"0001-01-01": "SILVER_PENNY", "2020-01-01": "CASTAR"},
+    }
+    kwargs.update(overrides)
+    return UnitSystem(**kwargs)
 
 
-def test_registered_currencies_are_interconvertible():
+def test_base_currency_is_the_declared_base():
+    assert middle_earth.UNIT_SYSTEM.base_currency == "CASTAR"
+
+
+def test_system_currencies_are_interconvertible():
     # silver_penny = castar / 4, so the factors are reciprocal.
-    assert currency_conversion_factor(
+    assert middle_earth.UNIT_SYSTEM.currency_conversion_factor(
         source_currency="SILVER_PENNY", target_currency="CASTAR"
     ) == pytest.approx(0.25)
-    assert currency_conversion_factor(
+    assert middle_earth.UNIT_SYSTEM.currency_conversion_factor(
         source_currency="CASTAR", target_currency="SILVER_PENNY"
     ) == pytest.approx(4.0)
 
 
 def test_currency_conversion_rejects_the_abstract_currency_token():
-    # The agnostic CURRENCY token is a pint unit but not a registered currency;
-    # conversion (and hence `data_currency=`) requires a concrete registered one.
+    # The agnostic CURRENCY token is a pint unit but not one of the system's
+    # currencies; conversion (and hence `data_currency=`) requires a concrete one.
     with pytest.raises(UnitDefinitionError, match="not a registered currency"):
-        currency_conversion_factor(source_currency="CURRENCY", target_currency="CASTAR")
+        middle_earth.UNIT_SYSTEM.currency_conversion_factor(
+            source_currency="CURRENCY", target_currency="CASTAR"
+        )
 
 
 def test_annotated_results_label_a_parameter_in_the_statutory_currency():
@@ -544,93 +552,55 @@ def test_annotated_results_label_a_parameter_in_the_statutory_currency():
     parameter and a column both resolve to the agnostic CURRENCY, so the label
     must follow the result category, not the resolved unit: the parameter's value
     is never converted, the column's is (GEP 10)."""
-    with isolated_currency_registration():
-        register_currency(name="CASTAR", base=True)
-        register_currency(name="SILVER_PENNY", definition="CASTAR / 4")
-        agnostic = UNIT_REGISTRY.parse_units("CURRENCY / month")
-        annotated = tree_with_unit_annotations(
-            tree={"a_param_m": 25.0, "a_column_m": np.array([1.0, 2.0])},
-            raw_results__from_input_data={},
-            raw_results__params={"a_param_m": 25.0},
-            unit_checks__resolved_units={"a_param_m": agnostic, "a_column_m": agnostic},
-            data_currency="CASTAR",
-            computation_currency="SILVER_PENNY",
-        )
-        labels = {qname: leaf.unit.base for qname, leaf in annotated.items()}
-        assert labels == {"a_param_m": "SILVER_PENNY", "a_column_m": "CASTAR"}
+    system = _fresh_system()
+    agnostic = system.registry.parse_units("CURRENCY / month")
+    annotated = tree_with_unit_annotations(
+        tree={"a_param_m": 25.0, "a_column_m": np.array([1.0, 2.0])},
+        raw_results__from_input_data={},
+        raw_results__params={"a_param_m": 25.0},
+        unit_checks__resolved_units={"a_param_m": agnostic, "a_column_m": agnostic},
+        data_currency="CASTAR",
+        computation_currency="SILVER_PENNY",
+        unit_system=system,
+    )
+    labels = {qname: leaf.unit.base for qname, leaf in annotated.items()}
+    assert labels == {"a_param_m": "SILVER_PENNY", "a_column_m": "CASTAR"}
 
 
-def test_a_second_base_currency_is_rejected():
-    # CASTAR is already the base; the process has a single base currency.
-    with (
-        isolated_currency_registration(),
-        pytest.raises(UnitDefinitionError, match="already the base"),
-    ):
-        register_currency(name="GOLD_DRAGON", base=True)
-
-
-def test_definition_referencing_no_registered_currency_is_rejected():
-    # A currency must be defined relative to an already-registered one; a
+def test_definition_referencing_no_system_currency_is_rejected():
+    # A currency must be defined relative to one the system already defines; a
     # definition against the abstract CURRENCY reference alone would start a
     # second, unconnected base.
-    with (
-        isolated_currency_registration(),
-        pytest.raises(UnitDefinitionError, match="no registered currency"),
-    ):
-        register_currency(name="FLOATING", definition="CURRENCY / 2")
+    with pytest.raises(UnitDefinitionError, match="no currency of this policy system"):
+        _fresh_system(other_currencies={"FLOATING": "CURRENCY / 2"})
 
 
 def test_statutory_currency_follows_the_dated_mapping():
-    assert statutory_currency_for_date(datetime.date(2019, 12, 31)) == "SILVER_PENNY"
-    assert statutory_currency_for_date(datetime.date(2020, 1, 1)) == "CASTAR"
-    assert statutory_currency_for_date(datetime.date(2025, 6, 1)) == "CASTAR"
+    system = middle_earth.UNIT_SYSTEM
+    assert (
+        system.statutory_currency_for_date(datetime.date(2019, 12, 31))
+        == "SILVER_PENNY"
+    )
+    assert system.statutory_currency_for_date(datetime.date(2020, 1, 1)) == "CASTAR"
+    assert system.statutory_currency_for_date(datetime.date(2025, 6, 1)) == "CASTAR"
 
 
 def test_statutory_currency_is_undefined_before_the_first_entry():
-    with isolated_currency_registration():
-        _statutory_currencies[:] = [(datetime.date(1900, 1, 1), "SILVER_PENNY")]
-        with pytest.raises(UnitDefinitionError, match="Extend the mapping"):
-            statutory_currency_for_date(datetime.date(1899, 12, 31))
+    system = _fresh_system(statutory_currencies={"1900-01-01": "SILVER_PENNY"})
+    with pytest.raises(UnitDefinitionError, match="Extend the mapping"):
+        system.statutory_currency_for_date(datetime.date(1899, 12, 31))
 
 
-def test_statutory_currency_requires_a_registered_mapping():
-    with isolated_currency_registration():
-        _statutory_currencies.clear()
-        with pytest.raises(UnitDefinitionError, match="No statutory-currency mapping"):
-            statutory_currency_for_date(datetime.date(2020, 1, 1))
+def test_empty_statutory_mapping_is_rejected():
+    with pytest.raises(UnitDefinitionError, match="at least one entry"):
+        _fresh_system(statutory_currencies={})
 
 
-def test_registering_an_empty_statutory_mapping_is_rejected():
-    with (
-        isolated_currency_registration(),
-        pytest.raises(UnitDefinitionError, match="at least one entry"),
+def test_statutory_mapping_must_reference_system_currencies():
+    with pytest.raises(
+        UnitDefinitionError, match="not a currency of this policy system"
     ):
-        register_statutory_currencies({})
-
-
-def test_statutory_mapping_must_reference_registered_currencies():
-    with (
-        isolated_currency_registration(),
-        pytest.raises(UnitDefinitionError, match="not registered"),
-    ):
-        register_statutory_currencies({"1900-01-01": "GOLD_DRAGON"})
-
-
-def test_a_different_statutory_mapping_is_rejected():
-    # mettsim's mapping is registered; a conflicting one must not replace it.
-    with (
-        isolated_currency_registration(),
-        pytest.raises(UnitDefinitionError, match="already registered"),
-    ):
-        register_statutory_currencies({"1900-01-01": "CASTAR"})
-
-
-def test_re_registering_the_identical_statutory_mapping_is_tolerated():
-    # A re-imported module registers the same mapping again — a no-op.
-    with isolated_currency_registration():
-        register_statutory_currencies(
-            {"0001-01-01": "SILVER_PENNY", "2020-01-01": "CASTAR"}
-        )
+        _fresh_system(statutory_currencies={"1900-01-01": "GOLD_DRAGON"})
 
 
 def test_warns_when_statutory_currency_differs_from_default_data_currency():
@@ -642,6 +612,7 @@ def test_warns_when_statutory_currency_differs_from_default_data_currency():
             computation_currency="SILVER_PENNY",
             data_currency="CASTAR",
             policy_date=datetime.date(2019, 1, 1),
+            unit_system=middle_earth.UNIT_SYSTEM,
         )
 
 
@@ -652,6 +623,7 @@ def test_no_warning_when_statutory_currency_is_the_base():
             computation_currency="CASTAR",
             data_currency="CASTAR",
             policy_date=datetime.date(2025, 1, 1),
+            unit_system=middle_earth.UNIT_SYSTEM,
         )
 
 
@@ -663,4 +635,5 @@ def test_no_warning_when_the_data_currency_is_set_off_the_base():
             computation_currency="SILVER_PENNY",
             data_currency="SILVER_PENNY",
             policy_date=datetime.date(2019, 1, 1),
+            unit_system=middle_earth.UNIT_SYSTEM,
         )

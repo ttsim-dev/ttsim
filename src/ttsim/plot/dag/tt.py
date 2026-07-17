@@ -24,6 +24,7 @@ from ttsim.tt import (
     ParamFunction,
     ParamObject,
     TimeConversionFunction,
+    UnitSystem,
 )
 from ttsim.typing import (
     DashedISOString,
@@ -48,6 +49,7 @@ def tt(
     # Elements of main
     policy_date_str: DashedISOString | None = None,
     orig_policy_objects: OrigPolicyObjects | None = None,
+    unit_system: UnitSystem | None = None,
     input_data: InputData | None = None,
     processed_data: QNameData | None = None,
     labels: Labels | None = None,
@@ -112,6 +114,7 @@ def tt(
             hierarchy.
         policy_date_str: The date for which to plot the DAG.
         orig_policy_objects: The orig policy objects.
+        unit_system: The policy system's currencies and grouping levels.
         input_data: The input data.
         processed_data: The processed data.
         labels: The labels.
@@ -136,6 +139,7 @@ def tt(
         policy_date_str=policy_date_str,
         policy_environment=policy_environment,
         orig_policy_objects=orig_policy_objects,
+        unit_system=unit_system,
         processed_data=processed_data,
         labels=labels,
         backend=backend,
@@ -166,6 +170,7 @@ def _get_tt_dag_with_node_metadata(
     policy_date_str: DashedISOString | None = None,
     policy_environment: PolicyEnvironment | None = None,
     orig_policy_objects: OrigPolicyObjects | None = None,
+    unit_system: UnitSystem | None = None,
     processed_data: QNameData | None = None,
     labels: Labels | None = None,
     backend: Literal["numpy", "jax"] = "numpy",
@@ -192,6 +197,7 @@ def _get_tt_dag_with_node_metadata(
         ],
         policy_date_str=policy_date_str,
         orig_policy_objects=orig_policy_objects,
+        unit_system=unit_system,
         policy_environment=policy_environment,
         tt_targets=tt_targets,
         input_data=input_data,

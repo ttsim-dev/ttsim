@@ -27,6 +27,7 @@ from ttsim.interface_dag_elements.unit_checks import (
     fail_if_environment_units_are_missing,
 )
 from ttsim.main_args import InputData, OrigPolicyObjects, TTTargets
+from ttsim.tt.currencies import UnitSystem
 from ttsim.typing import (
     FlatColumnObjectsParamFunctions,
     FlatOrigParamSpecs,
@@ -45,11 +46,13 @@ def cached_policy_environment(
     policy_date: datetime.date,
     root: Path,
     backend: Literal["numpy", "jax"],
+    unit_system: UnitSystem,
 ) -> PolicyEnvironment:
     return main(
         main_target="policy_environment",
         policy_date=policy_date,
         orig_policy_objects=OrigPolicyObjects.root(root),
+        unit_system=unit_system,
         backend=backend,
         include_fail_nodes=True,
         include_warn_nodes=False,
@@ -103,12 +106,14 @@ def execute_test(
     test: PolicyTest,
     root: Path,
     backend: Literal["numpy", "jax"],
+    unit_system: UnitSystem,
     default_data_currency: str | None = None,
 ) -> None:
     environment = cached_policy_environment(
         policy_date=test.policy_date,
         root=root,
         backend=backend,
+        unit_system=unit_system,
     )
     if test.target_structure:
         result_df = main(
@@ -119,6 +124,7 @@ def execute_test(
             tt_targets=TTTargets.tree(test.target_structure),
             rounding=True,
             backend=backend,
+            unit_system=unit_system,
             data_currency=test.info.get("data_currency", default_data_currency),
             include_fail_nodes=True,
             include_warn_nodes=False,
@@ -255,11 +261,13 @@ def check_env_completeness(
     orig_policy_objects: dict[
         str, FlatColumnObjectsParamFunctions | FlatOrigParamSpecs
     ],
+    unit_system: UnitSystem,
 ) -> None:
     qname_env_with_derived_functions = main(
         main_target="specialized_environment_for_plotting_and_templates__without_tree_logic_and_with_derived_functions",
         policy_date=policy_date,
         orig_policy_objects=OrigPolicyObjects(**orig_policy_objects),
+        unit_system=unit_system,
         backend="numpy",
     )
     all_nodes = {
@@ -299,6 +307,7 @@ def check_env_units(
     orig_policy_objects: dict[
         str, FlatColumnObjectsParamFunctions | FlatOrigParamSpecs
     ],
+    unit_system: UnitSystem,
 ) -> None:
     """Run the unit checks over the full environment at a policy date.
 
@@ -319,6 +328,7 @@ def check_env_units(
         ],
         policy_date=policy_date,
         orig_policy_objects=OrigPolicyObjects(**orig_policy_objects),
+        unit_system=unit_system,
         backend="numpy",
     )
     env = targets["specialized_environment_for_plotting_and_templates"][
@@ -326,4 +336,6 @@ def check_env_units(
     ]
     grouping_levels = targets["labels"]["grouping_levels"]
     fail_if_environment_units_are_missing(env=env, grouping_levels=grouping_levels)
-    fail_if_environment_units_are_inconsistent(env=env, grouping_levels=grouping_levels)
+    fail_if_environment_units_are_inconsistent(
+        env=env, grouping_levels=grouping_levels, unit_system=unit_system
+    )

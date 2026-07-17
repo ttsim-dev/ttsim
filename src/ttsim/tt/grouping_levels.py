@@ -1,22 +1,23 @@
 """Registration of grouping levels as pint base dimensions (GEP 10).
 
 The registration *operations* for the per-build grouping levels (the individual
-``person`` leaf and one per ``*_id`` group column). The level state and the
-dimension helpers a declaration is resolved against live in
-:mod:`ttsim.tt.units`; this module reads and mutates that shared state.
+``person`` leaf and one per ``*_id`` group column). A level's *dimension* lives
+in a policy system's registry, so :func:`register_grouping_levels` takes one;
+the fluent builder step it also adds sits on :class:`CompositeUnit`, which is a
+plain value shared by every system.
 """
 
 from __future__ import annotations
 
 from collections.abc import Iterable
 
+import pint
+
 from ttsim.tt.units import (
     _ALLOWED_UNIT_TOKENS,
     PERSON_LEVEL,
-    UNIT_REGISTRY,
     CompositeUnit,
     _grouping_level_unit_name,
-    _registered_grouping_levels,
     _unit_builder_levels,
 )
 
@@ -40,8 +41,8 @@ def register_unit_builder_levels(names: Iterable[str]) -> None:
         )
 
 
-def register_grouping_levels(names: Iterable[str]) -> None:
-    """Register grouping levels as base dimensions in the registry.
+def register_grouping_levels(names: Iterable[str], registry: pint.UnitRegistry) -> None:
+    """Register grouping levels as base dimensions in a policy system's registry.
 
     Each grouping level — the individual ``person`` (the leaf, identified by
     ``p_id``) and one per ``*_id`` group column (``hh``, ``bg``, ``fg``, …) — is
@@ -57,20 +58,21 @@ def register_grouping_levels(names: Iterable[str]) -> None:
 
     Each level is defined under an internal :data:`_GROUPING_LEVEL_PREFIX`-prefixed
     pint name anchoring a fresh base dimension and added to the closed pint-token
-    vocabulary. Re-registering an already-known level is a tolerated no-op,
-    mirroring :func:`register_currency`.
+    vocabulary. Whether a level is already known is asked of ``registry`` itself,
+    so every system's registry gets its own dimension for the levels it uses —
+    including the ``person`` leaf every system shares. Re-registering an
+    already-known level is a tolerated no-op.
 
     Args:
         names: The grouping-level names to register (e.g. ``["hh", "bg"]``).
             ``person`` is added unconditionally.
+        registry: The policy system's registry to define the dimensions in.
     """
     for name in (PERSON_LEVEL, *names):
-        if name in _registered_grouping_levels:
-            continue
         unit_name = _grouping_level_unit_name(name)
-        UNIT_REGISTRY.define(f"{unit_name} = [{unit_name}]")
+        if unit_name not in registry:
+            registry.define(f"{unit_name} = [{unit_name}]")
         _ALLOWED_UNIT_TOKENS.add(unit_name)
-        _registered_grouping_levels.add(name)
     # Packages that use the builder at import time call
     # `register_unit_builder_levels` directly, before their declarations run.
     register_unit_builder_levels(names)

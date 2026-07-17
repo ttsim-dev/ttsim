@@ -27,6 +27,7 @@ build time; no live array is ever wrapped.
 from __future__ import annotations
 
 import dataclasses
+import functools
 import inspect
 import re
 import sys
@@ -57,6 +58,7 @@ from ttsim.tt.column_objects_param_function import (
     PolicyFunction,
     PolicyInput,
 )
+from ttsim.tt.currencies import UnitSystem
 from ttsim.tt.grouping_levels import register_grouping_levels
 from ttsim.tt.param_objects import (
     DictParam,
@@ -76,7 +78,6 @@ from ttsim.tt.units import (
     _QNAME_TIME_SUFFIX_PATTERN,
     PERSON_LEVEL,
     TIME_UNIT_ID_TO_PINT_NAME,
-    UNIT_REGISTRY,
     UNSET_UNIT,
     CompositeUnit,
     UnitAnnotatedColumn,
@@ -214,16 +215,17 @@ _BOOL_KINDS = frozenset({ResolvedKind.BOOL_SCALAR, ResolvedKind.BOOL_COLUMN})
 #: The logical operators a dry-run screens for boolean (dimensionless) operands.
 _LOGICAL_OPS = frozenset({"&", "|", "^", "~"})
 
-#: The dimensionless unit, used when reporting a logical op's bare operand.
-_DIMENSIONLESS_UNIT: pint.Unit = cast(
-    "pint.Unit", UNIT_REGISTRY.Quantity(1.0, "").units
-)
+
+def _dimensionless_unit(registry: pint.UnitRegistry) -> pint.Unit:
+    """The dimensionless unit, used when reporting a logical op's bare operand."""
+    return registry.dimensionless
 
 
 @interface_function()
 def resolved_units(
     specialized_environment__without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,  # noqa: E501
     labels__grouping_levels: OrderedQNames,
+    unit_system: UnitSystem,
 ) -> dict[str, pint.Unit | dict[str | int, Any]]:
     """The resolved pint unit of every annotated node in the environment.
 
@@ -235,12 +237,14 @@ def resolved_units(
     return resolve_environment_units(
         env=specialized_environment__without_tree_logic_and_with_derived_functions,
         grouping_levels=labels__grouping_levels,
+        unit_system=unit_system,
     )
 
 
 def resolve_environment_units(
     env: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
     grouping_levels: OrderedQNames,
+    unit_system: UnitSystem,
 ) -> dict[str, pint.Unit | dict[str | int, Any]]:
     """Resolve the complete unit of every annotated node in the environment.
 
@@ -253,7 +257,8 @@ def resolve_environment_units(
     A node that declares no unit (still :data:`UNSET_UNIT`) is absent from the
     result; the mandatory-units check reports it.
     """
-    register_grouping_levels(grouping_levels)
+    registry = unit_system.registry
+    register_grouping_levels(names=grouping_levels, registry=registry)
     pattern = get_re_pattern_for_all_time_units_and_groupings(
         time_units=tuple(TIME_UNIT_IDS_TO_LABELS),
         grouping_levels=grouping_levels,
@@ -261,7 +266,11 @@ def resolve_environment_units(
     resolved: dict[str, pint.Unit | dict[str | int, Any]] = {
         # `parse_unit` guides declarations to the DIMENSIONLESS token, so the
         # framework-internal ordinal spelling resolves directly.
-        qname: (_DIMENSIONLESS_UNIT if unit == "dimensionless" else parse_unit(unit))
+        qname: (
+            _dimensionless_unit(registry)
+            if unit == "dimensionless"
+            else parse_unit(unit_str=unit, registry=registry)
+        )
         for qname, unit in FRAMEWORK_DATE_NODE_UNITS.items()
         if qname in env
     }
@@ -273,17 +282,34 @@ def resolve_environment_units(
             match = pattern.fullmatch(leaf_name)
             name_time_unit_id = match.group("time_unit") if match else None
             param_unit = _resolve_param_object_unit(
-                qname=qname, obj=obj, name_time_unit_id=name_time_unit_id
+                qname=qname,
+                obj=obj,
+                registry=registry,
+                name_time_unit_id=name_time_unit_id,
             )
             if param_unit is not None:
                 resolved[qname] = param_unit
         elif isinstance(obj, AggByGroupFunction):
             agg_unit = _resolve_agg_by_group_unit(
-                qname=qname, obj=obj, env=env, pattern=pattern
+                qname=qname, obj=obj, env=env, pattern=pattern, registry=registry
             )
             if agg_unit is not None:
                 resolved[qname] = agg_unit
-        else:  # ColumnObject | ParamFunction
+        elif isinstance(obj, ParamFunction) and _returns_a_schedule(obj):
+            token = getattr(obj, "unit", UNSET_UNIT)
+            if token is not UNSET_UNIT:
+                # A schedule-returning param function's `unit=` is its schedule's
+                # OUTPUT axis (as a require_converter's `output_unit:` is), not a
+                # column unit: resolve it the parameter way — concrete currency
+                # allowed, no name-suffix rules — so `look_up`/`piecewise_polynomial`
+                # consumers screen against it. The raw-axis derivation stays the
+                # fallback when the function declares `unit=UNSET_UNIT` (GEP 10).
+                resolved[qname] = resolve_compositional_param_unit(
+                    unit=cast("CompositeUnit", token),
+                    registry=registry,
+                    where=f"Schedule param function {qname!r}",
+                )
+        else:  # ColumnObject | scalar ParamFunction
             token = getattr(obj, "unit", UNSET_UNIT)
             if token is not UNSET_UNIT:
                 leaf_name = dt.tree_path_from_qname(qname)[-1]
@@ -291,14 +317,21 @@ def resolve_environment_units(
                 resolved[qname] = _resolve_leveled_column_unit(
                     token=cast("CompositeUnit", token),
                     match=match,
+                    registry=registry,
                     is_boolean=node_is_boolean(qname=qname, obj=obj),
                 )
     return resolved
 
 
+def _returns_a_schedule(obj: ParamFunction) -> bool:
+    """Whether a param function is annotated as returning a schedule/lookup value."""
+    return _return_annotation_name(obj.function) in _SCHEDULE_RETURN_TYPE_NAMES
+
+
 def _resolve_leveled_column_unit(
     token: CompositeUnit,
     match: re.Match[str] | None,
+    registry: pint.UnitRegistry,
     *,
     is_boolean: bool = False,
 ) -> pint.Unit:
@@ -320,6 +353,7 @@ def _resolve_leveled_column_unit(
         time_unit_id=time_unit_id,
         grouping_level=grouping_level,
         where="A column/function",
+        registry=registry,
         is_boolean=is_boolean,
     )
 
@@ -337,7 +371,10 @@ def _argument_is_person_pointer(qname: str) -> bool:
 
 
 def _resolve_opted_out_agg_unit(
-    qname: str, obj: AggByGroupFunction, match: re.Match[str] | None
+    qname: str,
+    obj: AggByGroupFunction,
+    match: re.Match[str] | None,
+    registry: pint.UnitRegistry,
 ) -> pint.Unit | None:
     """Resolve an opted-out aggregation from its declared unit, like a column.
 
@@ -351,6 +388,7 @@ def _resolve_opted_out_agg_unit(
     return _resolve_leveled_column_unit(
         token=cast("CompositeUnit", token),
         match=match,
+        registry=registry,
         is_boolean=node_is_boolean(qname=qname, obj=obj),
     )
 
@@ -360,6 +398,7 @@ def _resolve_agg_by_group_unit(
     obj: AggByGroupFunction,
     env: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
     pattern: re.Pattern[str],
+    registry: pint.UnitRegistry,
 ) -> pint.Unit | None:
     """Resolve a group-aggregation node's unit, level-aware.
 
@@ -388,14 +427,16 @@ def _resolve_agg_by_group_unit(
     """
     match = pattern.fullmatch(dt.tree_path_from_qname(qname)[-1])
     if not obj.verify_units:
-        return _resolve_opted_out_agg_unit(qname=qname, obj=obj, match=match)
+        return _resolve_opted_out_agg_unit(
+            qname=qname, obj=obj, match=match, registry=registry
+        )
     target_level = _suffix_grouping_level(match)
     agg_type = obj.agg_type
     # COUNT and ANY/ALL are independent of the source's unit, so resolve them
     # before touching the source: well-defined even when the source declares none.
     if agg_type in (AggType.COUNT, AggType.ANY, AggType.ALL):
         return resolved_unit_for_aggregation(
-            agg_type=agg_type, target_level=target_level
+            agg_type=agg_type, target_level=target_level, registry=registry
         )
     sources = {
         p
@@ -422,12 +463,13 @@ def _resolve_agg_by_group_unit(
         is AggType.COUNT
     ):
         return resolved_unit_for_aggregation(
-            agg_type=AggType.COUNT, target_level=target_level
+            agg_type=AggType.COUNT, target_level=target_level, registry=registry
         )
     source_match = pattern.fullmatch(dt.tree_path_from_qname(source_qname)[-1])
     source_unit = _resolve_leveled_column_unit(
         token=cast("CompositeUnit", source_token),
         match=source_match,
+        registry=registry,
         is_boolean=source_is_boolean,
     )
     # Read the source's level off its *resolved* unit, not its declared token: the
@@ -438,6 +480,7 @@ def _resolve_agg_by_group_unit(
         agg_type=agg_type,
         target_level=target_level,
         source_level=source_level,
+        registry=registry,
     )
 
 
@@ -458,7 +501,9 @@ def _has_grouping_level_numerator(unit: pint.Unit) -> bool:
     return any(exponent > 0 for _, exponent in _grouping_levels_with_exponent(unit))
 
 
-def _boolean_level(unit: pint.Unit) -> tuple[bool, str | None]:
+def _boolean_level(
+    unit: pint.Unit, registry: pint.UnitRegistry
+) -> tuple[bool, str | None]:
     """Classify a unit as a (possibly leveled) boolean and read its level.
 
     A boolean is a truth value: dimensionless apart from at most a single grouping
@@ -473,23 +518,23 @@ def _boolean_level(unit: pint.Unit) -> tuple[bool, str | None]:
     """
     if _has_grouping_level_numerator(unit):
         return (False, None)
-    if not UNIT_REGISTRY.Quantity(
-        1.0, _unit_without_grouping_levels(unit)
+    if not registry.Quantity(
+        1.0, _unit_without_grouping_levels(unit=unit, registry=registry)
     ).dimensionless:
         return (False, None)
     return (True, _unit_level_denominator(unit))
 
 
-def _boolean_quantity(level: str | None) -> pint.Quantity:
+def _boolean_quantity(level: str | None, registry: pint.UnitRegistry) -> pint.Quantity:
     """A representative boolean ``Quantity`` at ``level`` — ``1 / [level]``.
 
     ``_boolean_quantity("fam")`` is ``1 / [fam]`` (a fam-level indicator);
     ``_boolean_quantity(None)`` is a plain dimensionless ``1`` (a level-less flag).
     """
-    truth = UNIT_REGISTRY.Quantity(1.0, "")
+    truth = registry.Quantity(1.0, "")
     if level is None:
         return truth
-    return truth / UNIT_REGISTRY.Quantity(1.0, f"{_GROUPING_LEVEL_PREFIX}{level}")
+    return truth / registry.Quantity(1.0, f"{_GROUPING_LEVEL_PREFIX}{level}")
 
 
 def _combined_boolean_level(left: str | None, right: str | None) -> str | None:
@@ -513,7 +558,7 @@ def fail_if_environment_units_are_missing(
 ) -> None:
     """Mandatory-units check over a fully assembled environment.
 
-    Every active node must declare a unit, where ``unit=Unit.DIMENSIONLESS`` /
+    Every active node must declare a unit, where ``unit=TTSIMUnit.DIMENSIONLESS`` /
     ``unit: DIMENSIONLESS`` *is* a declaration (a dimensionless quantity):
 
     - a dict or require_converter parameter with per-leaf units must cover every
@@ -584,6 +629,7 @@ def _agg_declaration_inconsistency(
     qname: str,
     obj: AggByGroupFunction,
     resolved_units: Mapping[str, pint.Unit | dict[str | int, Any]],
+    registry: pint.UnitRegistry,
 ) -> str | None:
     """Error message if an aggregation's declared unit ≠ what it derives.
 
@@ -617,10 +663,12 @@ def _agg_declaration_inconsistency(
     if derived is None or isinstance(derived, dict) or declared_token is UNSET_UNIT:
         return None
     declared_unit = resolve_compositional_param_unit(
-        unit=cast("CompositeUnit", declared_token), where=f"Aggregation {qname!r}"
+        unit=cast("CompositeUnit", declared_token),
+        registry=registry,
+        where=f"Aggregation {qname!r}",
     )
     derived_unit = cast("pint.Unit", derived)
-    if units_are_equivalent(left=declared_unit, right=derived_unit):
+    if units_are_equivalent(left=declared_unit, right=derived_unit, registry=registry):
         return None
     return (
         f"{qname}: declares `{declared_token}` but its {obj.agg_type.name} "
@@ -635,6 +683,7 @@ def _agg_declaration_inconsistency(
 def _aggregation_declaration_errors(
     env: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
     resolved_units: Mapping[str, pint.Unit | dict[str | int, Any]],
+    registry: pint.UnitRegistry,
 ) -> list[str]:
     """Declared-vs-derived errors for every group aggregation."""
     return [
@@ -643,7 +692,7 @@ def _aggregation_declaration_errors(
         if isinstance(obj, AggByGroupFunction)
         and (
             error := _agg_declaration_inconsistency(
-                qname=qname, obj=obj, resolved_units=resolved_units
+                qname=qname, obj=obj, resolved_units=resolved_units, registry=registry
             )
         )
         is not None
@@ -681,7 +730,7 @@ def _rounding_spec_declaration_inconsistency(
     if token_is_agnostic_currency(spec.unit):
         return (
             f"{qname}: the rounding spec's magnitudes are written in a concrete "
-            f"currency; declare it (e.g. `Unit.DM.PER_YEAR`), not the agnostic "
+            f"currency; declare it (e.g. `TTSIMUnit.DM.PER_YEAR`), not the agnostic "
             f"`{spec.unit}` (GEP 10)."
         )
     if token_source_currency(spec.unit) is None:
@@ -715,6 +764,7 @@ def _rounding_spec_declaration_errors(
 def fail_if_environment_units_are_inconsistent(
     env: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
     grouping_levels: OrderedQNames,
+    unit_system: UnitSystem,
     resolved_units: dict[str, pint.Unit | dict[str | int, Any]] | None = None,
 ) -> None:
     """Conservative body/edge verification over an assembled environment.
@@ -746,12 +796,13 @@ def fail_if_environment_units_are_inconsistent(
             with its declaration, or an aggregation's declared unit disagrees
             with what it derives. All offending nodes are reported together.
     """
+    registry = unit_system.registry
     if resolved_units is None:
         resolved_units = resolve_environment_units(
-            env=env, grouping_levels=grouping_levels
+            env=env, grouping_levels=grouping_levels, unit_system=unit_system
         )
     representative_values = _representative_values_by_qname(
-        env=env, resolved_units=resolved_units
+        env=env, resolved_units=resolved_units, unit_system=unit_system
     )
     boolean_nodes = {
         qname
@@ -760,30 +811,65 @@ def fail_if_environment_units_are_inconsistent(
         and node_is_boolean(qname=qname, obj=obj)
     }
     errors: list[str] = _aggregation_declaration_errors(
-        env=env, resolved_units=resolved_units
+        env=env, resolved_units=resolved_units, registry=registry
     )
     errors.extend(_rounding_spec_declaration_errors(env=env))
     errors.extend(_axes_converter_contract_errors(env=env))
     errors.extend(
-        _structured_annotation_drift_errors(env=env, resolved_units=resolved_units)
+        _structured_annotation_drift_errors(
+            env=env, resolved_units=resolved_units, unit_system=unit_system
+        )
     )
+    errors.extend(
+        _body_verification_errors(
+            env=env,
+            resolved_units=resolved_units,
+            representative_values=representative_values,
+            boolean_nodes=boolean_nodes,
+            unit_system=unit_system,
+        )
+    )
+    if errors:
+        raise UnitConsistencyError(
+            "Environment unit-consistency check failed:\n  " + "\n  ".join(errors)
+        )
+
+
+def _body_verification_errors(
+    env: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
+    resolved_units: Mapping[str, pint.Unit | dict[str | int, Any]],
+    representative_values: Mapping[str, Any],
+    boolean_nodes: set[str],
+    unit_system: UnitSystem,
+) -> list[str]:
+    """Dry-run every human-written scalar body and collect its inference errors.
+
+    Only ``@policy_function`` / ``@param_function`` bodies are dry-run; everything
+    else (aggregations, time-conversions, group ids) is unit-assigned by
+    construction. A body is skipped when it is an unimplemented-period stub, has
+    no resolved unit, opts out (``verify_units=False``), declares a structured
+    unit, or has an unannotated producer.
+    """
+    registry = unit_system.registry
+    # The helper shims close over this run's registry, so they are built per run
+    # rather than once at import.
+    dry_run_helper_shims, explorer_holder = _dry_run_helper_shims(
+        unit_system=unit_system
+    )
+    errors: list[str] = []
     for qname, obj in env.items():
-        # Only these two have a human-written scalar body; everything else
-        # (aggregations validated above, time-conversions, group ids) is assigned
-        # by construction.
         if not isinstance(obj, PolicyFunction | ParamFunction):
             continue
         if getattr(obj, "fail_msg_if_included", None) is not None:
-            # A placeholder for an unimplemented period: it raises when reached, so
-            # its stub body carries no unit semantics. The declared unit still stands
-            # as the edge contract (like an explicit opt-out).
             continue
-        if qname not in resolved_units:
-            # Still UNSET — the mandatory-units check reports it.
+        if isinstance(obj, ParamFunction) and _returns_a_schedule(obj):
+            # Its body builds a lookup/piecewise table, not a scalar; the declared
+            # unit is the schedule's output contract (screened at the consumer's
+            # `look_up`/`piecewise_polynomial`), so there is no scalar body to infer.
             continue
-        if not obj.verify_units:
-            # Body opted out of unit inference; its declared unit still stands as
-            # the edge contract, so consumers are still checked.
+        if qname not in resolved_units or not obj.verify_units:
+            # Still UNSET (the mandatory-units check reports it), or the body
+            # opted out — its declared unit stays the edge contract either way.
             continue
         declared = resolved_units[qname]
         if isinstance(declared, dict):
@@ -801,7 +887,7 @@ def fail_if_environment_units_are_inconsistent(
         # leveled boolean carries its level into the body while only its truth value
         # is explorer-controlled; an unresolved producer falls back to level-less.
         boolean_values = {
-            name: representative_values.get(name, UNIT_REGISTRY.Quantity(1.0, ""))
+            name: representative_values.get(name, registry.Quantity(1.0, ""))
             for name in boolean_parameters
         }
         error = _verify_one_body(
@@ -810,18 +896,17 @@ def fail_if_environment_units_are_inconsistent(
                 func=obj.function,
                 module="xnp",
                 module_obj=_NON_UNIT_ARGUMENT_VALUES["xnp"],
-                extra_globals=_DRY_RUN_HELPER_SHIMS,
+                extra_globals=dry_run_helper_shims,
             ),
             declared=declared,
             boolean_values=boolean_values,
             base_kwargs=base_kwargs,
+            unit_system=unit_system,
+            explorer_holder=explorer_holder,
         )
         if error is not None:
             errors.append(error)
-    if errors:
-        raise UnitConsistencyError(
-            "Environment unit-consistency check failed:\n  " + "\n  ".join(errors)
-        )
+    return errors
 
 
 def fail_if_not_all_leaves_are_unit_annotated_columns(
@@ -850,7 +935,7 @@ def fail_if_not_all_leaves_are_unit_annotated_columns(
             "input_data__tree_with_unit_annotations requires every leaf to be a "
             "UnitAnnotatedColumn (GEP 10), but these are bare: "
             f"{', '.join(untagged)}. Tag a dimensionless column (an id, a boolean) "
-            "with `UnitAnnotatedColumn(values=arr, unit=Unit.DIMENSIONLESS)`, or "
+            "with `UnitAnnotatedColumn(values=arr, unit=TTSIMUnit.DIMENSIONLESS)`, or "
             "pass untagged data via input_data__tree."
         )
 
@@ -858,11 +943,12 @@ def fail_if_not_all_leaves_are_unit_annotated_columns(
 def fail_if_input_units_are_inconsistent(
     input_units: Mapping[str, pint.Unit],
     resolved_units: Mapping[str, Any],
+    unit_system: UnitSystem,
 ) -> None:
     """Fail if an input column's tag disagrees with the unit declared for it.
 
     Two units meet here: the input column's **tag** (the unit the user attaches
-    to the data, ``UnitAnnotatedColumn(..., unit=Unit.EUR.PER_MONTH)``) and the
+    to the data, ``UnitAnnotatedColumn(..., unit=TTSIMUnit.EUR.PER_MONTH)``) and the
     unit **declared for that column in the policy environment** (its ``unit=`` /
     ``unit:``). They must agree, checked on three axes:
 
@@ -887,13 +973,16 @@ def fail_if_input_units_are_inconsistent(
         UnitConsistencyError: If any tagged column disagrees with the unit
             declared for it. All offending columns are reported together.
     """
+    registry = unit_system.registry
     errors: list[str] = []
     for qname, tag in input_units.items():
         expected = resolved_units.get(qname)
         if not isinstance(expected, pint.Unit):
             # No scalar declared unit (absent, or a dict parameter); nothing to check.
             continue
-        if unit_has_currency_component(tag) != unit_has_currency_component(expected):
+        if unit_has_currency_component(
+            units=tag, registry=registry
+        ) != unit_has_currency_component(units=expected, registry=registry):
             errors.append(
                 f"  {qname}: tagged '{tag}' but declared '{expected}' — one carries "
                 f"a currency and the other does not, so the boundary would silently "
@@ -911,9 +1000,15 @@ def fail_if_input_units_are_inconsistent(
                 f"the name suffix (GEP 10)."
             )
             continue
-        tag_residual = unit_residual_excluding_currency_and_flow_period(tag)
-        expected_residual = unit_residual_excluding_currency_and_flow_period(expected)
-        if not units_are_equivalent(left=tag_residual, right=expected_residual):
+        tag_residual = unit_residual_excluding_currency_and_flow_period(
+            units=tag, registry=registry
+        )
+        expected_residual = unit_residual_excluding_currency_and_flow_period(
+            units=expected, registry=registry
+        )
+        if not units_are_equivalent(
+            left=tag_residual, right=expected_residual, registry=registry
+        ):
             errors.append(
                 f"  {qname}: tagged '{tag}', which is not equivalent to the declared "
                 f"unit '{expected}' (the boundary converts currency and screens the "
@@ -991,6 +1086,7 @@ def _resolve_param_mapping_object_units(
     qname: str,
     obj: ParamMappingObject,
     name_time_unit_id: str | None,
+    registry: pint.UnitRegistry,
 ) -> pint.Unit | None:
     """Resolve a mapping parameter's per-axis unit declarations.
 
@@ -1025,14 +1121,17 @@ def _resolve_param_mapping_object_units(
             qname=qname,
             output_token=output_token,
             name_time_unit_id=name_time_unit_id,
+            registry=registry,
         )
     input_token = tokens["input_unit"]
     if input_token is not UNSET_UNIT:
-        resolve_compositional_param_unit(unit=input_token, where=f"Parameter {qname!r}")
+        resolve_compositional_param_unit(
+            unit=input_token, registry=registry, where=f"Parameter {qname!r}"
+        )
     if output_token is UNSET_UNIT:
         return None
     return resolve_compositional_param_unit(
-        unit=output_token, where=f"Parameter {qname!r}"
+        unit=output_token, registry=registry, where=f"Parameter {qname!r}"
     )
 
 
@@ -1040,6 +1139,7 @@ def _fail_if_name_suffix_disagrees_with_output_axis(
     qname: str,
     output_token: Any,  # noqa: ANN401
     name_time_unit_id: str,
+    registry: pint.UnitRegistry,
 ) -> None:
     """Check the name-suffix ⟺ flow-output coincidence rules.
 
@@ -1054,13 +1154,17 @@ def _fail_if_name_suffix_disagrees_with_output_axis(
             f"`output_unit:` is {_spell_token(output_token)} (GEP 10)."
         )
     resolve_compositional_param_unit(
-        unit=output_token, time_unit_id=name_time_unit_id, where=f"Parameter {qname!r}"
+        unit=output_token,
+        registry=registry,
+        time_unit_id=name_time_unit_id,
+        where=f"Parameter {qname!r}",
     )
 
 
 def _resolve_param_object_unit(
     qname: str,
     obj: ParamObject,
+    registry: pint.UnitRegistry,
     name_time_unit_id: str | None = None,
 ) -> pint.Unit | dict[str | int, Any] | None:
     """Resolve a parameter's declared compositional unit.
@@ -1078,13 +1182,18 @@ def _resolve_param_object_unit(
     """
     if isinstance(obj, ParamMappingObject):
         return _resolve_param_mapping_object_units(
-            qname=qname, obj=obj, name_time_unit_id=name_time_unit_id
+            qname=qname,
+            obj=obj,
+            name_time_unit_id=name_time_unit_id,
+            registry=registry,
         )
     if obj.unit is UNSET_UNIT:
         return None
     if isinstance(obj.unit, Mapping):
         return _resolve_unit_mapping(
-            qname=qname, unit_mapping=cast("Mapping[str | int, Any]", obj.unit)
+            qname=qname,
+            unit_mapping=cast("Mapping[str | int, Any]", obj.unit),
+            registry=registry,
         )
     token = cast("CompositeUnit", obj.unit)
     _fail_if_param_token_is_agnostic_currency(token=token, where=f"Parameter {qname!r}")
@@ -1092,6 +1201,7 @@ def _resolve_param_object_unit(
     # dict/raw parameter has no single name to suffix.
     return resolve_compositional_param_unit(
         unit=token,
+        registry=registry,
         time_unit_id=name_time_unit_id if isinstance(obj, ScalarParam) else None,
         where=f"Parameter {qname!r}",
     )
@@ -1100,6 +1210,7 @@ def _resolve_param_object_unit(
 def _resolve_unit_mapping(
     qname: str,
     unit_mapping: Mapping[str | int, Any],
+    registry: pint.UnitRegistry,
 ) -> dict[str | int, Any]:
     """Resolve a per-leaf ``unit:`` mapping to pint units.
 
@@ -1111,38 +1222,53 @@ def _resolve_unit_mapping(
     resolved: dict[str | int, Any] = {}
     for key, token in unit_mapping.items():
         if isinstance(token, Mapping):
-            resolved[key] = _resolve_unit_mapping(qname=qname, unit_mapping=token)
+            resolved[key] = _resolve_unit_mapping(
+                qname=qname, unit_mapping=token, registry=registry
+            )
             continue
         where = f"Parameter {qname!r}, unit of leaf {key!r}"
         _fail_if_param_token_is_agnostic_currency(token=token, where=where)
         match = _QNAME_TIME_SUFFIX_PATTERN.search(str(key))
         suffix_id = match.group("time_unit") if match else None
         resolved[key] = resolve_compositional_param_unit(
-            unit=cast("CompositeUnit", token), time_unit_id=suffix_id, where=where
+            unit=cast("CompositeUnit", token),
+            registry=registry,
+            time_unit_id=suffix_id,
+            where=where,
         )
     return resolved
 
 
 def _representative_value(
     resolved_unit: pint.Unit | dict[str | int, Any],
+    registry: pint.UnitRegistry,
 ) -> Any:  # noqa: ANN401
     """A representative dry-run value: ``Quantity(1.0, unit)``, or a dict thereof."""
     if isinstance(resolved_unit, dict):
         return {
-            key: _representative_value(cast("pint.Unit | dict[str | int, Any]", unit))
+            key: _representative_value(
+                resolved_unit=cast("pint.Unit | dict[str | int, Any]", unit),
+                registry=registry,
+            )
             for key, unit in resolved_unit.items()
         }
-    return UNIT_REGISTRY.Quantity(1.0, resolved_unit)
+    return registry.Quantity(1.0, resolved_unit)
 
 
-def _uniform_quantity_tree(value: Any, resolved_unit: pint.Unit) -> Any:  # noqa: ANN401
+def _uniform_quantity_tree(
+    value: Any,  # noqa: ANN401
+    resolved_unit: pint.Unit,
+    registry: pint.UnitRegistry,
+) -> Any:  # noqa: ANN401
     """Mirror a dict param's value structure with uniform representative quantities."""
     if isinstance(value, Mapping):
         return {
-            key: _uniform_quantity_tree(value=sub_value, resolved_unit=resolved_unit)
+            key: _uniform_quantity_tree(
+                value=sub_value, resolved_unit=resolved_unit, registry=registry
+            )
             for key, sub_value in value.items()
         }
-    return UNIT_REGISTRY.Quantity(1.0, resolved_unit)
+    return registry.Quantity(1.0, resolved_unit)
 
 
 #: The unqualified return-annotation names the axes contract accepts: the two
@@ -1186,6 +1312,7 @@ def _axes_declaring_raw_dependencies(
 def _resolved_raw_param_axis(
     token: Any,  # noqa: ANN401
     qname: str,
+    registry: pint.UnitRegistry,
 ) -> pint.Unit | None:
     """Resolve one declared axis of an input/output-unit ``require_converter``."""
     if token is UNSET_UNIT:
@@ -1193,7 +1320,9 @@ def _resolved_raw_param_axis(
     where = f"Parameter {qname!r}"
     unit_token = cast("CompositeUnit", token)
     _fail_if_param_token_is_agnostic_currency(token=unit_token, where=where)
-    return resolve_compositional_param_unit(unit=unit_token, where=where)
+    return resolve_compositional_param_unit(
+        unit=unit_token, registry=registry, where=where
+    )
 
 
 def _resolved_return_dataclass(func: Any) -> type | None:  # noqa: ANN401
@@ -1217,19 +1346,14 @@ def _resolved_return_dataclass(func: Any) -> type | None:  # noqa: ANN401
     return obj if isinstance(obj, type) and dataclasses.is_dataclass(obj) else None
 
 
-#: Per-class memo of :func:`_structured_field_kinds`. ``None`` records a class
-#: whose annotations do not resolve at runtime. Field annotations are
-#: currency-agnostic by rule, so a cached resolution never goes stale when a
-#: currency registration is rolled back.
-_STRUCTURED_FIELD_KINDS: dict[type, dict[str, pint.Unit | type] | None] = {}
-
-
-def _structured_field_kinds(cls: type) -> dict[str, pint.Unit | type] | None:
+def _structured_field_kinds(
+    cls: type, unit_system: UnitSystem
+) -> dict[str, pint.Unit | type] | None:
     """Resolve a parameter dataclass's field annotations for the dry-run.
 
     Maps each field to what its pluck yields:
 
-    - an ``Annotated[<scalar>, Unit…]`` field → the resolved unit;
+    - an ``Annotated[<scalar>, TTSIMUnit…]`` field → the resolved unit;
     - a nested-dataclass field → its class (whose plucks resolve recursively);
     - anything else (a bare scalar, dict, array, schedule value) is absent — the
       pluck stays opaque and is cast at the site (GEP 10).
@@ -1237,16 +1361,20 @@ def _structured_field_kinds(cls: type) -> dict[str, pint.Unit | type] | None:
     Returns ``None`` when the annotations do not resolve at runtime (a name
     imported only under ``TYPE_CHECKING``), leaving every pluck opaque.
 
+    Memoized per class on ``unit_system``: a resolved unit belongs to that
+    system's registry, so the memo cannot be shared across systems.
+
     Raises:
         UnitDefinitionError: If a field annotates several units, annotates a
             non-scalar field, or pins a concrete currency.
     """
-    if cls in _STRUCTURED_FIELD_KINDS:
-        return _STRUCTURED_FIELD_KINDS[cls]
+    memo = unit_system.field_units_by_class
+    if cls in memo:
+        return memo[cls]
     try:
         hints = get_type_hints(cls, include_extras=True)
     except NameError:
-        _STRUCTURED_FIELD_KINDS[cls] = None
+        memo[cls] = None
         return None
     kinds: dict[str, pint.Unit | type] = {}
     for field in dataclasses.fields(cls):
@@ -1272,11 +1400,11 @@ def _structured_field_kinds(cls: type) -> dict[str, pint.Unit | type] | None:
                     f"single unit — cast at the pluck instead (GEP 10)."
                 )
             kinds[field.name] = resolve_compositional_field_unit(
-                unit=tokens[0], where=where
+                unit=tokens[0], registry=unit_system.registry, where=where
             )
         elif isinstance(base, type) and dataclasses.is_dataclass(base):
             kinds[field.name] = base
-    _STRUCTURED_FIELD_KINDS[cls] = kinds
+    memo[cls] = kinds
     return kinds
 
 
@@ -1303,12 +1431,16 @@ def _flatten_to_paths(
     return out
 
 
-def _annotated_field_units(cls: type) -> dict[tuple[str, ...], pint.Unit]:
+def _annotated_field_units(
+    cls: type, unit_system: UnitSystem
+) -> dict[tuple[str, ...], pint.Unit]:
     """Flatten a parameter dataclass's annotated field units to field paths."""
     return _flatten_to_paths(
         cls,
         is_leaf=lambda child: isinstance(child, pint.Unit),
-        items=lambda node: (_structured_field_kinds(node) or {}).items(),
+        items=lambda node: (
+            _structured_field_kinds(cls=node, unit_system=unit_system) or {}
+        ).items(),
     )
 
 
@@ -1326,6 +1458,7 @@ def _flattened_unit_mapping(
 def _structured_annotation_drift_errors(
     env: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
     resolved_units: Mapping[str, pint.Unit | dict[str | int, Any]],
+    unit_system: UnitSystem,
 ) -> list[str]:
     """YAML-vs-annotation drift check for dataclass-building converters.
 
@@ -1345,7 +1478,7 @@ def _structured_annotation_drift_errors(
         cls = _resolved_return_dataclass(obj.function)
         if cls is None:
             continue
-        field_units = _annotated_field_units(cls)
+        field_units = _annotated_field_units(cls=cls, unit_system=unit_system)
         if not field_units:
             continue
         for dep in sorted(obj.dependencies):
@@ -1360,7 +1493,7 @@ def _structured_annotation_drift_errors(
             for path, field_unit in sorted(field_units.items()):
                 leaf_unit = leaf_units.get(path)
                 if leaf_unit is None or units_are_equivalent(
-                    left=leaf_unit, right=field_unit
+                    left=leaf_unit, right=field_unit, registry=unit_system.registry
                 ):
                     continue
                 errors.append(
@@ -1377,6 +1510,7 @@ def _param_function_stand_in(
     qname: str,
     obj: ParamFunction,
     env: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
+    unit_system: UnitSystem,
 ) -> _DryRunSchedule | _DryRunStructuredValue:
     """The dry-run stand-in for a structured param-function output (GEP 10).
 
@@ -1398,16 +1532,23 @@ def _param_function_stand_in(
         and _return_annotation_name(obj.function) in _SCHEDULE_RETURN_TYPE_NAMES
     ):
         raw_qname, raw = axes_deps[0]
-        output_unit = _resolved_raw_param_axis(token=raw.output_unit, qname=raw_qname)
+        output_unit = _resolved_raw_param_axis(
+            token=raw.output_unit, qname=raw_qname, registry=unit_system.registry
+        )
         if output_unit is not None:
             return _DryRunSchedule(
                 input_unit=_resolved_raw_param_axis(
-                    token=raw.input_unit, qname=raw_qname
+                    token=raw.input_unit,
+                    qname=raw_qname,
+                    registry=unit_system.registry,
                 ),
                 output_unit=output_unit,
+                unit_system=unit_system,
             )
     return _DryRunStructuredValue(
-        producer=qname, cls=_resolved_return_dataclass(obj.function)
+        producer=qname,
+        unit_system=unit_system,
+        cls=_resolved_return_dataclass(obj.function),
     )
 
 
@@ -1478,7 +1619,9 @@ def _axes_converter_contract_errors(
     return errors
 
 
-def _resolve_schedule_input_unit(obj: ParamMappingObject) -> pint.Unit | None:
+def _resolve_schedule_input_unit(
+    obj: ParamMappingObject, registry: pint.UnitRegistry
+) -> pint.Unit | None:
     """The resolved ``input_unit`` of a schedule/lookup parameter, or ``None``.
 
     Resolved the same way as the ``output_unit`` the environment exposes, so a
@@ -1488,13 +1631,16 @@ def _resolve_schedule_input_unit(obj: ParamMappingObject) -> pint.Unit | None:
     if obj.input_unit is UNSET_UNIT:
         return None
     return resolve_compositional_param_unit(
-        unit=cast("CompositeUnit", obj.input_unit), where="A schedule input axis"
+        unit=cast("CompositeUnit", obj.input_unit),
+        registry=registry,
+        where="A schedule input axis",
     )
 
 
 def _representative_values_by_qname(
     env: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
     resolved_units: Mapping[str, pint.Unit | dict[str | int, Any]],
+    unit_system: UnitSystem,
 ) -> dict[str, Any]:
     """Representative dry-run values for every unit-resolved node.
 
@@ -1509,23 +1655,41 @@ def _representative_values_by_qname(
       declares input and output units for it, a :class:`_DryRunStructuredValue`
       otherwise.
     """
+    registry = unit_system.registry
     out: dict[str, Any] = {}
     for qname, unit in resolved_units.items():
         obj = env.get(qname)
         if isinstance(obj, ParamMappingObject) and not isinstance(unit, dict):
             out[qname] = _DryRunSchedule(
-                input_unit=_resolve_schedule_input_unit(obj),
+                input_unit=_resolve_schedule_input_unit(obj=obj, registry=registry),
                 output_unit=cast("pint.Unit", unit),
+                unit_system=unit_system,
+            )
+        elif (
+            isinstance(obj, ParamFunction)
+            and _returns_a_schedule(obj)
+            and not isinstance(unit, dict)
+        ):
+            # A schedule param function that declares its own output unit: its
+            # `look_up`/`piecewise_polynomial` yields that unit, the key unscreened.
+            out[qname] = _DryRunSchedule(
+                input_unit=None,
+                output_unit=cast("pint.Unit", unit),
+                unit_system=unit_system,
             )
         elif isinstance(obj, DictParam | RawParam) and not isinstance(unit, dict):
             out[qname] = _uniform_quantity_tree(
-                value=obj.value, resolved_unit=cast("pint.Unit", unit)
+                value=obj.value,
+                resolved_unit=cast("pint.Unit", unit),
+                registry=registry,
             )
         else:
-            out[qname] = _representative_value(unit)
+            out[qname] = _representative_value(resolved_unit=unit, registry=registry)
     for qname, obj in env.items():
         if isinstance(obj, ParamFunction) and obj.unit is UNSET_UNIT:
-            out[qname] = _param_function_stand_in(qname=qname, obj=obj, env=env)
+            out[qname] = _param_function_stand_in(
+                qname=qname, obj=obj, env=env, unit_system=unit_system
+            )
     return out
 
 
@@ -1686,7 +1850,7 @@ class _DryRunQuantity:
     the declaration — so the wrapper can never produce a false positive.
     """
 
-    __slots__ = ("_explorer", "_label", "q")
+    __slots__ = ("_explorer", "_label", "_unit_system", "q")
     # Keep NumPy from broadcasting over us: defer binary ops with a NumPy operand
     # to our reflected dunders instead.
     __array_ufunc__ = None
@@ -1697,24 +1861,37 @@ class _DryRunQuantity:
         self,
         q: Any,  # noqa: ANN401
         explorer: _PathExplorer,
+        unit_system: UnitSystem,
         label: str | None = None,
     ) -> None:
         self.q = q
         self._explorer = explorer
+        # The system whose registry `q` lives in — every unit the wrapper mints
+        # (a boolean's level, a dimensionless truth value) must land there too.
+        self._unit_system = unit_system
         # How the body's author would name this value — the argument name for a
         # direct input, a composed description for a comparison or logical
         # combination, ``None`` once arithmetic has mixed it beyond naming. Used
         # to report the branch a failure sits on (`_PathExplorer.branch_detail`).
         self._label = label
 
+    @property
+    def _registry(self) -> pint.UnitRegistry:
+        return self._unit_system.registry
+
     def _wrap(self, q: Any) -> _DryRunQuantity:  # noqa: ANN401
-        return _DryRunQuantity(q=q, explorer=self._explorer)
+        return _DryRunQuantity(
+            q=q, explorer=self._explorer, unit_system=self._unit_system
+        )
 
     def _controlled_bool_at(
         self, level: str | None, label: str | None = None
     ) -> _DryRunQuantity:
         return _DryRunQuantity(
-            q=_boolean_quantity(level), explorer=self._explorer, label=label
+            q=_boolean_quantity(level=level, registry=self._registry),
+            explorer=self._explorer,
+            unit_system=self._unit_system,
+            label=label,
         )
 
     def _composed_label(self, other: Any, op: str) -> str | None:  # noqa: ANN401
@@ -1757,13 +1934,15 @@ class _DryRunQuantity:
         mismatch downcasts to the per-person level. A bare literal carries no unit
         and stays a lenient, level-less boolean.
         """
-        self_is_boolean, self_level = _boolean_level(cast("pint.Unit", self.q.units))
+        self_is_boolean, self_level = _boolean_level(
+            unit=cast("pint.Unit", self.q.units), registry=self._registry
+        )
         other_q = _unwrap(other)
         if isinstance(other_q, _DryRunStructuredValue):
             other_q._raise_used_as_quantity(op)  # noqa: SLF001
         if isinstance(other_q, pint.Quantity):
             other_is_boolean, other_level = _boolean_level(
-                cast("pint.Unit", other_q.units)
+                unit=cast("pint.Unit", other_q.units), registry=self._registry
             )
         else:
             other_is_boolean, other_level = True, None
@@ -1771,7 +1950,7 @@ class _DryRunQuantity:
             right = (
                 cast("pint.Unit", other_q.units)
                 if isinstance(other_q, pint.Quantity)
-                else _DIMENSIONLESS_UNIT
+                else _dimensionless_unit(self._registry)
             )
             raise _UnitMixError(
                 op=op, left=cast("pint.Unit", self.q.units), right=right
@@ -1803,9 +1982,11 @@ class _DryRunQuantity:
         other_q = _unwrap(other)
         if isinstance(other_q, _DryRunStructuredValue):
             other_q._raise_used_as_quantity(op)  # noqa: SLF001
-        self_is_point = is_calendar_point_unit(cast("pint.Unit", self.q.units))
+        self_is_point = is_calendar_point_unit(
+            unit=cast("pint.Unit", self.q.units), registry=self._registry
+        )
         other_is_point = isinstance(other_q, pint.Quantity) and is_calendar_point_unit(
-            cast("pint.Unit", other_q.units)
+            unit=cast("pint.Unit", other_q.units), registry=self._registry
         )
         if (
             self_is_point
@@ -1813,6 +1994,7 @@ class _DryRunQuantity:
             and not units_are_equivalent(
                 left=cast("pint.Unit", self.q.units),
                 right=cast("pint.Unit", other_q.units),
+                registry=self._registry,
             )
         ):
             raise _UnitMixError(
@@ -1846,6 +2028,7 @@ class _DryRunQuantity:
         if isinstance(other_q, pint.Quantity) and not units_are_equivalent(
             left=cast("pint.Unit", self.q.units),
             right=cast("pint.Unit", other_q.units),
+            registry=self._registry,
         ):
             raise _UnitMixError(op=op, left=self.q.units, right=other_q.units)
         if (
@@ -1856,7 +2039,7 @@ class _DryRunQuantity:
             raise _UnitMixError(
                 op=op,
                 left=cast("pint.Unit", self.q.units),
-                right=_DIMENSIONLESS_UNIT,
+                right=_dimensionless_unit(self._registry),
                 literal=other_q,
             )
 
@@ -1939,10 +2122,14 @@ class _DryRunQuantity:
         return self._logical_result(other=other, op="^")
 
     def __invert__(self) -> _DryRunQuantity:
-        is_boolean, level = _boolean_level(cast("pint.Unit", self.q.units))
+        is_boolean, level = _boolean_level(
+            unit=cast("pint.Unit", self.q.units), registry=self._registry
+        )
         if not is_boolean:
             raise _UnitMixError(
-                op="~", left=cast("pint.Unit", self.q.units), right=_DIMENSIONLESS_UNIT
+                op="~",
+                left=cast("pint.Unit", self.q.units),
+                right=_dimensionless_unit(self._registry),
             )
         return self._controlled_bool_at(
             level=level,
@@ -2010,6 +2197,7 @@ class _DryRunQuantity:
 def _wrap_for_dry_run(
     value: Any,  # noqa: ANN401
     explorer: _PathExplorer,
+    unit_system: UnitSystem,
     label: str | None = None,
 ) -> Any:  # noqa: ANN401
     """Wrap unit-carrying representative values; pass framework args through.
@@ -2022,10 +2210,13 @@ def _wrap_for_dry_run(
     branch like any other operand.
     """
     if isinstance(value, pint.Quantity):
-        return _DryRunQuantity(q=value, explorer=explorer, label=label)
+        return _DryRunQuantity(
+            q=value, explorer=explorer, unit_system=unit_system, label=label
+        )
     if isinstance(value, _DryRunStructuredValue):
         return _DryRunStructuredValue(
             producer=value._producer,  # noqa: SLF001
+            unit_system=unit_system,
             cls=value._cls,  # noqa: SLF001
             explorer=explorer,
             label=label,
@@ -2035,6 +2226,7 @@ def _wrap_for_dry_run(
             key: _wrap_for_dry_run(
                 value=leaf,
                 explorer=explorer,
+                unit_system=unit_system,
                 label=f"{label}[{key!r}]" if label is not None else None,
             )
             for key, leaf in value.items()
@@ -2073,7 +2265,7 @@ class _DryRunStructuredValue:
     demanding a ``cast_unit`` at the pluck.
     """
 
-    __slots__ = ("_cls", "_explorer", "_label", "_producer")
+    __slots__ = ("_cls", "_explorer", "_label", "_producer", "_unit_system")
     # Defer binary NumPy ops to our (raising) reflected dunders.
     __array_ufunc__ = None
     __array_priority__ = 1000
@@ -2082,11 +2274,16 @@ class _DryRunStructuredValue:
     def __init__(
         self,
         producer: str,
+        unit_system: UnitSystem,
         cls: type | None = None,
         explorer: _PathExplorer | None = None,
         label: str | None = None,
     ) -> None:
         self._producer = producer
+        # An annotated field's pluck resolves to a unit, so the stand-in needs
+        # the system to resolve it in — an object graph, not a call tree, so it
+        # carries the system rather than receiving it per call.
+        self._unit_system = unit_system
         self._cls = cls
         self._explorer = explorer
         self._label = label
@@ -2095,25 +2292,37 @@ class _DryRunStructuredValue:
         raise _StructuredValueUsedAsQuantityError(producer=self._producer, op=op)
 
     def _opaque(self) -> _DryRunStructuredValue:
-        return _DryRunStructuredValue(producer=self._producer)
+        return _DryRunStructuredValue(
+            producer=self._producer, unit_system=self._unit_system
+        )
 
     def __getattr__(self, name: str) -> Any:  # noqa: ANN401
         # Refuse protocol probes (``__array__``, copy/pickle hooks, …).
         if name.startswith("__") and name.endswith("__"):
             raise AttributeError(name)
-        kinds = _structured_field_kinds(self._cls) if self._cls is not None else None
+        kinds = (
+            _structured_field_kinds(cls=self._cls, unit_system=self._unit_system)
+            if self._cls is not None
+            else None
+        )
         resolved = (kinds or {}).get(name)
         label = f"{self._label}.{name}" if self._label is not None else None
         if isinstance(resolved, pint.Unit):
             # An annotated field's pluck is a known quantity; with the run's
             # explorer it screens and branches like any other operand.
-            quantity = UNIT_REGISTRY.Quantity(1.0, resolved)
+            quantity = self._unit_system.registry.Quantity(1.0, resolved)
             if self._explorer is None:
                 return quantity
-            return _DryRunQuantity(q=quantity, explorer=self._explorer, label=label)
+            return _DryRunQuantity(
+                q=quantity,
+                explorer=self._explorer,
+                unit_system=self._unit_system,
+                label=label,
+            )
         if resolved is not None:
             return _DryRunStructuredValue(
                 producer=self._producer,
+                unit_system=self._unit_system,
                 cls=resolved,
                 explorer=self._explorer,
                 label=label,
@@ -2191,11 +2400,17 @@ class _DryRunSchedule:
     unset, in which case the domain is not screened.
     """
 
-    __slots__ = ("input_unit", "output_unit")
+    __slots__ = ("input_unit", "output_unit", "unit_system")
 
-    def __init__(self, input_unit: pint.Unit | None, output_unit: pint.Unit) -> None:
+    def __init__(
+        self,
+        input_unit: pint.Unit | None,
+        output_unit: pint.Unit,
+        unit_system: UnitSystem,
+    ) -> None:
         self.input_unit = input_unit
         self.output_unit = output_unit
+        self.unit_system = unit_system
 
     def _produce(self, domain_args: tuple[Any, ...]) -> _DryRunQuantity:
         explorer: _PathExplorer | None = None
@@ -2203,7 +2418,9 @@ class _DryRunSchedule:
             if isinstance(arg, _DryRunQuantity):
                 explorer = arg._explorer  # noqa: SLF001
                 if self.input_unit is not None and not units_are_equivalent(
-                    left=cast("pint.Unit", arg.q.units), right=self.input_unit
+                    left=cast("pint.Unit", arg.q.units),
+                    right=self.input_unit,
+                    registry=self.unit_system.registry,
                 ):
                     raise _UnitMixError(
                         op="look-up",
@@ -2215,7 +2432,9 @@ class _DryRunSchedule:
             # literal index): not dry-runnable, fall back to the opt-out.
             raise _ScheduleNotDryRunnableError
         return _DryRunQuantity(
-            q=UNIT_REGISTRY.Quantity(1.0, self.output_unit), explorer=explorer
+            q=self.unit_system.registry.Quantity(1.0, self.output_unit),
+            explorer=explorer,
+            unit_system=self.unit_system,
         )
 
     def look_up(self, *args: Any) -> _DryRunQuantity:  # noqa: ANN401
@@ -2256,29 +2475,40 @@ def _join_dry_run(
     raise _ScheduleNotDryRunnableError
 
 
-def _cast_unit_dry_run(value: Any, unit: str | CompositeUnit) -> Any:  # noqa: ANN401
+def _cast_unit_dry_run(
+    value: Any,  # noqa: ANN401
+    unit: str | CompositeUnit,
+    unit_system: UnitSystem,
+    explorer_holder: list[_PathExplorer | None],
+) -> Any:  # noqa: ANN401
     """Dry-run shim for ``cast_unit``.
 
     The cast is total: whatever flowed in — a quantity at another unit or
     level, a bare literal, an attribute plucked off a structured value — the
     stand-in flowing out carries the stated unit, resolved like a declaration
-    (currency-agnostic, the person leaf implied). A ``_DryRunQuantity`` input
-    keeps its explorer, so branch decisions stay on the run's path; any other
-    input anchors a plain representative quantity, which a wrapped operand
-    combines with like any parameter value. A malformed token raises a
-    :class:`UnitDefinitionError`, which :func:`_verify_one_body` re-raises
-    rather than misreporting as an un-evaluable body.
+    (currency-agnostic, the person leaf implied). The result stays on the body's
+    path: a ``_DryRunQuantity`` input keeps its explorer, and any other input
+    (a bare literal) is wrapped with the body's explorer (``explorer_holder``),
+    so a cast literal orders and combines like any quantity — ``max(x,
+    cast_unit(0, …))`` screens instead of reading as un-evaluable. A malformed
+    token raises a :class:`UnitDefinitionError`, which :func:`_verify_one_body`
+    re-raises rather than misreporting as an un-evaluable body.
     """
     token = coerce_to_composite_unit(value=unit, where="A `cast_unit` call")
-    resolved = resolve_compositional_cast_unit(unit=token, where="A `cast_unit` call")
-    quantity = UNIT_REGISTRY.Quantity(1.0, resolved)
+    resolved = resolve_compositional_cast_unit(
+        unit=token, registry=unit_system.registry, where="A `cast_unit` call"
+    )
+    quantity = unit_system.registry.Quantity(1.0, resolved)
     if isinstance(value, _DryRunQuantity):
         return value._wrap(quantity)  # noqa: SLF001
-    return quantity
+    explorer = explorer_holder[0]
+    if explorer is None:
+        return quantity
+    return _DryRunQuantity(q=quantity, explorer=explorer, unit_system=unit_system)
 
 
 def _time_conversion_shim(
-    from_pint: str, to_pint: str, *, is_flow: bool
+    from_pint: str, to_pint: str, registry: pint.UnitRegistry, *, is_flow: bool
 ) -> Callable[[Any], Any]:
     """Build a dry-run shim for one ``ttsim.unit_converters`` time converter.
 
@@ -2291,8 +2521,8 @@ def _time_conversion_shim(
     unchanged; a value whose period does not match the converter produces a
     mismatched unit that the declared-vs-inferred check then reports.
     """
-    from_q = UNIT_REGISTRY.Quantity(1.0, from_pint)
-    to_q = UNIT_REGISTRY.Quantity(1.0, to_pint)
+    from_q = registry.Quantity(1.0, from_pint)
+    to_q = registry.Quantity(1.0, to_pint)
 
     def shim(value: Any) -> Any:  # noqa: ANN401
         if not isinstance(value, _DryRunQuantity):
@@ -2303,7 +2533,7 @@ def _time_conversion_shim(
     return shim
 
 
-def _time_conversion_shims() -> dict[str, Any]:
+def _time_conversion_shims(registry: pint.UnitRegistry) -> dict[str, Any]:
     """A dry-run shim for every ``<a>_to_<b>`` / ``per_<a>_to_per_<b>`` converter."""
     shims: dict[str, Any] = {}
     for from_id, from_pint in TIME_UNIT_ID_TO_PINT_NAME.items():
@@ -2311,21 +2541,67 @@ def _time_conversion_shims() -> dict[str, Any]:
             if from_id == to_id:
                 continue
             shims[f"{from_id}_to_{to_id}"] = _time_conversion_shim(
-                from_pint=from_pint, to_pint=to_pint, is_flow=False
+                from_pint=from_pint,
+                to_pint=to_pint,
+                registry=registry,
+                is_flow=False,
             )
             shims[f"per_{from_id}_to_per_{to_id}"] = _time_conversion_shim(
-                from_pint=from_pint, to_pint=to_pint, is_flow=True
+                from_pint=from_pint,
+                to_pint=to_pint,
+                registry=registry,
+                is_flow=True,
             )
     return shims
 
 
-#: Module-level helpers swapped for unit-only shims in a dry-run body's scope.
-_DRY_RUN_HELPER_SHIMS: Mapping[str, Any] = {
-    "piecewise_polynomial": _piecewise_polynomial_dry_run,
-    "join": _join_dry_run,
-    "cast_unit": _cast_unit_dry_run,
-    **_time_conversion_shims(),
-}
+def _dry_run_helper_shims(
+    unit_system: UnitSystem,
+) -> tuple[Mapping[str, Any], list[_PathExplorer | None]]:
+    """The module-level helpers swapped for unit-only shims in a body's scope.
+
+    Each shim mints quantities in ``unit_system``'s registry, so the set is
+    built per run rather than shared. The returned ``explorer_holder`` lets the
+    ``cast_unit`` shim reach the explorer of the body currently under
+    verification — :func:`_verify_one_body` sets it per body — so a cast literal
+    becomes an explorer-carrying quantity rather than a bare pint one.
+    """
+    explorer_holder: list[_PathExplorer | None] = [None]
+    shims: Mapping[str, Any] = {
+        "piecewise_polynomial": _piecewise_polynomial_dry_run,
+        "join": _join_dry_run,
+        "cast_unit": functools.partial(
+            _cast_unit_dry_run,
+            unit_system=unit_system,
+            explorer_holder=explorer_holder,
+        ),
+        "max": _scalar_clamp_dry_run(op="maximum"),
+        "min": _scalar_clamp_dry_run(op="minimum"),
+        **_time_conversion_shims(unit_system.registry),
+    }
+    return shims, explorer_holder
+
+
+def _scalar_clamp_dry_run(op: str) -> Any:  # noqa: ANN401
+    """Shim the scalar ``max``/``min`` builtins to screen like the vectorized ops.
+
+    A scalar body's ``max(a, b)``/``min(a, b)`` runs the Python builtin, which
+    returns one operand *whole* — so on the branch where a bare ``0`` floor wins
+    the result is a unit-less ``0`` and a downstream ``/`` or ``*`` corrupts the
+    unit. Routing through :func:`_clamping_op` (the vectorizer's own path for
+    ``xnp.maximum``/``xnp.minimum``) makes the result carry the quantity's unit
+    on every branch, so a zero floor needs no ``cast_unit``. The two-argument and
+    one-iterable spellings (GEP 1) both fold through the same screen.
+    """
+
+    def shim(*args: Any) -> Any:  # noqa: ANN401
+        items = list(args[0]) if len(args) == 1 else list(args)
+        result = items[0]
+        for item in items[1:]:
+            result = _clamping_op(left=result, right=item, op=op)
+        return result
+
+    return shim
 
 
 def _clamping_op(left: Any, right: Any, op: str) -> Any:  # noqa: ANN401
@@ -2401,7 +2677,7 @@ def _structured_pluck_message(
         f"{qname}: uses a value plucked off the structured parameter "
         f"'{error.producer}' as a quantity ('{error.op}'), but such a value "
         f"carries no unit. State its unit at the structure — annotate the "
-        f"dataclass field (`Annotated[float, Unit…]`) — or at the pluck with "
+        f"dataclass field (`Annotated[float, TTSIMUnit…]`) — or at the pluck with "
         f"`cast_unit(<pluck>, <unit>)`, or opt out of body inference with "
         f"`verify_units=False` (GEP 10)."
     )
@@ -2481,6 +2757,8 @@ def _verify_one_body(
     declared: pint.Unit,
     boolean_values: Mapping[str, Any],
     base_kwargs: dict[str, Any],
+    unit_system: UnitSystem,
+    explorer_holder: list[_PathExplorer | None],
 ) -> str | None:
     """Dry-run one body on every reachable branch path; return an error or ``None``.
 
@@ -2501,6 +2779,9 @@ def _verify_one_body(
     combinations fail as well.
     """
     explorer = _PathExplorer()
+    # The `cast_unit` shim reaches this body's explorer here, so a cast literal
+    # (`max(x, cast_unit(0, …))`) becomes an explorer-carrying quantity.
+    explorer_holder[0] = explorer
     paths = 0
     branch_errors: list[str] = []
     clean_paths = 0
@@ -2516,7 +2797,12 @@ def _verify_one_body(
         paths += 1
         explorer.start_run()
         kwargs = {
-            name: _wrap_for_dry_run(value=value, explorer=explorer, label=name)
+            name: _wrap_for_dry_run(
+                value=value,
+                explorer=explorer,
+                unit_system=unit_system,
+                label=name,
+            )
             for name, value in {**base_kwargs, **boolean_values}.items()
         }
         error, terminal = _run_one_path(
@@ -2525,6 +2811,7 @@ def _verify_one_body(
             declared=declared,
             kwargs=kwargs,
             explorer=explorer,
+            unit_system=unit_system,
         )
         if terminal:
             return error
@@ -2545,6 +2832,7 @@ def _run_one_path(
     declared: pint.Unit,
     kwargs: dict[str, Any],
     explorer: _PathExplorer,
+    unit_system: UnitSystem,
 ) -> tuple[str | None, bool]:
     """Run the body once along the explorer's current path.
 
@@ -2585,6 +2873,7 @@ def _run_one_path(
         inferred=_unwrap(result),
         declared=declared,
         detail=explorer.branch_detail(),
+        unit_system=unit_system,
     ), False
 
 
@@ -2636,6 +2925,7 @@ def _bare_literal_result_error(
     inferred: Any,  # noqa: ANN401
     declared: pint.Unit,
     detail: str,
+    registry: pint.UnitRegistry,
 ) -> str | None:
     """The literal-return screen for a plain (non-``Quantity``) scalar result.
 
@@ -2647,7 +2937,7 @@ def _bare_literal_result_error(
         isinstance(inferred, int | float | numpy.number)
         and not isinstance(inferred, bool | numpy.bool_)
         and inferred != 0
-        and not UNIT_REGISTRY.Quantity(1.0, declared).dimensionless
+        and not registry.Quantity(1.0, declared).dimensionless
     ):
         return (
             f"{qname}: returns the bare literal {inferred}{detail} under the "
@@ -2690,6 +2980,7 @@ def _inferred_result_error(
     inferred: Any,  # noqa: ANN401
     declared: pint.Unit,
     detail: str,
+    unit_system: UnitSystem,
 ) -> str | None:
     """Check one dry-run result against the declaration.
 
@@ -2716,20 +3007,26 @@ def _inferred_result_error(
     ``CURRENCY``) stay lenient; a non-zero literal return and a dimensionless
     claim on a group-owned declaration are rejected.
     """
+    registry = unit_system.registry
     if not isinstance(
         inferred, pint.Quantity | int | float | numpy.number | numpy.bool_
     ):
         return _non_quantity_result_error(qname=qname, inferred=inferred)
     if not isinstance(inferred, pint.Quantity):
         return _bare_literal_result_error(
-            qname=qname, inferred=inferred, declared=declared, detail=detail
+            qname=qname,
+            inferred=inferred,
+            declared=declared,
+            detail=detail,
+            registry=registry,
         )
     if inferred.dimensionless:
         return _dimensionless_claim_error(qname=qname, declared=declared, detail=detail)
     inferred_unit = cast("pint.Unit", inferred.units)
     if not units_are_equivalent(
-        left=_unit_without_grouping_levels(inferred_unit),
-        right=_unit_without_grouping_levels(declared),
+        left=_unit_without_grouping_levels(unit=inferred_unit, registry=registry),
+        right=_unit_without_grouping_levels(unit=declared, registry=registry),
+        registry=registry,
     ):
         return (
             f"{qname}: declares '{declared}' but its body infers "

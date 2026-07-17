@@ -17,8 +17,7 @@ from ttsim.interface_dag_elements.policy_environment import (
     _active_column_objects_and_param_functions,
     _active_param_objects,
 )
-from ttsim.tt import ScalarParam, Unit, policy_function
-from ttsim.tt.currencies import statutory_currency_for_date
+from ttsim.tt import ScalarParam, TTSIMUnit, policy_function
 
 if TYPE_CHECKING:
     from types import ModuleType
@@ -38,7 +37,7 @@ def some_int_param():
         end_date=datetime.date(2025, 12, 31),
         name={"de": "Some int param", "en": "Some int param"},
         description={"de": "Some int param", "en": "Some int param"},
-        unit=Unit.DIMENSIONLESS,
+        unit=TTSIMUnit.DIMENSIONLESS,
         note=None,
         reference=None,
     )
@@ -82,6 +81,7 @@ def test_input_is_recognized_as_potential_group_id(backend):
     assert "kin" in main(
         main_target="labels__grouping_levels",
         orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+        unit_system=middle_earth.UNIT_SYSTEM,
         policy_date=datetime.date(2020, 1, 1),
         backend=backend,
     )
@@ -91,6 +91,7 @@ def test_p_id_not_recognized_as_potential_group_id(backend):
     assert "p" not in main(
         main_target="labels__grouping_levels",
         orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+        unit_system=middle_earth.UNIT_SYSTEM,
         policy_date=datetime.date(2020, 1, 1),
         backend=backend,
     )
@@ -103,7 +104,7 @@ def test_p_id_not_recognized_as_potential_group_id(backend):
     ],
 )
 def test_start_date_valid(date_string: str, expected: datetime.date):
-    @policy_function(start_date=date_string, unit=Unit.DIMENSIONLESS)
+    @policy_function(start_date=date_string, unit=TTSIMUnit.DIMENSIONLESS)
     def test_func() -> int:
         pass
 
@@ -124,13 +125,13 @@ def test_start_date_invalid(date_string: str):
         match=r"neither matches the format YYYY-MM-DD nor is a datetime.date",
     ):
 
-        @policy_function(start_date=date_string, unit=Unit.DIMENSIONLESS)
+        @policy_function(start_date=date_string, unit=TTSIMUnit.DIMENSIONLESS)
         def test_func() -> int:
             pass
 
 
 def test_start_date_missing():
-    @policy_function(unit=Unit.DIMENSIONLESS)
+    @policy_function(unit=TTSIMUnit.DIMENSIONLESS)
     def test_func() -> int:
         pass
 
@@ -144,7 +145,7 @@ def test_start_date_missing():
     ],
 )
 def test_end_date_valid(date_string: str, expected: datetime.date):
-    @policy_function(end_date=date_string, unit=Unit.DIMENSIONLESS)
+    @policy_function(end_date=date_string, unit=TTSIMUnit.DIMENSIONLESS)
     def test_func() -> int:
         pass
 
@@ -165,13 +166,13 @@ def test_end_date_invalid(date_string: str):
         match=r"neither matches the format YYYY-MM-DD nor is a datetime.date",
     ):
 
-        @policy_function(end_date=date_string, unit=Unit.DIMENSIONLESS)
+        @policy_function(end_date=date_string, unit=TTSIMUnit.DIMENSIONLESS)
         def test_func() -> int:
             pass
 
 
 def test_end_date_missing():
-    @policy_function(unit=Unit.DIMENSIONLESS)
+    @policy_function(unit=TTSIMUnit.DIMENSIONLESS)
     def test_func() -> int:
         pass
 
@@ -182,7 +183,7 @@ def test_active_period_is_empty():
     with pytest.raises(ValueError, match="must be before the end date"):
 
         @policy_function(
-            start_date="2023-01-20", end_date="2023-01-19", unit=Unit.DIMENSIONLESS
+            start_date="2023-01-20", end_date="2023-01-19", unit=TTSIMUnit.DIMENSIONLESS
         )
         def test_func() -> int:
             pass
@@ -210,12 +211,16 @@ def test_active_tree_with_column_objects_and_param_functions(
     functions_last_day = _active_column_objects_and_param_functions(
         orig=orig,
         policy_date=last_day,
-        computation_currency=statutory_currency_for_date(last_day),
+        computation_currency=middle_earth.UNIT_SYSTEM.statutory_currency_for_date(
+            last_day
+        ),
     )
     functions_next_day = _active_column_objects_and_param_functions(
         orig=orig,
         policy_date=next_day,
-        computation_currency=statutory_currency_for_date(next_day),
+        computation_currency=middle_earth.UNIT_SYSTEM.statutory_currency_for_date(
+            next_day
+        ),
     )
 
     accessor = optree.tree_accessors(tree, none_is_leaf=True)[0]  # ty: ignore[invalid-argument-type]

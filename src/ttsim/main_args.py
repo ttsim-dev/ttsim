@@ -159,9 +159,9 @@ class InputData(MainArg):
         converted to the data currency, its period is checked against the column's
         time suffix, and its dimension and grouping level are checked against the
         column's declared unit. A currency column names a concrete currency
-        (``unit=Unit.EUR.PER_MONTH``, never the agnostic ``Unit.CURRENCY``); tag
-        a dimensionless column (an id, a boolean) with
-        ``UnitAnnotatedColumn(values=arr, unit=Unit.DIMENSIONLESS)``; use
+        (``unit=TTSIMUnit.EUR.PER_MONTH``, never the agnostic
+        ``TTSIMUnit.CURRENCY``); tag a dimensionless column (an id, a boolean) with
+        ``UnitAnnotatedColumn(values=arr, unit=TTSIMUnit.DIMENSIONLESS)``; use
         :meth:`tree` for untagged data.
         """
         return _set_single_field(

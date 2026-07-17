@@ -63,7 +63,6 @@ from ttsim.tt.type_resolution import (
 from ttsim.tt.units import (
     UNSET_UNIT,
     CompositeUnit,
-    unit_for_aggregation,
 )
 from ttsim.tt.vectorization import vectorize_function
 from ttsim.typing import DashedISOString, IntColumn, UnorderedQNames
@@ -637,7 +636,7 @@ def group_creation_function(
         reorder: Whether the created Group ID's should be reordered to be
             consecutively numbered starting from 0.
         unit: The group id's compositional unit. A group id is a dimensionless
-            identifier, so this is ``Unit.DIMENSIONLESS``.
+            identifier, so this is ``TTSIMUnit.DIMENSIONLESS``.
 
     """
     start_date, end_date = _convert_and_validate_dates(
@@ -758,15 +757,6 @@ def agg_by_group_function(
         group_ids = {p for p in args if p.endswith("_id")}
         _fail_if_group_id_is_invalid(group_ids=group_ids, orig_location=orig_location)
         group_id = group_ids.pop()
-        # An aggregation's unit follows from its type, so when the decorator leaves
-        # it UNSET it is derived here via `unit_for_aggregation`.
-        node_unit = unit
-        if node_unit is UNSET_UNIT:
-            node_unit = unit_for_aggregation(
-                source_unit=UNSET_UNIT,
-                agg_type=agg_type,
-                target_level=group_id.removesuffix("_id"),
-            )
         other_args = args - {group_id, "num_segments", "backend"}
         column_name: str | None
         if agg_type == AggType.COUNT:
@@ -781,6 +771,11 @@ def agg_by_group_function(
             )
             column_name = other_args.pop()
             mapper = {"group_id": group_id, "column": column_name}
+        _fail_if_unit_is_unset(
+            unit=unit,
+            decorator_name="@agg_by_group_function",
+            orig_location=orig_location,
+        )
         agg_func = _make_typed_aggregation_function(
             primitive=agg_registry[agg_type],
             mapper=mapper,
@@ -799,12 +794,31 @@ def agg_by_group_function(
             orig_location=f"{func.__module__}.{func.__name__}",  # ty: ignore[unresolved-attribute]
             warn_msg_if_included=warn_msg_if_included,
             fail_msg_if_included=fail_msg_if_included,
-            unit=node_unit,
+            unit=unit,
             verify_units=verify_units,
             agg_type=agg_type,
         )
 
     return inner
+
+
+def _fail_if_unit_is_unset(
+    unit: CompositeUnit,
+    decorator_name: str,
+    orig_location: str,
+) -> None:
+    """Fail if an aggregation does not declare a unit.
+
+    Aggregations declare their ``unit`` explicitly like every other declaration
+    (GEP 10); the framework then verifies it against the aggregated source and
+    the aggregation type.
+    """
+    if unit is UNSET_UNIT:
+        msg = (
+            f"{decorator_name} at {orig_location} must declare a `unit=` (GEP 10). "
+            f"Every aggregation states its unit explicitly, whatever the operation."
+        )
+        raise AggregationDefinitionError(msg)
 
 
 def _fail_if_group_id_is_invalid(
@@ -966,10 +980,6 @@ def agg_by_p_id_function(
     start_date, end_date = _convert_and_validate_dates(
         start_date=start_date, end_date=end_date
     )
-    # When the decorator leaves the unit UNSET it is derived from the aggregation
-    # type via `unit_for_aggregation`.
-    if unit is UNSET_UNIT:
-        unit = unit_for_aggregation(source_unit=UNSET_UNIT, agg_type=agg_type)
 
     agg_registry: dict[AggType, Callable[..., Any]] = {
         AggType.SUM: sum_by_p_id,
@@ -1023,6 +1033,11 @@ def agg_by_p_id_function(
                 "num_segments": "num_segments",
                 "backend": "backend",
             }
+        _fail_if_unit_is_unset(
+            unit=unit,
+            decorator_name="@agg_by_p_id_function",
+            orig_location=orig_location,
+        )
         agg_func = _make_typed_aggregation_function(
             primitive=agg_registry[agg_type],
             mapper=mapper,

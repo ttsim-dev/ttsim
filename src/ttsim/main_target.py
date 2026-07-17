@@ -224,6 +224,7 @@ class MainTarget(MainTargetABC):
     tt_targets: type[Targets] = field(default=Targets)
     len_p_id: str = "len_p_id"
     backend: str = "backend"
+    unit_system: str = "unit_system"
     data_currency: str = "data_currency"
     computation_currency: str = "computation_currency"
     evaluation_date_str: str = "evaluation_date_str"

@@ -39,7 +39,7 @@ from ttsim.tt.column_objects_param_function import (
     policy_function,
 )
 from ttsim.tt.param_objects import ParamObject
-from ttsim.tt.units import Unit
+from ttsim.tt.units import TTSIMUnit
 from ttsim.typing import (
     OrderedQNames,
     PolicyEnvironment,
@@ -283,7 +283,7 @@ def dummy_callable(
             end_date=obj.end_date,
             # Placeholder: a ParamObject's unit may be a per-leaf mapping the
             # decorator would reject, and this dummy node's unit is never checked.
-            unit=Unit.DIMENSIONLESS,
+            unit=TTSIMUnit.DIMENSIONLESS,
         )(dummy)
     if isinstance(obj, InterfaceInput):
         original_docstring = obj.docstring
