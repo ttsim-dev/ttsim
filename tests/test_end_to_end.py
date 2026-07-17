@@ -348,7 +348,7 @@ def _run_cloudpickle_subprocess(tmp_path, script_body: str) -> None:
     import textwrap  # noqa: PLC0415
 
     script = tmp_path / "repro.py"
-    script.write_text(textwrap.dedent(script_body))
+    script.write_text(textwrap.dedent(script_body), encoding="utf-8")
     result = subprocess.run(  # noqa: S603
         [sys.executable, str(script)],
         capture_output=True,
