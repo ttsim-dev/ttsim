@@ -79,7 +79,9 @@ class UnitSystem:
     start date it applies from (until the next entry's). Mandatory: a run for a
     policy date with no statutory currency fails."""
 
-    other_currencies: Mapping[str, str] = MappingProxyType({})
+    other_currencies: Mapping[str, str] = dataclasses.field(
+        default_factory=lambda: MappingProxyType({})
+    )
     """Each further currency, mapped to a pint-parseable definition relative to
     an already-defined currency of this system (``{"DM": "EUR / 1.95583"}``).
     Definitions are applied in order, so one may reference an earlier one."""
