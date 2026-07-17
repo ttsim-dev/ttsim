@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import numpy
 import pytest
+from mettsim.middle_earth import UNIT_SYSTEM
 
 from ttsim.interface_dag_elements.results import tree
 
@@ -148,6 +149,7 @@ def test_restore_original_row_order(
         specialized_environment__without_tree_logic_and_with_derived_functions={},
         data_currency="CASTAR",
         computation_currency="CASTAR",
+        unit_system=UNIT_SYSTEM,
     )
 
     # Check the structure and values recursively

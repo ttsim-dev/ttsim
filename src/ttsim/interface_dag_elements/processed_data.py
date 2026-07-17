@@ -12,7 +12,7 @@ from jaxtyping import Shaped
 
 from ttsim.interface_dag_elements.interface_node_objects import interface_function
 from ttsim.tt.column_objects_param_function import reorder_ids
-from ttsim.tt.currencies import currency_conversion_factor
+from ttsim.tt.currencies import UnitSystem
 from ttsim.tt.units import (
     UNSET_UNIT,
     CompositeUnit,
@@ -36,6 +36,7 @@ def _canonicalize_input_dtype(
     *,
     column_label: str | None = None,
     data_currency: str | None = None,
+    registry: pint.UnitRegistry | None = None,
 ) -> Shaped[Array | np.ndarray, " n_obs"]:
     """Canonicalize a column to a backend-native dtype the TT DAG can operate on.
 
@@ -61,11 +62,13 @@ def _canonicalize_input_dtype(
     """
     if isinstance(arr, pint.Quantity):
         # A pint-tagged column only ever reaches here via `processed_data`, which
-        # always has a concrete data currency; the currency-less converter callers
-        # (`data_converters`, plain `pd.Series` leaves) never pass a `Quantity`.
+        # always has a concrete data currency and registry; the currency-less
+        # converter callers (`data_converters`, plain `pd.Series` leaves) never
+        # pass a `Quantity`.
         arr = strip_input_quantity_at_boundary(
             quantity=arr,
             data_currency=cast("str", data_currency),
+            registry=cast("pint.UnitRegistry", registry),
             column_label=column_label,
         )
     if isinstance(arr, pd.Series):
@@ -158,6 +161,7 @@ def currency_conversion_factor_and_columns(
     specialized_environment: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
     source_currency: str,
     target_currency: str,
+    unit_system: UnitSystem,
 ) -> tuple[float, set[str]]:
     """The conversion factor and the columns it applies to.
 
@@ -168,7 +172,7 @@ def currency_conversion_factor_and_columns(
     """
     if source_currency == target_currency:
         return 1.0, set()
-    factor = currency_conversion_factor(
+    factor = unit_system.currency_conversion_factor(
         source_currency=source_currency, target_currency=target_currency
     )
     currency_qnames = qnames_with_currency_declarations(
@@ -206,6 +210,7 @@ def processed_data(
     specialized_environment__without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,  # noqa: E501
     data_currency: str,
     computation_currency: str,
+    unit_system: UnitSystem,
 ) -> QNameData:
     """The internal processed data for use in the taxes and transfers function.
 
@@ -226,6 +231,7 @@ def processed_data(
         ),
         source_currency=data_currency,
         target_currency=computation_currency,
+        unit_system=unit_system,
     )
 
     orig_p_ids = _canonicalize_input_dtype(
@@ -233,6 +239,7 @@ def processed_data(
         xnp=xnp,
         column_label="p_id",
         data_currency=data_currency,
+        registry=unit_system.registry,
     )
     sorted_orig_p_ids = orig_p_ids[input_data__sort_indices]
     internal_p_ids = xnp.arange(len(orig_p_ids))
@@ -257,6 +264,7 @@ def processed_data(
             xnp=xnp,
             column_label=qname,
             data_currency=data_currency,
+            registry=unit_system.registry,
         )
 
         if path[-1].endswith("_id"):

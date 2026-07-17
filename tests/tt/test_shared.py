@@ -263,6 +263,7 @@ def test_copy_full_policy_environment():
         main_target=MainTarget.policy_environment,
         policy_date_str="2025-01-01",
         orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+        unit_system=middle_earth.UNIT_SYSTEM,
     )
 
     copied_env = copy_environment(policy_env)
@@ -301,6 +302,7 @@ def test_deepcopy_fails_on_policy_environment():
         main_target=MainTarget.policy_environment,
         policy_date_str="2025-01-01",
         orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+        unit_system=middle_earth.UNIT_SYSTEM,
     )
 
     with pytest.raises((TypeError, AttributeError)) as excinfo:
@@ -317,6 +319,7 @@ def test_copy_environment_works_where_deepcopy_fails():
         main_target=MainTarget.policy_environment,
         policy_date_str="2025-01-01",
         orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+        unit_system=middle_earth.UNIT_SYSTEM,
     )
 
     # Confirm deepcopy fails
@@ -374,6 +377,7 @@ def test_policy_environment_type_inference():
         main_target=MainTarget.policy_environment,
         policy_date_str="2025-01-01",
         orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+        unit_system=middle_earth.UNIT_SYSTEM,
     )
 
     # Type checker should infer PolicyEnvironment -> PolicyEnvironment

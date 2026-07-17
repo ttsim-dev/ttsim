@@ -42,6 +42,7 @@ from ttsim.tt.column_objects_param_function import (
     ParamFunction,
     PolicyInput,
 )
+from ttsim.tt.currencies import UnitSystem
 from ttsim.tt.param_objects import (
     PLACEHOLDER_FIELD,
     PLACEHOLDER_VALUE,
@@ -1000,6 +1001,7 @@ def tt_units_are_inconsistent(
     specialized_environment__without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
     labels__grouping_levels: OrderedQNames,
     unit_checks__resolved_units: dict[str, pint.Unit | dict[str | int, Any]],
+    unit_system: UnitSystem,
 ) -> None:
     """Fail if a function body infers a unit that contradicts its declaration.
 
@@ -1017,6 +1019,7 @@ def tt_units_are_inconsistent(
     fail_if_environment_units_are_inconsistent(
         env=specialized_environment__without_tree_logic_and_with_derived_functions,
         grouping_levels=labels__grouping_levels,
+        unit_system=unit_system,
         resolved_units=unit_checks__resolved_units,
     )
 
@@ -1046,8 +1049,8 @@ def input_currency_is_not_concrete(
     """Fail if a currency-bearing input column names the agnostic ``CURRENCY``.
 
     Input data, like a parameter, is written in a concrete currency: a currency
-    column must name one (``Unit.EUR``, ``Unit.DM``), never the agnostic
-    ``Unit.CURRENCY`` — which would leave the run unable to tell what the numbers
+    column must name one (``TTSIMUnit.EUR``, ``TTSIMUnit.DM``), never the agnostic
+    ``TTSIMUnit.CURRENCY`` — which would leave the run unable to tell what the numbers
     are denominated in. (Columns and functions are the opposite: agnostic only.)
 
     Raises:
@@ -1063,8 +1066,8 @@ def input_currency_is_not_concrete(
     if agnostic:
         raise UnitConsistencyError(
             "Input data is denominated in a concrete currency, so a currency "
-            "column must name one (e.g. Unit.EUR, Unit.DM), not the agnostic "
-            f"Unit.CURRENCY (GEP 10). These name the agnostic currency: "
+            "column must name one (e.g. TTSIMUnit.EUR, TTSIMUnit.DM), not the agnostic "
+            f"TTSIMUnit.CURRENCY (GEP 10). These name the agnostic currency: "
             f"{', '.join(agnostic)}."
         )
 
@@ -1075,6 +1078,7 @@ def input_currency_is_not_concrete(
 def input_units_are_inconsistent(
     input_data__units: dict[str, pint.Unit],
     unit_checks__resolved_units: dict[str, pint.Unit | dict[str | int, Any]],
+    unit_system: UnitSystem,
 ) -> None:
     """Fail if a tagged input column's unit contradicts its declared unit.
 
@@ -1089,6 +1093,7 @@ def input_units_are_inconsistent(
     fail_if_input_units_are_inconsistent(
         input_units=input_data__units,
         resolved_units=unit_checks__resolved_units,
+        unit_system=unit_system,
     )
 
 

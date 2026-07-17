@@ -4,6 +4,7 @@ import dags.tree as dt
 import numpy
 import pandas as pd
 import pytest
+from mettsim.middle_earth import UNIT_SYSTEM
 
 from ttsim.interface_dag_elements.input_data import sort_indices
 from ttsim.interface_dag_elements.processed_data import (
@@ -13,8 +14,7 @@ from ttsim.interface_dag_elements.processed_data import (
 from ttsim.interface_dag_elements.specialized_environment import (
     _add_derived_functions,
 )
-from ttsim.tt import Unit, policy_input
-from ttsim.tt.units import UNIT_REGISTRY
+from ttsim.tt import TTSIMUnit, policy_input
 
 
 def _spec_env(policy_environment, input_data__flat, grouping_levels=()):
@@ -53,6 +53,7 @@ def test_processed_data(input_data__flat, xnp):
                 specialized_environment__without_tree_logic_and_with_derived_functions={},
                 data_currency="CASTAR",
                 computation_currency="CASTAR",
+                unit_system=UNIT_SYSTEM,
             )
         ),
         pd.DataFrame(expected),
@@ -83,6 +84,7 @@ def test_processed_data_foreign_key_out_of_bounds(xnp):
                 specialized_environment__without_tree_logic_and_with_derived_functions={},
                 data_currency="CASTAR",
                 computation_currency="CASTAR",
+                unit_system=UNIT_SYSTEM,
             )
         ),
         pd.DataFrame(expected),
@@ -113,6 +115,7 @@ def test_processed_data_foreign_key_inside_bounds(xnp):
                 specialized_environment__without_tree_logic_and_with_derived_functions={},
                 data_currency="CASTAR",
                 computation_currency="CASTAR",
+                unit_system=UNIT_SYSTEM,
             )
         ),
         pd.DataFrame(expected),
@@ -139,6 +142,7 @@ def test_processed_data_single_column(xnp):
                 specialized_environment__without_tree_logic_and_with_derived_functions={},
                 data_currency="CASTAR",
                 computation_currency="CASTAR",
+                unit_system=UNIT_SYSTEM,
             )
         ),
         pd.DataFrame(expected),
@@ -206,6 +210,7 @@ def test_processed_data_coerces_uint_columns_to_signed(xnp):
         specialized_environment__without_tree_logic_and_with_derived_functions={},
         data_currency="CASTAR",
         computation_currency="CASTAR",
+        unit_system=UNIT_SYSTEM,
     )
     assert result["wage"].dtype.kind == "i"
     # Subtraction stays signed instead of underflowing into uint wraparound.
@@ -236,6 +241,7 @@ def test_processed_data_single_row(xnp):
                 specialized_environment__without_tree_logic_and_with_derived_functions={},
                 data_currency="CASTAR",
                 computation_currency="CASTAR",
+                unit_system=UNIT_SYSTEM,
             )
         ),
         pd.DataFrame(expected),
@@ -249,11 +255,11 @@ def test_processed_data_converts_pint_tagged_currency_input(xnp):
     handed in as silver pennies rides along castar data and is rescaled at the
     boundary (4 silver pennies = 1 castar).
     """
-    from mettsim import middle_earth  # noqa: F401, PLC0415 (registers the currencies)
-
     input_data__flat = {
         ("p_id",): numpy.array([0, 1]),
-        ("wealth",): UNIT_REGISTRY.Quantity(numpy.array([4.0, 8.0]), "SILVER_PENNY"),
+        ("wealth",): UNIT_SYSTEM.registry.Quantity(
+            numpy.array([4.0, 8.0]), "SILVER_PENNY"
+        ),
     }
     out = processed_data(
         input_data__flat=input_data__flat,
@@ -264,8 +270,9 @@ def test_processed_data_converts_pint_tagged_currency_input(xnp):
         specialized_environment__without_tree_logic_and_with_derived_functions={},
         data_currency="CASTAR",
         computation_currency="CASTAR",
+        unit_system=UNIT_SYSTEM,
     )
-    assert not isinstance(out["wealth"], UNIT_REGISTRY.Quantity)
+    assert not isinstance(out["wealth"], UNIT_SYSTEM.registry.Quantity)
     assert list(numpy.asarray(out["wealth"])) == pytest.approx([1.0, 2.0])
 
 
@@ -276,13 +283,12 @@ def test_processed_data_converts_untagged_currency_input_by_declared_unit(xnp):
     carries a currency component is converted to the computation currency.
     Non-currency columns are untouched.
     """
-    from mettsim import middle_earth  # noqa: F401, PLC0415 (registers the currencies)
 
-    @policy_input(unit=Unit.CURRENCY)
+    @policy_input(unit=TTSIMUnit.CURRENCY)
     def wealth() -> float:
         pass
 
-    @policy_input(unit=Unit.YEARS)
+    @policy_input(unit=TTSIMUnit.YEARS)
     def age() -> int:
         pass
 
@@ -306,6 +312,7 @@ def test_processed_data_converts_untagged_currency_input_by_declared_unit(xnp):
         ),
         data_currency="SILVER_PENNY",
         computation_currency="CASTAR",
+        unit_system=UNIT_SYSTEM,
     )
     assert list(numpy.asarray(out["wealth"])) == pytest.approx([1.0, 2.0])
     assert list(numpy.asarray(out["age"])) == [30, 40]
@@ -316,13 +323,12 @@ def test_derived_input_ignores_siblings_a_derivation_cannot_produce(xnp):
     flow `income_m` shares the base name but no derivation produces `income_hh`
     from it (a time suffix is only ever rebased, never dropped), so the column
     must not convert."""
-    from mettsim import middle_earth  # noqa: F401, PLC0415 (registers the currencies)
 
-    @policy_input(unit=Unit.CURRENCY.PER_MONTH)
+    @policy_input(unit=TTSIMUnit.CURRENCY.PER_MONTH)
     def income_m() -> float:
         pass
 
-    @policy_input(unit=Unit.YEARS)
+    @policy_input(unit=TTSIMUnit.YEARS)
     def income() -> int:
         pass
 
@@ -345,6 +351,7 @@ def test_derived_input_ignores_siblings_a_derivation_cannot_produce(xnp):
         ),
         data_currency="SILVER_PENNY",
         computation_currency="CASTAR",
+        unit_system=UNIT_SYSTEM,
     )
     assert list(numpy.asarray(out["income_hh"])) == pytest.approx([4.0, 4.0])
 
@@ -356,9 +363,8 @@ def test_processed_data_converts_derived_input_via_its_stub(xnp):
     declared ``wage_m`` carries ``CURRENCY_PER_MONTH_PER_HH`` (aggregation
     never adds or removes the currency component), so the column converts.
     """
-    from mettsim import middle_earth  # noqa: F401, PLC0415 (registers the currencies)
 
-    @policy_input(unit=Unit.CURRENCY.PER_MONTH)
+    @policy_input(unit=TTSIMUnit.CURRENCY.PER_MONTH)
     def wage_m() -> float:
         pass
 
@@ -381,6 +387,7 @@ def test_processed_data_converts_derived_input_via_its_stub(xnp):
         ),
         data_currency="SILVER_PENNY",
         computation_currency="CASTAR",
+        unit_system=UNIT_SYSTEM,
     )
     assert list(numpy.asarray(out["wage_m_hh"])) == pytest.approx([1.0, 1.0])
 
@@ -391,9 +398,8 @@ def test_processed_data_converts_time_variant_input_via_its_stub(xnp):
     ``wage_y`` has no declaration of its own; the stub minted from the
     declared ``wage_m`` carries ``CURRENCY_PER_YEAR``, so the column converts.
     """
-    from mettsim import middle_earth  # noqa: F401, PLC0415 (registers the currencies)
 
-    @policy_input(unit=Unit.CURRENCY.PER_MONTH)
+    @policy_input(unit=TTSIMUnit.CURRENCY.PER_MONTH)
     def wage_m() -> float:
         pass
 
@@ -416,5 +422,6 @@ def test_processed_data_converts_time_variant_input_via_its_stub(xnp):
         ),
         data_currency="SILVER_PENNY",
         computation_currency="CASTAR",
+        unit_system=UNIT_SYSTEM,
     )
     assert list(numpy.asarray(out["wage_y"])) == pytest.approx([1.0, 1.0])

@@ -12,9 +12,10 @@ import datetime
 from typing import TYPE_CHECKING
 
 import pandas as pd
+from mettsim import middle_earth
 
 from ttsim import InputData, MainTarget, TTTargets, main
-from ttsim.tt import FKType, ScalarParam, Unit, policy_function, policy_input
+from ttsim.tt import FKType, ScalarParam, TTSIMUnit, policy_function, policy_input
 
 if TYPE_CHECKING:
     from types import ModuleType
@@ -55,7 +56,7 @@ def test_endogenous_p_id_target_returns_user_space_p_ids(
         start_date=_DATE,
         end_date=_DATE,
         leaf_name="p_id_recipient",
-        unit=Unit.DIMENSIONLESS,
+        unit=TTSIMUnit.DIMENSIONLESS,
     )(_identity)
 
     result = main(
@@ -68,6 +69,7 @@ def test_endogenous_p_id_target_returns_user_space_p_ids(
         tt_targets=TTTargets.tree({"p_id_recipient": None}),
         input_data=InputData.tree(tree={"p_id": xnp.array([20, 10, 30])}),
         backend=backend,
+        unit_system=middle_earth.UNIT_SYSTEM,
     )
 
     expected = pd.DataFrame(
@@ -95,11 +97,11 @@ def test_endogenous_p_id_target_collapses_arbitrary_negative_to_sentinel(
         start_date=_DATE,
         end_date=_DATE,
         leaf_name="p_id_recipient",
-        unit=Unit.DIMENSIONLESS,
+        unit=TTSIMUnit.DIMENSIONLESS,
         vectorization_strategy="vectorize",
     )(_recipient_or_negative_two)
 
-    @policy_input(unit=Unit.DIMENSIONLESS)
+    @policy_input(unit=TTSIMUnit.DIMENSIONLESS)
     def is_recipient() -> bool:
         pass
 
@@ -119,6 +121,7 @@ def test_endogenous_p_id_target_collapses_arbitrary_negative_to_sentinel(
             }
         ),
         backend=backend,
+        unit_system=middle_earth.UNIT_SYSTEM,
     )
 
     expected = pd.DataFrame(
@@ -141,11 +144,11 @@ def test_endogenous_p_id_target_preserves_minus_one_sentinel(
         start_date=_DATE,
         end_date=_DATE,
         leaf_name="p_id_recipient",
-        unit=Unit.DIMENSIONLESS,
+        unit=TTSIMUnit.DIMENSIONLESS,
         vectorization_strategy="vectorize",
     )(_recipient_or_minus_one)
 
-    @policy_input(unit=Unit.DIMENSIONLESS)
+    @policy_input(unit=TTSIMUnit.DIMENSIONLESS)
     def is_recipient() -> bool:
         pass
 
@@ -165,6 +168,7 @@ def test_endogenous_p_id_target_preserves_minus_one_sentinel(
             }
         ),
         backend=backend,
+        unit_system=middle_earth.UNIT_SYSTEM,
     )
 
     expected = pd.DataFrame(
@@ -185,7 +189,9 @@ def test_exogenous_p_id_pointer_as_input_target_is_unchanged(
     computed-column path.
     """
 
-    @policy_input(foreign_key_type=FKType.MAY_POINT_TO_SELF, unit=Unit.DIMENSIONLESS)
+    @policy_input(
+        foreign_key_type=FKType.MAY_POINT_TO_SELF, unit=TTSIMUnit.DIMENSIONLESS
+    )
     def p_id_parent_1() -> int:
         pass
 
@@ -204,6 +210,7 @@ def test_exogenous_p_id_pointer_as_input_target_is_unchanged(
             }
         ),
         backend=backend,
+        unit_system=middle_earth.UNIT_SYSTEM,
     )
 
     expected = pd.DataFrame(
@@ -225,7 +232,7 @@ def test_endogenous_p_id_target_mixed_with_regular_column(
         start_date=_DATE,
         end_date=_DATE,
         leaf_name="p_id_recipient",
-        unit=Unit.DIMENSIONLESS,
+        unit=TTSIMUnit.DIMENSIONLESS,
     )(_identity)
 
     @policy_function(
@@ -233,12 +240,12 @@ def test_endogenous_p_id_target_mixed_with_regular_column(
         end_date=_DATE,
         leaf_name="doubled_m",
         vectorization_strategy="vectorize",
-        unit=Unit.CURRENCY.PER_MONTH,
+        unit=TTSIMUnit.CURRENCY.PER_MONTH,
     )
     def doubled_m(income_m: float) -> float:
         return income_m * 2.0
 
-    @policy_input(unit=Unit.CURRENCY.PER_MONTH)
+    @policy_input(unit=TTSIMUnit.CURRENCY.PER_MONTH)
     def income_m() -> float:
         pass
 
@@ -259,6 +266,7 @@ def test_endogenous_p_id_target_mixed_with_regular_column(
             }
         ),
         backend=backend,
+        unit_system=middle_earth.UNIT_SYSTEM,
     )
 
     expected = pd.DataFrame(

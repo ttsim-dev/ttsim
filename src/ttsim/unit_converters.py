@@ -5,9 +5,10 @@ from typing import Any, overload
 
 import numpy as np
 import pandas as pd
+import pint
 from jaxtyping import Float, Int
 
-from ttsim.tt.units import UNIT_REGISTRY
+from ttsim.tt.units import build_registry
 
 # `jax` is an optional runtime dependency; the NumPy-only test envs do not
 # install it. Resolve `Array` to a backend-agnostic union of the (optional)
@@ -30,13 +31,10 @@ TIME_UNIT_IDS_TO_LABELS = {
 }
 
 
-def _ratio(numerator: str, denominator: str) -> float:
+def _ratio(numerator: str, denominator: str, registry: pint.UnitRegistry) -> float:
     """Dimensionless magnitude of ``1 numerator / 1 denominator``, from pint."""
     return (
-        (
-            UNIT_REGISTRY.Quantity(1.0, numerator)
-            / UNIT_REGISTRY.Quantity(1.0, denominator)
-        )
+        (registry.Quantity(1.0, numerator) / registry.Quantity(1.0, denominator))
         .to("dimensionless")
         .magnitude
     )
@@ -52,12 +50,29 @@ def _as_int_if_whole(magnitude: float) -> int | float:
     return rounded if math.isclose(magnitude, rounded) else magnitude
 
 
-# The week factor is composed via days (365.25 / 7) so it matches GEP 1's
-# canonical value bit-for-bit rather than pint's direct year/week reduction.
-_Q_PER_Y = _as_int_if_whole(_ratio(numerator="year", denominator="quarter_year"))
-_M_PER_Y = _as_int_if_whole(_ratio(numerator="year", denominator="month"))
-_D_PER_Y = _ratio(numerator="year", denominator="day")
-_W_PER_Y = _D_PER_Y / _ratio(numerator="week", denominator="day")
+def _periods_per_year() -> tuple[int | float, int | float, float, float]:
+    """The quarter / month / day / week factors against a year, read off pint.
+
+    The ratio between two periods is part of the vocabulary every policy system
+    shares, so it is read off a throwaway registry rather than any system's; the
+    factors it yields are plain numbers and outlive it.
+
+    The week factor is composed via days (365.25 / 7) so it matches GEP 1's
+    canonical value bit-for-bit rather than pint's direct year/week reduction.
+    """
+    registry = build_registry()
+    quarters = _as_int_if_whole(
+        _ratio(numerator="year", denominator="quarter_year", registry=registry)
+    )
+    months = _as_int_if_whole(
+        _ratio(numerator="year", denominator="month", registry=registry)
+    )
+    days = _ratio(numerator="year", denominator="day", registry=registry)
+    weeks = days / _ratio(numerator="week", denominator="day", registry=registry)
+    return quarters, months, days, weeks
+
+
+_Q_PER_Y, _M_PER_Y, _D_PER_Y, _W_PER_Y = _periods_per_year()
 
 
 # --- Year conversions (stocks) ---

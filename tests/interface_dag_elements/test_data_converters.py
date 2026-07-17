@@ -5,6 +5,7 @@ import datetime
 import numpy
 import pandas as pd
 import pytest
+from mettsim import middle_earth
 from numpy.testing import assert_array_equal
 
 from ttsim import (
@@ -20,7 +21,7 @@ from ttsim.interface_dag_elements.data_converters import (
 )
 from ttsim.tt import (
     ScalarParam,
-    Unit,
+    TTSIMUnit,
     param_function,
     policy_function,
 )
@@ -40,17 +41,17 @@ _GENERIC_PARAM_SPEC = {
 }
 
 
-@policy_function(unit=Unit.DIMENSIONLESS)
+@policy_function(unit=TTSIMUnit.DIMENSIONLESS)
 def int_policy_function() -> int:
     return 1
 
 
-@policy_function(unit=Unit.DIMENSIONLESS)
+@policy_function(unit=TTSIMUnit.DIMENSIONLESS)
 def another_int_policy_function() -> int:
     return 1
 
 
-@param_function(unit=Unit.DIMENSIONLESS)
+@param_function(unit=TTSIMUnit.DIMENSIONLESS)
 def int_param_function() -> int:
     return 1
 
@@ -232,6 +233,7 @@ def test_nested_data_to_dataframe(
         tt_targets=TTTargets.tree(tt_targets__tree),
         rounding=False,
         backend=backend,
+        unit_system=middle_earth.UNIT_SYSTEM,
     )
     result_df = nested_data_to_df_with_mapped_columns(
         nested_data_to_convert=results__tree,

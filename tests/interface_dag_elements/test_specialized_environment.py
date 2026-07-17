@@ -8,6 +8,7 @@ import dags.tree as dt
 import numpy
 import pandas as pd
 import pytest
+from mettsim import middle_earth
 
 from ttsim import main, merge_trees
 from ttsim.interface_dag_elements.specialized_environment import (
@@ -23,7 +24,7 @@ from ttsim.tt import (
     PiecewisePolynomialParamValue,
     RawParam,
     ScalarParam,
-    Unit,
+    TTSIMUnit,
     agg_by_group_function,
     agg_by_p_id_function,
     param_function,
@@ -36,62 +37,62 @@ if TYPE_CHECKING:
     from ttsim.typing import IntColumn, RawParamValue
 
 
-@policy_input(unit=Unit.DIMENSIONLESS)
+@policy_input(unit=TTSIMUnit.DIMENSIONLESS)
 def p_id() -> int:
     pass
 
 
-@policy_input(unit=Unit.DIMENSIONLESS)
+@policy_input(unit=TTSIMUnit.DIMENSIONLESS)
 def p_id_someone_else() -> int:
     pass
 
 
-@policy_input(unit=Unit.DIMENSIONLESS)
+@policy_input(unit=TTSIMUnit.DIMENSIONLESS)
 def fam_id() -> int:
     pass
 
 
-@policy_input(unit=Unit.CURRENCY.PER_MONTH)
+@policy_input(unit=TTSIMUnit.CURRENCY.PER_MONTH)
 def betrag_m() -> float:
     pass
 
 
-@policy_input(unit=Unit.CURRENCY.PER_MONTH)
+@policy_input(unit=TTSIMUnit.CURRENCY.PER_MONTH)
 def income_m() -> float:
     pass
 
 
-@policy_function(vectorization_strategy="vectorize", unit=Unit.CURRENCY.PER_MONTH)
+@policy_function(vectorization_strategy="vectorize", unit=TTSIMUnit.CURRENCY.PER_MONTH)
 def benefit_m(income_m: float) -> float:
     return income_m * 0.5
 
 
-@policy_function(vectorization_strategy="vectorize", unit=Unit.DIMENSIONLESS)
+@policy_function(vectorization_strategy="vectorize", unit=TTSIMUnit.DIMENSIONLESS)
 def identity(x: int) -> int:
     return x
 
 
-@policy_function(vectorization_strategy="vectorize", unit=Unit.DIMENSIONLESS)
+@policy_function(vectorization_strategy="vectorize", unit=TTSIMUnit.DIMENSIONLESS)
 def identity_plus_one(identity: int) -> int:
     return identity + 1
 
 
-@policy_function(vectorization_strategy="vectorize", unit=Unit.DIMENSIONLESS)
+@policy_function(vectorization_strategy="vectorize", unit=TTSIMUnit.DIMENSIONLESS)
 def some_func(p_id: int) -> int:
     return p_id
 
 
-@policy_function(vectorization_strategy="vectorize", unit=Unit.DIMENSIONLESS)
+@policy_function(vectorization_strategy="vectorize", unit=TTSIMUnit.DIMENSIONLESS)
 def another_func(some_func: int) -> int:
     return some_func
 
 
-@param_function(unit=Unit.DIMENSIONLESS)
+@param_function(unit=TTSIMUnit.DIMENSIONLESS)
 def some_scalar_params_func(some_int_param: int) -> int:
     return some_int_param
 
 
-@policy_function(vectorization_strategy="vectorize", unit=Unit.DIMENSIONLESS)
+@policy_function(vectorization_strategy="vectorize", unit=TTSIMUnit.DIMENSIONLESS)
 def some_policy_func_taking_scalar_params_func(
     some_scalar_params_func: int,
 ) -> int:
@@ -104,7 +105,7 @@ class ConvertedParam:
     some_bool_param: bool
 
 
-@param_function(unit=Unit.DIMENSIONLESS)
+@param_function(unit=TTSIMUnit.DIMENSIONLESS)
 def some_converting_params_func(raw_param_spec: RawParamValue) -> ConvertedParam:
     return ConvertedParam(
         some_float_param=raw_param_spec["some_float_param"],
@@ -112,7 +113,7 @@ def some_converting_params_func(raw_param_spec: RawParamValue) -> ConvertedParam
     )
 
 
-@param_function(unit=Unit.DIMENSIONLESS)
+@param_function(unit=TTSIMUnit.DIMENSIONLESS)
 def some_param_function_taking_scalar(
     some_int_scalar: int,
     some_float_scalar: float,
@@ -121,7 +122,7 @@ def some_param_function_taking_scalar(
     return some_int_scalar + some_float_scalar + int(some_bool_scalar)
 
 
-@policy_function(vectorization_strategy="vectorize", unit=Unit.DIMENSIONLESS)
+@policy_function(vectorization_strategy="vectorize", unit=TTSIMUnit.DIMENSIONLESS)
 def some_policy_function_taking_int_param(some_int_param: int) -> float:
     return some_int_param
 
@@ -135,7 +136,7 @@ SOME_RAW_PARAM = RawParam(
     end_date=datetime.date(2025, 12, 31),
     name={"de": "Ein raw param spec", "en": "Some raw param spec"},
     description={"de": "Ein raw param spec", "en": "Some raw param spec"},
-    unit=Unit.DIMENSIONLESS,
+    unit=TTSIMUnit.DIMENSIONLESS,
     note=None,
     reference=None,
 )
@@ -147,7 +148,7 @@ SOME_INT_PARAM = ScalarParam(
     end_date=datetime.date(2025, 12, 31),
     name={"de": "Ein int param", "en": "Some int param"},
     description={"de": "Ein int param", "en": "Some int param"},
-    unit=Unit.DIMENSIONLESS,
+    unit=TTSIMUnit.DIMENSIONLESS,
     note=None,
     reference=None,
 )
@@ -159,7 +160,7 @@ SOME_DICT_PARAM = DictParam(
     end_date=datetime.date(2025, 12, 31),
     name={"de": "Ein dict param", "en": "Some dict param"},
     description={"de": "Ein dict param", "en": "Some dict param"},
-    unit=Unit.DIMENSIONLESS,
+    unit=TTSIMUnit.DIMENSIONLESS,
     note=None,
     reference=None,
 )
@@ -183,8 +184,8 @@ def some_piecewise_polynomial_param(xnp):
             "de": "Ein piecewise polynomial param",
             "en": "Some piecewise polynomial param",
         },
-        input_unit=Unit.DIMENSIONLESS,
-        output_unit=Unit.DIMENSIONLESS,
+        input_unit=TTSIMUnit.DIMENSIONLESS,
+        output_unit=TTSIMUnit.DIMENSIONLESS,
         note=None,
         reference=None,
     )
@@ -209,47 +210,49 @@ def minimal_input_data_shared_fam():
     }
 
 
-@agg_by_group_function(agg_type=AggType.SUM, unit=Unit.DIMENSIONLESS)
+@agg_by_group_function(agg_type=AggType.SUM, unit=TTSIMUnit.DIMENSIONLESS)
 def foo_fam(foo: int, fam_id: int) -> int:
     pass
 
 
 # Create a function which is used by some tests below
-@policy_function(vectorization_strategy="vectorize", unit=Unit.DIMENSIONLESS)
+@policy_function(vectorization_strategy="vectorize", unit=TTSIMUnit.DIMENSIONLESS)
 def func_before_partial(arg_1: int, some_param: int) -> int:
     return arg_1 + some_param
 
 
 @pytest.fixture
 @policy_function(
-    leaf_name="foo", vectorization_strategy="vectorize", unit=Unit.DIMENSIONLESS
+    leaf_name="foo", vectorization_strategy="vectorize", unit=TTSIMUnit.DIMENSIONLESS
 )
 def function_with_bool_return(x: bool) -> bool:
     return x
 
 
-@policy_input(unit=Unit.DIMENSIONLESS)
+@policy_input(unit=TTSIMUnit.DIMENSIONLESS)
 def x() -> int:
     pass
 
 
-@policy_input(unit=Unit.DIMENSIONLESS)
+@policy_input(unit=TTSIMUnit.DIMENSIONLESS)
 def x_f() -> float:
     pass
 
 
-@policy_input(unit=Unit.DIMENSIONLESS)
+@policy_input(unit=TTSIMUnit.DIMENSIONLESS)
 def x_b() -> bool:
     pass
 
 
-@policy_input(unit=Unit.DIMENSIONLESS)
+@policy_input(unit=TTSIMUnit.DIMENSIONLESS)
 def kin_id() -> int:
     pass
 
 
 @agg_by_group_function(
-    leaf_name="y_kin", agg_type=AggType.SUM, unit=Unit.DIMENSIONLESS.PER_LEVEL("kin")
+    leaf_name="y_kin",
+    agg_type=AggType.SUM,
+    unit=TTSIMUnit.DIMENSIONLESS.PER_LEVEL("kin"),
 )
 def y_kin(kin_id: int, x: int) -> int:
     pass
@@ -258,7 +261,9 @@ def y_kin(kin_id: int, x: int) -> int:
 # A SUM is the group's whatever the source's base (GEP 10) — even a dimensionless
 # share acquires the target level, so the declared unit spells it.
 @agg_by_group_function(
-    leaf_name="y_kin", agg_type=AggType.SUM, unit=Unit.DIMENSIONLESS.PER_LEVEL("kin")
+    leaf_name="y_kin",
+    agg_type=AggType.SUM,
+    unit=TTSIMUnit.DIMENSIONLESS.PER_LEVEL("kin"),
 )
 def y_kin_namespaced_input(kin_id: int, inputs__x: int) -> int:
     pass
@@ -266,7 +271,7 @@ def y_kin_namespaced_input(kin_id: int, inputs__x: int) -> int:
 
 @pytest.fixture
 @policy_function(
-    leaf_name="bar", vectorization_strategy="vectorize", unit=Unit.DIMENSIONLESS
+    leaf_name="bar", vectorization_strategy="vectorize", unit=TTSIMUnit.DIMENSIONLESS
 )
 def function_with_int_return(x: int) -> int:
     return x
@@ -274,7 +279,7 @@ def function_with_int_return(x: int) -> int:
 
 @pytest.fixture
 @policy_function(
-    leaf_name="baz", vectorization_strategy="vectorize", unit=Unit.DIMENSIONLESS
+    leaf_name="baz", vectorization_strategy="vectorize", unit=TTSIMUnit.DIMENSIONLESS
 )
 def function_with_float_return(x: int) -> float:
     return x
@@ -310,7 +315,7 @@ def return_n1__x_kin(n1__x_kin: int) -> int:
                 "p_id": p_id,
                 "n1": {
                     "f": policy_function(
-                        leaf_name="f", unit=Unit.DIMENSIONLESS, verify_units=False
+                        leaf_name="f", unit=TTSIMUnit.DIMENSIONLESS, verify_units=False
                     )(return_n1__x_kin),
                     "x": x,
                 },
@@ -329,7 +334,7 @@ def return_n1__x_kin(n1__x_kin: int) -> int:
                 "p_id": p_id,
                 "n1": {
                     "f": policy_function(
-                        leaf_name="f", unit=Unit.DIMENSIONLESS, verify_units=False
+                        leaf_name="f", unit=TTSIMUnit.DIMENSIONLESS, verify_units=False
                     )(return_x_kin),
                     "x": x,
                 },
@@ -347,7 +352,7 @@ def return_n1__x_kin(n1__x_kin: int) -> int:
                 "kin_id": kin_id,
                 "p_id": p_id,
                 "n1": {
-                    "f": policy_function(leaf_name="f", unit=Unit.DIMENSIONLESS)(
+                    "f": policy_function(leaf_name="f", unit=TTSIMUnit.DIMENSIONLESS)(
                         some_x
                     ),
                     "x": x,
@@ -366,7 +371,7 @@ def return_n1__x_kin(n1__x_kin: int) -> int:
                 "kin_id": kin_id,
                 "p_id": p_id,
                 "n1": {
-                    "f": policy_function(leaf_name="f", unit=Unit.DIMENSIONLESS)(
+                    "f": policy_function(leaf_name="f", unit=TTSIMUnit.DIMENSIONLESS)(
                         some_x
                     ),
                     "x": x,
@@ -387,7 +392,7 @@ def return_n1__x_kin(n1__x_kin: int) -> int:
                 "p_id": p_id,
                 "n1": {
                     "f": policy_function(
-                        leaf_name="f", unit=Unit.DIMENSIONLESS, verify_units=False
+                        leaf_name="f", unit=TTSIMUnit.DIMENSIONLESS, verify_units=False
                     )(return_y_kin),
                     "y_kin": y_kin_namespaced_input,
                 },
@@ -417,6 +422,7 @@ def test_create_agg_by_group_functions(
         tt_targets=TTTargets.tree(tt_targets__tree),
         rounding=False,
         backend=backend,
+        unit_system=middle_earth.UNIT_SYSTEM,
     )
 
 
@@ -435,6 +441,7 @@ def test_output_is_tree(minimal_input_data, backend, xnp):
         tt_targets=TTTargets.tree({"module": {"some_func": None}}),
         rounding=False,
         backend=backend,
+        unit_system=middle_earth.UNIT_SYSTEM,
     )
 
     assert isinstance(out, dict)
@@ -469,6 +476,7 @@ def test_params_target_is_allowed(minimal_input_data):
         tt_targets=TTTargets.tree({"some_param": None, "module": {"some_func": None}}),
         rounding=False,
         backend="numpy",
+        unit_system=middle_earth.UNIT_SYSTEM,
     )
 
     assert isinstance(out, dict)
@@ -484,13 +492,13 @@ def test_function_without_data_dependency_is_not_mistaken_for_data(
     @policy_function(
         leaf_name="a",
         vectorization_strategy="not_required",
-        unit=Unit.DIMENSIONLESS,
+        unit=TTSIMUnit.DIMENSIONLESS,
         verify_units=False,
     )
     def a() -> IntColumn:
         return xnp.array(minimal_input_data["p_id"])
 
-    @policy_function(leaf_name="b", unit=Unit.DIMENSIONLESS)
+    @policy_function(leaf_name="b", unit=TTSIMUnit.DIMENSIONLESS)
     def b(a: int) -> int:
         return a
 
@@ -507,6 +515,7 @@ def test_function_without_data_dependency_is_not_mistaken_for_data(
         tt_targets=TTTargets.tree({"b": None}),
         rounding=False,
         backend=backend,
+        unit_system=middle_earth.UNIT_SYSTEM,
     )
     numpy.testing.assert_array_almost_equal(
         results__tree["b"],
@@ -579,6 +588,7 @@ def test_user_provided_aggregate_by_group_specs(backend):
         tt_targets=TTTargets.tree({"module_name": {"betrag_m_fam": None}}),
         rounding=False,
         backend=backend,
+        unit_system=middle_earth.UNIT_SYSTEM,
     )
 
     pd.testing.assert_series_equal(
@@ -598,12 +608,14 @@ def test_user_provided_aggregation(backend):
     # Double up, then take max fam_id
     expected = pd.Series([400, 400, 200], index=pd.Index(data["p_id"], name="p_id"))
 
-    @policy_function(vectorization_strategy="vectorize", unit=Unit.CURRENCY.PER_MONTH)
+    @policy_function(
+        vectorization_strategy="vectorize", unit=TTSIMUnit.CURRENCY.PER_MONTH
+    )
     def betrag_double_m(betrag_m: float) -> float:
         return 2 * betrag_m
 
     @agg_by_group_function(
-        agg_type=AggType.MAX, unit=Unit.CURRENCY.PER_MONTH.PER_LEVEL("fam")
+        agg_type=AggType.MAX, unit=TTSIMUnit.CURRENCY.PER_MONTH.PER_LEVEL("fam")
     )
     def betrag_double_m_fam(betrag_double_m: float, fam_id: int) -> float:
         pass
@@ -626,6 +638,7 @@ def test_user_provided_aggregation(backend):
         tt_targets=TTTargets.tree({"module_name": {"betrag_double_m_fam": None}}),
         rounding=False,
         backend=backend,
+        unit_system=middle_earth.UNIT_SYSTEM,
     )
 
     pd.testing.assert_series_equal(
@@ -651,12 +664,14 @@ def test_user_provided_aggregation_with_time_conversion(backend):
         index=pd.Index(data["p_id"], name="p_id"),
     )
 
-    @policy_function(vectorization_strategy="vectorize", unit=Unit.CURRENCY.PER_MONTH)
+    @policy_function(
+        vectorization_strategy="vectorize", unit=TTSIMUnit.CURRENCY.PER_MONTH
+    )
     def betrag_double_m(betrag_m: float) -> float:
         return 2 * betrag_m
 
     @agg_by_group_function(
-        agg_type=AggType.MAX, unit=Unit.CURRENCY.PER_MONTH.PER_LEVEL("fam")
+        agg_type=AggType.MAX, unit=TTSIMUnit.CURRENCY.PER_MONTH.PER_LEVEL("fam")
     )
     def max_betrag_double_m_fam(betrag_double_m: float, fam_id: int) -> float:
         pass
@@ -679,6 +694,7 @@ def test_user_provided_aggregation_with_time_conversion(backend):
         tt_targets=TTTargets.tree({"module_name": {"max_betrag_double_y_fam": None}}),
         rounding=False,
         backend=backend,
+        unit_system=middle_earth.UNIT_SYSTEM,
     )
 
     pd.testing.assert_series_equal(
@@ -689,7 +705,7 @@ def test_user_provided_aggregation_with_time_conversion(backend):
     )
 
 
-@agg_by_p_id_function(agg_type=AggType.SUM, unit=Unit.DIMENSIONLESS)
+@agg_by_p_id_function(agg_type=AggType.SUM, unit=TTSIMUnit.DIMENSIONLESS)
 def sum_source_by_p_id_someone_else(
     source: int,
     p_id: int,
@@ -700,7 +716,7 @@ def sum_source_by_p_id_someone_else(
     pass
 
 
-@agg_by_p_id_function(agg_type=AggType.SUM, unit=Unit.CURRENCY.PER_MONTH)
+@agg_by_p_id_function(agg_type=AggType.SUM, unit=TTSIMUnit.CURRENCY.PER_MONTH)
 def sum_source_m_by_p_id_someone_else(
     source_m: int,
     p_id: int,
@@ -721,7 +737,7 @@ def sum_source_m_by_p_id_someone_else(
                 },
             },
             "source",
-            Unit.DIMENSIONLESS,
+            TTSIMUnit.DIMENSIONLESS,
             {"module": {"sum_source_by_p_id_someone_else": None}},
             pd.Series([200, 100, 0], index=pd.Index([0, 1, 2], name="p_id")),
         ),
@@ -733,7 +749,7 @@ def sum_source_m_by_p_id_someone_else(
             },
             "source_m",
             # The _m suffix denotes a flow, so a flow token is required.
-            Unit.CURRENCY.PER_MONTH,
+            TTSIMUnit.CURRENCY.PER_MONTH,
             {"module": {"sum_source_m_by_p_id_someone_else": None}},
             pd.Series([200, 100, 0], index=pd.Index([0, 1, 2], name="p_id")),
         ),
@@ -776,6 +792,7 @@ def test_user_provided_aggregate_by_p_id_specs(
         tt_targets=TTTargets.tree(target_tree),
         rounding=False,
         backend=backend,
+        unit_system=middle_earth.UNIT_SYSTEM,
     )
 
     pd.testing.assert_series_equal(
@@ -899,6 +916,7 @@ def test_can_override_ttsim_objects_with_data(
         include_fail_nodes=False,
         rounding=False,
         backend=backend,
+        unit_system=middle_earth.UNIT_SYSTEM,
     )
 
     flat_actual = dt.flatten_to_tree_paths(actual)
@@ -927,6 +945,7 @@ def test_scalars_in_input_data_become_part_of_specialized_environment(xnp, backe
         evaluation_date_str="2024-01-01",
         backend=backend,
         include_warn_nodes=False,
+        unit_system=middle_earth.UNIT_SYSTEM,
     )
     assert root_nodes == set()
 
@@ -956,7 +975,15 @@ def test_derived_time_converted_scalar_drives_derived_consumer(xnp, backend):
         "include_warn_nodes": False,
         "include_fail_nodes": False,
     }
-    root_nodes = main(main_target=MainTarget.labels.root_nodes, **common_kwargs)  # ty: ignore[invalid-argument-type]
+    root_nodes = main(
+        main_target=MainTarget.labels.root_nodes,
+        **common_kwargs,  # ty: ignore[invalid-argument-type]
+        unit_system=middle_earth.UNIT_SYSTEM,
+    )
     assert root_nodes == set()
-    result = main(main_target=MainTarget.results.tree, **common_kwargs)  # ty: ignore[invalid-argument-type]
+    result = main(
+        main_target=MainTarget.results.tree,
+        **common_kwargs,  # ty: ignore[invalid-argument-type]
+        unit_system=middle_earth.UNIT_SYSTEM,
+    )
     numpy.testing.assert_allclose(result["benefit_m"], numpy.full(3, 500.0))

@@ -17,6 +17,7 @@ from ttsim.interface_dag_elements.processed_data import (
     currency_conversion_factor_and_columns,
     value_in_target_currency,
 )
+from ttsim.tt.currencies import UnitSystem
 from ttsim.tt.units import (
     UnitAnnotatedColumn,
     composite_from_resolved_unit,
@@ -45,6 +46,7 @@ def tree(
     specialized_environment__without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,  # noqa: E501
     data_currency: str,
     computation_currency: str,
+    unit_system: UnitSystem,
 ) -> NestedResults:
     """The combined results as a tree with original row order restored.
 
@@ -60,6 +62,7 @@ def tree(
         ),
         source_currency=computation_currency,
         target_currency=data_currency,
+        unit_system=unit_system,
     )
 
     restore_order = numpy.empty(len(input_data__sort_indices), dtype=int)
@@ -95,6 +98,7 @@ def tree_with_unit_annotations(
     unit_checks__resolved_units: dict[str, pint.Unit | dict[str | int, Any]],
     data_currency: str,
     computation_currency: str,
+    unit_system: UnitSystem,
 ) -> NestedResults:
     """The combined results as a tree of :class:`UnitAnnotatedColumn` leaves.
 
@@ -108,6 +112,7 @@ def tree_with_unit_annotations(
 
     A leaf with no resolved unit is left bare.
     """
+    registry = unit_system.registry
     resolved = unit_checks__resolved_units
     tagged: dict[str, Any] = {}
     for qname, value in dt.flatten_to_qnames(tree).items():
@@ -117,19 +122,19 @@ def tree_with_unit_annotations(
             continue
         if qname in raw_results__from_input_data:
             result_unit = input_target_unit_in_data_currency(
-                units=unit, data_currency=data_currency
+                units=unit, data_currency=data_currency, registry=registry
             )
         elif qname in raw_results__params:
             result_unit = param_unit_in_computation_currency(
-                units=unit, computation_currency=computation_currency
+                units=unit, computation_currency=computation_currency, registry=registry
             )
         else:
             result_unit = output_unit_in_data_currency(
-                units=unit, data_currency=data_currency
+                units=unit, data_currency=data_currency, registry=registry
             )
         tagged[qname] = UnitAnnotatedColumn(
             values=value,
-            unit=composite_from_resolved_unit(result_unit),
+            unit=composite_from_resolved_unit(units=result_unit, registry=registry),
         )
     return dt.unflatten_from_qnames(tagged)
 

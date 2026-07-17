@@ -11,7 +11,7 @@ from ttsim.interface_dag_elements.fail_if import (
 )
 from ttsim.interface_dag_elements.interface_node_objects import warn_function
 from ttsim.tt.column_objects_param_function import PolicyInput
-from ttsim.tt.currencies import base_currency
+from ttsim.tt.currencies import UnitSystem
 from ttsim.warnings import PotentialCurrencyMismatchWarning
 
 if TYPE_CHECKING:
@@ -32,15 +32,18 @@ if TYPE_CHECKING:
         "computation_currency",
         "data_currency",
         "policy_date",
+        "unit_system",
     ]
 )
 def statutory_currency_and_base_currency_differ(
     computation_currency: str,
     data_currency: str,
     policy_date: datetime.date,
+    unit_system: UnitSystem,
 ) -> None:
     """Warn if the statutory currency and base currency differ."""
-    if computation_currency != base_currency() and data_currency == base_currency():
+    base_currency = unit_system.base_currency
+    if computation_currency != base_currency and data_currency == base_currency:
         msg = (
             f"The statutory currency for {policy_date} is {computation_currency}, "
             f"but the currency of the input and output data is {data_currency}. Make "

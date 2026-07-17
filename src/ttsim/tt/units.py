@@ -3,6 +3,12 @@
 Establishes the closed unit vocabulary that checks the dimensional soundness of
 the taxes-and-transfers DAG, plus the build-time machinery that runs the check.
 
+The vocabulary here is spelled in :class:`CompositeUnit` values, which carry no
+registry reference — ``TTSIMUnit.CURRENCY.PER_MONTH`` is a pure value. Resolving one
+to a :class:`pint.Unit` needs a registry, which a policy system owns
+(:class:`ttsim.tt.currencies.UnitSystem`); every helper below that resolves,
+parses, or compares takes that registry explicitly.
+
 pint is a build-time tool only — it never wraps a live array (a
 :class:`pint.Quantity` is not a JAX pytree and does not trace under ``jit``). It
 serves two build-time jobs:
@@ -19,7 +25,8 @@ grouping level, in that canonical order. It
 has two round-tripping spellings (via :func:`parse_compositional_unit` /
 :func:`str`):
 
-- fluent, off the :class:`Unit` namespace (``Unit.CURRENCY.PER_MONTH.PER_BG``);
+- fluent, off the :class:`TTSIMUnit` namespace
+  (``TTSIMUnit.CURRENCY.PER_MONTH.PER_BG``);
 - flat canonical string, in YAML (``CURRENCY_PER_MONTH_PER_BG``).
 
 The base is ``CURRENCY`` on columns and functions; on parameters it is a
@@ -105,7 +112,7 @@ class CompositeUnit:
     (``.PER_BG.PER_MONTH``) is a definition error. Two round-tripping spellings
     (via :func:`str`):
 
-    - fluent, off a base (``Unit.CURRENCY.PER_MONTH.PER_BG``);
+    - fluent, off a base (``TTSIMUnit.CURRENCY.PER_MONTH.PER_BG``);
     - flat canonical string, parsed by :func:`parse_compositional_unit`
       (``"CURRENCY_PER_MONTH_PER_BG"``).
 
@@ -173,7 +180,7 @@ class CompositeUnit:
 
     @property
     def PER_HOURS(self) -> CompositeUnit:  # noqa: N802 (DSL: mirrors the token)
-        """This unit per working hour (``Unit.CURRENCY.PER_HOURS``, a wage floor).
+        """This unit per working hour (``TTSIMUnit.CURRENCY.PER_HOURS``, a wage floor).
 
         Shares the physical-denominator slot with the area: a price is per at
         most one physical thing.
@@ -287,9 +294,9 @@ def base_is_level_carrying(base: str) -> bool:
 
 
 def resolve_compositional_unit(
-    unit: CompositeUnit, *, with_level: bool = True
+    unit: CompositeUnit, *, registry: pint.UnitRegistry, with_level: bool = True
 ) -> pint.Unit:
-    """Resolve a compositional unit to its pint unit.
+    """Resolve a compositional unit to its pint unit in ``registry``.
 
     Each denominator divides the base in turn:
 
@@ -302,37 +309,42 @@ def resolve_compositional_unit(
     (the concrete currency drives the build-time conversion, not the check).
 
     Raises:
-        UnitDefinitionError: If a level denominator names an unregistered
-            grouping level.
+        UnitDefinitionError: If a level denominator names a grouping level the
+            registry does not define.
     """
     if _is_currency_base(unit.base):
-        resolved = UNIT_REGISTRY.parse_units(CURRENCY_TOKEN)
+        resolved = registry.parse_units(CURRENCY_TOKEN)
     elif unit.base == "PERSON_COUNT":
         # Via the helper so an un-built registry fails loudly.
-        resolved = _grouping_level_unit(PERSON_LEVEL)
+        resolved = _grouping_level_unit(name=PERSON_LEVEL, registry=registry)
     else:
         base = _COMPOSITIONAL_BASE_TO_PINT[unit.base]
         resolved = (
-            UNIT_REGISTRY.dimensionless
-            if base is None
-            else UNIT_REGISTRY.parse_units(base)
+            registry.dimensionless if base is None else registry.parse_units(base)
         )
     if unit.area is not None:
         resolved = _divide_by_period(
-            non_time_unit=resolved, period_pint_name=_AREA_TOKEN_TO_PINT[unit.area]
+            non_time_unit=resolved,
+            period_pint_name=_AREA_TOKEN_TO_PINT[unit.area],
+            registry=registry,
         )
     if unit.period is not None:
         resolved = _divide_by_period(
-            non_time_unit=resolved, period_pint_name=_PERIOD_TOKEN_TO_PINT[unit.period]
+            non_time_unit=resolved,
+            period_pint_name=_PERIOD_TOKEN_TO_PINT[unit.period],
+            registry=registry,
         )
     if with_level and unit.level is not None:
-        resolved = divide_by_grouping_level(unit=resolved, level=unit.level.lower())
+        resolved = divide_by_grouping_level(
+            unit=resolved, level=unit.level.lower(), registry=registry
+        )
     return resolved
 
 
 def _attach_implied_person_leaf(
     resolved: pint.Unit,
     unit: CompositeUnit,
+    registry: pint.UnitRegistry,
     *,
     is_boolean: bool = False,
 ) -> pint.Unit:
@@ -353,7 +365,9 @@ def _attach_implied_person_leaf(
     if unit.level is not None:
         return resolved
     if is_boolean or (base_is_level_carrying(unit.base) and unit.area is None):
-        return divide_by_grouping_level(unit=resolved, level=PERSON_LEVEL)
+        return divide_by_grouping_level(
+            unit=resolved, level=PERSON_LEVEL, registry=registry
+        )
     return resolved
 
 
@@ -363,6 +377,7 @@ def resolve_compositional_column_unit(
     time_unit_id: str | None,
     grouping_level: str,
     where: str,
+    registry: pint.UnitRegistry,
     is_boolean: bool = False,
 ) -> pint.Unit:
     """Resolve a column/function's compositional unit, validating the name suffix.
@@ -412,9 +427,9 @@ def resolve_compositional_column_unit(
             f"aggregation suffix implies {grouping_level.upper()!r}; a spelled "
             f"group level must not contradict the suffix (GEP 10)."
         )
-    resolved = resolve_compositional_unit(unit=unit, with_level=True)
+    resolved = resolve_compositional_unit(unit=unit, registry=registry, with_level=True)
     return _attach_implied_person_leaf(
-        resolved=resolved, unit=unit, is_boolean=is_boolean
+        resolved=resolved, unit=unit, registry=registry, is_boolean=is_boolean
     )
 
 
@@ -434,6 +449,7 @@ def unit_with_rebased_period(unit: CompositeUnit, time_unit_id: str) -> Composit
 def resolve_compositional_param_unit(
     unit: CompositeUnit,
     *,
+    registry: pint.UnitRegistry,
     time_unit_id: str | None = None,
     where: str,
 ) -> pint.Unit:
@@ -462,12 +478,12 @@ def resolve_compositional_param_unit(
                 f"{where}: the unit spells period {unit.period!r} but the name's "
                 f"time suffix implies {expected_period!r}; they must agree (GEP 10)."
             )
-    resolved = resolve_compositional_unit(unit=unit, with_level=True)
-    return _attach_implied_person_leaf(resolved=resolved, unit=unit)
+    resolved = resolve_compositional_unit(unit=unit, registry=registry, with_level=True)
+    return _attach_implied_person_leaf(resolved=resolved, unit=unit, registry=registry)
 
 
 def _resolve_agnostic_body_unit(
-    unit: CompositeUnit, *, where: str, what: str
+    unit: CompositeUnit, *, registry: pint.UnitRegistry, where: str, what: str
 ) -> pint.Unit:
     """Resolve a code-side compositional unit with no name to validate against.
 
@@ -485,33 +501,38 @@ def _resolve_agnostic_body_unit(
             f"the agnostic {CURRENCY_TOKEN} — only parameters and rounding specs "
             f"pin down concrete currencies (GEP 10)."
         )
-    resolved = resolve_compositional_unit(unit=unit, with_level=True)
-    return _attach_implied_person_leaf(resolved=resolved, unit=unit)
+    resolved = resolve_compositional_unit(unit=unit, registry=registry, with_level=True)
+    return _attach_implied_person_leaf(resolved=resolved, unit=unit, registry=registry)
 
 
-def resolve_compositional_cast_unit(unit: CompositeUnit, *, where: str) -> pint.Unit:
+def resolve_compositional_cast_unit(
+    unit: CompositeUnit, *, registry: pint.UnitRegistry, where: str
+) -> pint.Unit:
     """Resolve the target unit of a :func:`cast_unit` call inside a body."""
     return _resolve_agnostic_body_unit(
-        unit=unit, where=where, what="a cast inside a body"
+        unit=unit, registry=registry, where=where, what="a cast inside a body"
     )
 
 
-def resolve_compositional_field_unit(unit: CompositeUnit, *, where: str) -> pint.Unit:
+def resolve_compositional_field_unit(
+    unit: CompositeUnit, *, registry: pint.UnitRegistry, where: str
+) -> pint.Unit:
     """Resolve a parameter dataclass field annotation's compositional unit (GEP 10)."""
     return _resolve_agnostic_body_unit(
-        unit=unit, where=where, what="a field annotation"
+        unit=unit, registry=registry, where=where, what="a field annotation"
     )
 
 
 class _UnitNamespaceMeta(type):
-    """Metaclass for :class:`Unit` so ``ty`` accepts dynamically-added bases.
+    """Metaclass for :class:`TTSIMUnit` so ``ty`` accepts dynamically-added bases.
 
-    Concrete currency bases (``Unit.EUR``, ``Unit.DM``, ``Unit.SILVER_PENNY``)
-    are injected onto :class:`Unit` by :func:`register_currency` at registration
+    Concrete currency bases (``TTSIMUnit.EUR``, ``TTSIMUnit.DM``,
+    ``TTSIMUnit.SILVER_PENNY``)
+    are injected onto :class:`TTSIMUnit` by :func:`register_currency` at registration
     time — they cannot be hard-wired class attributes because the currency
     vocabulary is discovered per package. At runtime an injected base is a real
     attribute, so this metaclass adds no ``__getattr__``; under type checking it
-    declares one so ``Unit.EUR`` type-checks (mirroring
+    declares one so ``TTSIMUnit.EUR`` type-checks (mirroring
     :class:`CompositeUnit`'s builder-step hint).
     """
 
@@ -520,42 +541,42 @@ class _UnitNamespaceMeta(type):
         def __getattr__(cls, name: str) -> CompositeUnit: ...
 
 
-class Unit(metaclass=_UnitNamespaceMeta):
+class TTSIMUnit(metaclass=_UnitNamespaceMeta):
     """The builder namespace of unit *bases*.
 
-    Each attribute is a bare :class:`CompositeUnit` — ``Unit.CURRENCY`` *is*
+    Each attribute is a bare :class:`CompositeUnit` — ``TTSIMUnit.CURRENCY`` *is*
     ``CompositeUnit(base="CURRENCY")`` — that heads a ``.per_*`` builder chain
     enforcing the canonical order ``base _PER_ <area> _PER_ <period> _PER_
-    <level>`` (``Unit.CURRENCY.PER_MONTH.PER_BG``).
+    <level>`` (``TTSIMUnit.CURRENCY.PER_MONTH.PER_BG``).
 
     The agnostic currency base ``CURRENCY`` lives here permanently; each concrete
     currency base (``EUR``, ``DM``, ``SILVER_PENNY``) is injected by
     :func:`register_currency` when its package registers it, so concrete bases
-    can tag a :class:`UnitAnnotatedColumn` of input data (``Unit.EUR.PER_MONTH``)
+    can tag a :class:`UnitAnnotatedColumn` of input data (``TTSIMUnit.EUR.PER_MONTH``)
     even though a column/function declaration must stay agnostic.
     """
 
     CURRENCY = CompositeUnit(base=CURRENCY_TOKEN)
     """An amount of currency (agnostic): wages, claims, benefits, wealth. A
-    period denominator makes it a flow (``Unit.CURRENCY.PER_MONTH``)."""
+    period denominator makes it a flow (``TTSIMUnit.CURRENCY.PER_MONTH``)."""
 
     DIMENSIONLESS = CompositeUnit(base="DIMENSIONLESS")
     """A plain dimensionless number: a share, a rate. A boolean declares
     ``DIMENSIONLESS`` too — bare for a person-level indicator, its group level
-    spelled for a group one (``Unit.DIMENSIONLESS.PER_FAM``)."""
+    spelled for a group one (``TTSIMUnit.DIMENSIONLESS.PER_FAM``)."""
 
     PERSON_COUNT = CompositeUnit(base="PERSON_COUNT")
     """The individual (leaf) count base — the numerator of a head count
     (``[person]``). With a level denominator it is a head count per group:
-    ``Unit.PERSON_COUNT.PER_BG`` resolves to ``[person] / [bg]``."""
+    ``TTSIMUnit.PERSON_COUNT.PER_BG`` resolves to ``[person] / [bg]``."""
 
     HOURS = CompositeUnit(base="HOURS")
     """Working hours (the isolated ``[hours]`` dimension). A period denominator
-    re-bases them (``Unit.HOURS.PER_WEEK``)."""
+    re-bases them (``TTSIMUnit.HOURS.PER_WEEK``)."""
 
     SQUARE_METER = CompositeUnit(base="SQUARE_METER")
     """An area in square meters; also the lone *area* denominator
-    (``Unit.CURRENCY.PER_SQUARE_METER``)."""
+    (``TTSIMUnit.CURRENCY.PER_SQUARE_METER``)."""
 
     HECTARE = CompositeUnit(base="HECTARE")
     """An area in hectares: land."""
@@ -587,10 +608,11 @@ class UnitAnnotatedColumn:
 
     The leaf type of the unit-annotated input *and* result trees (GEP 10). On the
     way in, the user hand-authors one per column —
-    ``UnitAnnotatedColumn(values=[2000.0, 0.0], unit=Unit.EUR.PER_MONTH)`` — and
-    a currency column must name a **concrete** currency (``Unit.EUR``,
-    ``Unit.DM``), exactly as a parameter does; the agnostic ``Unit.CURRENCY`` is
-    rejected at the boundary. On the way out, each result leaf is wrapped the same
+    ``UnitAnnotatedColumn(values=[2000.0, 0.0], unit=TTSIMUnit.EUR.PER_MONTH)`` — and
+    a currency column must name a **concrete** currency (``TTSIMUnit.EUR``,
+    ``TTSIMUnit.DM``), exactly as a parameter does; the agnostic
+    ``TTSIMUnit.CURRENCY`` is rejected at the boundary. On the way out, each result
+    leaf is wrapped the same
     way, its ``unit`` the node's resolved unit — a column's in the concrete data
     currency, a parameter's in its statutory currency.
 
@@ -600,7 +622,7 @@ class UnitAnnotatedColumn:
     Args:
         values: The column data — any leaf the ordinary input tree accepts (a
             list, a numpy/JAX array, a ``pd.Series``); canonicalized downstream.
-        unit: The column's compositional unit, built off :class:`Unit`.
+        unit: The column's compositional unit, built off :class:`TTSIMUnit`.
     """
 
     values: Any
@@ -634,7 +656,7 @@ def cast_unit(
 
     Args:
         value: The expression to re-tag; returned unchanged.
-        unit: The stated unit — built off :class:`Unit` or the flat
+        unit: The stated unit — built off :class:`TTSIMUnit` or the flat
             compositional spelling.
 
     Returns:
@@ -737,8 +759,12 @@ def coerce_to_composite_unit(
     )
 
 
-def _build_registry() -> pint.UnitRegistry:
-    """Create the module-level registry with the units TTSIM knows about.
+def build_registry() -> pint.UnitRegistry:
+    """Create a registry holding the units TTSIM knows about.
+
+    One registry per policy system (:class:`ttsim.tt.currencies.UnitSystem`),
+    which then defines its own currencies and grouping levels into it. The
+    vocabulary built here is the part every system shares.
 
     pint's defaults already provide the ``[time]`` units (``year``, ``month``,
     ``week``, ``day`` — with the per-year factors GETTSIM uses: 12, 365.25/7,
@@ -763,8 +789,9 @@ def _build_registry() -> pint.UnitRegistry:
       ever uses magnitude ``1.0`` and the runtime path is bare arrays — so we
       pick the 1900-01-01 epoch, aligned across the three axes. Subtracting two
       points yields pint's companion ``delta_calendar_*`` *duration* unit, which
-      :attr:`Unit.YEARS` / :attr:`Unit.MONTHS` / :attr:`Unit.DAYS` resolve to
-      (each is ratio 1 against ``year`` / ``month`` / ``day``).
+      :attr:`TTSIMUnit.YEARS` / :attr:`TTSIMUnit.MONTHS` /
+      :attr:`TTSIMUnit.DAYS` resolve to (each is ratio 1 against
+      ``year`` / ``month`` / ``day``).
 
     pint's remaining built-ins parse, but :func:`parse_unit` rejects every
     token outside :data:`_ALLOWED_UNIT_TOKENS`, so they cannot appear in a
@@ -780,19 +807,31 @@ def _build_registry() -> pint.UnitRegistry:
     return ureg
 
 
-#: The single module-level registry. Downstream packages mutate it by calling
-#: :func:`register_currency`; nothing else should call ``UNIT_REGISTRY.define``.
-UNIT_REGISTRY = _build_registry()
+#: The dimension names :func:`build_registry` mints for currency and takes from
+#: pint for time. Every registry spells them the same way, and a pint
+#: dimensionality compares by content, so the boundary helpers pick a unit's
+#: currency / flow-period component out by matching against these directly —
+#: no registry needed.
+_CURRENCY_DIMENSIONALITY: Mapping[str, Any] = {"[currency]": 1}
+_TIME_DIMENSIONALITY: Mapping[str, Any] = {"[time]": 1}
 
-#: Reference dimensionalities, computed once against the built registry. The
-#: ``[currency]`` dimension and ``[time]`` (named via ``year``) are process
-#: constants; the boundary helpers compare a unit's components against them to
-#: pick out its currency / flow-period part.
-_CURRENCY_DIMENSIONALITY = UNIT_REGISTRY.Quantity(1.0, CURRENCY_TOKEN).dimensionality
-_TIME_DIMENSIONALITY = UNIT_REGISTRY.Quantity(1.0, "year").dimensionality
+
+def _unit_is_currency(unit: pint.Unit) -> bool:
+    """Whether a pint unit is exactly one power of the ``[currency]`` dimension."""
+    return dict(unit.dimensionality) == _CURRENCY_DIMENSIONALITY
+
+
+def _unit_is_time(unit: pint.Unit) -> bool:
+    """Whether a pint unit is exactly one power of the ``[time]`` dimension."""
+    return dict(unit.dimensionality) == _TIME_DIMENSIONALITY
+
 
 #: The unit tokens a declaration may combine: TTSIM rejects any unit it does not
-#: know about. :func:`register_currency` adds each registered concrete currency.
+#: know about. Each policy system adds its concrete currencies and grouping
+#: levels. The set is global and additive: a token is a *name*, and two systems'
+#: names are disjoint but for the shared vocabulary, so admitting the union costs
+#: only precision in the error message for a token of the wrong system — which
+#: the system's own registry then rejects anyway.
 #: ``meter`` is admitted for areas (``meter ** 2``).
 _ALLOWED_UNIT_TOKENS: set[str] = {
     CURRENCY_TOKEN,
@@ -813,21 +852,15 @@ _ALLOWED_UNIT_TOKENS: set[str] = {
     "delta_calendar_day",
 }
 
-#: The concrete currencies registered so far (their pint unit names). A currency
-#: is a valid compositional *base* (its upper-cased name); on a parameter the
-#: base also names the currency the numbers are written in.
+#: The concrete currencies of every policy system built so far (their pint unit
+#: names). A currency is a valid compositional *base* (its upper-cased name); on
+#: a parameter the base also names the currency the numbers are written in. Names
+#: only — which currencies are *interconvertible* is a per-system question the
+#: system's registry answers.
 _registered_currencies: set[str] = set()
 
 #: Tolerance for the magnitude part of a unit-equivalence comparison.
 _REL_TOL = 1e-9
-
-
-#: The grouping levels registered so far (the bare names, e.g. ``"person"``,
-#: ``"hh"``), populated by :func:`register_grouping_levels`. ``person`` (the
-#: individual leaf, doubling as the ``[person]`` count dimension) is always
-#: present once any level has been registered. The set is discovered per build
-#: from the policy environment's ``*_id`` columns; ttsim ships no fixed list.
-_registered_grouping_levels: set[str] = set()
 
 
 def _grouping_level_unit_name(name: str) -> str:
@@ -835,10 +868,28 @@ def _grouping_level_unit_name(name: str) -> str:
     return f"{_GROUPING_LEVEL_PREFIX}{name}"
 
 
-def _fail_if_grouping_level_is_unknown(name: str) -> None:
-    """Reject a grouping-level name that has not been registered."""
-    if name not in _registered_grouping_levels:
-        known = ", ".join(sorted(_registered_grouping_levels)) or "(none registered)"
+def registered_grouping_levels(registry: pint.UnitRegistry) -> set[str]:
+    """The grouping levels a registry defines a dimension for.
+
+    The bare names (``"person"``, ``"hh"``, …). ``person`` — the individual leaf,
+    doubling as the ``[person]`` count dimension — is present once any level has
+    been registered. The set is discovered per build from the policy
+    environment's ``*_id`` columns; ttsim ships no fixed list.
+    """
+    return {
+        name.removeprefix(_GROUPING_LEVEL_PREFIX)
+        for name in registry
+        if name.startswith(_GROUPING_LEVEL_PREFIX)
+    }
+
+
+def _fail_if_grouping_level_is_unknown(name: str, registry: pint.UnitRegistry) -> None:
+    """Reject a grouping level the registry defines no dimension for."""
+    if _grouping_level_unit_name(name) not in registry:
+        known = (
+            ", ".join(sorted(registered_grouping_levels(registry)))
+            or "(none registered)"
+        )
         raise UnitDefinitionError(
             f"Unknown grouping level {name!r}; expected one of {known}. Grouping "
             f"levels are discovered per build from the `*_id` columns and "
@@ -846,17 +897,19 @@ def _fail_if_grouping_level_is_unknown(name: str) -> None:
         )
 
 
-def _grouping_level_unit(name: str) -> pint.Unit:
+def _grouping_level_unit(name: str, registry: pint.UnitRegistry) -> pint.Unit:
     """The pint unit of a registered grouping level.
 
     Raises:
         UnitDefinitionError: If the level has not been registered.
     """
-    _fail_if_grouping_level_is_unknown(name)
-    return UNIT_REGISTRY.parse_units(_grouping_level_unit_name(name))
+    _fail_if_grouping_level_is_unknown(name=name, registry=registry)
+    return registry.parse_units(_grouping_level_unit_name(name))
 
 
-def divide_by_grouping_level(unit: pint.Unit, level: str) -> pint.Unit:
+def divide_by_grouping_level(
+    unit: pint.Unit, level: str, registry: pint.UnitRegistry
+) -> pint.Unit:
     """Return ``unit`` divided by a grouping level's unit.
 
     A leveled quantity carries its level as a denominator, exactly as a flow
@@ -873,10 +926,12 @@ def divide_by_grouping_level(unit: pint.Unit, level: str) -> pint.Unit:
     Raises:
         UnitDefinitionError: If the level has not been registered.
     """
-    return unit / _grouping_level_unit(level)
+    return unit / _grouping_level_unit(name=level, registry=registry)
 
 
-def grouping_level_count_unit(target_level: str) -> pint.Unit:
+def grouping_level_count_unit(
+    target_level: str, registry: pint.UnitRegistry
+) -> pint.Unit:
     """The unit of a head count over ``target_level``.
 
     A head count is the ``[person]`` *count* dimension over the group it counts
@@ -887,10 +942,12 @@ def grouping_level_count_unit(target_level: str) -> pint.Unit:
     Raises:
         UnitDefinitionError: If ``person`` or ``target_level`` is not registered.
     """
-    return _grouping_level_unit(PERSON_LEVEL) / _grouping_level_unit(target_level)
+    return _grouping_level_unit(
+        name=PERSON_LEVEL, registry=registry
+    ) / _grouping_level_unit(name=target_level, registry=registry)
 
 
-def parse_unit(unit_str: str) -> pint.Unit:
+def parse_unit(unit_str: str, registry: pint.UnitRegistry) -> pint.Unit:
     """Parse a pint unit string, enforcing the closed pint-token vocabulary.
 
     Internal: declarations are :class:`CompositeUnit`\\ s, never pint syntax. This
@@ -916,13 +973,13 @@ def parse_unit(unit_str: str) -> pint.Unit:
             f"A unit must be given as a string, got {unit_str!r}."
         )
     try:
-        unit = UNIT_REGISTRY.parse_units(unit_str)
+        unit = registry.parse_units(unit_str)
     except (pint.errors.PintError, AssertionError, ValueError, TypeError) as e:
         raise UnitDefinitionError(f"Could not parse unit {unit_str!r}: {e}") from e
     _fail_if_unit_tokens_are_unknown(unit=unit, unit_str=unit_str)
     if not to_units_container(unit):
         raise UnitDefinitionError(
-            f"Unit {unit_str!r} resolves to the dimensionless unit. A "
+            f"TTSIMUnit {unit_str!r} resolves to the dimensionless unit. A "
             f"dimensionless quantity (a share, a rate, a head count) declares "
             f"`DIMENSIONLESS` (GEP 10)."
         )
@@ -945,31 +1002,23 @@ def _fail_if_unit_tokens_are_unknown(
     )
     if offending:
         raise UnitDefinitionError(
-            f"Unit {unit_str!r} involves unit token(s) TTSIM does not know "
+            f"TTSIMUnit {unit_str!r} involves unit token(s) TTSIM does not know "
             f"about: {', '.join(offending)}. Known units are "
             f"{', '.join(sorted(_ALLOWED_UNIT_TOKENS))} (GEP 10)."
         )
 
 
-def _divide_by_period(non_time_unit: pint.Unit, period_pint_name: str) -> pint.Unit:
+def _divide_by_period(
+    non_time_unit: pint.Unit, period_pint_name: str, registry: pint.UnitRegistry
+) -> pint.Unit:
     """Return ``non_time_unit / period`` as a pint unit."""
-    period = UNIT_REGISTRY.Quantity(1.0, period_pint_name)
-    return (UNIT_REGISTRY.Quantity(1.0, non_time_unit) / period).units
+    period = registry.Quantity(1.0, period_pint_name)
+    return (registry.Quantity(1.0, non_time_unit) / period).units
 
 
-def _token_base_unit(token: CompositeUnit) -> pint.Unit:
-    """The pint unit of a unit's physical kind — its period and grouping level
-    stripped (its area kept).
-
-    A currency base resolves to the agnostic :data:`CURRENCY_TOKEN` unit: for
-    dimensionality a registered currency means exactly what its agnostic
-    counterpart means — the concrete currency only drives the build-time
-    conversion of the numbers.
-    """
-    return resolve_compositional_unit(replace(token, period=None, level=None))
-
-
-def units_are_equivalent(left: pint.Unit, right: pint.Unit) -> bool:
+def units_are_equivalent(
+    left: pint.Unit, right: pint.Unit, registry: pint.UnitRegistry
+) -> bool:
     """Whether two units are interchangeable on a DAG edge.
 
     Equivalent iff they share a dimensionality *and* a magnitude (their ratio is
@@ -990,8 +1039,8 @@ def units_are_equivalent(left: pint.Unit, right: pint.Unit) -> bool:
       ``year`` / ``delta_calendar_year`` duration nor to a ``calendar_month``
       point on another axis.
     """
-    left_quantity = UNIT_REGISTRY.Quantity(1.0, left)
-    right_quantity = UNIT_REGISTRY.Quantity(1.0, right)
+    left_quantity = registry.Quantity(1.0, left)
+    right_quantity = registry.Quantity(1.0, right)
     if left_quantity.dimensionality != right_quantity.dimensionality:
         return False
     try:
@@ -1001,7 +1050,7 @@ def units_are_equivalent(left: pint.Unit, right: pint.Unit) -> bool:
     return math.isclose(ratio.magnitude, 1.0, rel_tol=_REL_TOL)
 
 
-def is_calendar_point_unit(unit: pint.Unit) -> bool:
+def is_calendar_point_unit(unit: pint.Unit, registry: pint.UnitRegistry) -> bool:
     """Whether a resolved unit is an affine calendar *point*.
 
     A calendar point (``calendar_year`` and its month/day siblings) is a pint
@@ -1019,7 +1068,7 @@ def is_calendar_point_unit(unit: pint.Unit) -> bool:
     ``point + duration``. Detection is by the very property that defines an offset
     unit: it cannot be divided by itself.
     """
-    quantity = UNIT_REGISTRY.Quantity(1.0, unit)
+    quantity = registry.Quantity(1.0, unit)
     try:
         quantity / quantity
     except pint.OffsetUnitCalculusError:
@@ -1027,7 +1076,9 @@ def is_calendar_point_unit(unit: pint.Unit) -> bool:
     return False
 
 
-def _currency_component_of(units: pint.Unit) -> pint.Unit | None:
+def _currency_component_of(
+    units: pint.Unit, registry: pint.UnitRegistry
+) -> pint.Unit | None:
     """Return the currency component of a (possibly composite) unit, or ``None``.
 
     Used at the input boundary to convert a pint-tagged column's currency to the
@@ -1035,21 +1086,20 @@ def _currency_component_of(units: pint.Unit) -> pint.Unit | None:
     ``DM / month``.
     """
     for token in to_units_container(units):
-        candidate = UNIT_REGISTRY.parse_units(token)
-        if (
-            UNIT_REGISTRY.Quantity(1.0, candidate).dimensionality
-            == _CURRENCY_DIMENSIONALITY
-        ):
+        candidate = registry.parse_units(token)
+        if _unit_is_currency(candidate):
             return candidate
     return None
 
 
-def unit_has_currency_component(units: pint.Unit) -> bool:
+def unit_has_currency_component(units: pint.Unit, registry: pint.UnitRegistry) -> bool:
     """Whether a (possibly composite) unit carries a currency component."""
-    return _currency_component_of(units) is not None
+    return _currency_component_of(units=units, registry=registry) is not None
 
 
-def unit_has_agnostic_currency_component(units: pint.Unit) -> bool:
+def unit_has_agnostic_currency_component(
+    units: pint.Unit, registry: pint.UnitRegistry
+) -> bool:
     """Whether a unit's currency component is the agnostic ``CURRENCY`` token.
 
     Distinguishes the two currency spellings when results are returned: a
@@ -1058,10 +1108,8 @@ def unit_has_agnostic_currency_component(units: pint.Unit) -> bool:
     its concrete statutory currency (never converted, labelled as declared) —
     GEP 10.
     """
-    component = _currency_component_of(units)
-    return component is not None and component == UNIT_REGISTRY.parse_units(
-        CURRENCY_TOKEN
-    )
+    component = _currency_component_of(units=units, registry=registry)
+    return component is not None and component == registry.parse_units(CURRENCY_TOKEN)
 
 
 #: The dimensionality-key prefix of a grouping-level dimension: the internal pint
@@ -1077,14 +1125,16 @@ def _grouping_levels_with_exponent(unit: pint.Unit) -> Iterator[tuple[str, Any]]
     numerator level (a ``[person]`` head count). Non-grouping dimensions and
     pint's (never-occurring here) complex exponents are skipped.
     """
-    for dimension, exponent in UNIT_REGISTRY.Quantity(1.0, unit).dimensionality.items():
+    for dimension, exponent in unit.dimensionality.items():
         if isinstance(exponent, complex):  # pint exponents are real; narrow for ty
             continue
         if dimension.startswith(_GROUPING_LEVEL_DIM_PREFIX):
             yield dimension[len(_GROUPING_LEVEL_DIM_PREFIX) : -1], exponent
 
 
-def _unit_without_grouping_levels(unit: pint.Unit) -> pint.Unit:
+def _unit_without_grouping_levels(
+    unit: pint.Unit, registry: pint.UnitRegistry
+) -> pint.Unit:
     """A unit with every grouping level (numerator and denominator) divided out.
 
     Stripping a level is index bookkeeping on the unit's container, not quantity
@@ -1092,7 +1142,7 @@ def _unit_without_grouping_levels(unit: pint.Unit) -> pint.Unit:
     """
     container = to_units_container(unit)
     level_keys = [k for k in container if k.startswith(_GROUPING_LEVEL_PREFIX)]
-    return UNIT_REGISTRY.Unit(container.remove(level_keys))
+    return registry.Unit(container.remove(level_keys))
 
 
 def _unit_level_denominator(unit: pint.Unit) -> str | None:
@@ -1115,7 +1165,9 @@ def _unit_level_denominator(unit: pint.Unit) -> str | None:
     )
 
 
-def _substitute_currency(units: pint.Unit, currency: str) -> pint.Unit:
+def _substitute_currency(
+    units: pint.Unit, currency: str, registry: pint.UnitRegistry
+) -> pint.Unit:
     """Swap a unit's currency component for ``currency``; a no-op if it has none.
 
     The one currency move input and output handling share: the period, area
@@ -1123,14 +1175,14 @@ def _substitute_currency(units: pint.Unit, currency: str) -> pint.Unit:
     currency (:func:`output_unit_in_data_currency`); for tagged input data it
     is the tag's concrete currency (:func:`input_strip_unit`).
     """
-    component = _currency_component_of(units)
+    component = _currency_component_of(units=units, registry=registry)
     if component is None:
         return units
-    return units / component * UNIT_REGISTRY.parse_units(currency)
+    return units / component * registry.parse_units(currency)
 
 
 def input_target_unit_in_data_currency(
-    units: pint.Unit, data_currency: str
+    units: pint.Unit, data_currency: str, registry: pint.UnitRegistry
 ) -> pint.Unit:
     """Restate the unit of an input column requested as a target.
 
@@ -1140,10 +1192,12 @@ def input_target_unit_in_data_currency(
     holding the user's euro values). The label follows the value, so any
     currency component is substituted with the data currency (GEP 10).
     """
-    return _substitute_currency(units=units, currency=data_currency)
+    return _substitute_currency(units=units, currency=data_currency, registry=registry)
 
 
-def output_unit_in_data_currency(units: pint.Unit, data_currency: str) -> pint.Unit:
+def output_unit_in_data_currency(
+    units: pint.Unit, data_currency: str, registry: pint.UnitRegistry
+) -> pint.Unit:
     """Restate a computed result column's resolved unit in the data currency.
 
     A computed column is converted to the data currency before being returned,
@@ -1154,13 +1208,13 @@ def output_unit_in_data_currency(units: pint.Unit, data_currency: str) -> pint.U
     not pass through here: their value is never converted, so they keep their
     statutory currency (:func:`param_unit_in_computation_currency`).
     """
-    if not unit_has_agnostic_currency_component(units):
+    if not unit_has_agnostic_currency_component(units=units, registry=registry):
         return units
-    return _substitute_currency(units=units, currency=data_currency)
+    return _substitute_currency(units=units, currency=data_currency, registry=registry)
 
 
 def param_unit_in_computation_currency(
-    units: pint.Unit, computation_currency: str
+    units: pint.Unit, computation_currency: str, registry: pint.UnitRegistry
 ) -> pint.Unit:
     """Restate a requested parameter's resolved unit in its statutory currency.
 
@@ -1170,7 +1224,9 @@ def param_unit_in_computation_currency(
     agnostic ``CURRENCY`` component is spelled in the computation currency, not
     the data currency; a non-currency unit is returned unchanged (GEP 10).
     """
-    return _substitute_currency(units=units, currency=computation_currency)
+    return _substitute_currency(
+        units=units, currency=computation_currency, registry=registry
+    )
 
 
 #: Reverse of the forward token→pint maps, for :func:`composite_from_resolved_unit`.
@@ -1182,7 +1238,9 @@ _PINT_NAME_TO_BASE_TOKEN = {
 }
 
 
-def composite_from_resolved_unit(units: pint.Unit) -> CompositeUnit:
+def composite_from_resolved_unit(
+    units: pint.Unit, registry: pint.UnitRegistry
+) -> CompositeUnit:
     """Reconstruct the compositional spelling of a *resolved* pint unit.
 
     The output-side inverse of :func:`resolve_compositional_unit`: it labels a
@@ -1202,8 +1260,8 @@ def composite_from_resolved_unit(units: pint.Unit) -> CompositeUnit:
     (:func:`output_unit_in_data_currency`) so the base is a concrete currency
     (``EUR``), never the agnostic ``CURRENCY``.
     """
-    currency = _currency_component_of(units)
-    period = _flow_period_of(units)
+    currency = _currency_component_of(units=units, registry=registry)
+    period = _flow_period_of(units=units, registry=registry)
     base = str(currency).upper() if currency is not None else "DIMENSIONLESS"
     area: str | None = None
     level: str | None = None
@@ -1213,7 +1271,9 @@ def composite_from_resolved_unit(units: pint.Unit) -> CompositeUnit:
         elif name != PERSON_LEVEL and exponent < 0:
             level = name.upper()
         # A `grouping_level_person` denominator is the implied leaf — dropped.
-    physical = to_units_container(_unit_without_grouping_levels(units))
+    physical = to_units_container(
+        _unit_without_grouping_levels(unit=units, registry=registry)
+    )
     for token, exponent in physical.items():
         if isinstance(exponent, complex):  # pint exponents are real; narrow for ty
             continue
@@ -1232,29 +1292,27 @@ def composite_from_resolved_unit(units: pint.Unit) -> CompositeUnit:
     )
 
 
-def _flow_period_of(units: pint.Unit) -> pint.Unit | None:
+def _flow_period_of(units: pint.Unit, registry: pint.UnitRegistry) -> pint.Unit | None:
     """Return a unit's flow period — its time component in the *denominator*.
 
     The ``month`` of ``CURRENCY / month``, the ``week`` of ``working_hour /
     week``. A
-    *numerator* time unit (the ``year`` of an age, ``Unit.YEARS``) is not a flow
+    *numerator* time unit (the ``year`` of an age, ``TTSIMUnit.YEARS``) is not a flow
     period and is ignored, so an intrinsically-temporal column is not mistaken
     for a flow. Returns ``None`` for a unit with no per-period part.
     """
     for token, exponent in to_units_container(units).items():
         if isinstance(exponent, complex):  # pint exponents are real; narrow for ty
             continue
-        candidate = UNIT_REGISTRY.parse_units(token)
-        if (
-            exponent < 0
-            and UNIT_REGISTRY.Quantity(1.0, candidate).dimensionality
-            == _TIME_DIMENSIONALITY
-        ):
+        candidate = registry.parse_units(token)
+        if exponent < 0 and _unit_is_time(candidate):
             return candidate
     return None
 
 
-def unit_residual_excluding_currency_and_flow_period(units: pint.Unit) -> pint.Unit:
+def unit_residual_excluding_currency_and_flow_period(
+    units: pint.Unit, registry: pint.UnitRegistry
+) -> pint.Unit:
     """A unit's *measurement* residual: currency, flow period, and levels removed.
 
     The input check screens measurement (the numerator scale — area, intrinsic
@@ -1268,14 +1326,16 @@ def unit_residual_excluding_currency_and_flow_period(units: pint.Unit) -> pint.U
     ``HECTARE`` column tagged ``m²`` shares the area dimension but is a
     10,000-fold level error).
     """
-    currency = _currency_component_of(units)
+    currency = _currency_component_of(units=units, registry=registry)
     residual = units / currency if currency is not None else units
-    period = _flow_period_of(residual)
+    period = _flow_period_of(units=residual, registry=registry)
     residual = residual * period if period is not None else residual
-    return _unit_without_grouping_levels(residual)
+    return _unit_without_grouping_levels(unit=residual, registry=registry)
 
 
-def _suffix_period_of(column_label: str | None) -> pint.Unit | None:
+def _suffix_period_of(
+    column_label: str | None, registry: pint.UnitRegistry
+) -> pint.Unit | None:
     """Return the flow period named by a column's GEP-1 time suffix.
 
     ``…_m`` → ``month``; a name with no time suffix → ``None``.
@@ -1285,13 +1345,11 @@ def _suffix_period_of(column_label: str | None) -> pint.Unit | None:
     match = _QNAME_TIME_SUFFIX_PATTERN.search(column_label)
     if match is None:
         return None
-    return UNIT_REGISTRY.parse_units(
-        TIME_UNIT_ID_TO_PINT_NAME[match.group("time_unit")]
-    )
+    return registry.parse_units(TIME_UNIT_ID_TO_PINT_NAME[match.group("time_unit")])
 
 
 def _fail_if_tag_period_disagrees_with_suffix(
-    units: pint.Unit, *, column_label: str | None
+    units: pint.Unit, *, column_label: str | None, registry: pint.UnitRegistry
 ) -> None:
     """Strict period guard: a pint tag's flow period must match the column's
     GEP-1 time suffix exactly — including both absent.
@@ -1300,13 +1358,15 @@ def _fail_if_tag_period_disagrees_with_suffix(
     no period. This catches a contradictory period that would otherwise be
     stripped silently (e.g. a ``_m`` column tagged ``DM / year`` — a 12-fold error).
     """
-    tag_period = _flow_period_of(units)
-    suffix_period = _suffix_period_of(column_label)
+    tag_period = _flow_period_of(units=units, registry=registry)
+    suffix_period = _suffix_period_of(column_label=column_label, registry=registry)
     matches = (
         tag_period is None
         if suffix_period is None
         else tag_period is not None
-        and units_are_equivalent(left=tag_period, right=suffix_period)
+        and units_are_equivalent(
+            left=tag_period, right=suffix_period, registry=registry
+        )
     )
     if matches:
         return
@@ -1321,7 +1381,7 @@ def _fail_if_tag_period_disagrees_with_suffix(
     )
 
 
-def input_strip_unit(unit: CompositeUnit) -> pint.Unit:
+def input_strip_unit(unit: CompositeUnit, registry: pint.UnitRegistry) -> pint.Unit:
     """The concrete pint unit used to strip a :class:`UnitAnnotatedColumn`.
 
     Resolves the tag with its concrete currency and flow period — the two axes the
@@ -1329,12 +1389,14 @@ def input_strip_unit(unit: CompositeUnit) -> pint.Unit:
     is screened against the name suffix. Grouping levels do not affect the
     magnitude and are omitted, so this needs no registered level dimension.
     """
-    resolved = resolve_compositional_unit(unit=unit, with_level=False)
+    resolved = resolve_compositional_unit(
+        unit=unit, registry=registry, with_level=False
+    )
     concrete = token_source_currency(unit)
     return (
         resolved
         if concrete is None
-        else _substitute_currency(units=resolved, currency=concrete)
+        else _substitute_currency(units=resolved, currency=concrete, registry=registry)
     )
 
 
@@ -1342,6 +1404,7 @@ def strip_input_quantity_at_boundary(
     quantity: Any,  # noqa: ANN401 (a pint Quantity wrapping an input column)
     *,
     data_currency: str,
+    registry: pint.UnitRegistry,
     column_label: str | None = None,
 ) -> Any:  # noqa: ANN401
     """Convert a pint-tagged input column to the data currency, then strip it.
@@ -1381,12 +1444,12 @@ def strip_input_quantity_at_boundary(
         where = f" on input column {column_label!r}" if column_label else ""
         raise UnitDefinitionError(f"pint-tagged input{where}: {e}") from e
     _fail_if_tag_period_disagrees_with_suffix(
-        units=quantity.units, column_label=column_label
+        units=quantity.units, column_label=column_label, registry=registry
     )
-    source_currency = _currency_component_of(quantity.units)
+    source_currency = _currency_component_of(units=quantity.units, registry=registry)
     if source_currency is None:
         return quantity.magnitude
-    data_currency_unit = UNIT_REGISTRY.parse_units(data_currency)
+    data_currency_unit = registry.parse_units(data_currency)
     if source_currency == data_currency_unit:
         return quantity.magnitude
     target = quantity.units / source_currency * data_currency_unit
@@ -1399,7 +1462,7 @@ def head_count_from_boolean_sum(
     """Normalise a ``SUM`` over a boolean to a ``COUNT`` for unit purposes.
 
     Summing a boolean counts the persons its flag is true for, so its unit is a
-    head count's — the same :attr:`Unit.PERSON_COUNT` a ``COUNT`` mints. Every
+    head count's — the same :attr:`TTSIMUnit.PERSON_COUNT` a ``COUNT`` mints. Every
     other aggregation keeps its own type. This is the single source of truth used
     by both the declared-token minter (:func:`unit_for_aggregation`) and the
     resolved-unit deriver
@@ -1420,12 +1483,13 @@ def unit_for_aggregation(
 ) -> CompositeUnit:
     """Auto-assign the *declared* unit of an aggregation node.
 
-    The single source of truth for an aggregation node's auto-assigned token,
-    consumed by both ``agg_by_group_function`` and ``agg_by_p_id_function``:
+    The single source of truth for an automatically added aggregation's token
+    (``my_col`` → ``my_col_hh``); author-written ``@agg_by_group_function`` /
+    ``@agg_by_p_id_function`` nodes declare their unit explicitly (GEP 10):
 
     - a **head count** — ``COUNT``, or a ``SUM`` over a boolean source
       (``source_is_boolean``, counting the persons its flag is true for) — is the
-      ``[person]`` count base at its target level: :attr:`Unit.PERSON_COUNT` per
+      ``[person]`` count base at its target level: :attr:`TTSIMUnit.PERSON_COUNT` per
       ``target_level``;
     - ``SUM`` / ``MIN`` / ``MAX`` over a non-boolean source are properties of the
       **target** group whatever the source's base (GEP 10): they keep the
@@ -1437,11 +1501,11 @@ def unit_for_aggregation(
       (``MEAN = SUM / COUNT`` cancels the group), so it takes the individual
       spelling: the source token with any group level stripped;
     - ``ANY`` / ``ALL`` yield a boolean, a leveled dimensionless quantity at the
-      target level: bare :attr:`Unit.DIMENSIONLESS` for an individual result,
+      target level: bare :attr:`TTSIMUnit.DIMENSIONLESS` for an individual result,
       ``DIMENSIONLESS_PER_<target_level>`` for a group one.
 
     A ``PERSON_COUNT`` head count at the individual :data:`PERSON_LEVEL` (an
-    ``agg_by_p_id`` ``COUNT``) is the bare :attr:`Unit.PERSON_COUNT`, which
+    ``agg_by_p_id`` ``COUNT``) is the bare :attr:`TTSIMUnit.PERSON_COUNT`, which
     resolves to ``[person] / [person]`` = dimensionless.
 
     Args:
@@ -1456,9 +1520,9 @@ def unit_for_aggregation(
 
     Returns:
         The auto-assigned unit. ``PERSON_COUNT_PER_<target_level>`` for a ``COUNT`` head
-        count (the bare :attr:`Unit.PERSON_COUNT` at the individual level),
+        count (the bare :attr:`TTSIMUnit.PERSON_COUNT` at the individual level),
         ``DIMENSIONLESS_PER_<target_level>`` for a boolean ``ANY`` / ``ALL`` result
-        (bare :attr:`Unit.DIMENSIONLESS` at the individual level); otherwise the
+        (bare :attr:`TTSIMUnit.DIMENSIONLESS` at the individual level); otherwise the
         source token at the target (``SUM`` / ``MIN`` / ``MAX``) or individual
         (``MEAN``) level (:data:`UNSET_UNIT` when the source itself lacks a
         declaration, which the mandatory-units check then reports against the
@@ -1469,15 +1533,15 @@ def unit_for_aggregation(
     )
     if agg_type is AggType.COUNT:
         return (
-            Unit.PERSON_COUNT
+            TTSIMUnit.PERSON_COUNT
             if target_level == PERSON_LEVEL
-            else Unit.PERSON_COUNT.PER_LEVEL(target_level)
+            else TTSIMUnit.PERSON_COUNT.PER_LEVEL(target_level)
         )
     if agg_type in (AggType.ANY, AggType.ALL):
         return (
-            Unit.DIMENSIONLESS
+            TTSIMUnit.DIMENSIONLESS
             if target_level == PERSON_LEVEL
-            else Unit.DIMENSIONLESS.PER_LEVEL(target_level)
+            else TTSIMUnit.DIMENSIONLESS.PER_LEVEL(target_level)
         )
     if source_unit is UNSET_UNIT:
         return source_unit
@@ -1490,6 +1554,7 @@ def resolved_unit_for_aggregation(
     *,
     agg_type: AggType,
     target_level: str,
+    registry: pint.UnitRegistry,
     source_unit: pint.Unit | None = None,
     source_level: str | None = None,
 ) -> pint.Unit:
@@ -1541,10 +1606,10 @@ def resolved_unit_for_aggregation(
     """
     if agg_type in (AggType.ANY, AggType.ALL):
         return divide_by_grouping_level(
-            unit=UNIT_REGISTRY.dimensionless, level=target_level
+            unit=registry.dimensionless, level=target_level, registry=registry
         )
     if agg_type is AggType.COUNT:
-        return grouping_level_count_unit(target_level=target_level)
+        return grouping_level_count_unit(target_level=target_level, registry=registry)
     if source_unit is None:
         msg = (
             f"A value aggregation ({agg_type}) needs a source_unit; only "
@@ -1556,15 +1621,19 @@ def resolved_unit_for_aggregation(
     stripped = (
         source_unit
         if source_level is None
-        else source_unit * _grouping_level_unit(source_level)
+        else source_unit * _grouping_level_unit(name=source_level, registry=registry)
     )
     if agg_type is AggType.MEAN:
         if source_level is None or not to_units_container(stripped):
             return stripped
-        return divide_by_grouping_level(unit=stripped, level=PERSON_LEVEL)
+        return divide_by_grouping_level(
+            unit=stripped, level=PERSON_LEVEL, registry=registry
+        )
     if target_level == PERSON_LEVEL and source_level is None:
         return stripped
-    return divide_by_grouping_level(unit=stripped, level=target_level)
+    return divide_by_grouping_level(
+        unit=stripped, level=target_level, registry=registry
+    )
 
 
 def fail_if_units_are_missing(
@@ -1572,7 +1641,7 @@ def fail_if_units_are_missing(
 ) -> None:
     """Data-independent check that every node declares a unit.
 
-    A missing unit is a definition error. :attr:`Unit.DIMENSIONLESS` is *not*
+    A missing unit is a definition error. :attr:`TTSIMUnit.DIMENSIONLESS` is *not*
     missing — it declares a dimensionless quantity; a node without any declaration
     maps to :data:`UNSET_UNIT`. This is the leaf check that
     :func:`ttsim.interface_dag_elements.unit_checks.fail_if_environment_units_are_missing`
@@ -1587,6 +1656,6 @@ def fail_if_units_are_missing(
     if missing:
         raise UnitDefinitionError(
             "The following nodes are missing a mandatory `unit=` declaration "
-            f"(GEP 10; declare `unit=Unit.DIMENSIONLESS` / `unit: DIMENSIONLESS` "
+            f"(GEP 10; declare `unit=TTSIMUnit.DIMENSIONLESS` / `unit: DIMENSIONLESS` "
             f"for a dimensionless quantity): {', '.join(missing)}."
         )

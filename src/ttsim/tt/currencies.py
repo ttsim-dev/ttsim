@@ -1,326 +1,302 @@
-"""Currency registration and boundary conversion.
+"""A policy system's currencies, and the boundary conversion between them.
 
-The registration and conversion *operations* of the ``[currency]`` dimension. The
-currency vocabulary itself — the ``CURRENCY`` token, the ``Unit`` builder, and the state
-a declaration is resolved against — lives in :mod:`ttsim.tt.units`; this module reads
-and mutates that shared state.
+A :class:`UnitSystem` is the value a policy package builds once, at import, and
+hands to ``main(unit_system=...)``: its currencies, the dated statutory-currency
+mapping, the grouping levels its declarations spell — and the pint registry all
+of those are defined in.
 
-A downstream package registers its currencies on import: one base currency, any number
-of others defined relative to an already-registered one, and the dated
-statutory-currency mapping.
+The registry is per system, so two policy systems coexist in one process, each
+with its own base currency. "Exactly one currency is the base" (GEP 10) holds
+within a system, by construction: the base is a constructor argument, not
+something a second import could contradict.
+
+The unit *vocabulary* a declaration is spelled in — the ``CURRENCY`` token, the
+``TTSIMUnit`` builder, the :class:`CompositeUnit` grammar — is shared and lives in
+:mod:`ttsim.tt.units`.
 """
 
 from __future__ import annotations
 
+import dataclasses
 import datetime
-import math
-from collections.abc import Iterator, Mapping
+from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
+from types import MappingProxyType
 
 import pint
 from pint.util import to_units_container
 
 from ttsim.exceptions import UnitDefinitionError
+from ttsim.tt.grouping_levels import register_grouping_levels
 from ttsim.tt.units import (
     _ALLOWED_UNIT_TOKENS,
-    _REL_TOL,
     CURRENCY_TOKEN,
-    UNIT_REGISTRY,
     CompositeUnit,
-    Unit,
+    TTSIMUnit,
     _registered_currencies,
+    _unit_is_currency,
+    build_registry,
 )
 
-_base_currency: list[str] = []
 
-#: The statutory-currency mapping: ``(start_date, currency)`` pairs sorted by
-#: start date, each applying from its start date until the next entry's. Empty
-#: until a downstream package registers its mapping.
-_statutory_currencies: list[tuple[datetime.date, str]] = []
+@dataclasses.dataclass(frozen=True, eq=False, kw_only=True)
+class UnitSystem:
+    """The currencies, statutory-currency mapping, and registry of one policy system.
 
+    A package builds one system and exports it as a singleton, so a system is
+    identified by object identity: ``eq=False`` keeps the inherited
+    identity-based ``__hash__``, which lets a system key an ``lru_cache`` (its
+    ``statutory_currencies`` mapping is otherwise unhashable).
 
-def base_currency() -> str:
-    """The registered base currency — the default data currency.
+    A policy package declares its system once and exports it::
 
-    A downstream package registers its base currency on import (gettsim's
-    ``euro``, mettsim's ``CASTAR``), and user data is assumed to arrive in it —
-    users need not pass ``data_currency=`` themselves.
+        UNIT_SYSTEM = UnitSystem(
+            base_currency="EUR",
+            other_currencies={"DM": "EUR / 1.95583"},
+            statutory_currencies={"0001-01-01": "DM", "2002-01-01": "EUR"},
+            grouping_levels=["hh", "bg", "fg"],
+        )
+
+    All of a system's currencies are interconvertible
+    (:meth:`currency_conversion_factor`); a currency of *another* system is not,
+    and is rejected rather than silently taken to be worth the same.
 
     Raises:
-        UnitDefinitionError: If no base currency is registered — the data
-            currency must be a concrete currency (GEP 10).
+        UnitDefinitionError: If a currency name clashes with a unit the shared
+            vocabulary already defines, if a definition does not resolve to the
+            ``[currency]`` dimension or does not reference exactly one of this
+            system's currencies, or if the statutory-currency mapping is empty
+            or names a currency the system does not have.
     """
-    if not _base_currency:
-        raise UnitDefinitionError(
-            "No base currency is registered, so the data currency is undefined. "
-            "A package must register one with `register_currency(name=..., "
-            "base=True)` before the system can run (GEP 10)."
-        )
-    return _base_currency[0]
 
+    base_currency: str
+    """The system's unit of account, and the default data currency. Defined as
+    factor 1 against the abstract ``[currency]`` reference; every other currency
+    is defined relative to it or to another already-defined one."""
 
-def register_statutory_currencies(currency_by_start_date: Mapping[str, str]) -> None:
-    """Declare the statutory currency at each start date.
+    statutory_currencies: Mapping[str, str]
+    """The currency statutes denominate their numbers in, keyed by the dashed ISO
+    start date it applies from (until the next entry's). Mandatory: a run for a
+    policy date with no statutory currency fails."""
 
-    A downstream package calls this on import, after registering the currencies
-    it references. Each entry applies from its start date (a dashed ISO string)
-    until the next entry's start date; the computation for a policy date runs in
-    the statutory currency at that date (:func:`statutory_currency_for_date`),
-    and the build guard requires every parameter to be declared in it.
-
-    Example:
-        register_statutory_currencies({"1948-06-21": "DM", "2002-01-01": "EUR"})
-
-    The mapping is mandatory: a run for a policy date with no registered
-    statutory currency fails.
-
-    Raises:
-        UnitDefinitionError: If the mapping is empty, references an unregistered
-            currency, or a different mapping is already registered.
-    """
-    if not currency_by_start_date:
-        raise UnitDefinitionError(
-            "register_statutory_currencies requires at least one entry; got an "
-            "empty mapping (GEP 10)."
-        )
-    unregistered = sorted(
-        {
-            name
-            for name in currency_by_start_date.values()
-            if name not in _registered_currencies
-        }
+    other_currencies: Mapping[str, str] = dataclasses.field(
+        default_factory=lambda: MappingProxyType({})
     )
-    if unregistered:
-        raise UnitDefinitionError(
-            f"register_statutory_currencies references "
-            f"{', '.join(repr(name) for name in unregistered)}, which "
-            f"{'is' if len(unregistered) == 1 else 'are'} not registered. "
-            f"Register every statutory currency with `register_currency` first "
-            f"(GEP 10)."
-        )
-    entries = sorted(
-        (datetime.date.fromisoformat(start_date), name)
-        for start_date, name in currency_by_start_date.items()
+    """Each further currency, mapped to a pint-parseable definition relative to
+    an already-defined currency of this system (``{"DM": "EUR / 1.95583"}``).
+    Definitions are applied in order, so one may reference an earlier one."""
+
+    grouping_levels: Sequence[str] = ()
+    """The group levels this system's declarations spell (``["hh", "bg"]``). The
+    individual ``person`` leaf is always present. A build discovers further
+    levels from the policy environment's ``*_id`` columns and registers them
+    then."""
+
+    registry: pint.UnitRegistry = dataclasses.field(init=False, repr=False)
+    """The system's own pint registry: the shared vocabulary plus this system's
+    currency definitions and grouping-level dimensions."""
+
+    currencies: frozenset[str] = dataclasses.field(init=False)
+    """Every currency name this system defines — the base and the others."""
+
+    statutory_currency_by_start_date: tuple[tuple[datetime.date, str], ...] = (
+        dataclasses.field(init=False, repr=False)
     )
-    if _statutory_currencies and _statutory_currencies != entries:
-        raise UnitDefinitionError(
-            f"A different statutory-currency mapping is already registered "
-            f"({_statutory_currencies}). A process has a single statutory-"
-            f"currency mapping (GEP 10)."
-        )
-    _statutory_currencies[:] = entries
+    """:attr:`statutory_currencies` parsed and sorted by start date."""
 
-
-def statutory_currency_for_date(policy_date: datetime.date) -> str:
-    """The statutory currency at a given policy date.
-
-    Raises:
-        UnitDefinitionError: If no mapping is registered, or ``policy_date``
-            lies before the mapping's first entry.
-    """
-    if not _statutory_currencies:
-        raise UnitDefinitionError(
-            "No statutory-currency mapping is registered, so the computation "
-            "currency is undefined. A package must register one with "
-            "`register_statutory_currencies({start_date: currency, ...})` "
-            "before the system can run (GEP 10)."
-        )
-    for start_date, name in reversed(_statutory_currencies):
-        if policy_date >= start_date:
-            return name
-    raise UnitDefinitionError(
-        f"The statutory-currency mapping starts at "
-        f"{_statutory_currencies[0][0].isoformat()}, so the statutory currency "
-        f"at {policy_date.isoformat()} is undefined. Extend the mapping "
-        f"registered with `register_statutory_currencies` (GEP 10)."
+    field_units_by_class: dict[type, dict[str, pint.Unit | type] | None] = (
+        dataclasses.field(init=False, repr=False, default_factory=dict)
     )
+    """Memo of the resolved unit annotations of each parameter dataclass the
+    dry-run has seen. The units are this system's registry's, so the memo is the
+    system's."""
 
-
-def _fail_if_definition_references_no_registered_currency(
-    name: str, definition: str
-) -> None:
-    """Reject a currency definition that does not chain to a registered currency.
-
-    Every non-base currency is defined relative to exactly one already-registered
-    concrete currency (``"CASTAR / 4"``). A definition against the abstract
-    :data:`CURRENCY_TOKEN` reference alone, or against no currency at all, would
-    start a second, unconnected base — which the single-base model forbids.
-
-    Raises:
-        UnitDefinitionError: If the definition references an unregistered unit,
-            no registered currency, or more than one.
-    """
-    try:
-        parsed_definition = UNIT_REGISTRY.parse_expression(definition)
-    except pint.UndefinedUnitError as error:
-        raise UnitDefinitionError(
-            f"Currency {name!r} is defined as {definition!r}, which "
-            f"references an unregistered unit. Define a currency relative "
-            f"to an already-registered one (GEP 10)."
-        ) from error
-    referenced = sorted(
-        str(token)
-        for token in to_units_container(parsed_definition.units)
-        if str(token) in _registered_currencies
-    )
-    if len(referenced) > 1:
-        raise UnitDefinitionError(
-            f"Currency {name!r} must be defined relative to exactly one "
-            f"registered currency; {definition!r} references "
-            f"{', '.join(referenced)} (GEP 10)."
+    def __post_init__(self) -> None:
+        registry = build_registry()
+        object.__setattr__(self, "registry", registry)
+        object.__setattr__(
+            self,
+            "currencies",
+            frozenset({self.base_currency, *self.other_currencies}),
         )
-    if not referenced:
+        self._define_currencies()
+        object.__setattr__(
+            self,
+            "statutory_currency_by_start_date",
+            self._parsed_statutory_currencies(),
+        )
+        register_grouping_levels(names=self.grouping_levels, registry=registry)
+
+    def currency_conversion_factor(
+        self, *, source_currency: str, target_currency: str
+    ) -> float:
+        """The factor converting ``source_currency`` into ``target_currency``.
+
+        Used only where data enters and leaves the computation: input columns are
+        converted from the data currency to the computation currency, and
+        currency-denominated results are converted back (GEP 10). pint is the
+        single source of truth for the rate. Both currencies must belong to this
+        system; all of a system's currencies are interconvertible.
+
+        Raises:
+            UnitDefinitionError: If either currency is not one of this system's.
+        """
+        for name in (source_currency, target_currency):
+            if name not in self.currencies:
+                raise UnitDefinitionError(
+                    f"Cannot convert currency: {name!r} is not a registered "
+                    f"currency of this policy system. Its currencies are "
+                    f"{', '.join(sorted(self.currencies))} (GEP 10)."
+                )
+        return (
+            self.registry.Quantity(1.0, source_currency).to(target_currency).magnitude
+        )
+
+    def statutory_currency_for_date(self, policy_date: datetime.date) -> str:
+        """The statutory currency at a given policy date.
+
+        Raises:
+            UnitDefinitionError: If ``policy_date`` lies before the mapping's
+                first entry.
+        """
+        for start_date, name in reversed(self.statutory_currency_by_start_date):
+            if policy_date >= start_date:
+                return name
         raise UnitDefinitionError(
-            f"Currency {name!r} defined as {definition!r} references no "
-            f"registered currency. Define it relative to an already-registered "
-            f"one (e.g. the base currency) (GEP 10)."
+            f"The statutory-currency mapping starts at "
+            f"{self.statutory_currency_by_start_date[0][0].isoformat()}, so the "
+            f"statutory currency at {policy_date.isoformat()} is undefined. "
+            f"Extend the mapping this policy system declares (GEP 10)."
+        )
+
+    def _define_currencies(self) -> None:
+        """Define the base and every other currency in the system's registry.
+
+        The base is factor 1 against the abstract :data:`CURRENCY_TOKEN`
+        reference; every other currency is defined relative to an
+        already-defined one, so all of them chain back to the base and are
+        interconvertible.
+        """
+        self._define_one_currency(name=self.base_currency, definition=CURRENCY_TOKEN)
+        defined = {self.base_currency}
+        for name, definition in self.other_currencies.items():
+            self._fail_if_definition_references_no_known_currency(
+                name=name, definition=definition, defined=defined
+            )
+            self._define_one_currency(name=name, definition=definition)
+            defined.add(name)
+        for name in self.currencies:
+            _ALLOWED_UNIT_TOKENS.add(name)
+            _registered_currencies.add(name)
+            # Surface the concrete currency on the `TTSIMUnit` builder (`TTSIMUnit.EUR`,
+            # `TTSIMUnit.DM`, `TTSIMUnit.SILVER_PENNY`) so it can tag a
+            # `UnitAnnotatedColumn` of input data. A column/function declaration
+            # still rejects a concrete base (`resolve_compositional_column_unit`);
+            # this only makes it reachable.
+            setattr(TTSIMUnit, name.upper(), CompositeUnit(base=name.upper()))
+
+    def _define_one_currency(self, name: str, definition: str) -> None:
+        """Define one currency in the registry, checking it lands in ``[currency]``."""
+        if name in self.registry:
+            raise UnitDefinitionError(
+                f"Cannot define currency {name!r}: a unit of that name already "
+                f"exists ({self.registry.Quantity(1.0, name).dimensionality}). "
+                f"Pick a name outside the shared unit vocabulary (GEP 10)."
+            )
+        self.registry.define(f"{name} = {definition}")
+        if not _unit_is_currency(self.registry.parse_units(name)):
+            raise UnitDefinitionError(
+                f"Currency {name!r} defined as {definition!r} does not resolve "
+                f"to the [currency] dimension."
+            )
+
+    def _fail_if_definition_references_no_known_currency(
+        self, name: str, definition: str, defined: set[str]
+    ) -> None:
+        """Reject a currency definition that does not chain to a known currency.
+
+        Every non-base currency is defined relative to exactly one currency this
+        system has already defined (``"CASTAR / 4"``). A definition against the
+        abstract :data:`CURRENCY_TOKEN` reference alone, or against no currency
+        at all, would start a second, unconnected base — which the single-base
+        model forbids.
+
+        Raises:
+            UnitDefinitionError: If the definition references a unit the registry
+                does not know, no currency of this system, or more than one.
+        """
+        try:
+            parsed = self.registry.parse_expression(definition)
+        except pint.UndefinedUnitError as error:
+            raise UnitDefinitionError(
+                f"Currency {name!r} is defined as {definition!r}, which "
+                f"references a unit this policy system does not define. Define a "
+                f"currency relative to one of its own (GEP 10)."
+            ) from error
+        referenced = sorted(
+            str(token)
+            for token in to_units_container(parsed.units)
+            if str(token) in defined
+        )
+        if len(referenced) > 1:
+            raise UnitDefinitionError(
+                f"Currency {name!r} must be defined relative to exactly one "
+                f"currency of this policy system; {definition!r} references "
+                f"{', '.join(referenced)} (GEP 10)."
+            )
+        if not referenced:
+            raise UnitDefinitionError(
+                f"Currency {name!r} defined as {definition!r} references no "
+                f"currency of this policy system. Define it relative to one "
+                f"already defined (e.g. the base currency) (GEP 10)."
+            )
+
+    def _parsed_statutory_currencies(self) -> tuple[tuple[datetime.date, str], ...]:
+        """Parse and sort the statutory-currency mapping.
+
+        Raises:
+            UnitDefinitionError: If the mapping is empty or names a currency this
+                system does not define.
+        """
+        if not self.statutory_currencies:
+            raise UnitDefinitionError(
+                "`statutory_currencies` requires at least one entry; got an "
+                "empty mapping (GEP 10)."
+            )
+        unknown = sorted(set(self.statutory_currencies.values()) - self.currencies)
+        if unknown:
+            raise UnitDefinitionError(
+                f"`statutory_currencies` references "
+                f"{', '.join(repr(name) for name in unknown)}, which "
+                f"{'is' if len(unknown) == 1 else 'are'} not a currency of this "
+                f"policy system. Declare every statutory currency as the "
+                f"`base_currency` or in `other_currencies` (GEP 10)."
+            )
+        return tuple(
+            sorted(
+                (datetime.date.fromisoformat(start_date), name)
+                for start_date, name in self.statutory_currencies.items()
+            )
         )
 
 
 @contextmanager
 def isolated_currency_registration() -> Iterator[None]:
-    """Restore the currency bookkeeping on exit (a test isolation tool).
+    """Restore the shared unit vocabulary on exit (a test isolation tool).
 
-    Registrations made inside the block do not leak: the currency set, the base
-    currency, the statutory-currency mapping, and the token vocabulary are
-    restored. The pint definitions
-    created inside the block cannot be removed, but without the bookkeeping
-    they are inert, and a later *consistent* re-registration is tolerated
-    (:func:`register_currency`).
+    A :class:`UnitSystem` keeps its currency definitions and level dimensions to
+    itself, but it also widens the process-global vocabulary — the currency
+    *names* a declaration may spell and the pint tokens a unit may combine — so
+    that a `CompositeUnit` can be classified without a system in scope. This
+    block restores both sets, so a system built inside it leaves the vocabulary
+    as it found it.
     """
     saved_currencies = set(_registered_currencies)
-    saved_base = list(_base_currency)
-    saved_statutory = list(_statutory_currencies)
     saved_tokens = set(_ALLOWED_UNIT_TOKENS)
     try:
         yield
     finally:
         _registered_currencies.clear()
         _registered_currencies.update(saved_currencies)
-        _base_currency[:] = saved_base
-        _statutory_currencies[:] = saved_statutory
         _ALLOWED_UNIT_TOKENS.clear()
         _ALLOWED_UNIT_TOKENS.update(saved_tokens)
-
-
-def register_currency(
-    name: str,
-    *,
-    base: bool = False,
-    definition: str | None = None,
-) -> None:
-    """Register a concrete currency in the ``[currency]`` dimension.
-
-    Downstream packages call this on import. Exactly one currency is the *base*
-    currency (factor 1 against the abstract :data:`CURRENCY_TOKEN` reference);
-    every other currency is defined relative to an already-known currency. All
-    currencies are interconvertible (:func:`currency_conversion_factor`), and the
-    base is the default data currency (the ``data_currency`` interface node).
-
-    The registered currency becomes a valid compositional *base* — its
-    upper-cased name (``register_currency("DM", ...)`` makes ``DM``,
-    ``DM_PER_MONTH``, … parseable) — so parameters can pin down the concrete
-    currency their numbers are written in.
-
-    Args:
-        name: The currency's unit name (e.g. ``"euro"``, ``"DM"``).
-        base: Whether this is the base currency. Mutually exclusive with
-            ``definition``.
-        definition: A pint-parseable definition relative to an already-registered
-            currency (e.g. ``"euro / 1.95583"``). Mutually exclusive with
-            ``base``.
-
-    Raises:
-        UnitDefinitionError: If the arguments are inconsistent, if a different
-            base currency is already registered, if the definition does not
-            resolve to the ``[currency]`` dimension, or if it does not reference
-            exactly one registered currency.
-    """
-    if base == (definition is not None):
-        raise UnitDefinitionError(
-            "register_currency requires exactly one of `base=True` or "
-            f"`definition=...`; got base={base!r}, definition={definition!r}."
-        )
-    if base and _base_currency and _base_currency[0] != name:
-        raise UnitDefinitionError(
-            f"Cannot register {name!r} as the base currency: {_base_currency[0]!r} "
-            f"is already the base. A process has a single base currency (GEP 10)."
-        )
-    if definition is not None:
-        _fail_if_definition_references_no_registered_currency(
-            name=name, definition=definition
-        )
-
-    currency_dim = UNIT_REGISTRY.Quantity(1.0, CURRENCY_TOKEN).dimensionality
-    if name in UNIT_REGISTRY:
-        # Idempotent re-registration (e.g. a re-imported module). Tolerate it
-        # only if the existing definition is consistent with this call — same
-        # dimension *and* same conversion factor: checking the dimension alone
-        # would silently keep the old factor and invalidate later conversions.
-        existing_dim = UNIT_REGISTRY.Quantity(1.0, name).dimensionality
-        if existing_dim != currency_dim:
-            raise UnitDefinitionError(
-                f"Cannot register currency {name!r}: a non-currency unit of "
-                f"that name already exists ({existing_dim})."
-            )
-        existing_factor = UNIT_REGISTRY.Quantity(1.0, name).to(CURRENCY_TOKEN).magnitude
-        if definition is not None:
-            requested_factor = (
-                UNIT_REGISTRY.parse_expression(definition).to(CURRENCY_TOKEN).magnitude
-            )
-        else:
-            requested_factor = 1.0
-        if not math.isclose(existing_factor, requested_factor, rel_tol=_REL_TOL):
-            requested_desc = "base (factor 1)" if base else f"{definition!r}"
-            raise UnitDefinitionError(
-                f"Cannot re-register currency {name!r}: it already converts to "
-                f"{existing_factor} {CURRENCY_TOKEN}, but this call ({requested_desc}) "
-                f"requests {requested_factor}. A currency's factor against "
-                f"{CURRENCY_TOKEN} must be consistent across registrations (GEP 10)."
-            )
-    else:
-        UNIT_REGISTRY.define(
-            f"{name} = {CURRENCY_TOKEN}" if base else f"{name} = {definition}"
-        )
-        if UNIT_REGISTRY.Quantity(1.0, name).dimensionality != currency_dim:
-            raise UnitDefinitionError(
-                f"Currency {name!r} defined as {definition!r} does not resolve "
-                f"to the [currency] dimension."
-            )
-
-    _ALLOWED_UNIT_TOKENS.add(name)
-    _registered_currencies.add(name)
-    if base:
-        _base_currency[:] = [name]
-    # Surface the concrete currency on the `Unit` builder (`Unit.EUR`, `Unit.DM`,
-    # `Unit.SILVER_PENNY`) so it can tag a `UnitAnnotatedColumn` of input data.
-    # A column/function declaration still rejects a concrete base
-    # (`resolve_compositional_column_unit`); this only makes it reachable.
-    setattr(Unit, name.upper(), CompositeUnit(base=name.upper()))
-
-
-def currency_conversion_factor(source_currency: str, target_currency: str) -> float:
-    """The factor converting a value from ``source_currency`` to ``target_currency``.
-
-    Used only where data enters and leaves the computation: input columns are
-    converted from the data currency to the computation currency, and
-    currency-denominated results are converted back (GEP 10). pint is the
-    single source of truth for the rate. Both currencies must be registered;
-    all registered currencies are interconvertible.
-
-    Raises:
-        UnitDefinitionError: If either currency is unknown or not a currency.
-    """
-    for name in (source_currency, target_currency):
-        if name not in _registered_currencies:
-            raise UnitDefinitionError(
-                f"Cannot convert currency: {name!r} is not a registered currency."
-            )
-    try:
-        return (
-            UNIT_REGISTRY.Quantity(1.0, source_currency).to(target_currency).magnitude
-        )
-    except pint.DimensionalityError as e:
-        raise UnitDefinitionError(
-            f"Cannot convert {source_currency!r} to {target_currency!r}: {e}"
-        ) from e
