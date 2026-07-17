@@ -339,8 +339,8 @@ def _unit_fields_from_spec(spec: OrigParamSpec) -> dict[str, Any]:
     kwargs (GEP 10).
 
     Mapping parameters declare one token per axis; a require_converter declares
-    either ``unit:`` (a single token or a per-leaf mapping, scaled leaf by leaf)
-    or per-axis tokens (a function-like output, converted per axis) — RawParam
+    either ``unit:`` (a single token or a per-leaf mapping, one token per leaf)
+    or per-axis tokens (a function-like output, one token per axis) — RawParam
     enforces the exclusivity; everything else declares a single ``unit:``. A
     stray ``unit:`` on a mapping parameter is passed through so that
     ParamMappingObject rejects it with a precise message.

@@ -119,8 +119,10 @@ class ParamMappingObject(ParamObject):
 
     A schedule or lookup table has a domain and a codomain, so it declares
     ``input_unit:`` and ``output_unit:`` (one token per axis) instead of
-    ``unit:``. The build-time currency conversion rescales interval bounds on
-    the input axis and intercepts on the output axis.
+    ``unit:``. The tokens give the unit of each axis — interval bounds on the
+    input, intercepts on the output — and describe the typed output its
+    consumers' call sites are screened against. Parameter values are never
+    currency-converted (GEP 10).
     """
 
     input_unit: CompositeUnit | str = UNSET_UNIT
@@ -262,12 +264,15 @@ class RawParam(ParamObject):
     dictionary.
 
     A ``require_converter`` is handed to a ``param_function`` that knows its
-    structure. For currency conversion it declares one of three shapes: a single
-    ``unit:`` token if the whole structure is homogeneously one unit (scaled
-    uniformly), a per-leaf ``unit:`` mapping if the structure mixes units (each
-    numeric leaf scaled by its own token), or ``input_unit:`` / ``output_unit:``
-    axes if its converter produces a function-like value (a piecewise schedule
-    or lookup table) whose output is converted per-axis.
+    structure. It declares its units in one of three shapes: a single ``unit:``
+    token if the whole structure is homogeneously one unit, a per-leaf ``unit:``
+    mapping if the structure mixes units (one token per numeric leaf), or
+    ``input_unit:`` / ``output_unit:`` axes if its converter produces a schedule
+    (a piecewise polynomial or lookup table). A ``unit:`` token gives the unit of
+    the raw numbers; the axes give the schedule's input and output units, which
+    its call sites are screened against. The consuming ``param_function``'s
+    annotations check the values' uses. Parameter values are never
+    currency-converted (GEP 10).
     """
 
     value: dict[str | int, Any] = PLACEHOLDER_FIELD
@@ -288,9 +293,9 @@ class RawParam(ParamObject):
         if declares_axes and self.unit is not UNSET_UNIT:
             raise UnitDefinitionError(
                 "A require_converter declares either `unit:` (a single token or "
-                "a per-leaf mapping, scaled leaf by leaf) or `input_unit:` / "
-                "`output_unit:` axes (a function-like output, converted "
-                f"per-axis), not both (GEP 10); got unit={self.unit!r}, "
+                "a per-leaf mapping, one token per leaf) or `input_unit:` / "
+                "`output_unit:` axes (a function-like output, one token per "
+                f"axis), not both (GEP 10); got unit={self.unit!r}, "
                 f"input_unit={self.input_unit!r}, output_unit={self.output_unit!r}."
             )
         for axis in ("input_unit", "output_unit"):

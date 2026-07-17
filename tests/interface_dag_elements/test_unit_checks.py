@@ -81,9 +81,7 @@ CASTAR_PER_MONTH = coerce_to_composite_unit(
 CASTAR = coerce_to_composite_unit(value="CASTAR", where="test setup")
 
 
-# ----------------------------------------------------------------------------
 # Fixture objects
-# ----------------------------------------------------------------------------
 
 
 @policy_input(unit=TTSIMUnit.DIMENSIONLESS)
@@ -211,11 +209,9 @@ def months_paid() -> int:
     """A duration in months."""
 
 
-# ----------------------------------------------------------------------------
 # Mandatory units, no exemptions: identifiers and booleans declare
 # DIMENSIONLESS; group-creation group ids are auto-assigned DIMENSIONLESS;
 # framework date nodes get their unit from the framework.
-# ----------------------------------------------------------------------------
 
 
 def test_boolean_nodes_are_detected():
@@ -266,11 +262,9 @@ def test_missing_check_reports_unannotated_identifier_and_boolean():
         )
 
 
-# ----------------------------------------------------------------------------
 # Currency-denominated rounding specs: mandatory on a currency-valued function,
 # forbidden elsewhere, composite must equal the function's declared unit with
 # the agnostic base swapped for the concrete currency (GEP 10)
-# ----------------------------------------------------------------------------
 
 
 def make_rounded_amount_y(rounding_spec: RoundingSpec):
@@ -394,9 +388,7 @@ def test_inconsistency_check_reports_rounding_spec_unit_on_non_currency_function
         )
 
 
-# ----------------------------------------------------------------------------
 # Unit resolution
-# ----------------------------------------------------------------------------
 
 
 def test_resolution_combines_token_and_name_suffix():
@@ -622,9 +614,7 @@ def test_scalar_param_spelled_period_must_agree_with_name_suffix():
         )
 
 
-# ----------------------------------------------------------------------------
 # Conservative body verification
-# ----------------------------------------------------------------------------
 
 
 def _wealth_tax_env() -> dict:
@@ -795,9 +785,7 @@ def test_numeric_driven_branch_with_dimensionless_arm_does_not_false_positive():
     )
 
 
-# ----------------------------------------------------------------------------
 # Calendar points vs durations (GEP 10, S1)
-# ----------------------------------------------------------------------------
 
 
 def _policy_year() -> ScalarParam:
@@ -973,7 +961,7 @@ def test_subtracting_calendar_points_of_different_axes_is_caught():
     """Two *different* offset units of the same [time] dimension are the trap:
     pint subtracts ``calendar_month - calendar_year`` with a silent /12 while the
     run-time subtraction is raw and unconverted, so a cross-axis point - point is
-    rejected rather than delegated to pint (defect #2, GEP 10)."""
+    rejected rather than delegated to pint (GEP 10)."""
 
     @policy_input(unit=TTSIMUnit.CALENDAR_MONTH)
     def some_calendar_month() -> int:
@@ -998,7 +986,7 @@ def test_subtracting_calendar_points_of_different_axes_is_caught():
 def test_adding_a_currency_to_a_calendar_point_is_reported_as_a_calendar_misuse():
     """A calendar point plus a foreign dimension raises pint ``DimensionalityError``;
     it is a genuine calendar bug, so it reports as a calendar misuse rather than
-    falling into the blanket ``verify_units=False`` advice (defect #7, GEP 10)."""
+    falling into the blanket ``verify_units=False`` advice (GEP 10)."""
 
     @policy_function(unit=TTSIMUnit.CALENDAR_YEAR)
     def nonsense(geburtsjahr: int, income_m: float) -> float:
@@ -1252,10 +1240,9 @@ def test_logical_op_on_unit_carrying_operand_is_caught():
 
 
 def test_not_of_a_leveled_boolean_keeps_its_level():
-    """``not`` on a leveled boolean keeps its level, exactly as ``~`` does (defect
-    #5, GEP 10): ``flag_fam and not other_flag_fam`` stays fam-level and matches
-    the fam-level declaration — no spurious level error. Before the fix, ``not``
-    dropped the stand-in to a plain bool and the combine mislevelled the result."""
+    """``not`` on a leveled boolean keeps its level, exactly as ``~`` does (GEP 10):
+    ``flag_fam and not other_flag_fam`` stays fam-level and matches the fam-level
+    declaration — no spurious level error."""
 
     @policy_input(unit=TTSIMUnit.DIMENSIONLESS.PER_FAM)
     def flag_fam() -> bool:
@@ -1282,8 +1269,7 @@ def test_not_of_a_leveled_boolean_keeps_its_level():
 
 def test_not_of_a_non_boolean_quantity_is_caught():
     """``not`` on a non-boolean (a currency) is a bug that ``~`` catches; its scalar
-    spelling must too — the dry-run models ``not`` as ``logical_not`` (defect #5,
-    GEP 10)."""
+    spelling must too — the dry-run models ``not`` as ``logical_not`` (GEP 10)."""
 
     @policy_function(unit=TTSIMUnit.DIMENSIONLESS)
     def flag(income_m: float) -> bool:
@@ -1454,9 +1440,7 @@ def test_python_and_on_unit_carrying_operand_is_still_caught():
         )
 
 
-# ----------------------------------------------------------------------------
 # Cross-level shares (division across grouping levels)
-# ----------------------------------------------------------------------------
 
 
 def test_terminal_cross_level_division_is_caught():
@@ -1608,9 +1592,7 @@ def test_head_count_at_wrong_group_level_is_still_caught():
         )
 
 
-# ----------------------------------------------------------------------------
 # `cast_unit`: the expression-level escape hatch
-# ----------------------------------------------------------------------------
 
 
 def test_cross_level_comparison_without_cast_is_caught():
@@ -2203,14 +2185,12 @@ def test_undryrunnable_body_with_opt_out_passes():
     )
 
 
-# ----------------------------------------------------------------------------
 # Vectorized bodies: the xnp stand-in and the piecewise_polynomial / look_up /
 # join primitives are screened at their edges (GEP 10). Their happy paths run
 # end-to-end through the mettsim worked example (housing_benefits: minimum +
 # look_up, payroll/property tax: piecewise, child_tax_credit: join), so these
 # tests pin only what a silent shim regression would hide from that check —
 # a screen that stops screening fails no test anywhere else.
-# ----------------------------------------------------------------------------
 
 
 def _make_lookup_param(**kwargs: Any) -> ConsecutiveIntLookupTableParam:
@@ -2520,7 +2500,7 @@ def test_join_target_level_disagreeing_with_the_declaration_is_caught():
 def test_body_consuming_identifier_infers_dimensionless_and_passes():
     # An identifier is a dimensionless quantity (GEP 10); a body multiplying it
     # infers dimensionless, which falls back to the declaration (no false
-    # positive) rather than being skipped as a previously-exempt input.
+    # positive).
     @policy_function(unit=TTSIMUnit.CURRENCY)
     def depends_on_identifier(p_id: int) -> float:
         return p_id * 2.0
@@ -2619,9 +2599,7 @@ def test_uniform_dict_param_is_subscriptable_in_dry_run():
     )
 
 
-# ----------------------------------------------------------------------------
 # Structured param functions (unit=UNSET_UNIT): plucks are cast at the site
-# ----------------------------------------------------------------------------
 
 
 @dataclass(frozen=True)
@@ -2772,10 +2750,8 @@ def test_structured_cast_too_coarse_fails_on_the_deeper_pluck():
         )
 
 
-# ----------------------------------------------------------------------------
 # Annotated parameter dataclasses: fields state their units, plucks resolve
 # (GEP 10)
-# ----------------------------------------------------------------------------
 
 
 @dataclass(frozen=True)
@@ -2996,10 +2972,8 @@ def test_piecewise_call_on_converter_built_schedule_without_cast_is_caught():
         )
 
 
-# ----------------------------------------------------------------------------
 # Converter-built schedules from input/output-unit require_converters screen
 # like parameter-declared ones (GEP 10)
-# ----------------------------------------------------------------------------
 
 
 def make_raw_levy_schedule() -> RawParam:
@@ -3208,9 +3182,7 @@ def test_converter_of_two_input_output_unit_params_is_rejected():
         )
 
 
-# ----------------------------------------------------------------------------
 # Per-function body opt-out (verify_units=False)
-# ----------------------------------------------------------------------------
 
 
 def test_verify_units_false_skips_body_inference():
@@ -3254,9 +3226,7 @@ def test_verify_units_false_still_checks_consumers_against_declared_unit():
         )
 
 
-# ----------------------------------------------------------------------------
 # Aggregation decorators
-# ----------------------------------------------------------------------------
 
 
 def test_count_aggregation_declares_person_per_group():
@@ -3367,9 +3337,7 @@ def test_aggregation_decorator_rejects_invalid_unit():
             """Invalid unit."""
 
 
-# ----------------------------------------------------------------------------
 # Param functions
-# ----------------------------------------------------------------------------
 
 
 def test_param_function_unit_resolves_via_leaf_name_suffix():
@@ -3390,9 +3358,7 @@ def test_param_function_unit_resolves_via_leaf_name_suffix():
     )
 
 
-# ----------------------------------------------------------------------------
 # Parameters must pin down their concrete currency (GEP 10)
-# ----------------------------------------------------------------------------
 
 
 def test_scalar_param_with_agnostic_currency_token_fails():
@@ -3446,9 +3412,7 @@ def test_concrete_currency_token_resolves_like_agnostic_counterpart():
     )
 
 
-# ----------------------------------------------------------------------------
 # Mapping parameters declare per-axis units (GEP 10)
-# ----------------------------------------------------------------------------
 
 
 def _make_schedule_param(**kwargs: Any) -> PiecewisePolynomialParam:
@@ -3530,11 +3494,9 @@ def test_param_mapping_object_missing_axis_units_are_reported():
 
 
 def test_auto_generated_boolean_group_aggregate_passes_the_build():
-    """The regression behind defect #1: requesting the group aggregate of a boolean
-    auto-generates a SUM node, whose framework-minted token must match what the
-    resolver derives (a head count). Before the fix the minter produced
-    DIMENSIONLESS_PER_FAM while the resolver derived [person]/[fam], so the build
-    rejected its own auto-assignment. It must now pass unchanged (GEP 10)."""
+    """Requesting the group aggregate of a boolean auto-generates a SUM node, whose
+    framework-minted token must match what the resolver derives (a head count,
+    [person]/[fam]). The build accepts its own auto-assignment (GEP 10)."""
 
     @policy_function(leaf_name="is_adult", unit=TTSIMUnit.DIMENSIONLESS)
     def is_adult() -> bool:
@@ -3848,9 +3810,7 @@ def test_same_group_level_addition_in_a_body_passes():
     )
 
 
-# ----------------------------------------------------------------------------
 # Aggregations: declared unit must match the derived unit (GEP 10)
-# ----------------------------------------------------------------------------
 
 
 def test_sum_over_boolean_declared_dimensionless_is_caught():

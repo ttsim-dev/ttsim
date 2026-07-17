@@ -47,7 +47,8 @@ def _as_int_if_whole(magnitude: float) -> int | float:
     stays an ``int``), so whole-number factors must stay ``int``.
     """
     rounded = round(magnitude)
-    return rounded if math.isclose(magnitude, rounded) else magnitude
+    is_whole = math.isclose(magnitude, rounded, rel_tol=1e-9, abs_tol=1e-9)
+    return rounded if is_whole else magnitude
 
 
 def _periods_per_year() -> tuple[int | float, int | float, float, float]:
