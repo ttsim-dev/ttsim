@@ -21,6 +21,7 @@ from ttsim.interface_dag_elements.automatically_added_functions import (
 )
 from ttsim.interface_dag_elements.unit_checks import (
     FRAMEWORK_DATE_NODE_UNITS,
+    _resolved_return_structure,
     fail_if_environment_units_are_inconsistent,
     fail_if_environment_units_are_missing,
     node_is_boolean,
@@ -34,7 +35,7 @@ from ttsim.tt import (
     RoundingSpec,
     TTSIMUnit,
     agg_by_group_function,
-    cast_unit,
+    cast_ttsim_unit,
     group_creation_function,
     join,
     param_function,
@@ -783,6 +784,96 @@ def test_numeric_driven_branch_with_dimensionless_arm_does_not_false_positive():
         grouping_levels=GROUPING_LEVELS,
         unit_system=UNIT_SYSTEM,
     )
+
+
+# Dry-run robustness: representative magnitudes are all 1.0, so a body may
+# divide by a zero-magnitude difference of same-unit quantities or call the
+# builtin ``round`` — both are dimensionally fine and must check cleanly.
+
+
+def test_division_by_zero_magnitude_difference_infers_the_quotient_unit():
+    """A body dividing by ``a - b`` of two equal-unit flows checks cleanly.
+
+    The two monthly flows are each represented at magnitude 1.0, so their
+    difference is 0; the dry-run cares only about the quotient's *unit*
+    (``currency / (currency/month) = months``), not that the magnitude is
+    finite.
+    """
+
+    @policy_function(unit=TTSIMUnit.MONTHS)
+    def months_to_close_the_gap(
+        wealth: float, income_m: float, other_income_m: float
+    ) -> float:
+        return wealth / (income_m - other_income_m)
+
+    fail_if_environment_units_are_inconsistent(
+        env={
+            "wealth": wealth,
+            "income_m": income_m,
+            "other_income_m": other_income_m,
+            "months_to_close_the_gap": months_to_close_the_gap,
+        },
+        grouping_levels=GROUPING_LEVELS,
+        unit_system=UNIT_SYSTEM,
+    )
+
+
+def test_division_by_zero_magnitude_difference_still_catches_a_unit_mismatch():
+    """The zero-division fallback keeps the quotient's unit, so a wrong
+    declaration is still caught: the ``months`` quotient is declared as a
+    currency."""
+
+    @policy_function(unit=TTSIMUnit.CURRENCY)
+    def gap_declared_as_currency(
+        wealth: float, income_m: float, other_income_m: float
+    ) -> float:
+        return wealth / (income_m - other_income_m)
+
+    with pytest.raises(UnitConsistencyError, match="gap_declared_as_currency"):
+        fail_if_environment_units_are_inconsistent(
+            env={
+                "wealth": wealth,
+                "income_m": income_m,
+                "other_income_m": other_income_m,
+                "gap_declared_as_currency": gap_declared_as_currency,
+            },
+            grouping_levels=GROUPING_LEVELS,
+            unit_system=UNIT_SYSTEM,
+        )
+
+
+def test_builtin_round_is_unit_preserving_and_checks_cleanly():
+    """A body calling the builtin ``round`` on a monthly flow checks cleanly:
+    ``round`` preserves the unit."""
+
+    @policy_function(unit=TTSIMUnit.CURRENCY.PER_MONTH)
+    def rounded_income_m(income_m: float) -> float:
+        return round(income_m)
+
+    fail_if_environment_units_are_inconsistent(
+        env={"income_m": income_m, "rounded_income_m": rounded_income_m},
+        grouping_levels=GROUPING_LEVELS,
+        unit_system=UNIT_SYSTEM,
+    )
+
+
+def test_builtin_round_preserves_the_unit_so_a_mismatch_is_caught():
+    """``round`` is unit-preserving, so a body rounding a monthly flow but
+    declaring a yearly one is still caught."""
+
+    @policy_function(unit=TTSIMUnit.CURRENCY.PER_YEAR)
+    def rounded_income_mislabelled_y(income_m: float) -> float:
+        return round(income_m)
+
+    with pytest.raises(UnitConsistencyError, match="rounded_income_mislabelled_y"):
+        fail_if_environment_units_are_inconsistent(
+            env={
+                "income_m": income_m,
+                "rounded_income_mislabelled_y": rounded_income_mislabelled_y,
+            },
+            grouping_levels=GROUPING_LEVELS,
+            unit_system=UNIT_SYSTEM,
+        )
 
 
 # Calendar points vs durations (GEP 10, S1)
@@ -1592,7 +1683,7 @@ def test_head_count_at_wrong_group_level_is_still_caught():
         )
 
 
-# `cast_unit`: the expression-level escape hatch
+# `cast_ttsim_unit`: the expression-level escape hatch
 
 
 def test_cross_level_comparison_without_cast_is_caught():
@@ -1626,7 +1717,7 @@ def test_cross_level_comparison_without_cast_is_caught():
 
 def test_cross_level_comparison_with_cast_passes():
     """The policy-mandated per-person reading — each person sees their family's
-    extreme — is stated at the site with ``cast_unit``; the rest of the body
+    extreme — is stated at the site with ``cast_ttsim_unit``; the rest of the body
     stays checked (GEP 10)."""
 
     @policy_input(unit=TTSIMUnit.MONTHS.PER_FAM)
@@ -1640,7 +1731,7 @@ def test_cross_level_comparison_with_cast_passes():
     @policy_function(unit=TTSIMUnit.DIMENSIONLESS)
     def eligible(age_youngest_months_fam: float, age_limit_months: float) -> bool:
         return (
-            cast_unit(value=age_youngest_months_fam, unit=TTSIMUnit.MONTHS)
+            cast_ttsim_unit(value=age_youngest_months_fam, unit=TTSIMUnit.MONTHS)
             <= age_limit_months
         )
 
@@ -1658,7 +1749,7 @@ def test_cross_level_comparison_with_cast_passes():
 def test_level_less_inference_under_a_declared_group_level_is_caught():
     """The declared-vs-inferred level match is exact: a body whose arithmetic
     yields no level cannot silently claim the declared group level; the error
-    points at ``cast_unit`` (GEP 10)."""
+    points at ``cast_ttsim_unit`` (GEP 10)."""
 
     @policy_input(unit=TTSIMUnit.MONTHS)
     def age_limit_months() -> float:
@@ -1668,7 +1759,7 @@ def test_level_less_inference_under_a_declared_group_level_is_caught():
     def doubled_limit_months_fam(age_limit_months: float) -> float:
         return age_limit_months * 2.0
 
-    with pytest.raises(UnitConsistencyError, match="cast_unit"):
+    with pytest.raises(UnitConsistencyError, match="cast_ttsim_unit"):
         fail_if_environment_units_are_inconsistent(
             env={
                 "age_limit_months": age_limit_months,
@@ -1681,7 +1772,7 @@ def test_level_less_inference_under_a_declared_group_level_is_caught():
 
 def test_cast_at_the_return_states_the_declared_group_level():
     """An intensive group property computed from level-less material states its
-    level with ``cast_unit`` at the return (GEP 10)."""
+    level with ``cast_ttsim_unit`` at the return (GEP 10)."""
 
     @policy_input(unit=TTSIMUnit.MONTHS)
     def age_limit_months() -> float:
@@ -1689,7 +1780,9 @@ def test_cast_at_the_return_states_the_declared_group_level():
 
     @policy_function(unit=TTSIMUnit.MONTHS.PER_FAM)
     def doubled_limit_months_fam(age_limit_months: float) -> float:
-        return cast_unit(value=age_limit_months * 2.0, unit=TTSIMUnit.MONTHS.PER_FAM)
+        return cast_ttsim_unit(
+            value=age_limit_months * 2.0, unit=TTSIMUnit.MONTHS.PER_FAM
+        )
 
     fail_if_environment_units_are_inconsistent(
         env={
@@ -1719,7 +1812,7 @@ def test_group_share_times_group_total_squares_the_level_and_is_caught():
     def parents_need_m_fam(parents_share_fam: float, need_m_fam: float) -> float:
         return parents_share_fam * need_m_fam
 
-    with pytest.raises(UnitConsistencyError, match="cast_unit"):
+    with pytest.raises(UnitConsistencyError, match="cast_ttsim_unit"):
         fail_if_environment_units_are_inconsistent(
             env={
                 "parents_share_fam": parents_share_fam,
@@ -1745,7 +1838,7 @@ def test_group_share_times_group_total_passes_with_cast():
 
     @policy_function(unit=TTSIMUnit.CURRENCY.PER_MONTH.PER_FAM)
     def parents_need_m_fam(parents_share_fam: float, need_m_fam: float) -> float:
-        return cast_unit(
+        return cast_ttsim_unit(
             value=parents_share_fam * need_m_fam,
             unit=TTSIMUnit.CURRENCY.PER_MONTH.PER_FAM,
         )
@@ -1768,7 +1861,9 @@ def test_cast_tags_a_dimensioned_literal_in_an_ordering_comparison():
 
     @policy_function(unit=TTSIMUnit.DIMENSIONLESS)
     def poor(income_m: float) -> bool:
-        return income_m < cast_unit(value=1000.0, unit=TTSIMUnit.CURRENCY.PER_MONTH)
+        return income_m < cast_ttsim_unit(
+            value=1000.0, unit=TTSIMUnit.CURRENCY.PER_MONTH
+        )
 
     fail_if_environment_units_are_inconsistent(
         env={"income_m": income_m, "poor": poor},
@@ -1778,7 +1873,7 @@ def test_cast_tags_a_dimensioned_literal_in_an_ordering_comparison():
 
     @policy_function(unit=TTSIMUnit.DIMENSIONLESS)
     def poor_buggy(income_m: float) -> bool:
-        return income_m < cast_unit(
+        return income_m < cast_ttsim_unit(
             value=1000.0, unit=TTSIMUnit.CURRENCY.PER_YEAR
         )  # wrong period
 
@@ -1800,7 +1895,7 @@ def test_cast_in_a_vectorized_body_is_screened_identically():
     )
     def capped_income_m(income_m: FloatColumn, xnp: ModuleType) -> FloatColumn:
         return xnp.minimum(
-            income_m, cast_unit(value=2000.0, unit=TTSIMUnit.CURRENCY.PER_MONTH)
+            income_m, cast_ttsim_unit(value=2000.0, unit=TTSIMUnit.CURRENCY.PER_MONTH)
         )
 
     fail_if_environment_units_are_inconsistent(
@@ -1817,7 +1912,7 @@ def test_cast_to_a_concrete_currency_is_rejected():
 
     @policy_function(unit=TTSIMUnit.CURRENCY.PER_MONTH)
     def pinned_m(income_m: float) -> float:
-        return cast_unit(value=income_m, unit="CASTAR_PER_MONTH")
+        return cast_ttsim_unit(value=income_m, unit="CASTAR_PER_MONTH")
 
     with pytest.raises(UnitDefinitionError, match="agnostic CURRENCY"):
         fail_if_environment_units_are_inconsistent(
@@ -1842,7 +1937,7 @@ def test_dimensionless_inference_cannot_claim_a_group_owned_declaration():
     def requirement_fulfilled_fam(share_of_need: float, threshold_share: float) -> bool:
         return share_of_need < threshold_share
 
-    with pytest.raises(UnitConsistencyError, match="cast_unit"):
+    with pytest.raises(UnitConsistencyError, match="cast_ttsim_unit"):
         fail_if_environment_units_are_inconsistent(
             env={
                 "share_of_need": share_of_need,
@@ -1857,7 +1952,7 @@ def test_dimensionless_inference_cannot_claim_a_group_owned_declaration():
     def requirement_fulfilled_cast_fam(
         share_of_need: float, threshold_share: float
     ) -> bool:
-        return cast_unit(
+        return cast_ttsim_unit(
             value=share_of_need < threshold_share, unit=TTSIMUnit.DIMENSIONLESS.PER_FAM
         )
 
@@ -1875,7 +1970,7 @@ def test_dimensionless_inference_cannot_claim_a_group_owned_declaration():
 def test_adding_a_nonzero_bare_literal_to_a_quantity_is_caught():
     """``income_m + 100.0`` hides a monthly amount in the literal; ``+``/``-``
     screen literals exactly as the ordering comparisons do — promote to a
-    parameter, tag with ``cast_unit``, or use 0 (GEP 10)."""
+    parameter, tag with ``cast_ttsim_unit``, or use 0 (GEP 10)."""
 
     @policy_function(unit=TTSIMUnit.CURRENCY.PER_MONTH)
     def bumped_income_m(income_m: float) -> float:
@@ -1890,7 +1985,9 @@ def test_adding_a_nonzero_bare_literal_to_a_quantity_is_caught():
 
     @policy_function(unit=TTSIMUnit.CURRENCY.PER_MONTH)
     def bumped_income_cast_m(income_m: float) -> float:
-        return income_m + cast_unit(value=100.0, unit=TTSIMUnit.CURRENCY.PER_MONTH)
+        return income_m + cast_ttsim_unit(
+            value=100.0, unit=TTSIMUnit.CURRENCY.PER_MONTH
+        )
 
     fail_if_environment_units_are_inconsistent(
         env={"income_m": income_m, "bumped_income_m": bumped_income_cast_m},
@@ -1902,7 +1999,7 @@ def test_adding_a_nonzero_bare_literal_to_a_quantity_is_caught():
 def test_nonzero_literal_return_under_a_dimensioned_declaration_is_caught():
     """``return 25.0`` under a currency declaration is a hidden dimensioned
     constant: only ``0`` falls through (the eligibility guard); anything else
-    is promoted to a parameter or tagged with ``cast_unit`` (GEP 10)."""
+    is promoted to a parameter or tagged with ``cast_ttsim_unit`` (GEP 10)."""
 
     @policy_function(unit=TTSIMUnit.CURRENCY.PER_MONTH)
     def lump_m(is_exempt: bool, income_m: float) -> float:
@@ -1920,7 +2017,7 @@ def test_nonzero_literal_return_under_a_dimensioned_declaration_is_caught():
     @policy_function(unit=TTSIMUnit.CURRENCY.PER_MONTH)
     def lump_cast_m(is_exempt: bool, income_m: float) -> float:
         if is_exempt:
-            return cast_unit(value=25.0, unit=TTSIMUnit.CURRENCY.PER_MONTH)
+            return cast_ttsim_unit(value=25.0, unit=TTSIMUnit.CURRENCY.PER_MONTH)
         return income_m
 
     fail_if_environment_units_are_inconsistent(
@@ -2325,7 +2422,7 @@ def test_scalar_max_zero_floor_preserves_unit_when_result_is_continued():
     """Scalar ``max(x, 0.0)`` carries ``x``'s unit on every branch, exactly as
     the vectorized ``xnp.maximum`` does, so the clamped value stays usable: the
     net/gross ratio ``max(income_m, 0.0) / income_m`` is dimensionless without a
-    ``cast_unit`` on the zero floor (GEP 10)."""
+    ``cast_ttsim_unit`` on the zero floor (GEP 10)."""
 
     @policy_function(unit=TTSIMUnit.DIMENSIONLESS)
     def ratio(income_m: float) -> float:
@@ -2665,10 +2762,10 @@ def test_structured_plucks_with_casts_are_verifiable():
 
     @policy_function(unit=TTSIMUnit.CURRENCY.PER_MONTH)
     def child_benefit_m(age: int, child_rate: _ChildRate) -> float:
-        amount_m = cast_unit(
+        amount_m = cast_ttsim_unit(
             value=child_rate.amount_m, unit=TTSIMUnit.CURRENCY.PER_MONTH
         )
-        max_age = cast_unit(value=child_rate.bounds.max_age, unit=TTSIMUnit.YEARS)
+        max_age = cast_ttsim_unit(value=child_rate.bounds.max_age, unit=TTSIMUnit.YEARS)
         if age <= max_age:
             return amount_m
         return 0.0
@@ -2689,12 +2786,12 @@ def test_structured_pluck_used_without_cast_is_caught():
     @policy_function(unit=TTSIMUnit.CURRENCY.PER_MONTH)
     def child_benefit_m(age: int, child_rate: _ChildRate) -> float:
         if age <= child_rate.bounds.max_age:  # bug: pluck used as a quantity
-            return cast_unit(
+            return cast_ttsim_unit(
                 value=child_rate.amount_m, unit=TTSIMUnit.CURRENCY.PER_MONTH
             )
         return 0.0
 
-    with pytest.raises(UnitConsistencyError, match="cast_unit"):
+    with pytest.raises(UnitConsistencyError, match="cast_ttsim_unit"):
         fail_if_environment_units_are_inconsistent(
             env={
                 "age": age,
@@ -2725,9 +2822,11 @@ def test_structured_cast_too_coarse_fails_on_the_deeper_pluck():
 
     @policy_function(unit=TTSIMUnit.CURRENCY.PER_MONTH)
     def child_benefit_m(age: int, child_rate: _ChildRate) -> float:
-        bounds = cast_unit(value=child_rate.bounds, unit=TTSIMUnit.YEARS)  # too coarse
+        bounds = cast_ttsim_unit(
+            value=child_rate.bounds, unit=TTSIMUnit.YEARS
+        )  # too coarse
         if age <= bounds.max_age:
-            return cast_unit(
+            return cast_ttsim_unit(
                 value=child_rate.amount_m, unit=TTSIMUnit.CURRENCY.PER_MONTH
             )
         return 0.0
@@ -2830,7 +2929,7 @@ def test_unannotated_field_keeps_the_cast_requirement():
             return partially_annotated_rate.amount_m
         return 0.0
 
-    with pytest.raises(UnitConsistencyError, match="cast_unit"):
+    with pytest.raises(UnitConsistencyError, match="cast_ttsim_unit"):
         fail_if_environment_units_are_inconsistent(
             env={
                 "age": age,
@@ -2843,29 +2942,196 @@ def test_unannotated_field_keeps_the_cast_requirement():
         )
 
 
-@dataclass(frozen=True)
-class _DriftingChildRate:
-    amount_m: Annotated[float, TTSIMUnit.YEARS]
-
-
 @param_function(unit=UNSET_UNIT)
-def drifting_child_rate(raw_child_rate: RawParamValue) -> _DriftingChildRate:
-    return _DriftingChildRate(amount_m=raw_child_rate["amount_m"])
+def annotated_child_rate_by_group(
+    raw_child_rate: RawParamValue,
+) -> dict[str, _AnnotatedChildRate]:
+    """A mapping of category to an annotated rate dataclass."""
+    return {
+        "kleinkind": _AnnotatedChildRate(
+            amount_m=raw_child_rate["amount_m"],
+            bounds=_AnnotatedAgeBounds(
+                min_age=raw_child_rate["bounds"]["min_age"],
+                max_age=raw_child_rate["bounds"]["max_age"],
+            ),
+        ),
+    }
 
 
-def test_field_annotation_drifting_from_the_unit_mapping_is_rejected():
-    # The YAML mapping declares CASTAR_PER_MONTH for the `amount_m` leaf; the
-    # field of the same path claims YEARS. The number would convert as money
-    # and check as a duration — the drift check makes that loud (GEP 10).
-    with pytest.raises(UnitConsistencyError, match="state the same unit"):
+def test_annotated_fields_resolve_plucks_through_mapping_of_dataclass():
+    """`param[key].field` on a `dict[str, <annotated dataclass>]` carries the
+    field's declared unit, so a consistent body needs no cast."""
+
+    @policy_function(unit=TTSIMUnit.CURRENCY.PER_MONTH)
+    def child_benefit_m(
+        age: int,
+        annotated_child_rate_by_group: dict[str, _AnnotatedChildRate],
+    ) -> float:
+        if age <= annotated_child_rate_by_group["kleinkind"].bounds.max_age:
+            return annotated_child_rate_by_group["kleinkind"].amount_m
+        return 0.0
+
+    fail_if_environment_units_are_inconsistent(
+        env={
+            "age": age,
+            "raw_child_rate": make_raw_child_rate(),
+            "annotated_child_rate_by_group": annotated_child_rate_by_group,
+            "child_benefit_m": child_benefit_m,
+        },
+        grouping_levels=GROUPING_LEVELS,
+        unit_system=UNIT_SYSTEM,
+    )
+
+
+def test_mapping_of_dataclass_pluck_misuse_is_caught():
+    """A field pluck through the mapping keeps its unit, so a dimensionally wrong
+    use (money plus a duration) is still caught."""
+
+    @policy_function(unit=TTSIMUnit.CURRENCY.PER_MONTH)
+    def child_benefit_m(
+        age: int,
+        annotated_child_rate_by_group: dict[str, _AnnotatedChildRate],
+    ) -> float:
+        return annotated_child_rate_by_group["kleinkind"].amount_m + age
+
+    with pytest.raises(UnitConsistencyError, match="non-equivalent units"):
         fail_if_environment_units_are_inconsistent(
             env={
+                "age": age,
                 "raw_child_rate": make_raw_child_rate(),
-                "drifting_child_rate": drifting_child_rate,
+                "annotated_child_rate_by_group": annotated_child_rate_by_group,
+                "child_benefit_m": child_benefit_m,
             },
             grouping_levels=GROUPING_LEVELS,
             unit_system=UNIT_SYSTEM,
         )
+
+
+def test_resolved_return_structure_handles_a_runtime_mapping_annotation():
+    """The non-string annotation path resolves the value dataclass of a mapping,
+    so a param function whose module lacks `from __future__ import annotations`
+    still gets field-unit tracing."""
+
+    def producer(raw_child_rate: object) -> object: ...
+
+    producer.__annotations__ = {"return": dict[str, _AnnotatedChildRate]}
+    cls, item_cls = _resolved_return_structure(producer)
+    assert cls is None
+    assert item_cls is _AnnotatedChildRate
+
+
+# Annotated schedule fields: a lookup nested in a parameter dataclass declares its
+# output unit at the field, so `params.field.look_up(...)` screens without a cast
+# (GEP 10)
+
+
+@dataclass(frozen=True)
+class _AnnotatedRentBounds:
+    max_age: Annotated[int, TTSIMUnit.YEARS]
+    rate_m: Annotated[ConsecutiveIntLookupTableParamValue, TTSIMUnit.CURRENCY.PER_MONTH]
+
+
+@dataclass(frozen=True)
+class _AnnotatedLookupRate:
+    factor: Annotated[ConsecutiveIntLookupTableParamValue, TTSIMUnit.DIMENSIONLESS]
+    bounds: _AnnotatedRentBounds
+
+
+@param_function(unit=UNSET_UNIT)
+def annotated_lookup_rate(xnp: ModuleType) -> _AnnotatedLookupRate:
+    """A structured builder whose dataclass fields include lookup schedules."""
+    return _AnnotatedLookupRate(
+        factor=ConsecutiveIntLookupTableParamValue(
+            xnp=xnp,
+            values_to_look_up=xnp.array([1.0, 2.0]),
+            bases_to_subtract=xnp.array([1]),
+        ),
+        bounds=_AnnotatedRentBounds(
+            max_age=18,
+            rate_m=ConsecutiveIntLookupTableParamValue(
+                xnp=xnp,
+                values_to_look_up=xnp.array([45.0, 60.0]),
+                bases_to_subtract=xnp.array([1]),
+            ),
+        ),
+    )
+
+
+def test_annotated_schedule_field_look_up_resolves_without_cast():
+    """A field annotated with a lookup type carries its output unit: the pluck
+    yields a schedule, so `look_up` produces that unit with no `cast_ttsim_unit`."""
+
+    @policy_function(unit=TTSIMUnit.DIMENSIONLESS)
+    def scaling(
+        statutory_age: int, annotated_lookup_rate: _AnnotatedLookupRate
+    ) -> float:
+        return annotated_lookup_rate.factor.look_up(statutory_age)
+
+    fail_if_environment_units_are_inconsistent(
+        env={
+            "statutory_age": statutory_age,
+            "annotated_lookup_rate": annotated_lookup_rate,
+            "scaling": scaling,
+        },
+        grouping_levels=GROUPING_LEVELS,
+        unit_system=UNIT_SYSTEM,
+    )
+
+
+def test_annotated_schedule_field_look_up_output_unit_is_applied():
+    """The field's output unit is really applied, not silenced: a money-per-month
+    look-up added to a duration is a non-equivalent-unit sum."""
+
+    @policy_function(unit=TTSIMUnit.CURRENCY.PER_MONTH)
+    def rent_m(
+        statutory_age: int, annotated_lookup_rate: _AnnotatedLookupRate
+    ) -> float:
+        return (
+            annotated_lookup_rate.bounds.rate_m.look_up(statutory_age) + statutory_age
+        )
+
+    with pytest.raises(UnitConsistencyError, match="non-equivalent units"):
+        fail_if_environment_units_are_inconsistent(
+            env={
+                "statutory_age": statutory_age,
+                "annotated_lookup_rate": annotated_lookup_rate,
+                "rent_m": rent_m,
+            },
+            grouping_levels=GROUPING_LEVELS,
+            unit_system=UNIT_SYSTEM,
+        )
+
+
+def test_annotated_schedule_field_resolves_through_nested_dataclass():
+    """A schedule field on a nested dataclass resolves through the nested pluck,
+    so `params.nested.the_lookup.look_up(...)` screens against the field unit."""
+
+    @policy_function(unit=TTSIMUnit.CURRENCY.PER_MONTH)
+    def rent_m(
+        statutory_age: int, annotated_lookup_rate: _AnnotatedLookupRate
+    ) -> float:
+        return annotated_lookup_rate.bounds.rate_m.look_up(statutory_age)
+
+    fail_if_environment_units_are_inconsistent(
+        env={
+            "statutory_age": statutory_age,
+            "annotated_lookup_rate": annotated_lookup_rate,
+            "rent_m": rent_m,
+        },
+        grouping_levels=GROUPING_LEVELS,
+        unit_system=UNIT_SYSTEM,
+    )
+
+
+def test_resolved_return_structure_handles_a_runtime_dataclass_annotation():
+    """The non-string annotation path resolves a plain dataclass return."""
+
+    def producer(raw_child_rate: object) -> object: ...
+
+    producer.__annotations__ = {"return": _AnnotatedChildRate}
+    cls, item_cls = _resolved_return_structure(producer)
+    assert cls is _AnnotatedChildRate
+    assert item_cls is None
 
 
 @dataclass(frozen=True)
@@ -2914,6 +3180,36 @@ def test_container_field_annotation_is_rejected():
         )
 
 
+@dataclass(frozen=True)
+class _NestedContainerRate:
+    bounds: _ContainerRate
+
+
+@param_function(unit=UNSET_UNIT)
+def never_plucked_bad_rate(raw_child_rate: RawParamValue) -> _NestedContainerRate:
+    """A structured builder with a malformed annotation nobody plucks."""
+    return _NestedContainerRate(
+        bounds=_ContainerRate(
+            amounts_m={str(key): float(value) for key, value in raw_child_rate.items()}
+        )
+    )
+
+
+def test_never_plucked_malformed_field_annotation_is_rejected():
+    """A malformed field annotation on a structured param function is caught at
+    build time even when no body ever plucks it — the eager pass walks the nested
+    dataclass tree (GEP 10)."""
+    with pytest.raises(UnitDefinitionError, match="scalar field"):
+        fail_if_environment_units_are_inconsistent(
+            env={
+                "raw_child_rate": make_raw_child_rate(),
+                "never_plucked_bad_rate": never_plucked_bad_rate,
+            },
+            grouping_levels=GROUPING_LEVELS,
+            unit_system=UNIT_SYSTEM,
+        )
+
+
 @param_function(unit=UNSET_UNIT)
 def built_schedule(
     raw_schedule: RawParamValue, xnp: ModuleType
@@ -2933,7 +3229,7 @@ def test_piecewise_call_on_converter_built_schedule_is_cast_at_the_call():
         built_schedule: PiecewisePolynomialParamValue,
         xnp: ModuleType,
     ) -> float:
-        return cast_unit(
+        return cast_ttsim_unit(
             value=piecewise_polynomial(x=bonus_y, parameters=built_schedule, xnp=xnp),
             unit=TTSIMUnit.CURRENCY.PER_YEAR,
         )
@@ -3092,7 +3388,7 @@ def test_axes_consumer_with_quantity_unit_is_rejected():
 def test_schedule_param_function_declared_unit_flows_into_look_up_without_cast():
     """A schedule-returning ``@param_function`` may declare its **own** output
     unit (rather than deriving it from a require_converter's axes): ``look_up``
-    then yields that unit at the consumer with no ``cast_unit``. Used where the
+    then yields that unit at the consumer with no ``cast_ttsim_unit``. Used where the
     raw keeps honest per-key units that cannot collapse to a single axis (GEP
     10)."""
 
@@ -3628,16 +3924,17 @@ def test_per_capita_division_bridges_via_head_count():
 
 
 def test_cast_unit_literal_clamp_floor_inside_max_is_checkable():
-    """A ``cast_unit(0, …)`` clamp floor inside ``max()`` is dry-run-checkable: the
-    tagged literal participates in the ordering screen like any quantity, so the
-    body infers its declared unit rather than reporting as un-evaluable (GEP 10)."""
+    """A ``cast_ttsim_unit(0, …)`` clamp floor inside ``max()`` is dry-run-
+    checkable: the tagged literal participates in the ordering screen like any
+    quantity, so the body infers its declared unit rather than reporting as
+    un-evaluable (GEP 10)."""
 
     @policy_input(unit=TTSIMUnit.CURRENCY.PER_MONTH)
     def wage_m() -> float: ...
 
     @policy_function(unit=TTSIMUnit.CURRENCY.PER_MONTH)
     def clamped_wage_m(wage_m: float) -> float:
-        return max(wage_m, cast_unit(0, TTSIMUnit.CURRENCY.PER_MONTH))
+        return max(wage_m, cast_ttsim_unit(0, TTSIMUnit.CURRENCY.PER_MONTH))
 
     fail_if_environment_units_are_inconsistent(
         env={"wage_m": wage_m, "clamped_wage_m": clamped_wage_m},
@@ -3656,8 +3953,8 @@ def test_cast_unit_literal_participates_in_every_screened_op():
 
     @policy_function(unit=TTSIMUnit.CURRENCY.PER_MONTH)
     def floored_m(wage_m: float) -> float:
-        floor = cast_unit(0, TTSIMUnit.CURRENCY.PER_MONTH)
-        bonus = cast_unit(100, TTSIMUnit.CURRENCY.PER_MONTH) * cast_unit(
+        floor = cast_ttsim_unit(0, TTSIMUnit.CURRENCY.PER_MONTH)
+        bonus = cast_ttsim_unit(100, TTSIMUnit.CURRENCY.PER_MONTH) * cast_ttsim_unit(
             1, TTSIMUnit.DIMENSIONLESS
         )
         return (wage_m + bonus) if wage_m > floor else floor
@@ -3679,7 +3976,7 @@ def test_cast_unit_literal_with_wrong_unit_is_still_screened():
 
     @policy_function(unit=TTSIMUnit.DIMENSIONLESS)
     def wage_is_positive(wage_m: float) -> bool:
-        return wage_m > cast_unit(0, TTSIMUnit.YEARS)
+        return wage_m > cast_ttsim_unit(0, TTSIMUnit.YEARS)
 
     with pytest.raises(UnitConsistencyError, match="wage_is_positive"):
         fail_if_environment_units_are_inconsistent(

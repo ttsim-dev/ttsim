@@ -47,7 +47,7 @@ from ttsim.tt.units import (
     CompositeUnit,
     TTSIMUnit,
     UnitAnnotatedColumn,
-    cast_unit,
+    cast_ttsim_unit,
 )
 
 __all__ = [
@@ -80,7 +80,7 @@ __all__ = [
     "UnitSystem",
     "agg_by_group_function",
     "agg_by_p_id_function",
-    "cast_unit",
+    "cast_ttsim_unit",
     "convert_sparse_to_consecutive_int_lookup_table",
     "get_consecutive_int_lookup_table_param_value",
     "get_month_based_phase_inout_of_age_thresholds_param_value",

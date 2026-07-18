@@ -26,7 +26,7 @@ from ttsim.tt import (
     CompositeUnit,
     TTSIMUnit,
     UnitSystem,
-    cast_unit,
+    cast_ttsim_unit,
     policy_function,
     policy_input,
     register_unit_builder_levels,
@@ -1076,7 +1076,7 @@ def test_hours_per_week_rebases_period_only():
 
 
 # ----------------------------------------------------------------------------
-# `cast_unit` and the implied person leaf (GEP 10)
+# `cast_ttsim_unit` and the implied person leaf (GEP 10)
 # ----------------------------------------------------------------------------
 
 
@@ -1084,8 +1084,8 @@ def test_cast_unit_is_the_identity_at_run_time():
     # Like `typing.cast`: no runtime effect, scalar or column, so the numeric
     # path and JAX tracing are untouched.
     column = np.array([1.0, 2.0])
-    assert cast_unit(column, TTSIMUnit.CURRENCY.PER_MONTH) is column
-    assert cast_unit(3.5, TTSIMUnit.MONTHS) == 3.5
+    assert cast_ttsim_unit(column, TTSIMUnit.CURRENCY.PER_MONTH) is column
+    assert cast_ttsim_unit(3.5, TTSIMUnit.MONTHS) == 3.5
 
 
 def test_cast_target_resolves_like_a_column_declaration():

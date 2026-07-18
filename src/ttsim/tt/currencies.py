@@ -22,6 +22,7 @@ import datetime
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from types import MappingProxyType
+from typing import Any
 
 import pint
 from pint.util import to_units_container
@@ -104,12 +105,15 @@ class UnitSystem:
     )
     """:attr:`statutory_currencies` parsed and sorted by start date."""
 
-    field_units_by_class: dict[type, dict[str, pint.Unit | type] | None] = (
-        dataclasses.field(init=False, repr=False, default_factory=dict)
+    field_units_by_class: dict[type, dict[str, Any] | None] = dataclasses.field(
+        init=False, repr=False, default_factory=dict
     )
     """Memo of the resolved unit annotations of each parameter dataclass the
-    dry-run has seen. The units are this system's registry's, so the memo is the
-    system's."""
+    dry-run has seen, keyed by class. Each value maps a field name to what its
+    pluck yields — a resolved ``pint.Unit``, a nested dataclass ``type``, or a
+    schedule-field marker built in :mod:`ttsim.interface_dag_elements.unit_checks`
+    (kept loose here so this module owns no private name from that layer). The
+    units are this system's registry's, so the memo is the system's."""
 
     def __post_init__(self) -> None:
         registry = build_registry()

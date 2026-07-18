@@ -487,7 +487,7 @@ def _resolve_agnostic_body_unit(
 ) -> pint.Unit:
     """Resolve a code-side compositional unit with no name to validate against.
 
-    Shared by the :func:`cast_unit` target and a parameter dataclass field
+    Shared by the :func:`cast_ttsim_unit` target and a parameter dataclass field
     annotation: both state a full unit whose spelled period and group level stand
     as given, both use the agnostic currency (the concrete denomination lives in
     the parameter YAML), and both resolve like a column declaration.
@@ -508,7 +508,7 @@ def _resolve_agnostic_body_unit(
 def resolve_compositional_cast_unit(
     unit: CompositeUnit, *, registry: pint.UnitRegistry, where: str
 ) -> pint.Unit:
-    """Resolve the target unit of a :func:`cast_unit` call inside a body."""
+    """Resolve the target unit of a :func:`cast_ttsim_unit` call inside a body."""
     return _resolve_agnostic_body_unit(
         unit=unit, registry=registry, where=where, what="a cast inside a body"
     )
@@ -632,7 +632,7 @@ class UnitAnnotatedColumn:
 _CastValueT = TypeVar("_CastValueT")
 
 
-def cast_unit(
+def cast_ttsim_unit(
     value: _CastValueT,
     unit: str | CompositeUnit,  # noqa: ARG001
 ) -> _CastValueT:
@@ -670,7 +670,7 @@ def cast_unit(
 #: - on a ``@param_function``, ``unit=UNSET_UNIT`` is the *explicit* declaration
 #:   of a structured output (a dataclass of related parameters, a converter-built
 #:   schedule) that is not a quantity: the body is not dry-run and consumers
-#:   state each plucked value's unit with ``cast_unit``;
+#:   state each plucked value's unit with ``cast_ttsim_unit``;
 #: - everywhere else a real unit is mandatory, so the sentinel only survives as a
 #:   dataclass field default (the ``unit`` field needs one for field-ordering),
 #:   marking an *omitted* declaration that the mandatory-units check reports.
