@@ -637,7 +637,7 @@ def test_stock_times_rate_without_time_component_is_caught():
 
     ``tax_rate`` is a plain dimensionless share, so ``wealth * tax_rate`` is a
     stock while the node declares a yearly flow. The exemption branch returns
-    0.0 (dimensionless -> fallback); the path explorer exercises the
+    0.0 (the explicit zero-literal exception); the path explorer exercises the
     substantive branch with ``is_exempt=False`` and catches the missing
     ``/ year``.
     """
@@ -1828,10 +1828,7 @@ def test_cast_to_a_concrete_currency_is_rejected():
 
 
 def test_dimensionless_inference_cannot_claim_a_group_owned_declaration():
-    """A plain dimensionless result slips every level screen, so it cannot
-    claim a group-owned declaration: a fam predicate over level-less shares
-    states its level with ``cast_unit``; the person grain stays lenient
-    (GEP 10)."""
+    """A family predicate over level-less shares must state its family level."""
 
     @policy_input(unit=TTSIMUnit.DIMENSIONLESS)
     def share_of_need() -> float:
@@ -2145,7 +2142,7 @@ def test_adding_bare_literal_does_not_false_positive():
     )
 
 
-def test_dimensionless_inference_falls_back_to_declaration():
+def test_zero_literal_falls_back_to_declaration():
     @policy_function(unit=TTSIMUnit.CURRENCY)
     def early_return(wealth: float) -> float:  # noqa: ARG001
         return 0.0
@@ -2412,9 +2409,8 @@ def test_schedule_call_with_wrong_domain_unit_is_caught():
 
 def test_schedule_output_disagreeing_with_the_declaration_is_caught():
     """The call produces the schedule's ``output_unit``, which the declaration
-    check verifies. Only this mismatch proves the output unit is real: were the
-    shim to produce a bare stand-in, the dimensionless fallback would mask it
-    in every happy-path run."""
+    check verifies. This mismatch confirms that the validator propagates the
+    schedule's output unit rather than treating the result as dimensionless."""
     schedule = _make_schedule_param(input_unit=CASTAR, output_unit=CASTAR_PER_YEAR)
 
     @policy_function(unit=TTSIMUnit.CURRENCY.PER_MONTH)
@@ -2497,19 +2493,17 @@ def test_join_target_level_disagreeing_with_the_declaration_is_caught():
         )
 
 
-def test_body_consuming_identifier_infers_dimensionless_and_passes():
-    # An identifier is a dimensionless quantity (GEP 10); a body multiplying it
-    # infers dimensionless, which falls back to the declaration (no false
-    # positive).
+def test_dimensionless_body_cannot_claim_a_currency_declaration():
     @policy_function(unit=TTSIMUnit.CURRENCY)
     def depends_on_identifier(p_id: int) -> float:
         return p_id * 2.0
 
-    fail_if_environment_units_are_inconsistent(
-        env={"p_id": p_id, "depends_on_identifier": depends_on_identifier},
-        grouping_levels=GROUPING_LEVELS,
-        unit_system=UNIT_SYSTEM,
-    )
+    with pytest.raises(UnitConsistencyError, match="depends_on_identifier"):
+        fail_if_environment_units_are_inconsistent(
+            env={"p_id": p_id, "depends_on_identifier": depends_on_identifier},
+            grouping_levels=GROUPING_LEVELS,
+            unit_system=UNIT_SYSTEM,
+        )
 
 
 def test_concrete_mismatch_is_caught():

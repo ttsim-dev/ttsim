@@ -541,9 +541,10 @@ def _combined_boolean_level(left: str | None, right: str | None) -> str | None:
     """Combine two boolean levels for a logical operator.
 
     Equal levels are kept; any mismatch downcasts to the individual
-    :data:`PERSON_LEVEL`. The downcast is sound and conservative: grouping levels
-    do not nest, and a cross-level logical combination is evaluated per person
-    (each person sees its groups' indicators), so the result is person-level.
+    :data:`PERSON_LEVEL`. The unit system does not encode nesting relations
+    between grouping levels. A cross-level logical combination is evaluated per
+    person (each person sees its groups' indicators), so the result is
+    person-level.
 
     Two fam-level indicators give ``"fam"``; the mixed
     ``wealth_fam >= threshold_fam or wealth_kin >= threshold_kin`` combines a fam-
@@ -1913,15 +1914,19 @@ class _DryRunQuantity:
         A comparison of a leveled quantity yields a boolean at that level
         (``einkommen_m_bg > schwelle`` is a bg-level indicator). The level is
         read off ``self``, falling back to the other operand — for an ordering
-        comparison the two are equivalent, so they agree.
+        comparison the two are equivalent, so they agree. A comparison of two
+        level-less quantities is evaluated per person and therefore yields a
+        person-level boolean.
         """
         level = _unit_level_denominator(cast("pint.Unit", self.q.units))
         if level is not None:
             return level
         other_q = _unwrap(other)
         if isinstance(other_q, pint.Quantity):
-            return _unit_level_denominator(cast("pint.Unit", other_q.units))
-        return None
+            other_level = _unit_level_denominator(cast("pint.Unit", other_q.units))
+            if other_level is not None:
+                return other_level
+        return PERSON_LEVEL
 
     def _logical_result(self, other: Any, op: str) -> _DryRunQuantity:  # noqa: ANN401
         """Combine two booleans under a logical operator ``&``/``|``/``^``.
@@ -2948,33 +2953,6 @@ def _bare_literal_result_error(
     return None
 
 
-def _dimensionless_claim_error(
-    qname: str,
-    declared: pint.Unit,
-    detail: str,
-) -> str | None:
-    """The group-ownership screen for a plain dimensionless inference.
-
-    A dimensionless result is unit-polymorphic — what an identifier, a share,
-    or a count magnitude produces (``p_id * 2.0``) — so it may stand in for any
-    *person-grain* declaration. It cannot claim a group-owned one: ownership is
-    a statement that arithmetic on level-less material can never produce, so it
-    is made explicitly, with ``cast_unit``.
-    """
-    declared_group_levels = {
-        name
-        for name, exponent in _grouping_levels_with_exponent(declared)
-        if exponent < 0 and name != PERSON_LEVEL
-    }
-    if not declared_group_levels:
-        return None
-    return (
-        f"{qname}: its body infers a plain dimensionless result{detail}, "
-        f"which cannot claim the group-owned declaration '{declared}'; "
-        f"state the intended unit at the site with `cast_unit` (GEP 10)."
-    )
-
-
 def _inferred_result_error(
     qname: str,
     inferred: Any,  # noqa: ANN401
@@ -3000,12 +2978,11 @@ def _inferred_result_error(
       level-less material, a policy-mandated cross-level product — states the
       intended unit with ``cast_unit`` at the site.
 
-    A plain scalar result and a plain dimensionless inference take their own
-    screens (:func:`_bare_literal_result_error`,
-    :func:`_dimensionless_claim_error`): ``return 0.0`` and dimensionless
-    magnitudes standing in for a person-grain quantity (``p_id * 2.0`` under
-    ``CURRENCY``) stay lenient; a non-zero literal return and a dimensionless
-    claim on a group-owned declaration are rejected.
+    A plain scalar result takes its own screen
+    (:func:`_bare_literal_result_error`): ``return 0.0`` stays lenient, while a
+    non-zero literal return is rejected. A dimensionless quantity is checked
+    like every other inferred quantity and therefore cannot satisfy a
+    dimensioned declaration.
     """
     registry = unit_system.registry
     if not isinstance(
@@ -3020,8 +2997,6 @@ def _inferred_result_error(
             detail=detail,
             registry=registry,
         )
-    if inferred.dimensionless:
-        return _dimensionless_claim_error(qname=qname, declared=declared, detail=detail)
     inferred_unit = cast("pint.Unit", inferred.units)
     if not units_are_equivalent(
         left=_unit_without_grouping_levels(unit=inferred_unit, registry=registry),
