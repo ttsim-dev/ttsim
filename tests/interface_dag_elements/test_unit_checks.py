@@ -2549,6 +2549,85 @@ def test_lookup_call_with_wrong_domain_unit_is_caught():
         )
 
 
+def test_lookup_indexed_by_a_computed_literal_counter_is_dry_runnable():
+    """A lookup keyed by a dimensionless counter built from literals resolves to
+    the schedule's output unit without an opt-out: the output unit is fixed by the
+    schedule regardless of the index (GEP 10). The body anchors on its own branch
+    path, so a bare-literal index needs no unit-carrying domain argument."""
+    by_stufe = _make_lookup_param(
+        input_unit=TTSIMUnit.DIMENSIONLESS, output_unit=CASTAR_PER_MONTH
+    )
+
+    @policy_function(unit=TTSIMUnit.CURRENCY.PER_MONTH)
+    def abzug_m(
+        income_m: float,
+        other_income_m: float,
+        by_stufe: ConsecutiveIntLookupTableParamValue,
+    ) -> float:
+        stufe = 0
+        if income_m > 0:
+            stufe = stufe + 1
+        if other_income_m > 0:
+            stufe = stufe + 1
+        return by_stufe.look_up(stufe)
+
+    fail_if_environment_units_are_inconsistent(
+        env={
+            "income_m": income_m,
+            "other_income_m": other_income_m,
+            "by_stufe": by_stufe,
+            "abzug_m": abzug_m,
+        },
+        grouping_levels=GROUPING_LEVELS,
+        unit_system=UNIT_SYSTEM,
+    )
+
+
+def test_lookup_indexed_by_a_computed_literal_counter_still_checks_the_output_unit():
+    """The counter-indexed lookup still produces the schedule's ``output_unit``,
+    which the declaration check verifies: a node declaring a yearly flow over a
+    monthly-flow schedule is caught (GEP 10)."""
+    by_stufe = _make_lookup_param(
+        input_unit=TTSIMUnit.DIMENSIONLESS, output_unit=CASTAR_PER_MONTH
+    )
+
+    @policy_function(unit=TTSIMUnit.CURRENCY.PER_YEAR)
+    def abzug_y(
+        income_m: float, by_stufe: ConsecutiveIntLookupTableParamValue
+    ) -> float:
+        # the schedule produces a monthly flow, but the node claims a yearly one
+        stufe = 1 if income_m > 0 else 0
+        return by_stufe.look_up(stufe)
+
+    with pytest.raises(UnitConsistencyError, match="abzug_y"):
+        fail_if_environment_units_are_inconsistent(
+            env={"income_m": income_m, "by_stufe": by_stufe, "abzug_y": abzug_y},
+            grouping_levels=GROUPING_LEVELS,
+            unit_system=UNIT_SYSTEM,
+        )
+
+
+def test_schedule_with_a_dimensionful_input_axis_rejects_a_bare_literal_index():
+    """A schedule declaring a dimensionful input axis is never keyed by a bare
+    literal: such an index bypasses the input-axis contract, so the body still
+    demands an explicit opt-out rather than passing silently (GEP 10)."""
+    schedule = _make_schedule_param(
+        input_unit=TTSIMUnit.HECTARE, output_unit=CASTAR_PER_YEAR
+    )
+
+    @policy_function(unit=TTSIMUnit.CURRENCY.PER_YEAR)
+    def levy_y(schedule: PiecewisePolynomialParamValue, xnp: ModuleType) -> float:
+        # bug: a bare literal where the schedule expects an area
+        return piecewise_polynomial(x=1.0, parameters=schedule, xnp=xnp)
+
+    with pytest.raises(UnitConsistencyError, match="verify_units=False"):
+        fail_if_environment_units_are_inconsistent(
+            env={"schedule": schedule, "levy_y": levy_y},
+            grouping_levels=GROUPING_LEVELS,
+            unit_system=UNIT_SYSTEM,
+        )
+
+
 def test_join_target_level_disagreeing_with_the_declaration_is_caught():
     """A ``join`` gather hands on the target column's unit, grouping level
     included (GEP 10) — proven by contradiction: were the shim to drop the
@@ -2942,6 +3021,35 @@ def test_unannotated_field_keeps_the_cast_requirement():
         )
 
 
+def test_lookup_indexed_by_an_opaque_structured_pluck_keeps_the_cast_requirement():
+    """An opaque (unannotated) structured pluck used as a lookup index is not a
+    bare literal: it still owes a `cast_ttsim_unit` or an annotation, so the body
+    demands an opt-out rather than passing on the literal-index fallback (GEP 10)."""
+    by_stufe = _make_lookup_param(
+        input_unit=TTSIMUnit.DIMENSIONLESS, output_unit=CASTAR_PER_MONTH
+    )
+
+    @policy_function(unit=TTSIMUnit.CURRENCY.PER_MONTH)
+    def benefit_m(
+        by_stufe: ConsecutiveIntLookupTableParamValue,
+        partially_annotated_rate: _PartiallyAnnotatedRate,
+    ) -> float:
+        # bug: an opaque pluck as the index, neither annotated nor cast
+        return by_stufe.look_up(partially_annotated_rate.max_age)
+
+    with pytest.raises(UnitConsistencyError, match="verify_units=False"):
+        fail_if_environment_units_are_inconsistent(
+            env={
+                "by_stufe": by_stufe,
+                "raw_child_rate": make_raw_child_rate(),
+                "partially_annotated_rate": partially_annotated_rate,
+                "benefit_m": benefit_m,
+            },
+            grouping_levels=GROUPING_LEVELS,
+            unit_system=UNIT_SYSTEM,
+        )
+
+
 @param_function(unit=UNSET_UNIT)
 def annotated_child_rate_by_group(
     raw_child_rate: RawParamValue,
@@ -3115,6 +3223,25 @@ def test_annotated_schedule_field_resolves_through_nested_dataclass():
     fail_if_environment_units_are_inconsistent(
         env={
             "statutory_age": statutory_age,
+            "annotated_lookup_rate": annotated_lookup_rate,
+            "rent_m": rent_m,
+        },
+        grouping_levels=GROUPING_LEVELS,
+        unit_system=UNIT_SYSTEM,
+    )
+
+
+def test_annotated_schedule_field_look_up_by_a_literal_index_is_dry_runnable():
+    """A schedule field keyed by a bare literal resolves to the field's output
+    unit without an opt-out, just as a top-level schedule parameter does: the
+    index need not carry a unit for the output to be known (GEP 10)."""
+
+    @policy_function(unit=TTSIMUnit.CURRENCY.PER_MONTH)
+    def rent_m(annotated_lookup_rate: _AnnotatedLookupRate) -> float:
+        return annotated_lookup_rate.bounds.rate_m.look_up(1)
+
+    fail_if_environment_units_are_inconsistent(
+        env={
             "annotated_lookup_rate": annotated_lookup_rate,
             "rent_m": rent_m,
         },

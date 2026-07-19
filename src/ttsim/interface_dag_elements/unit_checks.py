@@ -844,6 +844,22 @@ def fail_if_environment_units_are_inconsistent(
         )
 
 
+def _anchor_schedules_on_body_explorer(
+    representative_values: Mapping[str, Any],
+    explorer_holder: list[_PathExplorer | None],
+) -> None:
+    """Hand every top-level schedule the body's live explorer cell.
+
+    A bare-literal ``look_up`` on such a schedule anchors on the current body's
+    branch path via this shared, per-body-updated cell (see
+    :meth:`_DryRunSchedule._produce`). A schedule plucked from a structured field
+    is anchored where it is rebuilt per run instead (:func:`_wrap_for_dry_run`).
+    """
+    for value in representative_values.values():
+        if isinstance(value, _DryRunSchedule):
+            value.explorer_holder = explorer_holder
+
+
 def _body_verification_errors(
     env: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
     resolved_units: Mapping[str, pint.Unit | dict[str | int, Any]],
@@ -864,6 +880,9 @@ def _body_verification_errors(
     # rather than once at import.
     dry_run_helper_shims, explorer_holder = _dry_run_helper_shims(
         unit_system=unit_system
+    )
+    _anchor_schedules_on_body_explorer(
+        representative_values=representative_values, explorer_holder=explorer_holder
     )
     errors: list[str] = []
     for qname, obj in env.items():
@@ -2285,7 +2304,9 @@ def _wrap_for_dry_run(
     ``label`` is the argument name the body sees, carried on the stand-in so a
     branch decision on it can be named in an error. A structured stand-in is
     re-anchored on the run's explorer, so its annotated plucks screen and
-    branch like any other operand.
+    branch like any other operand; the same explorer, held in a one-element
+    cell, lets a schedule plucked from a schedule-typed field anchor a
+    bare-literal ``look_up`` on the run's branch path.
     """
     if isinstance(value, pint.Quantity):
         return _DryRunQuantity(
@@ -2299,6 +2320,7 @@ def _wrap_for_dry_run(
             explorer=explorer,
             label=label,
             item_cls=value._item_cls,  # noqa: SLF001
+            explorer_holder=[explorer],
         )
     if isinstance(value, dict):
         return {
@@ -2347,6 +2369,7 @@ class _DryRunStructuredValue:
     __slots__ = (
         "_cls",
         "_explorer",
+        "_explorer_holder",
         "_item_cls",
         "_label",
         "_producer",
@@ -2365,6 +2388,7 @@ class _DryRunStructuredValue:
         explorer: _PathExplorer | None = None,
         label: str | None = None,
         item_cls: type | None = None,
+        explorer_holder: list[_PathExplorer | None] | None = None,
     ) -> None:
         self._producer = producer
         # An annotated field's pluck resolves to a unit, so the stand-in needs
@@ -2377,13 +2401,20 @@ class _DryRunStructuredValue:
         # The value dataclass a mapping producer yields on subscript; `None`
         # unless the producer is typed `Mapping[..., <dataclass>]`.
         self._item_cls = item_cls
+        # The body's live explorer cell, handed to a schedule plucked from a
+        # schedule-typed field so a bare-literal `look_up` anchors on the body's
+        # branch path (see `_DryRunSchedule._produce`). Carried through nested
+        # plucks so a schedule any depth down still anchors.
+        self._explorer_holder = explorer_holder
 
     def _raise_used_as_quantity(self, op: str) -> NoReturn:
         raise _StructuredValueUsedAsQuantityError(producer=self._producer, op=op)
 
     def _opaque(self) -> _DryRunStructuredValue:
         return _DryRunStructuredValue(
-            producer=self._producer, unit_system=self._unit_system
+            producer=self._producer,
+            unit_system=self._unit_system,
+            explorer_holder=self._explorer_holder,
         )
 
     def __getattr__(self, name: str) -> Any:  # noqa: ANN401
@@ -2419,6 +2450,7 @@ class _DryRunStructuredValue:
                 input_unit=UNSET_UNIT,
                 output_unit=resolved.output_unit,
                 unit_system=self._unit_system,
+                explorer_holder=self._explorer_holder,
             )
         if resolved is not None:
             return _DryRunStructuredValue(
@@ -2427,6 +2459,7 @@ class _DryRunStructuredValue:
                 cls=resolved,
                 explorer=self._explorer,
                 label=label,
+                explorer_holder=self._explorer_holder,
             )
         return self._opaque()
 
@@ -2442,6 +2475,7 @@ class _DryRunStructuredValue:
             cls=self._item_cls,
             explorer=self._explorer,
             label=label,
+            explorer_holder=self._explorer_holder,
         )
 
     def __call__(self, *_args: Any, **_kwargs: Any) -> _DryRunStructuredValue:  # noqa: ANN401
@@ -2514,17 +2548,19 @@ class _DryRunSchedule:
     its output unit).
     """
 
-    __slots__ = ("input_unit", "output_unit", "unit_system")
+    __slots__ = ("explorer_holder", "input_unit", "output_unit", "unit_system")
 
     def __init__(
         self,
         input_unit: pint.Unit | CompositeUnit | None,
         output_unit: pint.Unit,
         unit_system: UnitSystem,
+        explorer_holder: list[_PathExplorer | None] | None = None,
     ) -> None:
         self.input_unit = input_unit
         self.output_unit = output_unit
         self.unit_system = unit_system
+        self.explorer_holder = explorer_holder
 
     def _produce(self, domain_args: tuple[Any, ...]) -> _DryRunQuantity:
         # An undeclared input axis (`None` or `UNSET_UNIT`) leaves the index
@@ -2534,6 +2570,7 @@ class _DryRunSchedule:
             self.input_unit is not None and self.input_unit is not UNSET_UNIT
         )
         explorer: _PathExplorer | None = None
+        all_indices_are_scalar_literals = True
         for arg in domain_args:
             if isinstance(arg, _DryRunQuantity):
                 explorer = arg._explorer  # noqa: SLF001
@@ -2547,9 +2584,28 @@ class _DryRunSchedule:
                         left=cast("pint.Unit", self.input_unit),
                         right=cast("pint.Unit", arg.q.units),
                     )
+            elif not _is_scalar_literal(arg):
+                # A non-quantity, non-literal index — an opaque structured pluck,
+                # say — cannot be treated as a bare literal: it still owes a
+                # `cast_ttsim_unit` or an annotation, so the anchoring fallback
+                # below must not silently accept it.
+                all_indices_are_scalar_literals = False
+        if (
+            explorer is None
+            and all_indices_are_scalar_literals
+            and self._literal_index_is_admissible()
+        ):
+            # No unit-carrying domain argument to anchor the result on (a bare or
+            # computed-literal index), but every index is a bare dimensionless
+            # literal and legitimate here. The output unit is fixed by the schedule
+            # regardless of the index, so anchor the result on the body's own
+            # branch path via `explorer_holder`. Only a schedule reached with no
+            # body explorer at all (never during body verification) stays
+            # un-anchorable and falls back to the opt-out.
+            explorer = (
+                self.explorer_holder[0] if self.explorer_holder is not None else None
+            )
         if explorer is None:
-            # No unit-carrying domain argument to anchor the result on (a bare
-            # literal index): not dry-runnable, fall back to the opt-out.
             raise _ScheduleNotDryRunnableError
         return _DryRunQuantity(
             q=self.unit_system.registry.Quantity(1.0, self.output_unit),
@@ -2557,8 +2613,33 @@ class _DryRunSchedule:
             unit_system=self.unit_system,
         )
 
+    def _literal_index_is_admissible(self) -> bool:
+        """Whether a bare literal is a legitimate index for this schedule.
+
+        A bare Python literal is a dimensionless, person-level value. It matches
+        an undeclared input axis (``None`` / :data:`UNSET_UNIT`, unscreened by
+        design) or a declared dimensionless one. A dimensionful axis (a currency,
+        an area, a calendar point) is never keyed by a bare literal, so such an
+        index is not admissible and the body must opt out.
+        """
+        if self.input_unit is None or self.input_unit is UNSET_UNIT:
+            return True
+        return self.unit_system.registry.Quantity(
+            1.0, cast("pint.Unit", self.input_unit)
+        ).dimensionless
+
     def look_up(self, *args: Any) -> _DryRunQuantity:  # noqa: ANN401
         return self._produce(args)
+
+
+def _is_scalar_literal(value: Any) -> bool:  # noqa: ANN401
+    """Whether ``value`` is a genuine numeric scalar (a bare or computed literal).
+
+    A body's arithmetic on Python/NumPy number literals stays a plain number;
+    every dry-run stand-in (a quantity, a structured value, a schedule) is
+    something else. `bool` counts — it is an `int` subclass.
+    """
+    return isinstance(value, int | float | numpy.integer | numpy.floating)
 
 
 def _piecewise_polynomial_dry_run(x: Any, parameters: Any, xnp: Any) -> Any:  # noqa: ANN401, ARG001
