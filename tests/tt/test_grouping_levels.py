@@ -22,7 +22,6 @@ from ttsim.tt.grouping_levels import register_grouping_levels
 from ttsim.tt.units import (
     CURRENCY_TOKEN,
     PERSON_LEVEL,
-    base_is_level_carrying,
     divide_by_grouping_level,
     grouping_level_count_unit,
     parse_unit,
@@ -115,37 +114,6 @@ def test_unregistered_grouping_level_is_rejected():
 # ----------------------------------------------------------------------------
 # Which tokens carry a level (level-carrying/level-less default)
 # ----------------------------------------------------------------------------
-
-
-@pytest.mark.parametrize(
-    ("base", "level_carrying"),
-    [
-        ("CURRENCY", True),
-        ("PERSON_COUNT", True),
-        ("SQUARE_METER", True),
-        ("HECTARE", True),
-        ("YEARS", False),
-        ("MONTHS", False),
-        ("DAYS", False),
-        ("CALENDAR_YEAR", False),
-        ("CALENDAR_MONTH", False),
-        ("CALENDAR_DAY", False),
-        ("DIMENSIONLESS", False),
-        ("HOURS", True),
-    ],
-)
-def test_base_is_level_carrying_defaults(base, level_carrying):
-    assert base_is_level_carrying(base) is level_carrying
-
-
-def test_concrete_currency_base_is_level_carrying():
-    # A concrete currency a policy system defines is a level-carrying base.
-    UnitSystem(
-        base_currency="CASTAR",
-        other_currencies={"LEVEL_TEST_COIN": "CASTAR / 2"},
-        statutory_currencies={"0001-01-01": "CASTAR"},
-    )
-    assert base_is_level_carrying("LEVEL_TEST_COIN")
 
 
 # ----------------------------------------------------------------------------
@@ -280,18 +248,11 @@ def test_cross_level_addition_is_not_equivalent():
 # ----------------------------------------------------------------------------
 
 
-def test_spelled_person_level_is_rejected():
-    # The person leaf is implied, never spelled (GEP 10): _PER_PERSON is rejected
-    # so there is exactly one canonical spelling for a per-person quantity.
-    with pytest.raises(UnitDefinitionError, match="implied, never spelled"):
-        _ = TTSIMUnit.CURRENCY.PER_YEAR.PER_PERSON
-
-
-def test_absent_level_yields_person_leaf():
-    # sparerfreibetrag: a per-person yearly amount — the person leaf is implied,
-    # so the bare CURRENCY_PER_YEAR resolves to CURRENCY / year / [person].
+def test_person_level_can_be_spelled():
+    # The person level is spelled like a group level (GEP 10): PER_PERSON
+    # resolves to CURRENCY / year / [person].
     resolved = resolve_compositional_param_unit(
-        unit=TTSIMUnit.CURRENCY.PER_YEAR, where="test", registry=REGISTRY
+        unit=TTSIMUnit.CURRENCY.PER_YEAR.PER_PERSON, where="test", registry=REGISTRY
     )
     per_person = divide_by_grouping_level(
         unit=parse_unit("CURRENCY / year", registry=REGISTRY),
@@ -299,6 +260,20 @@ def test_absent_level_yields_person_leaf():
         registry=REGISTRY,
     )
     assert units_are_equivalent(left=resolved, right=per_person, registry=REGISTRY)
+
+
+def test_absent_level_is_level_neutral():
+    # A bare CURRENCY_PER_YEAR carries no grouping level — level-neutral (GEP 10),
+    # so it multiplies a leveled quantity without polluting its level. A per-person
+    # amount spells its level (PER_PERSON); see test_person_level_can_be_spelled.
+    resolved = resolve_compositional_param_unit(
+        unit=TTSIMUnit.CURRENCY.PER_YEAR, where="test", registry=REGISTRY
+    )
+    assert units_are_equivalent(
+        left=resolved,
+        right=parse_unit("CURRENCY / year", registry=REGISTRY),
+        registry=REGISTRY,
+    )
 
 
 def test_spelled_level_on_stock_param():
@@ -321,11 +296,11 @@ def test_unknown_level_is_rejected():
         )
 
 
-def test_person_implied_on_scalar_param_with_name_suffix():
-    # A per-person scalar param: the person leaf is implied (not spelled) and the
-    # spelled period agrees with the name's time suffix.
+def test_person_level_spelled_on_scalar_param_with_name_suffix():
+    # A per-person scalar param spells PER_PERSON, and its spelled period agrees
+    # with the name's time suffix.
     resolved = resolve_compositional_param_unit(
-        unit=TTSIMUnit.CURRENCY.PER_YEAR,
+        unit=TTSIMUnit.CURRENCY.PER_YEAR.PER_PERSON,
         time_unit_id="y",
         where="test",
         registry=REGISTRY,
@@ -343,10 +318,10 @@ def test_person_implied_on_scalar_param_with_name_suffix():
 # ----------------------------------------------------------------------------
 
 
-def test_column_omitting_the_group_level_is_a_person_property():
-    # A per-person amount constant within the group (GEP 10's
-    # ``regelbedarf_pro_person_m_bg``): omitting the level at a group suffix
-    # leaves the implied person leaf, no ``[bg]``.
+def test_column_omitting_the_level_is_level_neutral():
+    # Omitting the level at a group suffix makes the column level-neutral — no
+    # ``[bg]`` and no person leaf (GEP 10). A per-person amount constant within
+    # the group spells PER_PERSON instead.
     resolved = resolve_compositional_column_unit(
         unit=TTSIMUnit.CURRENCY.PER_MONTH,
         time_unit_id="m",
@@ -354,12 +329,11 @@ def test_column_omitting_the_group_level_is_a_person_property():
         where="test",
         registry=REGISTRY,
     )
-    expected = divide_by_grouping_level(
-        unit=parse_unit("CURRENCY / month", registry=REGISTRY),
-        level=PERSON_LEVEL,
+    assert units_are_equivalent(
+        left=resolved,
+        right=parse_unit("CURRENCY / month", registry=REGISTRY),
         registry=REGISTRY,
     )
-    assert units_are_equivalent(left=resolved, right=expected, registry=REGISTRY)
 
 
 def test_intensive_column_omitting_the_level_stays_bare_at_a_group_suffix():
@@ -406,13 +380,50 @@ def test_spelled_group_level_contradicting_the_suffix_is_rejected():
         )
 
 
-def test_boolean_omitting_the_level_at_a_group_suffix_is_a_person_indicator():
+def test_person_level_is_allowed_on_a_group_suffixed_name():
+    # A per-person amount constant within a group may be stored under a group
+    # suffix (GEP 10): ``betrag_m_hh`` declaring CURRENCY_PER_MONTH_PER_PERSON is
+    # the household member's amount, and resolves to CURRENCY / month / [person] —
+    # PER_PERSON never contradicts the suffix, only a mismatched group level does.
+    resolved = resolve_compositional_column_unit(
+        unit=TTSIMUnit.CURRENCY.PER_MONTH.PER_PERSON,
+        time_unit_id="m",
+        grouping_level="hh",
+        where="test",
+        registry=REGISTRY,
+    )
+    expected = divide_by_grouping_level(
+        unit=parse_unit("CURRENCY / month", registry=REGISTRY),
+        level=PERSON_LEVEL,
+        registry=REGISTRY,
+    )
+    assert units_are_equivalent(left=resolved, right=expected, registry=REGISTRY)
+
+
+def test_boolean_omitting_the_level_is_level_neutral():
+    # A bare DIMENSIONLESS boolean is a level-neutral flag (GEP 10): omitting the
+    # level yields plain dimensionless, no person leaf. A person-level indicator
+    # spells DIMENSIONLESS_PER_PERSON, a group one its group.
     resolved = resolve_compositional_column_unit(
         unit=TTSIMUnit.DIMENSIONLESS,
         time_unit_id=None,
         grouping_level="hh",
         where="test",
-        is_boolean=True,
+        registry=REGISTRY,
+    )
+    assert units_are_equivalent(
+        left=resolved, right=REGISTRY.dimensionless, registry=REGISTRY
+    )
+
+
+def test_person_level_indicator_carries_the_person_leaf():
+    # A person-level boolean spells its level (GEP 10): DIMENSIONLESS_PER_PERSON
+    # resolves to 1 / [person], so summing it over a group mints a head count.
+    resolved = resolve_compositional_column_unit(
+        unit=TTSIMUnit.DIMENSIONLESS.PER_PERSON,
+        time_unit_id=None,
+        grouping_level="person",
+        where="test",
         registry=REGISTRY,
     )
     expected = divide_by_grouping_level(
@@ -662,11 +673,24 @@ def test_person_column_at_group_level_matches_a_count():
     )
 
 
-def test_person_at_person_level_is_dimensionless():
-    # A head count per individual is [person]/[person] = a plain number. The
-    # person leaf is implied, so the bare TTSIMUnit.PERSON_COUNT count resolves there.
-    at_person = resolve_compositional_param_unit(
+def test_bare_person_count_is_a_headcount_numerator():
+    # A bare PERSON_COUNT is the [person] head-count numerator, level-neutral —
+    # no implied person leaf (GEP 10).
+    resolved = resolve_compositional_param_unit(
         unit=TTSIMUnit.PERSON_COUNT, where="test", registry=REGISTRY
+    )
+    assert units_are_equivalent(
+        left=resolved,
+        right=parse_unit("grouping_level_person", registry=REGISTRY),
+        registry=REGISTRY,
+    )
+
+
+def test_person_count_per_person_is_dimensionless():
+    # A head count per individual is [person] / [person] = a plain number: the
+    # person level is spelled, PERSON_COUNT_PER_PERSON.
+    at_person = resolve_compositional_param_unit(
+        unit=TTSIMUnit.PERSON_COUNT.PER_PERSON, where="test", registry=REGISTRY
     )
     assert units_are_equivalent(
         left=at_person, right=REGISTRY.dimensionless, registry=REGISTRY
@@ -695,22 +719,24 @@ def test_declared_person_per_group_bridges_like_a_count():
     assert units_are_equivalent(left=bridged, right=expected, registry=REGISTRY)
 
 
-def test_count_aggregation_token_is_person():
-    # COUNT mints the PERSON_COUNT placeholder unit (group and PID alike); the
-    # level-aware resolved unit is recomputed downstream.
+def test_count_aggregation_token_is_person_count_at_target():
+    # COUNT mints PERSON_COUNT at its target level; at the person target (an
+    # agg_by_p_id COUNT) that is PERSON_COUNT_PER_PERSON = [person] / [person].
     assert (
         unit_for_aggregation(
             source_unit=TTSIMUnit.DIMENSIONLESS, agg_type=AggType.COUNT
         )
-        == TTSIMUnit.PERSON_COUNT
+        == TTSIMUnit.PERSON_COUNT.PER_PERSON
     )
 
 
 @pytest.mark.parametrize("agg_type", [AggType.ANY, AggType.ALL])
-def test_any_all_aggregation_token_is_dimensionless(agg_type):
+def test_any_all_aggregation_token_is_dimensionless_at_target(agg_type):
+    # ANY / ALL yield a boolean at the target level; at the person target that is
+    # DIMENSIONLESS_PER_PERSON = 1 / [person].
     assert (
         unit_for_aggregation(source_unit=TTSIMUnit.DIMENSIONLESS, agg_type=agg_type)
-        == TTSIMUnit.DIMENSIONLESS
+        == TTSIMUnit.DIMENSIONLESS.PER_PERSON
     )
 
 
@@ -734,14 +760,54 @@ def test_min_aggregation_token_over_a_level_less_base_takes_the_target_level():
     )
 
 
-def test_mean_aggregation_token_strips_to_the_individual_spelling():
-    # The individual reading is the level-less spelling: the person leaf is
-    # implied for a level-carrying base, bare for an intensive one.
+def test_mean_aggregation_token_swaps_a_leveled_source_to_the_person_leaf():
+    # A per-head average belongs to the person: a leveled non-dimensionless source
+    # swaps its group level for the spelled person leaf.
     assert (
         unit_for_aggregation(
             source_unit=TTSIMUnit.CURRENCY.PER_MONTH.PER_HH,
             agg_type=AggType.MEAN,
             target_level="hh",
         )
-        == TTSIMUnit.CURRENCY.PER_MONTH
+        == TTSIMUnit.CURRENCY.PER_MONTH.PER_PERSON
+    )
+
+
+def test_mean_aggregation_token_of_a_boolean_stays_level_neutral():
+    # A share — the mean of a person-level boolean — is level-neutral.
+    assert (
+        unit_for_aggregation(
+            source_unit=TTSIMUnit.DIMENSIONLESS.PER_PERSON,
+            agg_type=AggType.MEAN,
+            target_level="hh",
+        )
+        == TTSIMUnit.DIMENSIONLESS
+    )
+
+
+def test_mean_aggregation_token_of_a_dimensionless_flow_keeps_the_person_leaf():
+    # A dimensionless *flow* (a per-month rate) is not a bare share: its level-
+    # stripped token still carries the period, so the mean keeps the person leaf,
+    # matching what resolved_unit_for_aggregation derives.
+    assert (
+        unit_for_aggregation(
+            source_unit=TTSIMUnit.DIMENSIONLESS.PER_MONTH.PER_PERSON,
+            agg_type=AggType.MEAN,
+            target_level="hh",
+        )
+        == TTSIMUnit.DIMENSIONLESS.PER_MONTH.PER_PERSON
+    )
+
+
+def test_mean_aggregation_token_of_a_physically_cancelling_ratio_is_neutral():
+    # An area-over-area ratio at the person level resolves to dimensionless (the
+    # physical parts cancel), so its mean is a level-neutral share — matching what
+    # resolved_unit_for_aggregation derives after stripping the level.
+    assert (
+        unit_for_aggregation(
+            source_unit=TTSIMUnit.SQUARE_METER.PER_SQUARE_METER.PER_PERSON,
+            agg_type=AggType.MEAN,
+            target_level="hh",
+        )
+        == TTSIMUnit.SQUARE_METER.PER_SQUARE_METER
     )

@@ -28,7 +28,9 @@ def register_unit_builder_levels(names: Iterable[str]) -> None:
     The level vocabulary is open and discovered per build, so the builder cannot
     hard-wire the level step the way it does the closed area/period steps. Each
     package registers its levels at import, before its declarations run. The
-    person leaf is always registered. Idempotent.
+    person level is always registered — it is spelled like a group level
+    (``PER_PERSON``), so a per-person quantity carries its ``[person]`` leaf
+    explicitly. Idempotent.
     """
     for name in (PERSON_LEVEL, *names):
         if name in _unit_builder_levels:

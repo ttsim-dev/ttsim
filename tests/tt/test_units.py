@@ -597,13 +597,18 @@ def test_policy_input_rejects_invalid_unit_at_decoration():
         (AggType.MEAN, TTSIMUnit.CURRENCY.PER_MONTH, TTSIMUnit.CURRENCY.PER_MONTH),
         (AggType.MIN, TTSIMUnit.CURRENCY.PER_MONTH, TTSIMUnit.CURRENCY.PER_MONTH),
         (AggType.MAX, TTSIMUnit.CURRENCY.PER_MONTH, TTSIMUnit.CURRENCY.PER_MONTH),
-        # A COUNT is a head count: the PERSON_COUNT base, independent of source
-        # (GEP 10). The level-aware resolved unit is [person]/[target].
-        (AggType.COUNT, TTSIMUnit.CURRENCY.PER_MONTH, TTSIMUnit.PERSON_COUNT),
-        # ANY / ALL yield booleans, which are dimensionless quantities (GEP 10),
-        # independent of the source.
-        (AggType.ANY, TTSIMUnit.CURRENCY.PER_MONTH, TTSIMUnit.DIMENSIONLESS),
-        (AggType.ALL, TTSIMUnit.CURRENCY.PER_MONTH, TTSIMUnit.DIMENSIONLESS),
+        # A COUNT is a head count at its target level: the PERSON_COUNT base per
+        # target, independent of source (GEP 10). At the default person target
+        # that is PERSON_COUNT_PER_PERSON.
+        (
+            AggType.COUNT,
+            TTSIMUnit.CURRENCY.PER_MONTH,
+            TTSIMUnit.PERSON_COUNT.PER_PERSON,
+        ),
+        # ANY / ALL yield booleans at the target level (GEP 10), independent of
+        # the source; at the person target, DIMENSIONLESS_PER_PERSON.
+        (AggType.ANY, TTSIMUnit.CURRENCY.PER_MONTH, TTSIMUnit.DIMENSIONLESS.PER_PERSON),
+        (AggType.ALL, TTSIMUnit.CURRENCY.PER_MONTH, TTSIMUnit.DIMENSIONLESS.PER_PERSON),
     ],
 )
 def test_unit_for_aggregation(agg_type, source_unit, expected):
@@ -617,7 +622,7 @@ def test_unit_for_aggregation_preserves_unannotated_source():
     # COUNT mints a head count and ANY/ALL a boolean, both independent of source.
     assert (
         unit_for_aggregation(source_unit=UNSET_UNIT, agg_type=AggType.COUNT)
-        is TTSIMUnit.PERSON_COUNT
+        == TTSIMUnit.PERSON_COUNT.PER_PERSON
     )
 
 
@@ -633,7 +638,7 @@ def test_unit_for_aggregation_sum_over_boolean_is_a_head_count():
             agg_type=AggType.SUM,
             source_is_boolean=True,
         )
-        is TTSIMUnit.PERSON_COUNT
+        == TTSIMUnit.PERSON_COUNT.PER_PERSON
     )
     assert (
         unit_for_aggregation(
@@ -1076,7 +1081,7 @@ def test_hours_per_week_rebases_period_only():
 
 
 # ----------------------------------------------------------------------------
-# `cast_ttsim_unit` and the implied person leaf (GEP 10)
+# `cast_ttsim_unit` and level resolution (GEP 10)
 # ----------------------------------------------------------------------------
 
 
@@ -1089,8 +1094,8 @@ def test_cast_unit_is_the_identity_at_run_time():
 
 
 def test_cast_target_resolves_like_a_column_declaration():
-    # The cast states a unit in the declaration vocabulary: the person leaf is
-    # implied for a level-carrying base, an intensive base stays bare.
+    # The cast states a unit in the declaration vocabulary: an omitted level is
+    # level-neutral, exactly as for a column declaration.
     assert units_are_equivalent(
         left=resolve_compositional_cast_unit(
             unit=TTSIMUnit.CURRENCY.PER_MONTH, where="test", registry=REGISTRY
@@ -1119,10 +1124,10 @@ def test_cast_target_must_be_currency_agnostic():
         resolve_compositional_cast_unit(unit=token, where="test", registry=REGISTRY)
 
 
-def test_hours_denominator_suppresses_the_implied_person_leaf():
-    # A wage floor is a price, owned by nobody: the working-hours denominator
-    # keeps the person leaf off, so `floor * hours` cancels to a person-level
-    # amount (GEP 10) — the same rule as areas.
+def test_hours_denominator_resolves_level_neutral():
+    # A wage floor is a price, owned by nobody: with a working-hours denominator
+    # and no spelled level it is level-neutral, so `floor * hours` cancels
+    # cleanly against the physical quantity (GEP 10) — the same as areas.
     expected = parse_unit("CURRENCY / working_hour", registry=REGISTRY)
     assert units_are_equivalent(
         left=resolve_compositional_column_unit(
@@ -1160,10 +1165,10 @@ def test_composite_from_resolved_unit_reconstructs_the_hours_denominator():
     ) == coerce_to_composite_unit(value="CASTAR_PER_HOURS", where="test")
 
 
-def test_area_denominator_suppresses_the_implied_person_leaf():
-    # A rent cap is a price, owned by nobody: the area denominator keeps the
-    # person leaf off, so `cap * area` cancels to a person-level amount
-    # (GEP 10). Both the column and the parameter resolver apply the rule.
+def test_area_denominator_resolves_level_neutral():
+    # A rent cap is a price, owned by nobody: with an area denominator and no
+    # spelled level it is level-neutral, so `cap * area` cancels cleanly against
+    # the physical quantity (GEP 10). Both the column and parameter resolver apply.
     expected = parse_unit("CURRENCY / meter ** 2 / month", registry=REGISTRY)
     assert units_are_equivalent(
         left=resolve_compositional_column_unit(
@@ -1189,12 +1194,28 @@ def test_area_denominator_suppresses_the_implied_person_leaf():
     )
 
 
-def test_bare_area_base_still_carries_the_person_leaf():
-    # A dwelling area is owned: without an area *denominator*, the extensive
-    # SQUARE_METER base takes the implied person leaf as any owned amount does.
+def test_bare_area_base_is_level_neutral():
+    # A bare SQUARE_METER base carries no grouping level (GEP 10). A dwelling area
+    # owned by a person spells PER_PERSON; bare, it stays level-neutral.
     assert units_are_equivalent(
         left=resolve_compositional_column_unit(
             unit=TTSIMUnit.SQUARE_METER,
+            time_unit_id=None,
+            grouping_level="person",
+            where="test",
+            registry=REGISTRY,
+        ),
+        right=parse_unit("meter ** 2", registry=REGISTRY),
+        registry=REGISTRY,
+    )
+
+
+def test_area_base_with_person_level_carries_the_person_leaf():
+    # An owned dwelling area spells its level: SQUARE_METER_PER_PERSON resolves to
+    # meter ** 2 / [person].
+    assert units_are_equivalent(
+        left=resolve_compositional_column_unit(
+            unit=TTSIMUnit.SQUARE_METER.PER_PERSON,
             time_unit_id=None,
             grouping_level="person",
             where="test",

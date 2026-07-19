@@ -243,6 +243,31 @@ def resolved_units(
     )
 
 
+@interface_function()
+def declared_unit_tokens(
+    specialized_environment__without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,  # noqa: E501
+) -> dict[str, CompositeUnit]:
+    """Each node's *declared* compositional unit token, by qname.
+
+    The pre-resolution :class:`CompositeUnit` — which, unlike the resolved pint
+    unit, survives pint's ``[person]/[person]`` cancellation. It lets the input
+    check and the result labeller tell a per-person head count
+    (``PERSON_COUNT_PER_PERSON``) from a plain ``DIMENSIONLESS``: the two resolve
+    to the same dimensionless pint unit, but their tokens differ (GEP 10). Nodes
+    with a per-leaf mapping unit or no unit are omitted.
+    """
+    env = specialized_environment__without_tree_logic_and_with_derived_functions
+    return {
+        qname: token
+        for qname, obj in env.items()
+        if isinstance((token := getattr(obj, "unit", UNSET_UNIT)), CompositeUnit)
+        # `UNSET_UNIT` is itself a `CompositeUnit` sentinel (a node with no
+        # declaration, e.g. a framework date parameter). Exclude it so the result
+        # labeller does not mistake it for a real token and emit `__UNSET__`.
+        and token is not UNSET_UNIT
+    }
+
+
 def resolve_environment_units(
     env: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
     grouping_levels: OrderedQNames,
@@ -320,7 +345,6 @@ def resolve_environment_units(
                     token=cast("CompositeUnit", token),
                     match=match,
                     registry=registry,
-                    is_boolean=node_is_boolean(qname=qname, obj=obj),
                 )
     return resolved
 
@@ -334,19 +358,15 @@ def _resolve_leveled_column_unit(
     token: CompositeUnit,
     match: re.Match[str] | None,
     registry: pint.UnitRegistry,
-    *,
-    is_boolean: bool = False,
 ) -> pint.Unit:
     """Resolve a column/function's full unit, including its grouping level.
 
-    Both booleans and ordinary columns resolve via
-    :func:`resolve_compositional_column_unit`, which validates the spelled
-    period/level against the name suffix and resolves an omitted group level to
-    the person grain — the implied person leaf for a level-carrying base or a
-    boolean, bare for an intensive one. A **boolean** is leveled (``is_boolean``):
-    it is ``DIMENSIONLESS`` per the level it is defined at — ``1 / [fam]`` for a
-    fam-level indicator (spelled ``DIMENSIONLESS_PER_FAM``), ``1 / [person]`` for
-    a person-level one (bare ``DIMENSIONLESS``, person implied).
+    Resolves via :func:`resolve_compositional_column_unit`, which validates the
+    spelled period/level against the name suffix. An omitted level is
+    level-neutral. A quantity at the individual level spells it (``PER_PERSON``):
+    a per-person amount is ``CURRENCY_PER_MONTH_PER_PERSON``, a person-level
+    indicator ``DIMENSIONLESS_PER_PERSON`` (``1 / [person]``); a group-level
+    indicator spells its group (``DIMENSIONLESS_PER_FAM`` → ``1 / [fam]``).
     """
     time_unit_id = match.group("time_unit") if match else None
     grouping_level = _suffix_grouping_level(match)
@@ -356,7 +376,6 @@ def _resolve_leveled_column_unit(
         grouping_level=grouping_level,
         where="A column/function",
         registry=registry,
-        is_boolean=is_boolean,
     )
 
 
@@ -373,7 +392,6 @@ def _argument_is_person_pointer(qname: str) -> bool:
 
 
 def _resolve_opted_out_agg_unit(
-    qname: str,
     obj: AggByGroupFunction,
     match: re.Match[str] | None,
     registry: pint.UnitRegistry,
@@ -391,7 +409,6 @@ def _resolve_opted_out_agg_unit(
         token=cast("CompositeUnit", token),
         match=match,
         registry=registry,
-        is_boolean=node_is_boolean(qname=qname, obj=obj),
     )
 
 
@@ -429,9 +446,7 @@ def _resolve_agg_by_group_unit(
     """
     match = pattern.fullmatch(dt.tree_path_from_qname(qname)[-1])
     if not obj.verify_units:
-        return _resolve_opted_out_agg_unit(
-            qname=qname, obj=obj, match=match, registry=registry
-        )
+        return _resolve_opted_out_agg_unit(obj=obj, match=match, registry=registry)
     target_level = _suffix_grouping_level(match)
     agg_type = obj.agg_type
     # COUNT and ANY/ALL are independent of the source's unit, so resolve them
@@ -472,11 +487,12 @@ def _resolve_agg_by_group_unit(
         token=cast("CompositeUnit", source_token),
         match=source_match,
         registry=registry,
-        is_boolean=source_is_boolean,
     )
-    # Read the source's level off its *resolved* unit, not its declared token: the
-    # token may leave a person leaf implicit that the resolved denominator spells.
-    source_level = _unit_level_denominator(source_unit)
+    # Read the source's level off its token, not its resolved unit: a per-person
+    # head count's [person]/[person] cancels to dimensionless when resolved, hiding
+    # the level, so a group SUM/MIN/MAX would derive a level-less result that
+    # contradicts the minted PERSON_COUNT_PER_<group> token. The token spells it.
+    source_level = _composite_token_level(cast("CompositeUnit", source_token))
     return resolved_unit_for_aggregation(
         source_unit=source_unit,
         agg_type=agg_type,
@@ -640,10 +656,10 @@ def _agg_declaration_inconsistency(
     minted / swapped / preserved from the source and agg_type. A hand-written
     aggregation's declared unit must be **precise and complete**: it must equal the
     derived unit in full — physical kind, flow period, *and* grouping level — with
-    no implicit matching of time units or group levels. The author spells the group
-    level (``CURRENCY_PER_YEAR_PER_HH``, ``PERSON_COUNT_PER_BG``, even
-    ``MONTHS_PER_FG``); only the ``[person]`` leaf is implied. So both of these are
-    rejected:
+    no implicit matching of time units or levels. The author spells the level,
+    including the person leaf (``CURRENCY_PER_YEAR_PER_HH``, ``PERSON_COUNT_PER_BG``,
+    ``MONTHS_PER_FG``, ``CURRENCY_PER_YEAR_PER_PERSON``); an omitted level is
+    level-neutral. So both of these are rejected:
 
     - a ``SUM`` over a boolean declared ``DIMENSIONLESS`` rather than
       ``PERSON_COUNT_PER_BG``;
@@ -677,7 +693,7 @@ def _agg_declaration_inconsistency(
         f"{qname}: declares `{declared_token}` but its {obj.agg_type.name} "
         f"aggregation derives '{derived_unit}'. An aggregation's declared unit must "
         f"match what it produces exactly — physical kind, flow period, and grouping "
-        f"level; spell the group level (the ``[person]`` leaf is implied), e.g. "
+        f"level; spell the level (``PER_PERSON`` for a person-level result), e.g. "
         f"`PERSON_COUNT_PER_<level>` for a count, the source's currency and period "
         f"for a sum of money (GEP 10)."
     )
@@ -968,10 +984,22 @@ def fail_if_not_all_leaves_are_unit_annotated_columns(
         )
 
 
+def _composite_token_level(token: CompositeUnit) -> str | None:
+    """The grouping level a compositional token spells, or ``None`` if neutral.
+
+    Read straight off the token, so it survives pint's ``[person]/[person]``
+    cancellation: ``PERSON_COUNT_PER_PERSON`` reports ``"person"`` where its
+    resolved unit (dimensionless) reports no level.
+    """
+    return token.level.lower() if token.level is not None else None
+
+
 def fail_if_input_units_are_inconsistent(
     input_units: Mapping[str, pint.Unit],
     resolved_units: Mapping[str, Any],
     unit_system: UnitSystem,
+    input_unit_tokens: Mapping[str, CompositeUnit] | None = None,
+    declared_unit_tokens: Mapping[str, CompositeUnit] | None = None,
 ) -> None:
     """Fail if an input column's tag disagrees with the unit declared for it.
 
@@ -984,9 +1012,11 @@ def fail_if_input_units_are_inconsistent(
       currency, so a ``DM`` tag on a ``DIMENSIONLESS`` column (or the converse)
       would silently rescale — or skip rescaling — the data; both sides must agree
       on whether a currency component is present;
-    - **grouping level** — the tag spells its level (``EUR.PER_MONTH.PER_BG``, the
-      person leaf implied), which must equal the level the declared unit carries
-      (declared, not read off the suffix — GEP 10);
+    - **grouping level** — the tag spells its level (``EUR.PER_MONTH.PER_BG``,
+      ``EUR.PER_MONTH.PER_PERSON``), which must equal the level the declared unit
+      carries. The two are compared exactly: a level-neutral tag (no spelled
+      level) does not match a spelled ``PER_PERSON`` declaration, and vice versa
+      (the level is declared, not read off the suffix — GEP 10);
     - **measurement** — with currency (converted at the boundary) and flow period
       (screened against the name suffix by the dedicated period guard) factored
       out, the remaining numerator scale must match *exactly*: a ``HECTARES``
@@ -1019,12 +1049,38 @@ def fail_if_input_units_are_inconsistent(
                 f"one (GEP 10)."
             )
             continue
-        tag_level = _unit_level_denominator(tag) or PERSON_LEVEL
-        expected_level = _unit_level_denominator(expected) or PERSON_LEVEL
+        # Read the level off the compositional tokens when available: a resolved
+        # unit cancels a per-person head count's [person]/[person] to dimensionless,
+        # hiding the level, whereas the token spells it (GEP 10). Fall back to the
+        # resolved denominator only where a token is missing (direct/test callers).
+        tag_token = (input_unit_tokens or {}).get(qname)
+        declared_token = (declared_unit_tokens or {}).get(qname)
+        if tag_token is not None and declared_token is not None:
+            # A head count (PERSON_COUNT base) and a plain dimensionless share both
+            # strip to nothing once grouping levels are removed, so the residual
+            # check below cannot tell them apart; compare their bases on the token,
+            # where a per-person head count's cancelled [person] survives (GEP 10).
+            if (tag_token.base == "PERSON_COUNT") != (
+                declared_token.base == "PERSON_COUNT"
+            ):
+                errors.append(
+                    f"  {qname}: tagged '{tag_token}' but declared '{declared_token}' "
+                    f"— one is a head count (PERSON_COUNT) and the other is not. A "
+                    f"per-person head count resolves to the same dimensionless unit "
+                    f"as a share, so they must be told apart at the tag (GEP 10)."
+                )
+                continue
+            tag_level = _composite_token_level(tag_token)
+            expected_level = _composite_token_level(declared_token)
+        else:
+            tag_level = _unit_level_denominator(tag)
+            expected_level = _unit_level_denominator(expected)
         if tag_level != expected_level:
             errors.append(
-                f"  {qname}: tag is at the {tag_level!r} level but the column is at "
-                f"the {expected_level!r} level — the level is declared, not read off "
+                f"  {qname}: tag is at the {tag_level or 'level-neutral'!r} level but "
+                f"the column is at the {expected_level or 'level-neutral'!r} level — a "
+                f"level-neutral tag does not match a spelled level (PER_PERSON is not "
+                f"the same as an omitted level); the level is declared, not read off "
                 f"the name suffix (GEP 10)."
             )
             continue
@@ -2687,7 +2743,8 @@ def _cast_ttsim_unit_dry_run(
     The cast is total: whatever flowed in — a quantity at another unit or
     level, a bare literal, an attribute plucked off a structured value — the
     stand-in flowing out carries the stated unit, resolved like a declaration
-    (currency-agnostic, the person leaf implied). The result stays on the body's
+    (currency-agnostic; an omitted level is level-neutral, the person level
+    spelled ``PER_PERSON``). The result stays on the body's
     path: a ``_DryRunQuantity`` input keeps its explorer, and any other input
     (a bare literal) is wrapped with the body's explorer (``explorer_holder``),
     so a cast literal orders and combines like any quantity — ``max(x,

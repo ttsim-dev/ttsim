@@ -175,6 +175,7 @@ class InputData(MainTargetABC):
     tree: str = "input_data__tree"
     tree_with_unit_annotations: str = "input_data__tree_with_unit_annotations"
     units: str = "input_data__units"
+    unit_tokens: str = "input_data__unit_tokens"
 
 
 @dataclass(frozen=True)
@@ -200,6 +201,7 @@ class Templates(MainTargetABC):
 @dataclass(frozen=True)
 class UnitChecks(MainTargetABC):
     resolved_units: str = "unit_checks__resolved_units"
+    declared_unit_tokens: str = "unit_checks__declared_unit_tokens"
 
 
 @dataclass(frozen=True)

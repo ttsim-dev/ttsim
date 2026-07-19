@@ -165,12 +165,6 @@ class CompositeUnit:
                 f"Cannot add level '{level}' to '{self}': a unit carries at most "
                 f"one grouping level (GEP 10)."
             )
-        if level.lower() == PERSON_LEVEL:
-            raise UnitDefinitionError(
-                f"Cannot spell the person leaf on '{self}': the individual level is "
-                f"implied, never spelled — drop '_PER_PERSON'. Only group levels are "
-                f"spelled (GEP 10)."
-            )
         return replace(self, level=level.upper())
 
     @property
@@ -279,20 +273,6 @@ def parse_compositional_unit(spelling: str) -> CompositeUnit:
     return unit
 
 
-#: Compositional bases that carry a grouping level by default (currency is added
-#: separately); every other base is level-less. Booleans also carry a level but are
-#: dimensionless, so they ride the ``is_boolean`` flag rather than appear here. See
-#: GEP 10 for which quantities carry a level and why.
-_LEVEL_CARRYING_BASES: frozenset[str] = frozenset(
-    {"PERSON_COUNT", "SQUARE_METER", "HECTARE", "HOURS"}
-)
-
-
-def base_is_level_carrying(base: str) -> bool:
-    """Whether a compositional base carries a grouping level by default."""
-    return _is_currency_base(base) or base in _LEVEL_CARRYING_BASES
-
-
 def resolve_compositional_unit(
     unit: CompositeUnit, *, registry: pint.UnitRegistry, with_level: bool = True
 ) -> pint.Unit:
@@ -341,36 +321,6 @@ def resolve_compositional_unit(
     return resolved
 
 
-def _attach_implied_person_leaf(
-    resolved: pint.Unit,
-    unit: CompositeUnit,
-    registry: pint.UnitRegistry,
-    *,
-    is_boolean: bool = False,
-) -> pint.Unit:
-    """Attach the implied ``[person]`` leaf where the vocabulary calls for it.
-
-    An omitted group level means a person property; whether that attaches the
-    ``[person]`` leaf is fixed per spelling (GEP 10):
-
-    - a boolean always carries its level;
-    - a level-carrying base (currency, area, working hours, the ``[person]``
-      count) carries the leaf — unless a *physical denominator* (an area or
-      working hours) makes the unit a price or a density, owned by nobody: a
-      rent cap (``CURRENCY_PER_SQUARE_METER_PER_MONTH``) or a wage floor
-      (``CURRENCY_PER_HOURS``) stays leaf-less so it cancels cleanly against
-      the physical quantity;
-    - an intensive base (a duration, a share, a calendar point) stays bare.
-    """
-    if unit.level is not None:
-        return resolved
-    if is_boolean or (base_is_level_carrying(unit.base) and unit.area is None):
-        return divide_by_grouping_level(
-            unit=resolved, level=PERSON_LEVEL, registry=registry
-        )
-    return resolved
-
-
 def resolve_compositional_column_unit(
     unit: CompositeUnit,
     *,
@@ -378,7 +328,6 @@ def resolve_compositional_column_unit(
     grouping_level: str,
     where: str,
     registry: pint.UnitRegistry,
-    is_boolean: bool = False,
 ) -> pint.Unit:
     """Resolve a column/function's compositional unit, validating the name suffix.
 
@@ -387,15 +336,17 @@ def resolve_compositional_column_unit(
     - the spelled period must match the name's time suffix;
     - the grouping level is **declared, not read off the suffix** — a quantity
       carries a group level iff it is a property of the group as a whole. A
-      spelled group level must equal the name's aggregation suffix, but may be
-      omitted at *any* suffix.
+      spelled level must equal the name's aggregation suffix (the person grain
+      for an unsuffixed name), but may be omitted at *any* suffix.
 
-    An omitted group level makes the column a *person* property: the implied
-    person leaf for a level-carrying base (currency, area, working hours, the
-    ``[person]`` count) or a boolean, simply level-less for an intensive base (a
-    duration, a share, a calendar point). So ``betrag_m_hh`` may declare
-    ``CURRENCY_PER_MONTH_PER_HH`` (the household's amount) or ``CURRENCY_PER_MONTH``
-    (each member's, constant within the household), never ``…_PER_BG``.
+    An omitted level makes the unit **level-neutral** — it carries no grouping
+    level at all, so a rate or share multiplies a leveled quantity without
+    polluting its level. A quantity that lives at the individual level (a
+    per-person amount that aggregates over a group) spells it: ``PER_PERSON``.
+    So ``betrag_m`` declares ``CURRENCY_PER_MONTH_PER_PERSON`` (a per-person
+    amount) and ``betrag_m_hh`` either ``CURRENCY_PER_MONTH_PER_HH`` (the
+    household's amount) or, if constant within the household, ``…_PER_PERSON`` —
+    never ``…_PER_BG``.
 
     A concrete-currency base is rejected: a function does not care which
     currency it computes in — its values are denominated in whatever the
@@ -421,16 +372,19 @@ def resolve_compositional_column_unit(
             f"{where}: the unit spells period {unit.period!r} but the name's time "
             f"suffix implies {expected_period!r}; they must agree (GEP 10)."
         )
-    if unit.level is not None and unit.level != grouping_level.upper():
+    if (
+        unit.level is not None
+        and unit.level != PERSON_LEVEL.upper()
+        and unit.level != grouping_level.upper()
+    ):
         raise UnitDefinitionError(
-            f"{where}: the unit spells level {unit.level!r} but the name's "
+            f"{where}: the unit spells group level {unit.level!r} but the name's "
             f"aggregation suffix implies {grouping_level.upper()!r}; a spelled "
-            f"group level must not contradict the suffix (GEP 10)."
+            f"group level must not contradict the suffix (GEP 10). The person "
+            f"level (PER_PERSON) is always allowed — a per-person value constant "
+            f"within a group may be stored under a group-suffixed name."
         )
-    resolved = resolve_compositional_unit(unit=unit, registry=registry, with_level=True)
-    return _attach_implied_person_leaf(
-        resolved=resolved, unit=unit, registry=registry, is_boolean=is_boolean
-    )
+    return resolve_compositional_unit(unit=unit, registry=registry, with_level=True)
 
 
 def unit_with_rebased_period(unit: CompositeUnit, time_unit_id: str) -> CompositeUnit:
@@ -455,13 +409,13 @@ def resolve_compositional_param_unit(
 ) -> pint.Unit:
     """Resolve a parameter's compositional unit.
 
-    A parameter spells its period and any *group* level (it has no name suffix to
-    read them off); an omitted group level is the individual level, exactly as
-    for a column:
+    A parameter spells its period and its level (it has no name suffix to read
+    them off); an omitted level is **level-neutral**, exactly as for a column:
 
-    - ``SILVER_PENNY_PER_MONTH`` — a per-person amount;
+    - ``SILVER_PENNY_PER_MONTH_PER_PERSON`` — a per-person amount;
     - ``SILVER_PENNY_PER_FAM`` — a per-family amount;
-    - a level-less base (``DIMENSIONLESS``, ``YEARS``) stays level-less.
+    - a level-neutral base (``DIMENSIONLESS``, ``YEARS``, a bare rate) stays
+      level-neutral.
 
     A concrete-currency base is allowed — parameters pin the currency their
     numbers are written in. A scalar parameter additionally takes a time suffix
@@ -478,8 +432,7 @@ def resolve_compositional_param_unit(
                 f"{where}: the unit spells period {unit.period!r} but the name's "
                 f"time suffix implies {expected_period!r}; they must agree (GEP 10)."
             )
-    resolved = resolve_compositional_unit(unit=unit, registry=registry, with_level=True)
-    return _attach_implied_person_leaf(resolved=resolved, unit=unit, registry=registry)
+    return resolve_compositional_unit(unit=unit, registry=registry, with_level=True)
 
 
 def _resolve_agnostic_body_unit(
@@ -488,9 +441,10 @@ def _resolve_agnostic_body_unit(
     """Resolve a code-side compositional unit with no name to validate against.
 
     Shared by the :func:`cast_ttsim_unit` target and a parameter dataclass field
-    annotation: both state a full unit whose spelled period and group level stand
-    as given, both use the agnostic currency (the concrete denomination lives in
-    the parameter YAML), and both resolve like a column declaration.
+    annotation: both state a full unit whose spelled period and level stand as
+    given (an omitted level is level-neutral), both use the agnostic currency
+    (the concrete denomination lives in the parameter YAML), and both resolve
+    like a column declaration.
 
     Raises:
         UnitDefinitionError: If the base pins a concrete currency.
@@ -501,8 +455,7 @@ def _resolve_agnostic_body_unit(
             f"the agnostic {CURRENCY_TOKEN} — only parameters and rounding specs "
             f"pin down concrete currencies (GEP 10)."
         )
-    resolved = resolve_compositional_unit(unit=unit, registry=registry, with_level=True)
-    return _attach_implied_person_leaf(resolved=resolved, unit=unit, registry=registry)
+    return resolve_compositional_unit(unit=unit, registry=registry, with_level=True)
 
 
 def resolve_compositional_cast_unit(
@@ -643,9 +596,9 @@ def cast_ttsim_unit(
     column, so the numeric path and JAX tracing are untouched. Only the dry-run
     gives the call meaning: the stand-in flowing through it is re-tagged with the
     stated unit wholesale — dimension, flow period, and grouping level, resolved
-    like a declaration (currency-agnostic, the person leaf implied). The rest of
-    the body stays checked, and every override is visible at the expression that
-    needs it.
+    like a declaration (currency-agnostic; an omitted level is level-neutral, the
+    person level spelled ``PER_PERSON``). The rest of the body stays checked, and
+    every override is visible at the expression that needs it.
 
     Use it where a single operation is dimensionally irregular but deliberate:
 
@@ -1250,10 +1203,10 @@ def composite_from_resolved_unit(
 
     - the currency / count / area / duration numerator → the base;
     - the flow period → the period;
-    - the spelled group level → the level.
+    - the spelled level (group or ``[person]``) → the level.
 
-    The implied person leaf (a ``grouping_level_person`` denominator) is dropped,
-    as a spelling never spells it; a person-leaf *numerator* is the
+    A ``grouping_level_person`` *denominator* is the person level, spelled
+    ``PER_PERSON`` like any other level; a person-leaf *numerator* is the
     ``PERSON_COUNT`` base of a head count.
 
     Apply it to a unit already restated in the data currency
@@ -1268,9 +1221,9 @@ def composite_from_resolved_unit(
     for name, exponent in _grouping_levels_with_exponent(units):
         if name == PERSON_LEVEL and exponent > 0:
             base = "PERSON_COUNT"
-        elif name != PERSON_LEVEL and exponent < 0:
+        elif exponent < 0:
+            # Any denominator level — a group level or the person leaf — is spelled.
             level = name.upper()
-        # A `grouping_level_person` denominator is the implied leaf — dropped.
     physical = to_units_container(
         _unit_without_grouping_levels(unit=units, registry=registry)
     )
@@ -1456,6 +1409,28 @@ def strip_input_quantity_at_boundary(
     return quantity.to(target).magnitude
 
 
+def _token_physical_residual_is_dimensionless(unit: CompositeUnit) -> bool:
+    """Whether a token's physical part (base/area/period, ignoring the level) cancels.
+
+    Mirrors what :func:`resolved_unit_for_aggregation` observes: it tests the pint
+    *unit container* for emptiness, and pint cancels only **identical units**, not
+    merely same-dimension ones. So the residual is dimensionless in exactly three
+    cases — a plain share (bare ``DIMENSIONLESS``), a square-meter over a
+    square-meter denominator, and working hours over an hours denominator. A ratio
+    of *different* units of the same dimension keeps both in the container and does
+    not cancel: ``HECTARE_PER_SQUARE_METER`` (``hectare / meter ** 2``) and
+    ``MONTHS_PER_MONTH`` (``delta_calendar_month / month``) stay dimensioned, as do
+    a currency or a head count.
+    """
+    if unit.base == "DIMENSIONLESS":
+        return unit.area is None and unit.period is None
+    if unit.base == "SQUARE_METER":
+        return unit.area == "SQUARE_METER" and unit.period is None
+    if unit.base == "HOURS":
+        return unit.area == "HOURS" and unit.period is None
+    return False
+
+
 def head_count_from_boolean_sum(
     agg_type: AggType, *, source_is_boolean: bool
 ) -> AggType:
@@ -1495,18 +1470,20 @@ def unit_for_aggregation(
       **target** group whatever the source's base (GEP 10): they keep the
       source's physical token and take the target level — spelled for a group
       (``CURRENCY_PER_MONTH_PER_FAM``, ``MONTHS_PER_FG`` for an ``_fg`` extreme of
-      a bare duration), stripped for the person-level result of an
-      ``agg_by_p_id`` (the person leaf is implied, never spelled);
+      a bare duration), and ``PER_PERSON`` for the person-level result of an
+      ``agg_by_p_id`` over a leveled source (level-neutral for a level-neutral
+      one);
     - ``MEAN`` is the exception — a per-head average belongs to the **person**
-      (``MEAN = SUM / COUNT`` cancels the group), so it takes the individual
-      spelling: the source token with any group level stripped;
+      (``MEAN = SUM / COUNT`` cancels the group), so a leveled source swaps its
+      level for the ``PER_PERSON`` leaf; a share (a dimensionless mean, e.g. of a
+      boolean) and a level-neutral source stay level-neutral;
     - ``ANY`` / ``ALL`` yield a boolean, a leveled dimensionless quantity at the
-      target level: bare :attr:`TTSIMUnit.DIMENSIONLESS` for an individual result,
-      ``DIMENSIONLESS_PER_<target_level>`` for a group one.
+      target level: ``DIMENSIONLESS_PER_<target_level>``.
 
-    A ``PERSON_COUNT`` head count at the individual :data:`PERSON_LEVEL` (an
-    ``agg_by_p_id`` ``COUNT``) is the bare :attr:`TTSIMUnit.PERSON_COUNT`, which
-    resolves to ``[person] / [person]`` = dimensionless.
+    Every result spells its target level (``COUNT`` / ``ANY`` / ``ALL`` and the
+    person-level results of an ``agg_by_p_id``), so an ``agg_by_p_id`` ``COUNT`` is
+    ``PERSON_COUNT_PER_PERSON``, which resolves to ``[person] / [person]`` =
+    dimensionless.
 
     Args:
         source_unit: The source column's ``unit`` — a :class:`CompositeUnit`
@@ -1519,34 +1496,40 @@ def unit_for_aggregation(
             :func:`head_count_from_boolean_sum`).
 
     Returns:
-        The auto-assigned unit. ``PERSON_COUNT_PER_<target_level>`` for a ``COUNT`` head
-        count (the bare :attr:`TTSIMUnit.PERSON_COUNT` at the individual level),
-        ``DIMENSIONLESS_PER_<target_level>`` for a boolean ``ANY`` / ``ALL`` result
-        (bare :attr:`TTSIMUnit.DIMENSIONLESS` at the individual level); otherwise the
-        source token at the target (``SUM`` / ``MIN`` / ``MAX``) or individual
-        (``MEAN``) level (:data:`UNSET_UNIT` when the source itself lacks a
-        declaration, which the mandatory-units check then reports against the
-        source).
+        The auto-assigned unit. ``PERSON_COUNT_PER_<target_level>`` for a ``COUNT``
+        head count, ``DIMENSIONLESS_PER_<target_level>`` for a boolean ``ANY`` /
+        ``ALL`` result; otherwise the source token at the target (``SUM`` /
+        ``MIN`` / ``MAX``) or person (``MEAN``, and any ``agg_by_p_id``) level
+        (:data:`UNSET_UNIT` when the source itself lacks a declaration, which the
+        mandatory-units check then reports against the source).
     """
     agg_type = head_count_from_boolean_sum(
         agg_type=agg_type, source_is_boolean=source_is_boolean
     )
     if agg_type is AggType.COUNT:
-        return (
-            TTSIMUnit.PERSON_COUNT
-            if target_level == PERSON_LEVEL
-            else TTSIMUnit.PERSON_COUNT.PER_LEVEL(target_level)
-        )
+        return TTSIMUnit.PERSON_COUNT.PER_LEVEL(target_level)
     if agg_type in (AggType.ANY, AggType.ALL):
-        return (
-            TTSIMUnit.DIMENSIONLESS
-            if target_level == PERSON_LEVEL
-            else TTSIMUnit.DIMENSIONLESS.PER_LEVEL(target_level)
-        )
+        return TTSIMUnit.DIMENSIONLESS.PER_LEVEL(target_level)
     if source_unit is UNSET_UNIT:
         return source_unit
-    if agg_type is AggType.MEAN or target_level == PERSON_LEVEL:
-        return replace(source_unit, level=None)
+    if agg_type is AggType.MEAN:
+        # A per-head average belongs to the person, so a leveled source swaps its
+        # level for the person leaf. It stays level-neutral only where the resolver
+        # does — a level-neutral source, or one whose level-stripped physical part
+        # is dimensionless (a share, or a ratio whose base cancels its own
+        # denominator); a dimensionless *flow* keeps the leaf.
+        neutral = (
+            source_unit.level is None
+            or _token_physical_residual_is_dimensionless(source_unit)
+        )
+        return replace(source_unit, level=None if neutral else PERSON_LEVEL.upper())
+    if target_level == PERSON_LEVEL:
+        # An agg_by_p_id result is a person property: the person leaf for a
+        # leveled source, level-neutral for a level-neutral one.
+        return replace(
+            source_unit,
+            level=None if source_unit.level is None else PERSON_LEVEL.upper(),
+        )
     return replace(source_unit, level=target_level.upper())
 
 
@@ -1572,8 +1555,8 @@ def resolved_unit_for_aggregation(
       for the target and a level-less source *acquires* it — an ``_hh`` sum of a
       person income is ``CURRENCY/[hh]``, an ``_fg`` min of a bare age is
       ``MONTHS/[fg]``. At the person target (an ``agg_by_p_id`` node) the result
-      is a person property: implied person leaf for a leveled source, bare for a
-      level-less one.
+      is a person property: the person leaf for a leveled source, level-neutral
+      for a level-less one.
     - ``MEAN`` is the exception: a per-head average belongs to the **person**
       (``MEAN = SUM / COUNT``, and leveling it to the target would break
       ``mean · count = sum``), so the source level is swapped for the person

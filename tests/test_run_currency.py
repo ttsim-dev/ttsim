@@ -28,7 +28,7 @@ from ttsim.interface_dag_elements.warn_if import (
 )
 from ttsim.tt.currencies import UnitSystem
 from ttsim.tt.param_objects import RawParam
-from ttsim.tt.units import UNSET_UNIT
+from ttsim.tt.units import UNSET_UNIT, TTSIMUnit
 from ttsim.warnings import PotentialCurrencyMismatchWarning
 
 POLICY_DATE = datetime.date(2020, 1, 1)
@@ -559,12 +559,52 @@ def test_annotated_results_label_a_parameter_in_the_statutory_currency():
         raw_results__from_input_data={},
         raw_results__params={"a_param_m": 25.0},
         unit_checks__resolved_units={"a_param_m": agnostic, "a_column_m": agnostic},
+        unit_checks__declared_unit_tokens={},
         data_currency="CASTAR",
         computation_currency="SILVER_PENNY",
         unit_system=system,
     )
     labels = {qname: leaf.unit.base for qname, leaf in annotated.items()}
     assert labels == {"a_param_m": "SILVER_PENNY", "a_column_m": "CASTAR"}
+
+
+def test_annotated_results_preserve_a_per_person_head_count():
+    """A per-person head count (an ``agg_by_p_id`` COUNT declared
+    ``PERSON_COUNT_PER_PERSON``) resolves to ``[person] / [person]`` = dimensionless,
+    which the resolved-unit reconstruction alone would label ``DIMENSIONLESS``. The
+    label recovers the spelled head count from the declared token (GEP 10)."""
+    system = _fresh_system()
+    annotated = tree_with_unit_annotations(
+        tree={"n_children": np.array([2.0, 0.0])},
+        raw_results__from_input_data={},
+        raw_results__params={},
+        unit_checks__resolved_units={"n_children": system.registry.dimensionless},
+        unit_checks__declared_unit_tokens={
+            "n_children": TTSIMUnit.PERSON_COUNT.PER_PERSON
+        },
+        data_currency="CASTAR",
+        computation_currency="SILVER_PENNY",
+        unit_system=system,
+    )
+    assert annotated["n_children"].unit == TTSIMUnit.PERSON_COUNT.PER_PERSON
+
+
+def test_annotated_results_label_a_declarationless_dimensionless_target_as_such():
+    """A dimensionless target with no declared token (a framework date node such as
+    ``policy_month``) keeps its ``DIMENSIONLESS`` label — the per-person head-count
+    fallback must not fire when there is no token to recover (GEP 10)."""
+    system = _fresh_system()
+    annotated = tree_with_unit_annotations(
+        tree={"policy_month": np.array([6, 7])},
+        raw_results__from_input_data={},
+        raw_results__params={},
+        unit_checks__resolved_units={"policy_month": system.registry.dimensionless},
+        unit_checks__declared_unit_tokens={},
+        data_currency="CASTAR",
+        computation_currency="SILVER_PENNY",
+        unit_system=system,
+    )
+    assert annotated["policy_month"].unit == TTSIMUnit.DIMENSIONLESS
 
 
 def test_definition_referencing_no_system_currency_is_rejected():

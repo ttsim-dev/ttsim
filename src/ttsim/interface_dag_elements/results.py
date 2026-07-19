@@ -19,6 +19,8 @@ from ttsim.interface_dag_elements.processed_data import (
 )
 from ttsim.tt.currencies import UnitSystem
 from ttsim.tt.units import (
+    CompositeUnit,
+    TTSIMUnit,
     UnitAnnotatedColumn,
     composite_from_resolved_unit,
     input_target_unit_in_data_currency,
@@ -96,6 +98,7 @@ def tree_with_unit_annotations(
     raw_results__from_input_data: QNameData,
     raw_results__params: QNameResults,
     unit_checks__resolved_units: dict[str, pint.Unit | dict[str | int, Any]],
+    unit_checks__declared_unit_tokens: dict[str, CompositeUnit],
     data_currency: str,
     computation_currency: str,
     unit_system: UnitSystem,
@@ -132,10 +135,18 @@ def tree_with_unit_annotations(
             result_unit = output_unit_in_data_currency(
                 units=unit, data_currency=data_currency, registry=registry
             )
-        tagged[qname] = UnitAnnotatedColumn(
-            values=value,
-            unit=composite_from_resolved_unit(units=result_unit, registry=registry),
-        )
+        label = composite_from_resolved_unit(units=result_unit, registry=registry)
+        declared = unit_checks__declared_unit_tokens.get(qname)
+        if (
+            label == TTSIMUnit.DIMENSIONLESS
+            and declared is not None
+            and declared != TTSIMUnit.DIMENSIONLESS
+        ):
+            # A per-person head count resolves to [person]/[person] = dimensionless,
+            # so the reconstruction above loses its spelling. Recover it from the
+            # (currency-free) declared token — PERSON_COUNT_PER_PERSON (GEP 10).
+            label = declared
+        tagged[qname] = UnitAnnotatedColumn(values=value, unit=label)
     return dt.unflatten_from_qnames(tagged)
 
 

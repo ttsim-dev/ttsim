@@ -209,6 +209,75 @@ def test_input_level_matching_declared_passes():
     )
 
 
+def test_level_neutral_tag_does_not_match_a_person_declaration():
+    # A bare (level-neutral) tag is distinct from a spelled PER_PERSON declaration
+    # (GEP 10): an omitted level no longer matches the person leaf.
+    register_grouping_levels(["hh"], registry=REGISTRY)
+    with pytest.raises(UnitConsistencyError, match="level-neutral"):
+        fail_if_input_units_are_inconsistent(
+            input_units={"betrag_m": _resolved(TTSIMUnit.CURRENCY.PER_MONTH)},
+            resolved_units={
+                "betrag_m": _column(
+                    TTSIMUnit.CURRENCY.PER_MONTH.PER_PERSON, time_unit_id="m"
+                )
+            },
+            unit_system=SYSTEM,
+        )
+
+
+def test_person_tag_matching_a_person_declaration_passes():
+    register_grouping_levels(["hh"], registry=REGISTRY)
+    betrag = _column(TTSIMUnit.CURRENCY.PER_MONTH.PER_PERSON, time_unit_id="m")
+    fail_if_input_units_are_inconsistent(
+        input_units={"betrag_m": betrag},
+        resolved_units={"betrag_m": betrag},
+        unit_system=SYSTEM,
+    )
+
+
+def test_neutral_tag_for_a_person_count_declaration_is_caught_via_tokens():
+    # PERSON_COUNT_PER_PERSON resolves to [person]/[person] = dimensionless, exactly
+    # like a bare DIMENSIONLESS tag, so the resolved units cannot tell them apart.
+    # The token comparison does: a neutral share is not a head count (GEP 10).
+    register_grouping_levels(["hh"], registry=REGISTRY)
+    with pytest.raises(UnitConsistencyError, match="head count"):
+        fail_if_input_units_are_inconsistent(
+            input_units={"n_children": _resolved(TTSIMUnit.DIMENSIONLESS)},
+            resolved_units={"n_children": _resolved(TTSIMUnit.PERSON_COUNT.PER_PERSON)},
+            unit_system=SYSTEM,
+            input_unit_tokens={"n_children": TTSIMUnit.DIMENSIONLESS},
+            declared_unit_tokens={"n_children": TTSIMUnit.PERSON_COUNT.PER_PERSON},
+        )
+
+
+def test_person_count_tag_matching_its_declaration_passes_via_tokens():
+    register_grouping_levels(["hh"], registry=REGISTRY)
+    n = _resolved(TTSIMUnit.PERSON_COUNT.PER_PERSON)
+    fail_if_input_units_are_inconsistent(
+        input_units={"n_children": n},
+        resolved_units={"n_children": n},
+        unit_system=SYSTEM,
+        input_unit_tokens={"n_children": TTSIMUnit.PERSON_COUNT.PER_PERSON},
+        declared_unit_tokens={"n_children": TTSIMUnit.PERSON_COUNT.PER_PERSON},
+    )
+
+
+def test_share_tag_for_a_person_count_declaration_is_caught_via_token_base():
+    # A per-person share (DIMENSIONLESS_PER_PERSON, i.e. 1/[person]) and a per-person
+    # head count (PERSON_COUNT_PER_PERSON, i.e. [person]/[person]) both spell the
+    # person level and strip to dimensionless, so level and residual agree; the
+    # head-count base distinguishes them (GEP 10).
+    register_grouping_levels(["hh"], registry=REGISTRY)
+    with pytest.raises(UnitConsistencyError, match="head count"):
+        fail_if_input_units_are_inconsistent(
+            input_units={"n_children": _resolved(TTSIMUnit.DIMENSIONLESS.PER_PERSON)},
+            resolved_units={"n_children": _resolved(TTSIMUnit.PERSON_COUNT.PER_PERSON)},
+            unit_system=SYSTEM,
+            input_unit_tokens={"n_children": TTSIMUnit.DIMENSIONLESS.PER_PERSON},
+            declared_unit_tokens={"n_children": TTSIMUnit.PERSON_COUNT.PER_PERSON},
+        )
+
+
 def test_input_share_at_group_suffix_stays_level_less():
     # A group suffix must not force a level onto a level-less quantity.
     register_grouping_levels(["hh"], registry=REGISTRY)
