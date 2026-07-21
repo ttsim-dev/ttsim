@@ -1014,6 +1014,65 @@ def test_person_per_level_resolves_to_head_count():
     )
 
 
+def test_terminal_per_person_equals_the_bare_unit():
+    # A terminal `_PER_PERSON` carries no grouping level, so it is equal to — and
+    # stringifies identically to — the bare unit (GEP 10).
+    assert TTSIMUnit.CURRENCY.PER_MONTH.PER_PERSON == TTSIMUnit.CURRENCY.PER_MONTH
+    assert str(TTSIMUnit.CURRENCY.PER_MONTH.PER_PERSON) == str(
+        TTSIMUnit.CURRENCY.PER_MONTH
+    )
+    assert TTSIMUnit.PERSON_COUNT.PER_PERSON == TTSIMUnit.PERSON_COUNT
+    assert str(TTSIMUnit.PERSON_COUNT.PER_PERSON) == str(TTSIMUnit.PERSON_COUNT)
+
+
+def test_terminal_per_person_parses_and_resolves_to_bare():
+    # A terminal `_PER_PERSON` is the deprecated per-person spelling: it carries no
+    # grouping level and resolves to the bare unit (GEP 10).
+    parsed = parse_compositional_unit("CURRENCY_PER_MONTH_PER_PERSON")
+    resolved = resolve_compositional_unit(parsed, registry=REGISTRY)
+    assert units_are_equivalent(
+        left=resolved,
+        right=parse_unit("CURRENCY / month", registry=REGISTRY),
+        registry=REGISTRY,
+    )
+
+
+def test_per_person_after_a_group_level_is_rejected():
+    # `_PER_PERSON` after a group level is a second level: a unit carries at most
+    # one grouping level, so it is a definition error (GEP 10).
+    with pytest.raises(UnitDefinitionError):
+        parse_compositional_unit("CURRENCY_PER_HH_PER_PERSON")
+
+
+def test_per_person_before_a_period_is_rejected():
+    # A level (even the person one) must follow the period in canonical order, so
+    # `_PER_PERSON` before a period is a definition error (GEP 10).
+    with pytest.raises(UnitDefinitionError):
+        parse_compositional_unit("CURRENCY_PER_PERSON_PER_MONTH")
+
+
+def test_fluent_terminal_per_person_resolves_to_bare():
+    resolved = resolve_compositional_unit(
+        TTSIMUnit.CURRENCY.PER_MONTH.PER_PERSON, registry=REGISTRY
+    )
+    assert units_are_equivalent(
+        left=resolved,
+        right=parse_unit("CURRENCY / month", registry=REGISTRY),
+        registry=REGISTRY,
+    )
+
+
+def test_fluent_second_level_after_per_person_is_rejected():
+    with pytest.raises(UnitDefinitionError):
+        _ = TTSIMUnit.CURRENCY.PER_MONTH.PER_PERSON.PER_HH
+
+
+def test_fluent_per_person_before_a_period_is_rejected():
+    # A terminal `_PER_PERSON` must come last, so nothing may follow it.
+    with pytest.raises(UnitDefinitionError, match="closes the chain"):
+        _ = TTSIMUnit.CURRENCY.PER_PERSON.PER_MONTH
+
+
 def test_concrete_currency_base_resolves_like_agnostic():
     # For dimensionality a concrete currency means exactly what CURRENCY means.
     concrete = resolve_compositional_unit(

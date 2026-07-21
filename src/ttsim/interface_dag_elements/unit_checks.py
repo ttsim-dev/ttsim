@@ -981,7 +981,8 @@ def _composite_token_level(token: CompositeUnit) -> str | None:
     """The grouping level a compositional token spells, or ``None`` if bare.
 
     Read straight off the token (``CURRENCY_PER_MONTH_PER_HH`` reports ``"hh"``,
-    a bare token reports ``None``).
+    a bare token reports ``None``). A terminal ``_PER_PERSON`` unit is bare
+    (``level is None``), so it reports ``None`` too (GEP 10).
     """
     return token.level.lower() if token.level is not None else None
 

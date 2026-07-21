@@ -41,7 +41,7 @@ from __future__ import annotations
 import math
 import re
 from collections.abc import Iterator, Mapping
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from typing import TYPE_CHECKING, Any, TypeVar
 
 import pint
@@ -132,6 +132,10 @@ class CompositeUnit:
     area: str | None = None
     period: str | None = None
     level: str | None = None
+    _terminal_person: bool = field(default=False, compare=False)
+    """A validation-only marker that a terminal deprecated ``_PER_PERSON`` closed
+    the chain: the unit stays fully bare (equal to and stringified like the bare
+    unit), but nothing may follow it. Excluded from equality and hashing (GEP 10)."""
 
     if TYPE_CHECKING:
         # Per-level builder steps are added at runtime, so tell `ty` any builder
@@ -151,7 +155,17 @@ class CompositeUnit:
         """Whether this unit is a flow — i.e. has a period denominator."""
         return self.period is not None
 
+    def _fail_if_terminal_person(self, denominator: str) -> None:
+        if self._terminal_person:
+            raise UnitDefinitionError(
+                f"Cannot add '{denominator}' to '{self}': a terminal '{_PER}"
+                f"{_INDIVIDUAL_LEVEL_NORMALIZED_AWAY.upper()}' closes the chain — "
+                f"it must come last, and a unit carries at most one grouping level "
+                f"(GEP 10)."
+            )
+
     def _with_area(self, area: str) -> CompositeUnit:
+        self._fail_if_terminal_person(area)
         if self.area is not None or self.period is not None or self.level is not None:
             raise UnitDefinitionError(
                 f"Cannot add the physical denominator '{area}' to '{self}': the "
@@ -161,6 +175,7 @@ class CompositeUnit:
         return replace(self, area=area)
 
     def _with_period(self, period: str) -> CompositeUnit:
+        self._fail_if_terminal_person(period)
         if self.period is not None or self.level is not None:
             raise UnitDefinitionError(
                 f"Cannot add period '{period}' to '{self}': a period must precede "
@@ -169,15 +184,16 @@ class CompositeUnit:
         return replace(self, period=period)
 
     def _with_level(self, level: str) -> CompositeUnit:
-        if level.lower() == _INDIVIDUAL_LEVEL_NORMALIZED_AWAY:
-            # There is no `person` grouping level (GEP 10): a per-person quantity
-            # is bare. A `_PER_PERSON` suffix adds no level.
-            return self
+        self._fail_if_terminal_person(level)
         if self.level is not None:
             raise UnitDefinitionError(
                 f"Cannot add level '{level}' to '{self}': a unit carries at most "
                 f"one grouping level (GEP 10)."
             )
+        # The deprecated `person` level adds no grouping level (GEP 10): the unit
+        # stays bare, marked only so nothing may follow it.
+        if level.lower() == _INDIVIDUAL_LEVEL_NORMALIZED_AWAY:
+            return replace(self, _terminal_person=True)
         return replace(self, level=level.upper())
 
     @property
