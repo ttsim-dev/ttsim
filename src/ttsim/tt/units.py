@@ -72,7 +72,13 @@ CURRENCY_TOKEN = "CURRENCY"  # noqa: S105 (a unit token, not a secret)
 
 _GROUPING_LEVEL_PREFIX = "grouping_level_"
 
-PERSON_LEVEL = "person"
+#: The deprecated individual-level suffix. There is no `person` grouping level
+#: (GEP 10): a quantity with no group-level suffix is bare, and *bare* means both
+#: "per person / individual" and "level-neutral" — the two are one representation.
+#: A ``_PER_PERSON`` suffix (flat string or fluent ``.PER_PERSON``) is accepted and
+#: normalized to the bare unit, so existing declarations keep resolving; it adds no
+#: level. New code drops the suffix.
+_INDIVIDUAL_LEVEL_NORMALIZED_AWAY = "person"
 
 _PER = "_PER_"
 
@@ -83,7 +89,10 @@ _AREA_TOKEN_TO_PINT: dict[str, str] = {
 
 _COMPOSITIONAL_BASE_TO_PINT: dict[str, str | None] = {
     "DIMENSIONLESS": None,
-    "PERSON_COUNT": f"{_GROUPING_LEVEL_PREFIX}{PERSON_LEVEL}",
+    # A person count is dimensionless (GEP 10): `PERSON_COUNT` is a readable
+    # spelling that resolves to the plain number, so `PERSON_COUNT_PER_HH`
+    # resolves to `1 / [hh]` — persons per household.
+    "PERSON_COUNT": None,
     "HOURS": "working_hour",
     "SQUARE_METER": "meter ** 2",
     "HECTARE": "hectare",
@@ -160,6 +169,10 @@ class CompositeUnit:
         return replace(self, period=period)
 
     def _with_level(self, level: str) -> CompositeUnit:
+        if level.lower() == _INDIVIDUAL_LEVEL_NORMALIZED_AWAY:
+            # There is no `person` grouping level (GEP 10): a per-person quantity
+            # is bare. A `_PER_PERSON` suffix adds no level.
+            return self
         if self.level is not None:
             raise UnitDefinitionError(
                 f"Cannot add level '{level}' to '{self}': a unit carries at most "
@@ -286,7 +299,9 @@ def resolve_compositional_unit(
 
     A currency base resolves to the agnostic :data:`CURRENCY_TOKEN` dimension —
     for dimensionality a concrete currency means exactly what ``CURRENCY`` means
-    (the concrete currency drives the build-time conversion, not the check).
+    (the concrete currency drives the build-time conversion, not the check). A
+    ``PERSON_COUNT`` base resolves to the plain number (a count is dimensionless),
+    so ``PERSON_COUNT_PER_HH`` is ``1 / [hh]`` (GEP 10).
 
     Raises:
         UnitDefinitionError: If a level denominator names a grouping level the
@@ -294,9 +309,6 @@ def resolve_compositional_unit(
     """
     if _is_currency_base(unit.base):
         resolved = registry.parse_units(CURRENCY_TOKEN)
-    elif unit.base == "PERSON_COUNT":
-        # Via the helper so an un-built registry fails loudly.
-        resolved = _grouping_level_unit(name=PERSON_LEVEL, registry=registry)
     else:
         base = _COMPOSITIONAL_BASE_TO_PINT[unit.base]
         resolved = (
@@ -325,7 +337,7 @@ def resolve_compositional_column_unit(
     unit: CompositeUnit,
     *,
     time_unit_id: str | None,
-    grouping_level: str,
+    grouping_level: str | None,
     where: str,
     registry: pint.UnitRegistry,
 ) -> pint.Unit:
@@ -336,17 +348,17 @@ def resolve_compositional_column_unit(
     - the spelled period must match the name's time suffix;
     - the grouping level is **declared, not read off the suffix** — a quantity
       carries a group level iff it is a property of the group as a whole. A
-      spelled level must equal the name's aggregation suffix (the person grain
-      for an unsuffixed name), but may be omitted at *any* suffix.
+      spelled group level must equal the name's aggregation suffix, but may be
+      omitted at *any* suffix.
 
-    An omitted level makes the unit **level-neutral** — it carries no grouping
-    level at all, so a rate or share multiplies a leveled quantity without
-    polluting its level. A quantity that lives at the individual level (a
-    per-person amount that aggregates over a group) spells it: ``PER_PERSON``.
-    So ``betrag_m`` declares ``CURRENCY_PER_MONTH_PER_PERSON`` (a per-person
-    amount) and ``betrag_m_hh`` either ``CURRENCY_PER_MONTH_PER_HH`` (the
-    household's amount) or, if constant within the household, ``…_PER_PERSON`` —
-    never ``…_PER_BG``.
+    An omitted group level makes the unit **bare** — it carries no grouping level
+    at all. Bare is a single representation with two readings: a per-person amount
+    (an individual quantity that aggregates over a group) *and* a level-neutral
+    rate or share (that multiplies a leveled quantity without polluting its
+    level). So ``betrag_m`` declares ``CURRENCY_PER_MONTH`` (a per-person amount)
+    and ``betrag_m_hh`` declares ``CURRENCY_PER_MONTH_PER_HH`` (the household's
+    amount) or, if constant within the household, the bare ``CURRENCY_PER_MONTH``
+    — never ``…_PER_BG``. ``grouping_level`` is ``None`` for an unsuffixed name.
 
     A concrete-currency base is rejected: a function does not care which
     currency it computes in — its values are denominated in whatever the
@@ -372,17 +384,13 @@ def resolve_compositional_column_unit(
             f"{where}: the unit spells period {unit.period!r} but the name's time "
             f"suffix implies {expected_period!r}; they must agree (GEP 10)."
         )
-    if (
-        unit.level is not None
-        and unit.level != PERSON_LEVEL.upper()
-        and unit.level != grouping_level.upper()
-    ):
+    expected_level = grouping_level.upper() if grouping_level is not None else None
+    if unit.level is not None and unit.level != expected_level:
         raise UnitDefinitionError(
             f"{where}: the unit spells group level {unit.level!r} but the name's "
-            f"aggregation suffix implies {grouping_level.upper()!r}; a spelled "
-            f"group level must not contradict the suffix (GEP 10). The person "
-            f"level (PER_PERSON) is always allowed — a per-person value constant "
-            f"within a group may be stored under a group-suffixed name."
+            f"aggregation suffix implies {expected_level or 'no level (bare)'}; a "
+            f"spelled group level must match the suffix, or be omitted for a bare "
+            f"(per-person / level-neutral) quantity (GEP 10)."
         )
     return resolve_compositional_unit(unit=unit, registry=registry, with_level=True)
 
@@ -410,12 +418,11 @@ def resolve_compositional_param_unit(
     """Resolve a parameter's compositional unit.
 
     A parameter spells its period and its level (it has no name suffix to read
-    them off); an omitted level is **level-neutral**, exactly as for a column:
+    them off); an omitted level is **bare**, exactly as for a column:
 
-    - ``SILVER_PENNY_PER_MONTH_PER_PERSON`` — a per-person amount;
+    - ``SILVER_PENNY_PER_MONTH`` — a per-person amount (bare);
     - ``SILVER_PENNY_PER_FAM`` — a per-family amount;
-    - a level-neutral base (``DIMENSIONLESS``, ``YEARS``, a bare rate) stays
-      level-neutral.
+    - a bare base (``DIMENSIONLESS``, ``YEARS``, a rate) stays bare.
 
     A concrete-currency base is allowed — parameters pin the currency their
     numbers are written in. A scalar parameter additionally takes a time suffix
@@ -442,7 +449,7 @@ def _resolve_agnostic_body_unit(
 
     Shared by the :func:`cast_ttsim_unit` target and a parameter dataclass field
     annotation: both state a full unit whose spelled period and level stand as
-    given (an omitted level is level-neutral), both use the agnostic currency
+    given (an omitted level is bare), both use the agnostic currency
     (the concrete denomination lives in the parameter YAML), and both resolve
     like a column declaration.
 
@@ -515,13 +522,14 @@ class TTSIMUnit(metaclass=_UnitNamespaceMeta):
 
     DIMENSIONLESS = CompositeUnit(base="DIMENSIONLESS")
     """A plain dimensionless number: a share, a rate. A boolean declares
-    ``DIMENSIONLESS`` too — bare for a person-level indicator, its group level
+    ``DIMENSIONLESS`` too — bare for an individual indicator, its group level
     spelled for a group one (``TTSIMUnit.DIMENSIONLESS.PER_FAM``)."""
 
     PERSON_COUNT = CompositeUnit(base="PERSON_COUNT")
-    """The individual (leaf) count base — the numerator of a head count
-    (``[person]``). With a level denominator it is a head count per group:
-    ``TTSIMUnit.PERSON_COUNT.PER_BG`` resolves to ``[person] / [bg]``."""
+    """A count of persons — a readable spelling of a dimensionless quantity
+    (a count is a plain number, GEP 10). Bare it is dimensionless; with a level
+    denominator it is a head count per group: ``TTSIMUnit.PERSON_COUNT.PER_BG``
+    resolves to ``1 / [bg]`` — persons per Bedarfsgemeinschaft."""
 
     HOURS = CompositeUnit(base="HOURS")
     """Working hours (the isolated ``[hours]`` dimension). A period denominator
@@ -596,9 +604,9 @@ def cast_ttsim_unit(
     column, so the numeric path and JAX tracing are untouched. Only the dry-run
     gives the call meaning: the stand-in flowing through it is re-tagged with the
     stated unit wholesale — dimension, flow period, and grouping level, resolved
-    like a declaration (currency-agnostic; an omitted level is level-neutral, the
-    person level spelled ``PER_PERSON``). The rest of the body stays checked, and
-    every override is visible at the expression that needs it.
+    like a declaration (currency-agnostic; an omitted level is bare, i.e. both
+    per-person and level-neutral). The rest of the body stays checked, and every
+    override is visible at the expression that needs it.
 
     Use it where a single operation is dimensionally irregular but deliberate:
 
@@ -824,10 +832,10 @@ def _grouping_level_unit_name(name: str) -> str:
 def registered_grouping_levels(registry: pint.UnitRegistry) -> set[str]:
     """The grouping levels a registry defines a dimension for.
 
-    The bare names (``"person"``, ``"hh"``, …). ``person`` — the individual leaf,
-    doubling as the ``[person]`` count dimension — is present once any level has
-    been registered. The set is discovered per build from the policy
-    environment's ``*_id`` columns; ttsim ships no fixed list.
+    The bare names (``"hh"``, ``"bg"``, …). There is no ``person`` level (GEP 10):
+    an individual quantity is bare, carrying no grouping level. The set is
+    discovered per build from the policy environment's ``*_id`` columns; ttsim
+    ships no fixed list.
     """
     return {
         name.removeprefix(_GROUPING_LEVEL_PREFIX)
@@ -867,10 +875,10 @@ def divide_by_grouping_level(
 
     A leveled quantity carries its level as a denominator, exactly as a flow
     carries its period as one: ``CURRENCY / month`` at level ``hh`` becomes
-    ``CURRENCY / month / [hh]``, and at the individual level ``person`` it becomes
-    ``CURRENCY / month / [person]``. The ``[person]`` denominator of a person-level
-    quantity is the same dimension as a head count's ``[person]`` numerator, so the
-    two cancel.
+    ``CURRENCY / month / [hh]``. An individual quantity carries no level — it is
+    bare (``CURRENCY / month``). A head count over the same group is ``1 / [hh]``,
+    so dividing a per-``[hh]`` amount by it cancels the ``[hh]`` down to a bare
+    per-person amount.
 
     The division is *unit* arithmetic, not quantity arithmetic: attaching a level
     is index bookkeeping, so it must stay legal for offset (calendar-point) bases,
@@ -887,17 +895,18 @@ def grouping_level_count_unit(
 ) -> pint.Unit:
     """The unit of a head count over ``target_level``.
 
-    A head count is the ``[person]`` *count* dimension over the group it counts
-    within: counting persons in a household is ``[person] / [hh]`` — persons per
-    household. ``COUNT`` aggregations mint this, and it is the conversion factor
-    that bridges levels (``[person]/[hh] · CURRENCY/[hh] = CURRENCY/[person]``).
+    A head count is a dimensionless count over the group it counts within:
+    counting persons in a household is ``1 / [hh]`` — persons per household
+    (a count is dimensionless, GEP 10). ``COUNT`` aggregations mint this, and it
+    is the conversion factor that bridges levels
+    (``CURRENCY/[hh] ÷ (1/[hh]) = CURRENCY``, a bare per-person amount).
 
     Raises:
-        UnitDefinitionError: If ``person`` or ``target_level`` is not registered.
+        UnitDefinitionError: If ``target_level`` is not registered.
     """
-    return _grouping_level_unit(
-        name=PERSON_LEVEL, registry=registry
-    ) / _grouping_level_unit(name=target_level, registry=registry)
+    return divide_by_grouping_level(
+        unit=registry.dimensionless, level=target_level, registry=registry
+    )
 
 
 def parse_unit(unit_str: str, registry: pint.UnitRegistry) -> pint.Unit:
@@ -1074,9 +1083,9 @@ _GROUPING_LEVEL_DIM_PREFIX = f"[{_GROUPING_LEVEL_PREFIX}"
 def _grouping_levels_with_exponent(unit: pint.Unit) -> Iterator[tuple[str, Any]]:
     """Yield ``(level_name, exponent)`` for each grouping-level dimension of a unit.
 
-    A negative exponent is a denominator level (``/[hh]``), a positive one a
-    numerator level (a ``[person]`` head count). Non-grouping dimensions and
-    pint's (never-occurring here) complex exponents are skipped.
+    A negative exponent is a denominator level (``/[hh]``); grouping levels only
+    ever appear as denominators. Non-grouping dimensions and pint's
+    (never-occurring here) complex exponents are skipped.
     """
     for dimension, exponent in unit.dimensionality.items():
         if isinstance(exponent, complex):  # pint exponents are real; narrow for ty
@@ -1103,10 +1112,8 @@ def _unit_level_denominator(unit: pint.Unit) -> str | None:
 
     A leveled quantity carries its level as a ``/[level]`` denominator (negative
     exponent in the dimensionality), exactly as a flow carries its period. Returns
-    the level name (``"hh"``, ``"person"``, …) found in the denominator, or
-    ``None`` for a level-less unit. A head count's ``[person]`` *numerator*
-    (positive exponent) is not a denominator level and is ignored, so a
-    ``[person]/[hh]`` count reports ``"hh"`` — its index level.
+    the level name (``"hh"``, ``"bg"``, …) found in the denominator, or ``None``
+    for a bare unit. A head count ``1 / [hh]`` reports ``"hh"`` — its index level.
     """
     return next(
         (
@@ -1201,13 +1208,13 @@ def composite_from_resolved_unit(
     same shape as the input tree (GEP 10). A resolved unit obeys the grammar, so
     each component maps back to one slot:
 
-    - the currency / count / area / duration numerator → the base;
+    - the currency / area / duration numerator → the base;
     - the flow period → the period;
-    - the spelled level (group or ``[person]``) → the level.
+    - the spelled group level → the level.
 
-    A ``grouping_level_person`` *denominator* is the person level, spelled
-    ``PER_PERSON`` like any other level; a person-leaf *numerator* is the
-    ``PERSON_COUNT`` base of a head count.
+    A count and a share both resolve to the plain number, so the reconstructed
+    base is ``DIMENSIONLESS``; a head count's ``PERSON_COUNT`` spelling is
+    recovered from the declared token at the labelling site, not here (GEP 10).
 
     Apply it to a unit already restated in the data currency
     (:func:`output_unit_in_data_currency`) so the base is a concrete currency
@@ -1219,10 +1226,8 @@ def composite_from_resolved_unit(
     area: str | None = None
     level: str | None = None
     for name, exponent in _grouping_levels_with_exponent(units):
-        if name == PERSON_LEVEL and exponent > 0:
-            base = "PERSON_COUNT"
-        elif exponent < 0:
-            # Any denominator level — a group level or the person leaf — is spelled.
+        if exponent < 0:
+            # A denominator level (a group level) is spelled.
             level = name.upper()
     physical = to_units_container(
         _unit_without_grouping_levels(unit=units, registry=registry)
@@ -1409,38 +1414,16 @@ def strip_input_quantity_at_boundary(
     return quantity.to(target).magnitude
 
 
-def _token_physical_residual_is_dimensionless(unit: CompositeUnit) -> bool:
-    """Whether a token's physical part (base/area/period, ignoring the level) cancels.
-
-    Mirrors what :func:`resolved_unit_for_aggregation` observes: it tests the pint
-    *unit container* for emptiness, and pint cancels only **identical units**, not
-    merely same-dimension ones. So the residual is dimensionless in exactly three
-    cases — a plain share (bare ``DIMENSIONLESS``), a square-meter over a
-    square-meter denominator, and working hours over an hours denominator. A ratio
-    of *different* units of the same dimension keeps both in the container and does
-    not cancel: ``HECTARE_PER_SQUARE_METER`` (``hectare / meter ** 2``) and
-    ``MONTHS_PER_MONTH`` (``delta_calendar_month / month``) stay dimensioned, as do
-    a currency or a head count.
-    """
-    if unit.base == "DIMENSIONLESS":
-        return unit.area is None and unit.period is None
-    if unit.base == "SQUARE_METER":
-        return unit.area == "SQUARE_METER" and unit.period is None
-    if unit.base == "HOURS":
-        return unit.area == "HOURS" and unit.period is None
-    return False
-
-
 def head_count_from_boolean_sum(
     agg_type: AggType, *, source_is_boolean: bool
 ) -> AggType:
     """Normalise a ``SUM`` over a boolean to a ``COUNT`` for unit purposes.
 
     Summing a boolean counts the persons its flag is true for, so its unit is a
-    head count's — the same :attr:`TTSIMUnit.PERSON_COUNT` a ``COUNT`` mints. Every
-    other aggregation keeps its own type. This is the single source of truth used
-    by both the declared-token minter (:func:`unit_for_aggregation`) and the
-    resolved-unit deriver
+    head count's — the same dimensionless :attr:`TTSIMUnit.PERSON_COUNT` a
+    ``COUNT`` mints. Every other aggregation keeps its own type. This is the
+    single source of truth used by both the declared-token minter
+    (:func:`unit_for_aggregation`) and the resolved-unit deriver
     (:func:`ttsim.interface_dag_elements.unit_checks._resolve_agg_by_group_unit`),
     so the two cannot drift.
     """
@@ -1452,7 +1435,7 @@ def head_count_from_boolean_sum(
 def unit_for_aggregation(
     source_unit: CompositeUnit,
     agg_type: AggType,
-    target_level: str = PERSON_LEVEL,
+    target_level: str | None = None,
     *,
     source_is_boolean: bool = False,
 ) -> CompositeUnit:
@@ -1460,46 +1443,44 @@ def unit_for_aggregation(
 
     The single source of truth for an automatically added aggregation's token
     (``my_col`` → ``my_col_hh``); author-written ``@agg_by_group_function`` /
-    ``@agg_by_p_id_function`` nodes declare their unit explicitly (GEP 10):
+    ``@agg_by_p_id_function`` nodes declare their unit explicitly (GEP 10).
+    ``target_level`` is the group the node aggregates *to*, or ``None`` for an
+    individual (bare) result — an ``agg_by_p_id`` node:
 
     - a **head count** — ``COUNT``, or a ``SUM`` over a boolean source
       (``source_is_boolean``, counting the persons its flag is true for) — is the
-      ``[person]`` count base at its target level: :attr:`TTSIMUnit.PERSON_COUNT` per
-      ``target_level``;
+      dimensionless :attr:`TTSIMUnit.PERSON_COUNT` per ``target_level``
+      (``PERSON_COUNT_PER_HH`` = ``1 / [hh]``); bare ``PERSON_COUNT`` at an
+      individual target;
     - ``SUM`` / ``MIN`` / ``MAX`` over a non-boolean source are properties of the
       **target** group whatever the source's base (GEP 10): they keep the
       source's physical token and take the target level — spelled for a group
       (``CURRENCY_PER_MONTH_PER_FAM``, ``MONTHS_PER_FG`` for an ``_fg`` extreme of
-      a bare duration), and ``PER_PERSON`` for the person-level result of an
-      ``agg_by_p_id`` over a leveled source (level-neutral for a level-neutral
-      one);
-    - ``MEAN`` is the exception — a per-head average belongs to the **person**
-      (``MEAN = SUM / COUNT`` cancels the group), so a leveled source swaps its
-      level for the ``PER_PERSON`` leaf; a share (a dimensionless mean, e.g. of a
-      boolean) and a level-neutral source stay level-neutral;
-    - ``ANY`` / ``ALL`` yield a boolean, a leveled dimensionless quantity at the
-      target level: ``DIMENSIONLESS_PER_<target_level>``.
+      a bare duration), and **bare** for an individual ``agg_by_p_id`` result;
+    - ``MEAN`` is a per-head average that belongs to the **individual**
+      (``MEAN = SUM / COUNT`` cancels the group), so its result is **bare** — the
+      source's group level, if any, is dropped;
+    - ``ANY`` / ``ALL`` yield a boolean, a dimensionless quantity at the target
+      level (``DIMENSIONLESS_PER_<target_level>``); bare at an individual target.
 
-    Every result spells its target level (``COUNT`` / ``ANY`` / ``ALL`` and the
-    person-level results of an ``agg_by_p_id``), so an ``agg_by_p_id`` ``COUNT`` is
-    ``PERSON_COUNT_PER_PERSON``, which resolves to ``[person] / [person]`` =
-    dimensionless.
+    An individual result carries no grouping level, so an ``agg_by_p_id``
+    ``COUNT`` is bare ``PERSON_COUNT`` (dimensionless).
 
     Args:
         source_unit: The source column's ``unit`` — a :class:`CompositeUnit`
             (:data:`UNSET_UNIT` if the source does not declare one).
         agg_type: The :class:`ttsim.tt.aggregation.AggType` of the aggregation.
         target_level: The group level the node aggregates to (read off its name
-            suffix); :data:`PERSON_LEVEL` for an individual-level result.
+            suffix); ``None`` for an individual (bare) result.
         source_is_boolean: Whether the aggregated source column is boolean — a
             ``SUM`` over it is then minted as a head count (see
             :func:`head_count_from_boolean_sum`).
 
     Returns:
-        The auto-assigned unit. ``PERSON_COUNT_PER_<target_level>`` for a ``COUNT``
-        head count, ``DIMENSIONLESS_PER_<target_level>`` for a boolean ``ANY`` /
-        ``ALL`` result; otherwise the source token at the target (``SUM`` /
-        ``MIN`` / ``MAX``) or person (``MEAN``, and any ``agg_by_p_id``) level
+        The auto-assigned unit. ``PERSON_COUNT`` (per target) for a ``COUNT`` head
+        count, ``DIMENSIONLESS`` (per target) for a boolean ``ANY`` / ``ALL``
+        result; otherwise the source token at the target (``SUM`` / ``MIN`` /
+        ``MAX``) or bare (``MEAN``, and any individual ``agg_by_p_id``)
         (:data:`UNSET_UNIT` when the source itself lacks a declaration, which the
         mandatory-units check then reports against the source).
     """
@@ -1507,36 +1488,24 @@ def unit_for_aggregation(
         agg_type=agg_type, source_is_boolean=source_is_boolean
     )
     if agg_type is AggType.COUNT:
-        return TTSIMUnit.PERSON_COUNT.PER_LEVEL(target_level)
+        base = TTSIMUnit.PERSON_COUNT
+        return base if target_level is None else base.PER_LEVEL(target_level)
     if agg_type in (AggType.ANY, AggType.ALL):
-        return TTSIMUnit.DIMENSIONLESS.PER_LEVEL(target_level)
+        base = TTSIMUnit.DIMENSIONLESS
+        return base if target_level is None else base.PER_LEVEL(target_level)
     if source_unit is UNSET_UNIT:
         return source_unit
-    if agg_type is AggType.MEAN:
-        # A per-head average belongs to the person, so a leveled source swaps its
-        # level for the person leaf. It stays level-neutral only where the resolver
-        # does — a level-neutral source, or one whose level-stripped physical part
-        # is dimensionless (a share, or a ratio whose base cancels its own
-        # denominator); a dimensionless *flow* keeps the leaf.
-        neutral = (
-            source_unit.level is None
-            or _token_physical_residual_is_dimensionless(source_unit)
-        )
-        return replace(source_unit, level=None if neutral else PERSON_LEVEL.upper())
-    if target_level == PERSON_LEVEL:
-        # An agg_by_p_id result is a person property: the person leaf for a
-        # leveled source, level-neutral for a level-neutral one.
-        return replace(
-            source_unit,
-            level=None if source_unit.level is None else PERSON_LEVEL.upper(),
-        )
+    if agg_type is AggType.MEAN or target_level is None:
+        # A MEAN is a per-head average, and an agg_by_p_id result is an individual
+        # property: both are bare, so the source's group level is dropped.
+        return replace(source_unit, level=None)
     return replace(source_unit, level=target_level.upper())
 
 
 def resolved_unit_for_aggregation(
     *,
     agg_type: AggType,
-    target_level: str,
+    target_level: str | None,
     registry: pint.UnitRegistry,
     source_unit: pint.Unit | None = None,
     source_level: str | None = None,
@@ -1547,36 +1516,36 @@ def resolved_unit_for_aggregation(
     *resolved* pint units (the physical token combined with its flow period and
     grouping level) and is where a grouping level is minted, swapped, or
     preserved. ``target_level`` is the group being aggregated *to* (read off the
-    aggregation suffix); ``source_level`` is the source column's own level
-    (``None`` for a level-less source such as an age).
+    aggregation suffix), or ``None`` for an individual (bare) result — an
+    ``agg_by_p_id`` node; ``source_level`` is the source column's own level
+    (``None`` for a bare source such as an age).
 
     - ``SUM`` / ``MIN`` / ``MAX`` results are properties of the **target** group
       whatever the source's base (GEP 10): the source level (if any) is swapped
-      for the target and a level-less source *acquires* it — an ``_hh`` sum of a
-      person income is ``CURRENCY/[hh]``, an ``_fg`` min of a bare age is
-      ``MONTHS/[fg]``. At the person target (an ``agg_by_p_id`` node) the result
-      is a person property: the person leaf for a leveled source, level-neutral
-      for a level-less one.
-    - ``MEAN`` is the exception: a per-head average belongs to the **person**
+      for the target and a bare source *acquires* it — an ``_hh`` sum of a person
+      income is ``CURRENCY/[hh]``, an ``_fg`` min of a bare age is ``MONTHS/[fg]``.
+      At an individual target (an ``agg_by_p_id`` node) the result is **bare**.
+    - ``MEAN`` is a per-head average that belongs to the **individual**
       (``MEAN = SUM / COUNT``, and leveling it to the target would break
-      ``mean · count = sum``), so the source level is swapped for the person
-      leaf; a level-less source and the dimensionless truth value of a boolean
-      (whose mean is a share) stay bare.
-    - ``COUNT`` mints a head count ``[person] / [target]`` — persons per target
-      group — independent of the source.
+      ``mean · count = sum``), so the result is **bare** — the source level, if
+      any, is dropped.
+    - ``COUNT`` mints a head count ``1 / [target]`` — persons per target group —
+      independent of the source; bare at an individual target.
     - ``ANY`` / ``ALL`` yield a boolean *at the target level* — ``1 / [target]``
-      — so a group-level indicator carries the level its name claims.
+      — so a group-level indicator carries the level its name claims; bare at an
+      individual target.
 
     ``COUNT`` and ``ANY`` / ``ALL`` are independent of the source, so their
     ``source_unit`` / ``source_level`` default to ``None`` and are ignored.
 
     Args:
         agg_type: The :class:`ttsim.tt.aggregation.AggType` of the aggregation.
-        target_level: The group level being aggregated to (e.g. ``"hh"``).
+        target_level: The group level being aggregated to (e.g. ``"hh"``), or
+            ``None`` for an individual (bare) result.
         source_unit: The source column's resolved pint unit. Required for the
             value aggregations ``SUM`` / ``MEAN`` / ``MIN`` / ``MAX``; ignored
             (and ``None``) for ``COUNT`` / ``ANY`` / ``ALL``.
-        source_level: The source column's grouping level (e.g. ``"person"``), or
+        source_level: The source column's grouping level (e.g. ``"hh"``), or
             ``None`` if the source carries no level (or is ignored, as above).
 
     Returns:
@@ -1587,12 +1556,12 @@ def resolved_unit_for_aggregation(
             unregistered grouping level.
         ValueError: If a value aggregation is requested without a ``source_unit``.
     """
-    if agg_type in (AggType.ANY, AggType.ALL):
+    if agg_type in (AggType.ANY, AggType.ALL, AggType.COUNT):
+        if target_level is None:
+            return registry.dimensionless
         return divide_by_grouping_level(
             unit=registry.dimensionless, level=target_level, registry=registry
         )
-    if agg_type is AggType.COUNT:
-        return grouping_level_count_unit(target_level=target_level, registry=registry)
     if source_unit is None:
         msg = (
             f"A value aggregation ({agg_type}) needs a source_unit; only "
@@ -1606,13 +1575,9 @@ def resolved_unit_for_aggregation(
         if source_level is None
         else source_unit * _grouping_level_unit(name=source_level, registry=registry)
     )
-    if agg_type is AggType.MEAN:
-        if source_level is None or not to_units_container(stripped):
-            return stripped
-        return divide_by_grouping_level(
-            unit=stripped, level=PERSON_LEVEL, registry=registry
-        )
-    if target_level == PERSON_LEVEL and source_level is None:
+    # A MEAN is bare (individual), and an agg_by_p_id result (``target_level is
+    # None``) is bare too: the level-stripped source stands as-is.
+    if agg_type is AggType.MEAN or target_level is None:
         return stripped
     return divide_by_grouping_level(
         unit=stripped, level=target_level, registry=registry

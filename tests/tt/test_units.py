@@ -308,7 +308,7 @@ def test_currency_agnostic_base_rejected_on_column_at_resolution():
         resolve_compositional_column_unit(
             unit=token,
             time_unit_id="m",
-            grouping_level="person",
+            grouping_level=None,
             where="A column",
             registry=REGISTRY,
         )
@@ -597,18 +597,18 @@ def test_policy_input_rejects_invalid_unit_at_decoration():
         (AggType.MEAN, TTSIMUnit.CURRENCY.PER_MONTH, TTSIMUnit.CURRENCY.PER_MONTH),
         (AggType.MIN, TTSIMUnit.CURRENCY.PER_MONTH, TTSIMUnit.CURRENCY.PER_MONTH),
         (AggType.MAX, TTSIMUnit.CURRENCY.PER_MONTH, TTSIMUnit.CURRENCY.PER_MONTH),
-        # A COUNT is a head count at its target level: the PERSON_COUNT base per
-        # target, independent of source (GEP 10). At the default person target
-        # that is PERSON_COUNT_PER_PERSON.
+        # A COUNT is a head count at its target level: the dimensionless
+        # PERSON_COUNT base per target, independent of source (GEP 10). At the
+        # default individual target that is bare PERSON_COUNT.
         (
             AggType.COUNT,
             TTSIMUnit.CURRENCY.PER_MONTH,
-            TTSIMUnit.PERSON_COUNT.PER_PERSON,
+            TTSIMUnit.PERSON_COUNT,
         ),
         # ANY / ALL yield booleans at the target level (GEP 10), independent of
-        # the source; at the person target, DIMENSIONLESS_PER_PERSON.
-        (AggType.ANY, TTSIMUnit.CURRENCY.PER_MONTH, TTSIMUnit.DIMENSIONLESS.PER_PERSON),
-        (AggType.ALL, TTSIMUnit.CURRENCY.PER_MONTH, TTSIMUnit.DIMENSIONLESS.PER_PERSON),
+        # the source; at the individual target, bare DIMENSIONLESS.
+        (AggType.ANY, TTSIMUnit.CURRENCY.PER_MONTH, TTSIMUnit.DIMENSIONLESS),
+        (AggType.ALL, TTSIMUnit.CURRENCY.PER_MONTH, TTSIMUnit.DIMENSIONLESS),
     ],
 )
 def test_unit_for_aggregation(agg_type, source_unit, expected):
@@ -622,7 +622,7 @@ def test_unit_for_aggregation_preserves_unannotated_source():
     # COUNT mints a head count and ANY/ALL a boolean, both independent of source.
     assert (
         unit_for_aggregation(source_unit=UNSET_UNIT, agg_type=AggType.COUNT)
-        == TTSIMUnit.PERSON_COUNT.PER_PERSON
+        == TTSIMUnit.PERSON_COUNT
     )
 
 
@@ -631,14 +631,14 @@ def test_unit_for_aggregation_sum_over_boolean_is_a_head_count():
     # token is a head count's — the same one a COUNT mints (GEP 10) — not a leveled
     # DIMENSIONLESS. This keeps the minter in step with the resolver, which derives
     # the SUM-over-boolean as a head count too, so the build does not reject the
-    # framework's own auto-assigned token.
+    # framework's own auto-assigned token. At the individual target it is bare.
     assert (
         unit_for_aggregation(
             source_unit=TTSIMUnit.DIMENSIONLESS,
             agg_type=AggType.SUM,
             source_is_boolean=True,
         )
-        == TTSIMUnit.PERSON_COUNT.PER_PERSON
+        == TTSIMUnit.PERSON_COUNT
     )
     assert (
         unit_for_aggregation(
@@ -1002,8 +1002,8 @@ def test_compositional_unit_resolves_to_expected_pint_unit(spelling, expected):
 
 
 def test_person_per_level_resolves_to_head_count():
-    # PERSON_COUNT_PER_BG is the old HEADCOUNT at bg: [person] / [bg], the unit a COUNT
-    # aggregation to bg mints.
+    # PERSON_COUNT_PER_BG is a head count at bg: a dimensionless 1 / [bg], the unit
+    # a COUNT aggregation to bg mints (GEP 10).
     compositional = resolve_compositional_unit(
         parse_compositional_unit("PERSON_COUNT_PER_BG"), registry=REGISTRY
     )
@@ -1103,7 +1103,7 @@ def test_cast_target_resolves_like_a_column_declaration():
         right=resolve_compositional_column_unit(
             unit=TTSIMUnit.CURRENCY.PER_MONTH,
             time_unit_id="m",
-            grouping_level="person",
+            grouping_level=None,
             where="test",
             registry=REGISTRY,
         ),
@@ -1133,7 +1133,7 @@ def test_hours_denominator_resolves_level_neutral():
         left=resolve_compositional_column_unit(
             unit=TTSIMUnit.CURRENCY.PER_HOURS,
             time_unit_id=None,
-            grouping_level="person",
+            grouping_level=None,
             where="test",
             registry=REGISTRY,
         ),
@@ -1174,7 +1174,7 @@ def test_area_denominator_resolves_level_neutral():
         left=resolve_compositional_column_unit(
             unit=TTSIMUnit.CURRENCY.PER_SQUARE_METER.PER_MONTH,
             time_unit_id="m",
-            grouping_level="person",
+            grouping_level=None,
             where="test",
             registry=REGISTRY,
         ),
@@ -1195,13 +1195,13 @@ def test_area_denominator_resolves_level_neutral():
 
 
 def test_bare_area_base_is_level_neutral():
-    # A bare SQUARE_METER base carries no grouping level (GEP 10). A dwelling area
-    # owned by a person spells PER_PERSON; bare, it stays level-neutral.
+    # A bare SQUARE_METER base carries no grouping level (GEP 10). A per-person
+    # dwelling area is bare; a household's area spells its group level.
     assert units_are_equivalent(
         left=resolve_compositional_column_unit(
             unit=TTSIMUnit.SQUARE_METER,
             time_unit_id=None,
-            grouping_level="person",
+            grouping_level=None,
             where="test",
             registry=REGISTRY,
         ),
@@ -1210,17 +1210,17 @@ def test_bare_area_base_is_level_neutral():
     )
 
 
-def test_area_base_with_person_level_carries_the_person_leaf():
-    # An owned dwelling area spells its level: SQUARE_METER_PER_PERSON resolves to
-    # meter ** 2 / [person].
+def test_area_base_with_group_level_carries_the_group_level():
+    # A household's dwelling area spells its group level: SQUARE_METER_PER_HH
+    # resolves to meter ** 2 / [hh].
     assert units_are_equivalent(
         left=resolve_compositional_column_unit(
-            unit=TTSIMUnit.SQUARE_METER.PER_PERSON,
+            unit=TTSIMUnit.SQUARE_METER.PER_HH,
             time_unit_id=None,
-            grouping_level="person",
+            grouping_level="hh",
             where="test",
             registry=REGISTRY,
         ),
-        right=parse_unit("meter ** 2 / grouping_level_person", registry=REGISTRY),
+        right=parse_unit("meter ** 2 / grouping_level_hh", registry=REGISTRY),
         registry=REGISTRY,
     )

@@ -255,9 +255,7 @@ def unit_tokens_from_tree_with_unit_annotations(
     """Each input column's *declared tag* as a compositional token, by qname.
 
     The pre-resolution :class:`CompositeUnit` the user tagged the column with. The
-    input check compares its grouping level against the declared unit's token, so
-    a per-person head-count tag (``PERSON_COUNT_PER_PERSON``) is not conflated with
-    a plain ``DIMENSIONLESS`` — the two resolve to the same dimensionless pint unit
+    input check compares its grouping level against the declared unit's token
     (GEP 10).
     """
     flat = dt.flatten_to_tree_paths(tree_with_unit_annotations)

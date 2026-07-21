@@ -568,31 +568,29 @@ def test_annotated_results_label_a_parameter_in_the_statutory_currency():
     assert labels == {"a_param_m": "SILVER_PENNY", "a_column_m": "CASTAR"}
 
 
-def test_annotated_results_preserve_a_per_person_head_count():
-    """A per-person head count (an ``agg_by_p_id`` COUNT declared
-    ``PERSON_COUNT_PER_PERSON``) resolves to ``[person] / [person]`` = dimensionless,
-    which the resolved-unit reconstruction alone would label ``DIMENSIONLESS``. The
-    label recovers the spelled head count from the declared token (GEP 10)."""
+def test_annotated_results_preserve_a_head_count():
+    """A bare head count (an ``agg_by_p_id`` COUNT declared ``PERSON_COUNT``)
+    resolves to dimensionless, which the resolved-unit reconstruction alone would
+    label ``DIMENSIONLESS``. The label recovers the spelled head count from the
+    declared token (GEP 10)."""
     system = _fresh_system()
     annotated = tree_with_unit_annotations(
         tree={"n_children": np.array([2.0, 0.0])},
         raw_results__from_input_data={},
         raw_results__params={},
         unit_checks__resolved_units={"n_children": system.registry.dimensionless},
-        unit_checks__declared_unit_tokens={
-            "n_children": TTSIMUnit.PERSON_COUNT.PER_PERSON
-        },
+        unit_checks__declared_unit_tokens={"n_children": TTSIMUnit.PERSON_COUNT},
         data_currency="CASTAR",
         computation_currency="SILVER_PENNY",
         unit_system=system,
     )
-    assert annotated["n_children"].unit == TTSIMUnit.PERSON_COUNT.PER_PERSON
+    assert annotated["n_children"].unit == TTSIMUnit.PERSON_COUNT
 
 
 def test_annotated_results_label_a_declarationless_dimensionless_target_as_such():
     """A dimensionless target with no declared token (a framework date node such as
-    ``policy_month``) keeps its ``DIMENSIONLESS`` label — the per-person head-count
-    fallback must not fire when there is no token to recover (GEP 10)."""
+    ``policy_month``) keeps its ``DIMENSIONLESS`` label — the head-count fallback
+    must not fire when there is no token to recover (GEP 10)."""
     system = _fresh_system()
     annotated = tree_with_unit_annotations(
         tree={"policy_month": np.array([6, 7])},

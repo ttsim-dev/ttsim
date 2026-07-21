@@ -54,7 +54,6 @@ from ttsim.tt.param_objects import (
     ScalarParam,
 )
 from ttsim.tt.units import (
-    PERSON_LEVEL,
     coerce_to_composite_unit,
     divide_by_grouping_level,
     parse_unit,
@@ -81,12 +80,6 @@ CASTAR_PER_MONTH = coerce_to_composite_unit(
     value="CASTAR_PER_MONTH", where="test setup"
 )
 CASTAR = coerce_to_composite_unit(value="CASTAR", where="test setup")
-CASTAR_PER_YEAR_PER_PERSON = coerce_to_composite_unit(
-    value="CASTAR_PER_YEAR_PER_PERSON", where="test setup"
-)
-CASTAR_PER_PERSON = coerce_to_composite_unit(
-    value="CASTAR_PER_PERSON", where="test setup"
-)
 
 
 # Fixture objects
@@ -471,7 +464,7 @@ def test_resolution_includes_framework_date_nodes():
 def test_dict_param_with_per_leaf_units_resolves_to_unit_tree():
     schedule = DictParam(
         value={"child_amount_y": 100.0, "max_age": 18},
-        unit={"child_amount_y": "CASTAR_PER_YEAR_PER_PERSON", "max_age": "YEARS"},
+        unit={"child_amount_y": "CASTAR_PER_YEAR", "max_age": "YEARS"},
         start_date=_START,
         end_date=_END,
     )
@@ -483,7 +476,7 @@ def test_dict_param_with_per_leaf_units_resolves_to_unit_tree():
     unit_tree = _unit_tree(resolved=resolved, qname="schedule")
     assert units_are_equivalent(
         left=unit_tree["child_amount_y"],
-        right=parse_unit("CURRENCY / year / grouping_level_person", registry=REGISTRY),
+        right=parse_unit("CURRENCY / year", registry=REGISTRY),
         registry=REGISTRY,
     )
     assert units_are_equivalent(
@@ -515,7 +508,7 @@ def test_dict_param_integer_keyed_flow_leaf_spells_its_period():
     # directly (GEP 10).
     amount_by_rank = DictParam(
         value={1: 250.0, 2: 250.0},
-        unit={1: "CASTAR_PER_MONTH_PER_PERSON", 2: "CASTAR_PER_MONTH_PER_PERSON"},
+        unit={1: "CASTAR_PER_MONTH", 2: "CASTAR_PER_MONTH"},
         start_date=_START,
         end_date=_END,
     )
@@ -526,7 +519,7 @@ def test_dict_param_integer_keyed_flow_leaf_spells_its_period():
     )
     assert units_are_equivalent(
         left=_unit_tree(resolved=resolved, qname="amount_by_rank")[1],
-        right=parse_unit("CURRENCY / month / grouping_level_person", registry=REGISTRY),
+        right=parse_unit("CURRENCY / month", registry=REGISTRY),
         registry=REGISTRY,
     )
 
@@ -551,8 +544,8 @@ def test_dict_param_mixed_periods_via_spelled_units_are_allowed():
     schedule = DictParam(
         value={"base_amount_m": 100.0, "annual_bonus_y": 50.0},
         unit={
-            "base_amount_m": "CASTAR_PER_MONTH_PER_PERSON",
-            "annual_bonus_y": "CASTAR_PER_YEAR_PER_PERSON",
+            "base_amount_m": "CASTAR_PER_MONTH",
+            "annual_bonus_y": "CASTAR_PER_YEAR",
         },
         start_date=_START,
         end_date=_END,
@@ -565,12 +558,12 @@ def test_dict_param_mixed_periods_via_spelled_units_are_allowed():
     unit_tree = _unit_tree(resolved=resolved, qname="schedule")
     assert units_are_equivalent(
         left=unit_tree["base_amount_m"],
-        right=parse_unit("CURRENCY / month / grouping_level_person", registry=REGISTRY),
+        right=parse_unit("CURRENCY / month", registry=REGISTRY),
         registry=REGISTRY,
     )
     assert units_are_equivalent(
         left=unit_tree["annual_bonus_y"],
-        right=parse_unit("CURRENCY / year / grouping_level_person", registry=REGISTRY),
+        right=parse_unit("CURRENCY / year", registry=REGISTRY),
         registry=REGISTRY,
     )
 
@@ -592,7 +585,7 @@ def test_dict_param_missing_leaf_unit_is_reported():
 def test_scalar_flow_param_resolves_via_name_suffix():
     lump_sum = ScalarParam(
         value=100.0,
-        unit=CASTAR_PER_YEAR_PER_PERSON,
+        unit=CASTAR_PER_YEAR,
         start_date=_START,
         end_date=_END,
     )
@@ -603,7 +596,7 @@ def test_scalar_flow_param_resolves_via_name_suffix():
     )
     assert units_are_equivalent(
         left=_scalar_unit(resolved=resolved, qname="lump_sum_deduction_y"),
-        right=parse_unit("CURRENCY / year / grouping_level_person", registry=REGISTRY),
+        right=parse_unit("CURRENCY / year", registry=REGISTRY),
         registry=REGISTRY,
     )
 
@@ -1041,10 +1034,10 @@ def test_ordering_a_calendar_point_against_a_duration_is_caught():
 def test_ordering_two_same_axis_calendar_points_passes():
     """Ordering two points on the same calendar axis is sound
     (``geburtsjahr <= policy_year``): identical units, so the ordering screen
-    passes without any calendar dispensation. The comparison of two level-neutral
-    points yields a person-level boolean, spelled ``PER_PERSON`` (GEP 10)."""
+    passes without any calendar dispensation. The comparison of two bare points
+    yields a bare, individual boolean (GEP 10)."""
 
-    @policy_function(unit=TTSIMUnit.DIMENSIONLESS.PER_PERSON)
+    @policy_function(unit=TTSIMUnit.DIMENSIONLESS)
     def born_by_policy_year(policy_year: int, geburtsjahr: int) -> bool:
         return geburtsjahr <= policy_year
 
@@ -1138,7 +1131,7 @@ def test_duration_time_converter_body_passes():
     def wartezeitgrenze() -> int:
         """A threshold in years."""
 
-    @policy_function(unit=TTSIMUnit.DIMENSIONLESS.PER_PERSON)
+    @policy_function(unit=TTSIMUnit.DIMENSIONLESS)
     def wartezeit_erfüllt(wartezeit: int, wartezeitgrenze: int) -> bool:
         return m_to_y(wartezeit) >= wartezeitgrenze
 
@@ -1178,7 +1171,7 @@ def test_month_date_nodes_are_cyclic_ordinals():
     ``DIMENSIONLESS`` (GEP 10), so comparing it to another ordinal is plain
     dimensionless arithmetic."""
 
-    @policy_function(unit=TTSIMUnit.DIMENSIONLESS.PER_PERSON)
+    @policy_function(unit=TTSIMUnit.DIMENSIONLESS)
     def had_birthday(policy_month: int, geburtsmonat: int) -> bool:
         return policy_month >= geburtsmonat
 
@@ -1297,7 +1290,7 @@ def test_boolean_body_with_logical_ops_passes():
     """A boolean body combining clean truth values with ``&``/``|``/``~`` is not
     a false positive: every operand is a dimensionless truth value."""
 
-    @policy_function(unit=TTSIMUnit.DIMENSIONLESS.PER_PERSON)
+    @policy_function(unit=TTSIMUnit.DIMENSIONLESS)
     def eligible(income_m: float, other_income_m: float, is_exempt: bool) -> bool:
         return ((income_m >= other_income_m) | is_exempt) & (~is_exempt)
 
@@ -1415,18 +1408,15 @@ def test_boolean_body_at_correct_group_level_passes():
 
 
 def test_boolean_body_at_wrong_group_level_is_caught():
-    """A ``DIMENSIONLESS_PER_FAM`` predicate that actually compares *person*-level
-    quantities infers ``1 / [person]`` and is caught (GEP 10) — the bug leveled
-    booleans fix.
-
-    Before, the boolean result was level-less and bypassed the suffix-level check.
-    """
+    """A ``DIMENSIONLESS_PER_FAM`` predicate that actually compares bare
+    (individual) quantities infers a bare boolean and is caught against its
+    ``1 / [fam]`` declaration (GEP 10)."""
 
     @policy_function(
         leaf_name="requirement_fulfilled_fam", unit=TTSIMUnit.DIMENSIONLESS.PER_FAM
     )
     def requirement_fulfilled_fam(income_m: float, other_income_m: float) -> bool:
-        return income_m < other_income_m  # person-level operands, but a _fam name
+        return income_m < other_income_m  # bare operands, but a _fam name
 
     with pytest.raises(UnitConsistencyError, match="requirement_fulfilled_fam"):
         fail_if_environment_units_are_inconsistent(
@@ -1440,10 +1430,10 @@ def test_boolean_body_at_wrong_group_level_is_caught():
         )
 
 
-def test_logical_combine_of_mixed_levels_downcasts_to_person():
-    """``|`` of a fam-level and a person-level indicator is a person-level boolean
-    (the combine rule), matching a ``PER_PERSON`` declaration at the unsuffixed
-    name (GEP 10)."""
+def test_logical_combine_of_mixed_levels_downcasts_to_bare():
+    """``|`` of a fam-level and a bare indicator is a bare, individual boolean
+    (the combine rule), matching a bare ``DIMENSIONLESS`` declaration at the
+    unsuffixed name (GEP 10)."""
 
     @policy_input(unit=TTSIMUnit.CURRENCY.PER_MONTH.PER_FAM)
     def income_m_fam() -> float:
@@ -1453,7 +1443,7 @@ def test_logical_combine_of_mixed_levels_downcasts_to_person():
     def threshold_m_fam() -> float:
         """Family subsistence threshold."""
 
-    @policy_function(unit=TTSIMUnit.DIMENSIONLESS.PER_PERSON)
+    @policy_function(unit=TTSIMUnit.DIMENSIONLESS)
     def eligible(
         income_m: float,
         other_income_m: float,
@@ -1475,13 +1465,13 @@ def test_logical_combine_of_mixed_levels_downcasts_to_person():
     )
 
 
-def test_python_or_of_mixed_levels_is_rewritten_and_downcasts_to_person():
+def test_python_or_of_mixed_levels_is_rewritten_and_downcasts_to_bare():
     """Author-written ``or`` combines leveled booleans exactly like ``|`` (GEP 10).
 
     Python ``or`` short-circuits through ``__bool__`` and on its own would return a
     single, uncombined operand; the dry-run rewrites ``and``/``or`` to ``&``/``|``
-    first (mirroring the array vectorizer), so a fam-level ``or`` a person-level
-    indicator downcasts to a person-level boolean, matching the ``PER_PERSON``
+    first (mirroring the array vectorizer), so a fam-level ``or`` a bare indicator
+    downcasts to a bare, individual boolean, matching the bare ``DIMENSIONLESS``
     declaration at the unsuffixed name — the ``wealth_tax.exempt_from_wealth_tax``
     shape.
     """
@@ -1494,7 +1484,7 @@ def test_python_or_of_mixed_levels_is_rewritten_and_downcasts_to_person():
     def threshold_m_fam() -> float:
         """Family subsistence threshold."""
 
-    @policy_function(unit=TTSIMUnit.DIMENSIONLESS.PER_PERSON)
+    @policy_function(unit=TTSIMUnit.DIMENSIONLESS)
     def eligible(
         income_m: float,
         other_income_m: float,
@@ -1608,8 +1598,8 @@ def test_terminal_cross_level_division_passes_with_an_explicit_opt_out():
 def test_bedarfsanteilsmethode_cross_level_share_consumed_by_multiplication_passes():
     """The GETTSIM idiom: a person's share of a group claim,
     ``(bedarf_m / bedarf_m_fam) * anspruch_m_fam``. The cross-level result
-    ``[fam]/[person]`` is consumed by the multiply, landing on a person-level flow
-    that matches the declaration — no exemption needed, and unchanged by the
+    ``[fam]`` is consumed by the multiply, landing on a bare per-person flow that
+    matches the declaration — no exemption needed, and unchanged by the
     cross-level rule (GEP 10)."""
 
     @policy_input(unit=TTSIMUnit.CURRENCY.PER_MONTH)
@@ -1671,19 +1661,19 @@ def test_cross_level_share_declared_with_concrete_content_is_caught():
 
 
 def test_head_count_at_wrong_group_level_is_still_caught():
-    """A head count carries a ``[person]`` numerator and is a declarable,
-    level-checked unit. A ``[person]/[fam]`` count declared at the kin level is
-    caught (GEP 10) — it is not mistaken for a cross-level share."""
+    """A head count is a dimensionless, declarable, level-checked unit. A
+    ``1/[fam]`` count declared at the kin level is caught (GEP 10) — it is not
+    mistaken for a cross-level share."""
 
     @policy_input(unit=TTSIMUnit.PERSON_COUNT.PER_FAM)
     def anzahl_personen_fam() -> int:
-        """A head count per family — ``[person]/[fam]``."""
+        """A head count per family — ``1/[fam]``."""
 
     @policy_function(
         leaf_name="anzahl_personen_kin", unit=TTSIMUnit.PERSON_COUNT.PER_KIN
     )
     def anzahl_personen_kin(anzahl_personen_fam: int) -> int:
-        return anzahl_personen_fam  # a [person]/[fam] count under a _kin name
+        return anzahl_personen_fam  # a 1/[fam] count under a _kin name
 
     with pytest.raises(UnitConsistencyError, match="anzahl_personen_kin"):
         fail_if_environment_units_are_inconsistent(
@@ -1741,7 +1731,7 @@ def test_cross_level_comparison_with_cast_passes():
     def age_limit_months() -> float:
         """An age threshold; a level-less duration."""
 
-    @policy_function(unit=TTSIMUnit.DIMENSIONLESS.PER_PERSON)
+    @policy_function(unit=TTSIMUnit.DIMENSIONLESS)
     def eligible(age_youngest_months_fam: float, age_limit_months: float) -> bool:
         return (
             cast_ttsim_unit(value=age_youngest_months_fam, unit=TTSIMUnit.MONTHS)
@@ -1872,7 +1862,7 @@ def test_cast_tags_a_dimensioned_literal_in_an_ordering_comparison():
     the tagged literal is still screened, so a wrong-period tag is caught
     (GEP 10)."""
 
-    @policy_function(unit=TTSIMUnit.DIMENSIONLESS.PER_PERSON)
+    @policy_function(unit=TTSIMUnit.DIMENSIONLESS)
     def poor(income_m: float) -> bool:
         return income_m < cast_ttsim_unit(
             value=1000.0, unit=TTSIMUnit.CURRENCY.PER_MONTH
@@ -1884,7 +1874,7 @@ def test_cast_tags_a_dimensioned_literal_in_an_ordering_comparison():
         unit_system=UNIT_SYSTEM,
     )
 
-    @policy_function(unit=TTSIMUnit.DIMENSIONLESS.PER_PERSON)
+    @policy_function(unit=TTSIMUnit.DIMENSIONLESS)
     def poor_buggy(income_m: float) -> bool:
         return income_m < cast_ttsim_unit(
             value=1000.0, unit=TTSIMUnit.CURRENCY.PER_YEAR
@@ -2117,11 +2107,11 @@ def test_zero_literal_and_dimensionless_self_in_ordering_pass():
     def some_rate() -> float:
         """A dimensionless share."""
 
-    @policy_function(unit=TTSIMUnit.DIMENSIONLESS.PER_PERSON)
+    @policy_function(unit=TTSIMUnit.DIMENSIONLESS)
     def has_wealth(wealth: float) -> bool:
         return wealth > 0.0  # 0 is the allowed inline literal
 
-    @policy_function(unit=TTSIMUnit.DIMENSIONLESS.PER_PERSON)
+    @policy_function(unit=TTSIMUnit.DIMENSIONLESS)
     def high_rate(some_rate: float) -> bool:
         return some_rate > 0.5  # self is dimensionless, so a bare literal is fine
 
@@ -2660,7 +2650,7 @@ def test_join_target_level_disagreeing_with_the_declaration_is_caught():
         xnp: ModuleType,
     ) -> FloatColumn:
         # bug: the gathered target is the family's [fam] amount, but the node
-        # declares a person-level one
+        # declares a bare (individual) one
         return join(
             foreign_key=p_id_recipient,
             primary_key=p_id,
@@ -3690,13 +3680,11 @@ def test_declared_unit_tokens_excludes_the_unset_sentinel():
 
 
 def test_group_sum_of_a_person_count_source_derives_person_count_per_group():
-    """Summing a per-person head count (``PERSON_COUNT_PER_PERSON``, which resolves
-    to ``[person]/[person]`` = dimensionless) to a group derives
-    ``PERSON_COUNT_PER_<group>`` (``[person]/[group]``): the source level is read
-    off its token, not the cancelled resolved unit, so the derivation matches the
-    minted token and a valid declaration passes (GEP 10)."""
+    """Summing a bare per-person head count (``PERSON_COUNT``, a dimensionless
+    count) to a group derives ``PERSON_COUNT_PER_<group>`` (``1/[group]``), so the
+    derivation matches the minted token and a valid declaration passes (GEP 10)."""
 
-    @policy_input(unit=TTSIMUnit.PERSON_COUNT.PER_PERSON)
+    @policy_input(unit=TTSIMUnit.PERSON_COUNT)
     def n_children() -> int:
         """A per-person head count."""
 
@@ -3867,7 +3855,7 @@ def test_concrete_currency_token_resolves_like_agnostic_counterpart():
     # conversion, never the dimensionality.
     threshold = ScalarParam(
         value=100.0,
-        unit=CASTAR_PER_PERSON,
+        unit=CASTAR,
         start_date=_START,
         end_date=_END,
     )
@@ -3878,7 +3866,7 @@ def test_concrete_currency_token_resolves_like_agnostic_counterpart():
     )
     assert units_are_equivalent(
         left=_scalar_unit(resolved=resolved, qname="threshold"),
-        right=parse_unit("CURRENCY / grouping_level_person", registry=REGISTRY),
+        right=parse_unit("CURRENCY", registry=REGISTRY),
         registry=REGISTRY,
     )
 
@@ -3909,7 +3897,7 @@ def test_param_mapping_object_resolves_output_axis():
     # the output is a per-person amount (GEP 10).
     schedule = _make_schedule_param(
         input_unit=CASTAR_PER_YEAR,
-        output_unit=CASTAR_PER_YEAR_PER_PERSON,
+        output_unit=CASTAR_PER_YEAR,
     )
     resolved = resolve_environment_units(
         env={"schedule": schedule},
@@ -3918,7 +3906,7 @@ def test_param_mapping_object_resolves_output_axis():
     )
     assert units_are_equivalent(
         left=_scalar_unit(resolved=resolved, qname="schedule"),
-        right=parse_unit("CURRENCY / year / grouping_level_person", registry=REGISTRY),
+        right=parse_unit("CURRENCY / year", registry=REGISTRY),
         registry=REGISTRY,
     )
 
@@ -3927,7 +3915,7 @@ def test_param_mapping_object_complete_input_axis_with_flow_output():
     # The property-tax shape: hectares in, a per-person yearly currency flow out.
     schedule = _make_schedule_param(
         input_unit=TTSIMUnit.HECTARE,
-        output_unit=CASTAR_PER_YEAR_PER_PERSON,
+        output_unit=CASTAR_PER_YEAR,
     )
     resolved = resolve_environment_units(
         env={"schedule": schedule},
@@ -3936,7 +3924,7 @@ def test_param_mapping_object_complete_input_axis_with_flow_output():
     )
     assert units_are_equivalent(
         left=_scalar_unit(resolved=resolved, qname="schedule"),
-        right=parse_unit("CURRENCY / year / grouping_level_person", registry=REGISTRY),
+        right=parse_unit("CURRENCY / year", registry=REGISTRY),
         registry=REGISTRY,
     )
 
@@ -3968,7 +3956,7 @@ def test_param_mapping_object_missing_axis_units_are_reported():
 def test_auto_generated_boolean_group_aggregate_passes_the_build():
     """Requesting the group aggregate of a boolean auto-generates a SUM node, whose
     framework-minted token must match what the resolver derives (a head count,
-    [person]/[fam]). The build accepts its own auto-assignment (GEP 10)."""
+    1/[fam]). The build accepts its own auto-assignment (GEP 10)."""
 
     @policy_function(leaf_name="is_adult", unit=TTSIMUnit.DIMENSIONLESS)
     def is_adult() -> bool:
@@ -4037,7 +4025,7 @@ def test_aggregation_without_opt_out_still_rejects_a_wrong_level():
 
 def test_count_and_sum_of_boolean_both_mint_head_counts():
     """A COUNT and a SUM over a boolean are both head counts (GEP 10): each
-    resolves to [person]/[target], not DIMENSIONLESS."""
+    resolves to a dimensionless 1/[target], not a bare DIMENSIONLESS."""
 
     @agg_by_group_function(agg_type=AggType.COUNT, unit=TTSIMUnit.PERSON_COUNT.PER_FAM)
     def number_of_individuals_fam(fam_id: int) -> int: ...
@@ -4057,8 +4045,8 @@ def test_count_and_sum_of_boolean_both_mint_head_counts():
         grouping_levels=GROUPING_LEVELS,
         unit_system=UNIT_SYSTEM,
     )
-    head_count = parse_unit(
-        "grouping_level_person / grouping_level_fam", registry=REGISTRY
+    head_count = divide_by_grouping_level(
+        unit=REGISTRY.dimensionless, level="fam", registry=REGISTRY
     )
     assert units_are_equivalent(
         left=_scalar_unit(resolved=resolved, qname="number_of_individuals_fam"),
@@ -4073,8 +4061,8 @@ def test_count_and_sum_of_boolean_both_mint_head_counts():
 
 
 def test_per_capita_division_bridges_via_head_count():
-    """A group total divided by a head count type-checks to a per-person amount:
-    (CURRENCY/[fam]) / ([person]/[fam]) = CURRENCY/[person] (GEP 10)."""
+    """A group total divided by a head count type-checks to a bare per-person
+    amount: (CURRENCY/[fam]) / (1/[fam]) = CURRENCY (GEP 10)."""
 
     @agg_by_group_function(agg_type=AggType.COUNT, unit=TTSIMUnit.PERSON_COUNT.PER_FAM)
     def number_of_individuals_fam(fam_id: int) -> int: ...
@@ -4082,7 +4070,7 @@ def test_per_capita_division_bridges_via_head_count():
     @policy_input(unit=TTSIMUnit.CURRENCY.PER_MONTH.PER_FAM)
     def rent_m_fam() -> float: ...
 
-    @policy_function(unit=TTSIMUnit.CURRENCY.PER_MONTH.PER_PERSON)
+    @policy_function(unit=TTSIMUnit.CURRENCY.PER_MONTH)
     def rent_per_head_m(rent_m_fam: float, number_of_individuals_fam: int) -> float:
         return rent_m_fam / number_of_individuals_fam
 
@@ -4096,10 +4084,10 @@ def test_per_capita_division_bridges_via_head_count():
     )
     assert units_are_equivalent(
         left=_scalar_unit(resolved=resolved, qname="rent_per_head_m"),
-        right=parse_unit("CURRENCY / month / grouping_level_person", registry=REGISTRY),
+        right=parse_unit("CURRENCY / month", registry=REGISTRY),
         registry=REGISTRY,
     )
-    # The [fam] cancels against the count's [person]/[fam] — no level mismatch.
+    # The [fam] cancels against the count's 1/[fam] — no level mismatch.
     fail_if_environment_units_are_inconsistent(
         env=env, grouping_levels=GROUPING_LEVELS, unit_system=UNIT_SYSTEM
     )
@@ -4200,9 +4188,9 @@ def test_cross_group_level_subtraction_in_a_body_is_caught():
 
 
 def test_person_versus_group_level_subtraction_in_a_body_is_caught():
-    """A person-level quantity minus a group-level one is a mismatch (GEP 10).
+    """A bare (individual) quantity minus a group-level one is a mismatch (GEP 10).
 
-    ``income_m`` carries no group suffix, so it is ``CURRENCY/month/[person]``;
+    ``income_m`` carries no group suffix, so it is bare ``CURRENCY/month``;
     ``freibetrag_m_fam`` is ``CURRENCY/month/[fam]``. Combining them needs an
     explicit per-capita reconciliation, so the bare subtraction is rejected.
     """
@@ -4233,8 +4221,8 @@ def test_person_versus_group_level_ordering_comparison_is_caught():
     """An ordering comparison across levels is a mismatch (GEP 10).
 
     The canonical "person income below a group threshold" shape: ``income_m``
-    (``[person]``) against ``schwelle_m_fam`` (``[fam]``). Ordering two
-    non-equivalent quantities is rejected — a distinct dry-run path from `<`.
+    (bare) against ``schwelle_m_fam`` (``[fam]``). Ordering two non-equivalent
+    quantities is rejected — a distinct dry-run path from `<`.
     """
 
     @policy_input(unit=TTSIMUnit.CURRENCY.PER_MONTH)
@@ -4289,7 +4277,7 @@ def test_same_group_level_addition_in_a_body_passes():
 def test_sum_over_boolean_declared_dimensionless_is_caught():
     """A SUM over a boolean is a head count; declaring it DIMENSIONLESS is wrong.
 
-    It derives `[person]/[fam]` (the persons the indicator is true for), so the
+    It derives `1/[fam]` (the persons the indicator is true for), so the
     declaration must be PERSON_COUNT_PER_FAM, not DIMENSIONLESS (GEP 10).
     """
 
@@ -4338,10 +4326,10 @@ def test_sum_of_currency_declared_with_wrong_kind_is_caught():
         )
 
 
-def test_max_over_level_carrying_source_carries_the_target_group_level():
-    """Aggregations follow the *base*, not the agg type: a MAX of a level-carrying
-    person income carries the target group level like a SUM. A `_fam` MAX is
-    CURRENCY/month/[fam], not the source [person], and is declared `..._PER_FAM`.
+def test_max_over_bare_source_carries_the_target_group_level():
+    """Aggregations follow the *base*, not the agg type: a MAX of a bare person
+    income acquires the target group level like a SUM. A `_fam` MAX is
+    CURRENCY/month/[fam], not the source's bare level, and is declared `..._PER_FAM`.
     """
 
     @policy_input(unit=TTSIMUnit.CURRENCY.PER_MONTH)
@@ -4357,7 +4345,7 @@ def test_max_over_level_carrying_source_carries_the_target_group_level():
         env=env, grouping_levels=GROUPING_LEVELS, unit_system=UNIT_SYSTEM
     )
     max_unit = _scalar_unit(resolved=resolved, qname="income_max_m_fam")
-    # The MAX carries the target [fam] level, not the source [person] level.
+    # The MAX carries the target [fam] level, not the source's bare level.
     assert units_are_equivalent(
         left=max_unit,
         right=divide_by_grouping_level(
@@ -4369,11 +4357,7 @@ def test_max_over_level_carrying_source_carries_the_target_group_level():
     )
     assert not units_are_equivalent(
         left=max_unit,
-        right=divide_by_grouping_level(
-            unit=parse_unit("CURRENCY / month", registry=REGISTRY),
-            level=PERSON_LEVEL,
-            registry=REGISTRY,
-        ),
+        right=parse_unit("CURRENCY / month", registry=REGISTRY),
         registry=REGISTRY,
     )
     # The `_PER_FAM` declaration is consistent with what it derives.

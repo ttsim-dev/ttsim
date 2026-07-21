@@ -142,9 +142,9 @@ def tree_with_unit_annotations(
             and declared is not None
             and declared != TTSIMUnit.DIMENSIONLESS
         ):
-            # A per-person head count resolves to [person]/[person] = dimensionless,
-            # so the reconstruction above loses its spelling. Recover it from the
-            # (currency-free) declared token — PERSON_COUNT_PER_PERSON (GEP 10).
+            # A bare head count resolves to the plain dimensionless unit, so the
+            # reconstruction above loses its spelling. Recover it from the
+            # (currency-free) declared token — bare PERSON_COUNT (GEP 10).
             label = declared
         tagged[qname] = UnitAnnotatedColumn(values=value, unit=label)
     return dt.unflatten_from_qnames(tagged)
