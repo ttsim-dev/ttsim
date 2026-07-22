@@ -3715,6 +3715,39 @@ def test_lookup_table_builder_with_currency_input_unit_is_rejected():
         )
 
 
+def test_schedule_builder_with_concrete_currency_axis_is_rejected():
+    """A builder's `InputOutputUnit` axes are currency-agnostic, exactly like a
+    column/function declaration: a concrete-currency axis is a definition error
+    that names the offending builder (GEP 10)."""
+
+    @param_function(
+        unit=InputOutputUnit(
+            input_unit=TTSIMUnit.CURRENCY, output_unit=CASTAR_PER_YEAR
+        ),
+        verify_units=False,
+    )
+    def levy_schedule_concrete(
+        raw_levy_schedule: RawParamValue, xnp: ModuleType
+    ) -> PiecewisePolynomialParamValue:
+        return PiecewisePolynomialParamValue(
+            thresholds=xnp.asarray([0.0, raw_levy_schedule["ceiling"]]),
+            intercepts=xnp.asarray([0.0, 0.0]),
+            coefficients=xnp.asarray([[0.0], [raw_levy_schedule["top_rate"]]]),
+        )
+
+    with pytest.raises(
+        UnitDefinitionError, match=r"levy_schedule_concrete.*concrete currency"
+    ):
+        fail_if_environment_units_are_inconsistent(
+            env={
+                "raw_levy_schedule": make_raw_levy_schedule(),
+                "levy_schedule_concrete": levy_schedule_concrete,
+            },
+            grouping_levels=GROUPING_LEVELS,
+            unit_system=UNIT_SYSTEM,
+        )
+
+
 def test_schedule_builder_declared_axes_flow_into_look_up_without_cast():
     """A lookup-table builder declares its two axes with `InputOutputUnit`;
     ``look_up`` screens its index against the input axis and yields the output at

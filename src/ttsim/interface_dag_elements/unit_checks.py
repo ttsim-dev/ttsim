@@ -1741,13 +1741,16 @@ def _resolve_schedule_declaration_axis(
 ) -> pint.Unit:
     """Resolve one axis of a schedule builder's ``InputOutputUnit`` declaration.
 
-    Both axes are currency-agnostic compositional units, resolved the parameter
-    way — spelled period and level stand as given, an omitted level is bare, and
-    the agnostic ``CURRENCY`` resolves to the ``[currency]`` dimension — so a
-    schedule's declared axis and a concrete-currency parameter or agnostic column
-    argument compare as equivalent (GEP 10).
+    Both axes are currency-agnostic compositional units, exactly like a
+    column/function declaration or a schedule-typed field: a concrete-currency
+    axis is rejected (a builder runs in the statutory currency of the policy
+    date, whichever that is), the spelled period and level stand as given, an
+    omitted level is bare, and the agnostic ``CURRENCY`` resolves to the
+    ``[currency]`` dimension — so a schedule's declared axis and a
+    concrete-currency parameter or agnostic column argument compare as equivalent
+    (GEP 10).
     """
-    return resolve_compositional_param_unit(unit=unit, registry=registry, where=where)
+    return resolve_compositional_field_unit(unit=unit, registry=registry, where=where)
 
 
 def _resolve_schedule_input_unit(
