@@ -89,10 +89,6 @@ _AREA_TOKEN_TO_PINT: dict[str, str] = {
 
 _COMPOSITIONAL_BASE_TO_PINT: dict[str, str | None] = {
     "DIMENSIONLESS": None,
-    # A person count is dimensionless (GEP 10): `PERSON_COUNT` is a readable
-    # spelling that resolves to the plain number, so `PERSON_COUNT_PER_HH`
-    # resolves to `1 / [hh]` — persons per household.
-    "PERSON_COUNT": None,
     "HOURS": "working_hour",
     "SQUARE_METER": "meter ** 2",
     "HECTARE": "hectare",
@@ -316,8 +312,8 @@ def resolve_compositional_unit(
     A currency base resolves to the agnostic :data:`CURRENCY_TOKEN` dimension —
     for dimensionality a concrete currency means exactly what ``CURRENCY`` means
     (the concrete currency drives the build-time conversion, not the check). A
-    ``PERSON_COUNT`` base resolves to the plain number (a count is dimensionless),
-    so ``PERSON_COUNT_PER_HH`` is ``1 / [hh]`` (GEP 10).
+    count is a plain number, so a head count per group is spelled
+    ``DIMENSIONLESS_PER_HH`` and resolves to ``1 / [hh]`` (GEP 10).
 
     Raises:
         UnitDefinitionError: If a level denominator names a grouping level the
@@ -537,15 +533,11 @@ class TTSIMUnit(metaclass=_UnitNamespaceMeta):
     period denominator makes it a flow (``TTSIMUnit.CURRENCY.PER_MONTH``)."""
 
     DIMENSIONLESS = CompositeUnit(base="DIMENSIONLESS")
-    """A plain dimensionless number: a share, a rate. A boolean declares
-    ``DIMENSIONLESS`` too — bare for an individual indicator, its group level
-    spelled for a group one (``TTSIMUnit.DIMENSIONLESS.PER_FAM``)."""
-
-    PERSON_COUNT = CompositeUnit(base="PERSON_COUNT")
-    """A count of persons — a readable spelling of a dimensionless quantity
-    (a count is a plain number, GEP 10). Bare it is dimensionless; with a level
-    denominator it is a head count per group: ``TTSIMUnit.PERSON_COUNT.PER_BG``
-    resolves to ``1 / [bg]`` — persons per Bedarfsgemeinschaft."""
+    """A plain dimensionless number: a share, a rate, a head count (a count is a
+    plain number, GEP 10). A boolean declares ``DIMENSIONLESS`` too. Bare for an
+    individual quantity, its group level spelled for a group one — so
+    ``TTSIMUnit.DIMENSIONLESS.PER_BG`` resolves to ``1 / [bg]``, whether that is
+    persons per Bedarfsgemeinschaft or a share belonging to one."""
 
     HOURS = CompositeUnit(base="HOURS")
     """Working hours (the isolated ``[hours]`` dimension). A period denominator
@@ -707,7 +699,7 @@ def coerce_to_composite_unit(
     """Coerce a YAML ``unit:`` value to a :class:`CompositeUnit`.
 
     A string is a *compositional* spelling (``CURRENCY_PER_MONTH_PER_BG``,
-    ``PERSON_COUNT_PER_BG``, ``SILVER_PENNY_PER_YEAR``, or a bare base
+    ``DIMENSIONLESS_PER_BG``, ``SILVER_PENNY_PER_YEAR``, or a bare base
     ``DIMENSIONLESS``) parsed into a :class:`CompositeUnit`; an already-coerced
     :class:`CompositeUnit` passes through. Everything else — pint syntax like
     ``"CURRENCY / year"`` or the former ``"null"`` spelling — is rejected.
@@ -730,7 +722,7 @@ def coerce_to_composite_unit(
     raise UnitDefinitionError(
         f"{where}: invalid unit declaration {value!r}. A unit must be a "
         f"compositional spelling (e.g. CURRENCY_PER_MONTH_PER_BG, "
-        f"PERSON_COUNT_PER_BG), a bare base (e.g. CURRENCY, SILVER_PENNY), or "
+        f"DIMENSIONLESS_PER_BG), a bare base (e.g. CURRENCY, SILVER_PENNY), or "
         f"DIMENSIONLESS for a "
         f"dimensionless quantity (GEP 10)."
     )
@@ -1229,8 +1221,7 @@ def composite_from_resolved_unit(
     - the spelled group level → the level.
 
     A count and a share both resolve to the plain number, so the reconstructed
-    base is ``DIMENSIONLESS``; a head count's ``PERSON_COUNT`` spelling is
-    recovered from the declared token at the labelling site, not here (GEP 10).
+    base is ``DIMENSIONLESS`` either way (GEP 10).
 
     Apply it to a unit already restated in the data currency
     (:func:`output_unit_in_data_currency`) so the base is a concrete currency
@@ -1436,7 +1427,7 @@ def head_count_from_boolean_sum(
     """Normalise a ``SUM`` over a boolean to a ``COUNT`` for unit purposes.
 
     Summing a boolean counts the persons its flag is true for, so its unit is a
-    head count's — the same dimensionless :attr:`TTSIMUnit.PERSON_COUNT` a
+    head count's — the same dimensionless :attr:`TTSIMUnit.DIMENSIONLESS` a
     ``COUNT`` mints. Every other aggregation keeps its own type. This is the
     single source of truth used by both the declared-token minter
     (:func:`unit_for_aggregation`) and the resolved-unit deriver
@@ -1465,9 +1456,8 @@ def unit_for_aggregation(
 
     - a **head count** — ``COUNT``, or a ``SUM`` over a boolean source
       (``source_is_boolean``, counting the persons its flag is true for) — is the
-      dimensionless :attr:`TTSIMUnit.PERSON_COUNT` per ``target_level``
-      (``PERSON_COUNT_PER_HH`` = ``1 / [hh]``); bare ``PERSON_COUNT`` at an
-      individual target;
+      dimensionless :attr:`TTSIMUnit.DIMENSIONLESS` per ``target_level``
+      (``DIMENSIONLESS_PER_HH`` = ``1 / [hh]``); bare at an individual target;
     - ``SUM`` / ``MIN`` / ``MAX`` over a non-boolean source are properties of the
       **target** group whatever the source's base (GEP 10): they keep the
       source's physical token and take the target level — spelled for a group
@@ -1480,7 +1470,7 @@ def unit_for_aggregation(
       level (``DIMENSIONLESS_PER_<target_level>``); bare at an individual target.
 
     An individual result carries no grouping level, so an ``agg_by_p_id``
-    ``COUNT`` is bare ``PERSON_COUNT`` (dimensionless).
+    ``COUNT`` is bare ``DIMENSIONLESS``.
 
     Args:
         source_unit: The source column's ``unit`` — a :class:`CompositeUnit`
@@ -1493,20 +1483,17 @@ def unit_for_aggregation(
             :func:`head_count_from_boolean_sum`).
 
     Returns:
-        The auto-assigned unit. ``PERSON_COUNT`` (per target) for a ``COUNT`` head
-        count, ``DIMENSIONLESS`` (per target) for a boolean ``ANY`` / ``ALL``
-        result; otherwise the source token at the target (``SUM`` / ``MIN`` /
-        ``MAX``) or bare (``MEAN``, and any individual ``agg_by_p_id``)
+        The auto-assigned unit. ``DIMENSIONLESS`` (per target) for a ``COUNT``
+        head count and for a boolean ``ANY`` / ``ALL`` result; otherwise the
+        source token at the target (``SUM`` / ``MIN`` / ``MAX``) or bare
+        (``MEAN``, and any individual ``agg_by_p_id``)
         (:data:`UNSET_UNIT` when the source itself lacks a declaration, which the
         mandatory-units check then reports against the source).
     """
     agg_type = head_count_from_boolean_sum(
         agg_type=agg_type, source_is_boolean=source_is_boolean
     )
-    if agg_type is AggType.COUNT:
-        base = TTSIMUnit.PERSON_COUNT
-        return base if target_level is None else base.PER_LEVEL(target_level)
-    if agg_type in (AggType.ANY, AggType.ALL):
+    if agg_type in (AggType.COUNT, AggType.ANY, AggType.ALL):
         base = TTSIMUnit.DIMENSIONLESS
         return base if target_level is None else base.PER_LEVEL(target_level)
     if source_unit is UNSET_UNIT:

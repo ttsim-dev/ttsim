@@ -164,7 +164,7 @@ def test_policy_input_with_dates():
 
 
 @agg_by_group_function(
-    agg_type=AggType.COUNT, unit=TTSIMUnit.PERSON_COUNT.PER_LEVEL("group")
+    agg_type=AggType.COUNT, unit=TTSIMUnit.DIMENSIONLESS.PER_LEVEL("group")
 )
 def aggregate_by_group_count(group_id: int) -> int:
     pass
@@ -264,7 +264,7 @@ def test_agg_by_p_id_function_requires_unit():
 # ======================================================================================
 
 
-@agg_by_p_id_function(agg_type=AggType.COUNT, unit=TTSIMUnit.PERSON_COUNT)
+@agg_by_p_id_function(agg_type=AggType.COUNT, unit=TTSIMUnit.DIMENSIONLESS)
 def aggregate_by_p_id_count(p_id: int, p_id_specifier: int) -> int:
     pass
 

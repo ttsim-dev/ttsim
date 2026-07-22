@@ -250,19 +250,18 @@ def declared_unit_tokens(
 ) -> dict[str, CompositeUnit]:
     """Each node's *declared* compositional unit token, by qname.
 
-    The pre-resolution :class:`CompositeUnit`. It lets the result labeller recover
-    a bare head count's ``PERSON_COUNT`` spelling, which resolves to the same
-    plain dimensionless unit as a share (GEP 10). Nodes with a per-leaf mapping
-    unit or no unit are omitted.
+    The pre-resolution :class:`CompositeUnit`, which spells a grouping level
+    directly where a resolved unit only carries its denominator (GEP 10). Nodes
+    with a per-leaf mapping unit or no unit are omitted.
     """
     env = specialized_environment__without_tree_logic_and_with_derived_functions
     return {
         qname: token
         for qname, obj in env.items()
         if isinstance((token := getattr(obj, "unit", UNSET_UNIT)), CompositeUnit)
-        # `UNSET_UNIT` is itself a `CompositeUnit` sentinel (a node with no
-        # declaration, e.g. a framework date parameter). Exclude it so the result
-        # labeller does not mistake it for a real token and emit `__UNSET__`.
+        # `UNSET_UNIT` is itself a `CompositeUnit` sentinel standing for the
+        # *absence* of a declaration (e.g. a framework date parameter), so it must
+        # not appear among the declared tokens.
         and token is not UNSET_UNIT
     }
 
@@ -511,7 +510,12 @@ def _suffix_grouping_level(match: re.Match[str] | None) -> str | None:
 
 
 def _has_grouping_level_numerator(unit: pint.Unit) -> bool:
-    """Whether a unit carries a grouping level as a *numerator* — a head count."""
+    """Whether a unit carries a grouping level as a *numerator*.
+
+    A level lands in the numerator when a quantity is divided by a per-group one
+    (``CURRENCY / (CURRENCY / [hh])`` → ``[hh]``), never from a head count — that
+    is ``1 / [hh]``, a denominator (GEP 10).
+    """
     return any(exponent > 0 for _, exponent in _grouping_levels_with_exponent(unit))
 
 
@@ -523,12 +527,14 @@ def _boolean_level(
     A boolean is a truth value: dimensionless apart from at most a single grouping
     level it is measured *per* — ``1 / [fam]`` for a fam-level indicator, plain
     dimensionless for a level-less share/flag. A unit with physical content
-    (currency, area, a duration) or a grouping-level *numerator* (a head count
-    ``[person] / [hh]``) is *not* a boolean. Returns ``(is_boolean, level)``; the
-    level is ``None`` for a level-less boolean.
+    (currency, area, a duration) or a grouping-level *numerator* (``[hh]``) is
+    *not* a boolean. A head count is ``1 / [hh]``, so it is indistinguishable
+    from a leveled boolean here — both are the plain number over their group
+    (GEP 10). Returns ``(is_boolean, level)``; the level is ``None`` for a
+    level-less boolean.
 
     ``1 / [fam]`` → ``(True, "fam")``; a plain ``1`` → ``(True, None)``;
-    ``EUR_PER_MONTH`` or ``[person] / [hh]`` → ``(False, None)``.
+    ``EUR_PER_MONTH`` or ``[hh]`` → ``(False, None)``.
     """
     if _has_grouping_level_numerator(unit):
         return (False, None)
@@ -653,11 +659,11 @@ def _agg_declaration_inconsistency(
     aggregation's declared unit must be **precise and complete**: it must equal the
     derived unit in full — physical kind, flow period, *and* grouping level — with
     no implicit matching of time units or levels. The author spells the group
-    level (``CURRENCY_PER_YEAR_PER_HH``, ``PERSON_COUNT_PER_BG``, ``MONTHS_PER_FG``);
+    level (``CURRENCY_PER_YEAR_PER_HH``, ``DIMENSIONLESS_PER_BG``, ``MONTHS_PER_FG``);
     an omitted level is bare (individual). So both of these are rejected:
 
     - a ``SUM`` over a boolean declared ``DIMENSIONLESS`` rather than
-      ``PERSON_COUNT_PER_BG``;
+      ``DIMENSIONLESS_PER_BG``;
     - a ``_hh`` sum declared bare ``CURRENCY_PER_YEAR`` (omitting the level) or
       ``CURRENCY_PER_YEAR_PER_BG`` (wrong level).
 
@@ -689,7 +695,7 @@ def _agg_declaration_inconsistency(
         f"aggregation derives '{derived_unit}'. An aggregation's declared unit must "
         f"match what it produces exactly — physical kind, flow period, and grouping "
         f"level; spell the group level (omit it for a bare individual result), e.g. "
-        f"`PERSON_COUNT_PER_<level>` for a count, the source's currency and period "
+        f"`DIMENSIONLESS_PER_<level>` for a count, the source's currency and period "
         f"for a sum of money (GEP 10)."
     )
 
@@ -1043,9 +1049,9 @@ def fail_if_input_units_are_inconsistent(
                 f"one (GEP 10)."
             )
             continue
-        # A count (``PERSON_COUNT``) and a share both resolve to the plain number,
-        # and a per-person amount and a level-neutral rate are both bare — they are
-        # the same unit (GEP 10), so the resolved unit's denominator faithfully
+        # A count and a share are both the plain number, and a per-person amount
+        # and a level-neutral rate are both bare — they are the same unit
+        # (GEP 10), so the resolved unit's denominator faithfully
         # gives the grouping level. Prefer the declared tokens where present (they
         # spell the level directly), falling back to the resolved denominator.
         tag_token = (input_unit_tokens or {}).get(qname)
@@ -2325,6 +2331,34 @@ class _UnitCheckQuantity:
         # same way), so a body using the builtin `round(x)` keeps its unit.
         return self._wrap(self.q)
 
+    def astype(
+        self,
+        dtype: Any,  # noqa: ANN401
+        *args: Any,  # noqa: ANN401, ARG002
+        **kwargs: Any,  # noqa: ANN401, ARG002
+    ) -> _UnitCheckQuantity:
+        """The unit check's ``astype``, whose effect on the unit follows the dtype:
+
+        - a real numeric dtype (integer or floating) re-types the magnitude only,
+          so the unit is preserved
+          (this is how a lookup table is indexed off a float column,
+          ``xnp.floor(age).astype(int)``);
+        - ``bool`` yields an indicator, so the physical dimension is dropped and
+          only the grouping level survives — a per-``[fam]`` amount becomes a
+          per-``[fam]`` truth value;
+        - anything else (a datetime, a string, a complex number) has no unit
+          reading here, so the body is left un-evaluable and must opt out.
+
+        ``dtype`` is required but not positional-only, since both backends accept
+        the keyword form; the remaining options only affect the magnitude.
+        """
+        kind = numpy.dtype(dtype).kind
+        if kind == "b":
+            return self._controlled_bool_at(level=_unit_level_denominator(self.q.units))
+        if kind not in "iuf":
+            raise _UnsupportedAstypeError(dtype)
+        return self._wrap(self.q)
+
 
 def _wrap_for_unit_check(
     value: Any,  # noqa: ANN401
@@ -2555,6 +2589,13 @@ _STRUCTURED_VALUE_FORBIDDEN_OPS: Mapping[str, str] = {
 }
 
 
+class _UnsupportedAstypeError(Exception):
+    """A cast whose dtype has no unit reading (a datetime, a string)."""
+
+    def __init__(self, dtype: Any) -> None:  # noqa: ANN401
+        super().__init__(f"astype({dtype!r}) has no unit reading")
+
+
 def _structured_value_forbidden_op(op: str) -> Callable[..., Any]:
     def method(self: _UnitCheckStructuredValue, *_a: Any, **_k: Any) -> Any:  # noqa: ANN401
         return self._raise_used_as_quantity(op)
@@ -2562,9 +2603,19 @@ def _structured_value_forbidden_op(op: str) -> Callable[..., Any]:
     return method
 
 
-for _dunder, _op in _STRUCTURED_VALUE_FORBIDDEN_OPS.items():
-    setattr(_UnitCheckStructuredValue, _dunder, _structured_value_forbidden_op(_op))
-del _dunder, _op
+def _install_structured_value_forbidden_ops() -> None:
+    """Bind each dunder in `_STRUCTURED_VALUE_FORBIDDEN_OPS` to a raising stub.
+
+    The table covers arithmetic, ordering, equality, logical and truth-value uses.
+    A structured value is a container, not a quantity, so any of them is an
+    authoring error the unit check reports against the operator it was used with —
+    cast the pluck or opt out (GEP 10).
+    """
+    for dunder, op in _STRUCTURED_VALUE_FORBIDDEN_OPS.items():
+        setattr(_UnitCheckStructuredValue, dunder, _structured_value_forbidden_op(op))
+
+
+_install_structured_value_forbidden_ops()
 
 
 class _UnitCheckSchedule:
@@ -2722,9 +2773,9 @@ def _cast_ttsim_unit_for_unit_check(
     The cast is total: whatever flowed in — a quantity at another unit or
     level, a bare literal, an attribute plucked off a structured value — the
     stand-in flowing out carries the stated unit, resolved like a declaration
-    (currency-agnostic; an omitted level is level-neutral, the person level
-    spelled ``PER_PERSON``). The result stays on the body's
-    path: a ``_UnitCheckQuantity`` input keeps its explorer, and any other input
+    (currency-agnostic; an omitted level is bare — both per-person and
+    level-neutral). The result stays on the body's path: a
+    ``_UnitCheckQuantity`` input keeps its explorer, and any other input
     (a bare literal) is wrapped with the body's explorer (``explorer_holder``),
     so a cast literal orders and combines like any quantity — ``max(x,
     cast_ttsim_unit(0, …))`` screens instead of reading as un-evaluable. A malformed

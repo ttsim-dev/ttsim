@@ -23,14 +23,13 @@ from ttsim.interface_dag_elements.policy_environment import (
 from ttsim.tt import (
     GroupCreationFunction,
     PolicyInput,
-    Unit,
+    TTSIMUnit,
     policy_function,
 )
 from ttsim.tt.column_objects_param_function import (
     AggByGroupFunction,
     AggByPIDFunction,
 )
-from ttsim.tt.currencies import statutory_currency_for_date
 from ttsim.tt.type_resolution import scalar_type_to_array_type
 from ttsim.tt.vectorization import (
     TranslateToVectorizableError,
@@ -356,8 +355,10 @@ for year in range(1990, 2023):
                         root=middle_earth.ROOT_PATH
                     ),
                     policy_date=datetime.date(year=year, month=1, day=1),
-                    computation_currency=statutory_currency_for_date(
-                        datetime.date(year=year, month=1, day=1)
+                    computation_currency=(
+                        middle_earth.UNIT_SYSTEM.statutory_currency_for_date(
+                            datetime.date(year=year, month=1, day=1)
+                        )
                     ),
                 ),
             ).items()
@@ -559,6 +560,7 @@ def test_orc_hunting_bounty_amount(backend, xnp):
     """Test orc hunting bounty function with conditional logic."""
     # Test original function on scalar input
     # ==============================================================================
+    age = 30
     small_orcs_hunted = 5
     large_orcs_hunted = 2
     parent_is_noble = True
@@ -570,6 +572,7 @@ def test_orc_hunting_bounty_amount(backend, xnp):
             "large_orc": type(
                 "BountyPerLargeOrc", (), {"noble_hunter": 50, "peasant_hunter": 30}
             )(),
+            "minimum_hunter_age": 20,
         },
     )()
 
@@ -578,6 +581,7 @@ def test_orc_hunting_bounty_amount(backend, xnp):
     )
 
     exp_noble = amount_without_topup.function(
+        age=age,
         small_orcs_hunted=small_orcs_hunted,
         large_orcs_hunted=large_orcs_hunted,
         parent_is_noble=parent_is_noble,
@@ -586,6 +590,7 @@ def test_orc_hunting_bounty_amount(backend, xnp):
     assert exp_noble == 150.0  # 5*10 + 2*50
 
     exp_peasant = amount_without_topup.function(
+        age=age,
         small_orcs_hunted=small_orcs_hunted,
         large_orcs_hunted=large_orcs_hunted,
         parent_is_noble=False,
@@ -596,12 +601,14 @@ def test_orc_hunting_bounty_amount(backend, xnp):
     # Create array inputs and assert that original function raises error
     # ==============================================================================
     shape = (10, 2)
+    age = xnp.full(shape, age)
     small_orcs_hunted = xnp.full(shape, small_orcs_hunted)
     large_orcs_hunted = xnp.full(shape, large_orcs_hunted)
     parent_is_noble = xnp.full(shape, parent_is_noble)
 
     with pytest.raises(ValueError, match="truth value of an array with more than"):
         amount_without_topup.function(
+            age=age,
             small_orcs_hunted=small_orcs_hunted,
             large_orcs_hunted=large_orcs_hunted,
             parent_is_noble=parent_is_noble,
@@ -616,6 +623,7 @@ def test_orc_hunting_bounty_amount(backend, xnp):
         xnp=xnp,
     )
     got = converted(
+        age=age,
         small_orcs_hunted=small_orcs_hunted,
         large_orcs_hunted=large_orcs_hunted,
         parent_is_noble=parent_is_noble,
@@ -623,19 +631,21 @@ def test_orc_hunting_bounty_amount(backend, xnp):
     )
     assert_array_equal(got, xnp.full(shape, exp_noble))
 
-    # Test mixed noble/peasant conditions
+    # Test mixed noble/peasant conditions and an under-age hunter
+    age = xnp.array([[30, 30], [30, 15]])
     parent_is_noble = xnp.array([[True, False], [False, True]])
     small_orcs_hunted = xnp.array([[5, 5], [5, 5]])
     large_orcs_hunted = xnp.array([[2, 2], [2, 2]])
 
     got_mixed = converted(
+        age=age,
         small_orcs_hunted=small_orcs_hunted,
         large_orcs_hunted=large_orcs_hunted,
         parent_is_noble=parent_is_noble,
         bounty_per_orc=bounty_per_orc,
     )
-    # Expected: noble=150, peasant=110, peasant=110, noble=150
-    expected_mixed = xnp.array([[150.0, 110.0], [110.0, 150.0]])
+    # Expected: noble=150, peasant=110, peasant=110, noble but under age=0
+    expected_mixed = xnp.array([[150.0, 110.0], [110.0, 0.0]])
     assert_array_equal(got_mixed, expected_mixed)
 
 
@@ -690,7 +700,7 @@ def test_lambda_functions_disallowed_make_vectorizable_source(xnp):
 
 
 def test_make_vectorizable_policy_func(backend, xnp):
-    @policy_function(unit=Unit.DIMENSIONLESS)
+    @policy_function(unit=TTSIMUnit.DIMENSIONLESS)
     def alter_bis_24(alter: int) -> bool:
         return alter <= 24
 
@@ -722,7 +732,7 @@ def test_make_vectorizable_nested_func():
     assert_array_equal(got, exp)
 
 
-@policy_function(unit=Unit.DIMENSIONLESS)
+@policy_function(unit=TTSIMUnit.DIMENSIONLESS)
 def scalar_func(x: int) -> int:
     if x < 0:
         return 0
@@ -730,7 +740,7 @@ def scalar_func(x: int) -> int:
         return x * 2
 
 
-@policy_function(vectorization_strategy="not_required", unit=Unit.DIMENSIONLESS)
+@policy_function(vectorization_strategy="not_required", unit=TTSIMUnit.DIMENSIONLESS)
 def already_vectorized_func(x: IntColumn, xnp: ModuleType) -> IntColumn:
     return xnp.where(x < 0, 0, x * 2)
 

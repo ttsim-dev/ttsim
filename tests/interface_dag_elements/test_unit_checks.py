@@ -59,7 +59,13 @@ from ttsim.tt.units import (
     parse_unit,
     units_are_equivalent,
 )
-from ttsim.typing import BoolColumn, FloatColumn, IntColumn, RawParamValue
+from ttsim.typing import (
+    BoolColumn,
+    DatetimeColumn,
+    FloatColumn,
+    IntColumn,
+    RawParamValue,
+)
 from ttsim.unit_converters import m_to_y, per_m_to_per_y, y_to_m
 
 if TYPE_CHECKING:
@@ -879,6 +885,127 @@ def test_builtin_round_preserves_the_unit_so_a_mismatch_is_caught():
         )
 
 
+def test_astype_is_unit_preserving_and_checks_cleanly():
+    """``astype`` re-types the magnitude and leaves the unit alone, so a body
+    flooring a monthly flow and casting it to int keeps that unit."""
+
+    @policy_function(
+        unit=TTSIMUnit.CURRENCY.PER_MONTH, vectorization_strategy="not_required"
+    )
+    def floored_income_m(income_m: FloatColumn, xnp: ModuleType) -> IntColumn:
+        return xnp.floor(income_m).astype(int)
+
+    fail_if_environment_units_are_inconsistent(
+        env={"income_m": income_m, "floored_income_m": floored_income_m},
+        grouping_levels=GROUPING_LEVELS,
+        unit_system=UNIT_SYSTEM,
+    )
+
+
+def test_astype_to_bool_drops_the_physical_dimension():
+    """A cast to ``bool`` yields an indicator, so a body casting a monthly flow
+    but declaring it as currency is caught."""
+
+    @policy_function(
+        unit=TTSIMUnit.CURRENCY.PER_MONTH, vectorization_strategy="not_required"
+    )
+    def has_income_mislabelled_m(
+        income_m: FloatColumn,
+        xnp: ModuleType,  # noqa: ARG001
+    ) -> BoolColumn:
+        return income_m.astype(bool)
+
+    with pytest.raises(
+        UnitConsistencyError, match=r"has_income_mislabelled_m.*dimensionless"
+    ):
+        fail_if_environment_units_are_inconsistent(
+            env={
+                "income_m": income_m,
+                "has_income_mislabelled_m": has_income_mislabelled_m,
+            },
+            grouping_levels=GROUPING_LEVELS,
+            unit_system=UNIT_SYSTEM,
+        )
+
+
+def test_astype_to_bool_is_a_dimensionless_indicator():
+    """A cast to ``bool`` declared ``DIMENSIONLESS`` checks cleanly."""
+
+    @policy_function(
+        unit=TTSIMUnit.DIMENSIONLESS, vectorization_strategy="not_required"
+    )
+    def has_income(
+        income_m: FloatColumn,
+        xnp: ModuleType,  # noqa: ARG001
+    ) -> BoolColumn:
+        return income_m.astype(bool)
+
+    fail_if_environment_units_are_inconsistent(
+        env={"income_m": income_m, "has_income": has_income},
+        grouping_levels=GROUPING_LEVELS,
+        unit_system=UNIT_SYSTEM,
+    )
+
+
+def test_astype_to_an_unsupported_dtype_demands_an_opt_out():
+    """A dtype with no unit reading leaves the body un-evaluable."""
+
+    @policy_function(
+        unit=TTSIMUnit.CURRENCY.PER_MONTH, vectorization_strategy="not_required"
+    )
+    def as_dates_m(
+        income_m: FloatColumn,
+        xnp: ModuleType,  # noqa: ARG001
+    ) -> DatetimeColumn:
+        return income_m.astype("datetime64[D]")
+
+    with pytest.raises(UnitConsistencyError, match="verify_units=False"):
+        fail_if_environment_units_are_inconsistent(
+            env={"income_m": income_m, "as_dates_m": as_dates_m},
+            grouping_levels=GROUPING_LEVELS,
+            unit_system=UNIT_SYSTEM,
+        )
+
+
+def test_astype_accepts_the_keyword_dtype_form():
+    """Both backends accept `.astype(dtype=...)`, so the unit check must too."""
+
+    @policy_function(
+        unit=TTSIMUnit.CURRENCY.PER_MONTH, vectorization_strategy="not_required"
+    )
+    def floored_income_kwarg_m(income_m: FloatColumn, xnp: ModuleType) -> IntColumn:
+        return xnp.floor(income_m).astype(dtype=int)
+
+    fail_if_environment_units_are_inconsistent(
+        env={"income_m": income_m, "floored_income_kwarg_m": floored_income_kwarg_m},
+        grouping_levels=GROUPING_LEVELS,
+        unit_system=UNIT_SYSTEM,
+    )
+
+
+def test_astype_preserves_the_unit_so_a_mismatch_is_caught():
+    """``astype`` is unit-preserving, so a body flooring a monthly flow but
+    declaring a yearly one is still caught."""
+
+    @policy_function(
+        unit=TTSIMUnit.CURRENCY.PER_YEAR, vectorization_strategy="not_required"
+    )
+    def floored_income_mislabelled_y(
+        income_m: FloatColumn, xnp: ModuleType
+    ) -> IntColumn:
+        return xnp.floor(income_m).astype(int)
+
+    with pytest.raises(UnitConsistencyError, match="floored_income_mislabelled_y"):
+        fail_if_environment_units_are_inconsistent(
+            env={
+                "income_m": income_m,
+                "floored_income_mislabelled_y": floored_income_mislabelled_y,
+            },
+            grouping_levels=GROUPING_LEVELS,
+            unit_system=UNIT_SYSTEM,
+        )
+
+
 # Calendar points vs durations (GEP 10, S1)
 
 
@@ -1665,12 +1792,12 @@ def test_head_count_at_wrong_group_level_is_still_caught():
     ``1/[fam]`` count declared at the kin level is caught (GEP 10) — it is not
     mistaken for a cross-level share."""
 
-    @policy_input(unit=TTSIMUnit.PERSON_COUNT.PER_FAM)
+    @policy_input(unit=TTSIMUnit.DIMENSIONLESS.PER_FAM)
     def anzahl_personen_fam() -> int:
         """A head count per family — ``1/[fam]``."""
 
     @policy_function(
-        leaf_name="anzahl_personen_kin", unit=TTSIMUnit.PERSON_COUNT.PER_KIN
+        leaf_name="anzahl_personen_kin", unit=TTSIMUnit.DIMENSIONLESS.PER_KIN
     )
     def anzahl_personen_kin(anzahl_personen_fam: int) -> int:
         return anzahl_personen_fam  # a 1/[fam] count under a _kin name
@@ -3649,21 +3776,21 @@ def test_verify_units_false_still_checks_consumers_against_declared_unit():
 # Aggregation decorators
 
 
-def test_count_aggregation_declares_person_per_group():
-    """A COUNT declares its head-count unit explicitly — ``PERSON_COUNT_PER_<group>``
+def test_count_aggregation_declares_head_count_per_group():
+    """A COUNT declares its head-count unit explicitly — ``DIMENSIONLESS_PER_<group>``
     (GEP 10)."""
 
-    @agg_by_group_function(agg_type=AggType.COUNT, unit=TTSIMUnit.PERSON_COUNT.PER_FAM)
+    @agg_by_group_function(agg_type=AggType.COUNT, unit=TTSIMUnit.DIMENSIONLESS.PER_FAM)
     def number_of_individuals_fam(fam_id: int) -> int:
         """A head count per family."""
 
-    assert number_of_individuals_fam.unit == TTSIMUnit.PERSON_COUNT.PER_FAM
+    assert number_of_individuals_fam.unit == TTSIMUnit.DIMENSIONLESS.PER_FAM
 
 
 def test_declared_unit_tokens_excludes_the_unset_sentinel():
-    """``UNSET_UNIT`` is itself a ``CompositeUnit`` sentinel for a node with no
-    declaration; it must not appear among the declared tokens, or the result
-    labeller would mistake it for a real unit and emit ``__UNSET__`` (GEP 10)."""
+    """``UNSET_UNIT`` is itself a ``CompositeUnit`` sentinel standing for the
+    *absence* of a declaration, so the mapping holds only real declarations and
+    leaves such a node out entirely (GEP 10)."""
 
     @policy_function(unit=TTSIMUnit.DIMENSIONLESS)
     def flag(unannotated_income_y: float) -> bool:
@@ -3679,16 +3806,16 @@ def test_declared_unit_tokens_excludes_the_unset_sentinel():
     assert tokens["flag"] == TTSIMUnit.DIMENSIONLESS
 
 
-def test_group_sum_of_a_person_count_source_derives_person_count_per_group():
-    """Summing a bare per-person head count (``PERSON_COUNT``, a dimensionless
-    count) to a group derives ``PERSON_COUNT_PER_<group>`` (``1/[group]``), so the
-    derivation matches the minted token and a valid declaration passes (GEP 10)."""
+def test_group_sum_of_a_head_count_source_derives_head_count_per_group():
+    """Summing a bare per-person head count to a group derives
+    ``DIMENSIONLESS_PER_<group>`` (``1/[group]``), so the derivation matches the
+    minted token and a valid declaration passes (GEP 10)."""
 
-    @policy_input(unit=TTSIMUnit.PERSON_COUNT)
+    @policy_input(unit=TTSIMUnit.DIMENSIONLESS)
     def n_children() -> int:
         """A per-person head count."""
 
-    @agg_by_group_function(agg_type=AggType.SUM, unit=TTSIMUnit.PERSON_COUNT.PER_FAM)
+    @agg_by_group_function(agg_type=AggType.SUM, unit=TTSIMUnit.DIMENSIONLESS.PER_FAM)
     def n_children_fam(n_children: int, fam_id: int) -> int:
         """The family's total head count."""
 
@@ -3999,7 +4126,7 @@ def test_opted_out_aggregation_declares_its_own_level():
         right=parse_unit("CURRENCY / grouping_level_kin", registry=REGISTRY),
         registry=REGISTRY,
     )
-    # No declared-vs-derived rejection despite the MEAN deriving the person level.
+    # No declared-vs-derived rejection: the MEAN derives the bare individual unit.
     fail_if_environment_units_are_inconsistent(
         env=env, grouping_levels=GROUPING_LEVELS, unit_system=UNIT_SYSTEM
     )
@@ -4027,7 +4154,7 @@ def test_count_and_sum_of_boolean_both_mint_head_counts():
     """A COUNT and a SUM over a boolean are both head counts (GEP 10): each
     resolves to a dimensionless 1/[target], not a bare DIMENSIONLESS."""
 
-    @agg_by_group_function(agg_type=AggType.COUNT, unit=TTSIMUnit.PERSON_COUNT.PER_FAM)
+    @agg_by_group_function(agg_type=AggType.COUNT, unit=TTSIMUnit.DIMENSIONLESS.PER_FAM)
     def number_of_individuals_fam(fam_id: int) -> int: ...
 
     @policy_input(unit=TTSIMUnit.DIMENSIONLESS)
@@ -4064,7 +4191,7 @@ def test_per_capita_division_bridges_via_head_count():
     """A group total divided by a head count type-checks to a bare per-person
     amount: (CURRENCY/[fam]) / (1/[fam]) = CURRENCY (GEP 10)."""
 
-    @agg_by_group_function(agg_type=AggType.COUNT, unit=TTSIMUnit.PERSON_COUNT.PER_FAM)
+    @agg_by_group_function(agg_type=AggType.COUNT, unit=TTSIMUnit.DIMENSIONLESS.PER_FAM)
     def number_of_individuals_fam(fam_id: int) -> int: ...
 
     @policy_input(unit=TTSIMUnit.CURRENCY.PER_MONTH.PER_FAM)
@@ -4274,11 +4401,11 @@ def test_same_group_level_addition_in_a_body_passes():
 # Aggregations: declared unit must match the derived unit (GEP 10)
 
 
-def test_sum_over_boolean_declared_dimensionless_is_caught():
-    """A SUM over a boolean is a head count; declaring it DIMENSIONLESS is wrong.
-
-    It derives `1/[fam]` (the persons the indicator is true for), so the
-    declaration must be PERSON_COUNT_PER_FAM, not DIMENSIONLESS (GEP 10).
+def test_sum_over_boolean_declared_bare_dimensionless_is_caught():
+    """A SUM over a boolean is a head count, so it belongs to the group it counts
+    within: it derives `1/[fam]` (the persons the indicator is true for). The
+    declaration must spell that level — `DIMENSIONLESS_PER_FAM`, not the bare
+    `DIMENSIONLESS` (GEP 10).
     """
 
     @policy_input(unit=TTSIMUnit.DIMENSIONLESS)
@@ -4295,11 +4422,11 @@ def test_sum_over_boolean_declared_dimensionless_is_caught():
         )
 
 
-def test_sum_over_boolean_declared_person_per_group_passes():
+def test_sum_over_boolean_declared_head_count_per_group_passes():
     @policy_input(unit=TTSIMUnit.DIMENSIONLESS)
     def adult() -> bool: ...
 
-    @agg_by_group_function(agg_type=AggType.SUM, unit=TTSIMUnit.PERSON_COUNT.PER_FAM)
+    @agg_by_group_function(agg_type=AggType.SUM, unit=TTSIMUnit.DIMENSIONLESS.PER_FAM)
     def number_of_adults_fam(adult: bool, fam_id: int) -> int: ...
 
     fail_if_environment_units_are_inconsistent(

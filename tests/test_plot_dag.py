@@ -23,7 +23,7 @@ from ttsim.plot.dag.tt import _get_tt_dag_with_node_metadata
 from ttsim.tt import (
     PolicyInput,
     ScalarParam,
-    Unit,
+    TTSIMUnit,
     param_function,
     policy_function,
 )
@@ -74,7 +74,7 @@ SOME_PARAM_OBJECT = ScalarParam(
     value=111,
     start_date=datetime.date(2025, 1, 1),
     end_date=datetime.date(2025, 12, 31),
-    unit=Unit.DIMENSIONLESS,
+    unit=TTSIMUnit.DIMENSIONLESS,
     name={"de": ""},
     description={"de": ""},
 )
@@ -83,7 +83,7 @@ SOME_PARAM_OBJECT = ScalarParam(
 @param_function(
     start_date="2025-01-01",
     end_date="2025-12-31",
-    unit=Unit.DIMENSIONLESS,
+    unit=TTSIMUnit.DIMENSIONLESS,
 )
 def some_param_function() -> int:
     return 1
@@ -92,7 +92,7 @@ def some_param_function() -> int:
 @policy_function(
     start_date="2025-01-01",
     end_date="2025-12-31",
-    unit=Unit.DIMENSIONLESS,
+    unit=TTSIMUnit.DIMENSIONLESS,
 )
 def some_policy_function() -> int:
     return 1
@@ -101,7 +101,7 @@ def some_policy_function() -> int:
 @policy_function(
     start_date="2025-01-01",
     end_date="2025-12-31",
-    unit=Unit.DIMENSIONLESS,
+    unit=TTSIMUnit.DIMENSIONLESS,
 )
 def some_policy_function_depending_on_derived_param(some_param_y: float) -> float:
     return some_param_y + 1
@@ -325,10 +325,10 @@ def test_input_dependent_interface_functions_with_same_path_have_same_docstring(
             {"housing_benefits__income__amount_m"},
             [
                 "housing_benefits__amount_m_fam",
+                "housing_benefits__benefit_per_member_m",
                 "housing_benefits__eligibility__requirement_fulfilled_fam",
                 "housing_benefits__income__amount_m_fam",
                 "housing_benefits__income__amount_m",
-                "housing_benefits__income__amount_per_member_m_fam",
             ],
         ),
         (
@@ -361,6 +361,7 @@ def test_node_selection(selection_type, selection_depth, primary_nodes, expected
         selection_type=selection_type,
         selection_depth=selection_depth,
         include_params=True,
+        unit_system=middle_earth.UNIT_SYSTEM,
     )
     assert set(dag.nodes()) == set(expected_nodes)
 
@@ -442,6 +443,7 @@ def test_params_are_removed_from_dag(
         policy_date_str="2025-01-01",
         policy_environment=policy_environment,
         include_params=include_params,
+        unit_system=middle_earth.UNIT_SYSTEM,
     )
     assert set(dag.nodes()) == set(expected_nodes)
 
@@ -451,6 +453,7 @@ def test_orphaned_dates_are_removed_from_dag():
         root=middle_earth.ROOT_PATH,
         policy_date_str="2025-01-01",
         include_params=True,
+        unit_system=middle_earth.UNIT_SYSTEM,
     )
     assert "evaluation_day" not in dag.nodes()
     assert "policy_day" not in dag.nodes()
@@ -461,6 +464,7 @@ def test_input_data_overrides_nodes_in_plotting_dag():
         main_target=MainTarget.specialized_environment_for_plotting_and_templates.complete_tt_dag,
         policy_date_str="2025-01-01",
         orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+        unit_system=middle_earth.UNIT_SYSTEM,
         tt_targets=TTTargets.qname({"wealth_tax__amount_y"}),
         labels=Labels.input_columns({"wealth_tax__exempt_from_wealth_tax"}),
         include_warn_nodes=False,
@@ -481,6 +485,7 @@ def test_can_create_template_with_selection_and_input_data_from_tt():
         selection_type="ancestors",
         selection_depth=1,
         node_colormap=middle_earth.COLORMAP,
+        unit_system=middle_earth.UNIT_SYSTEM,
     )
 
 
@@ -498,6 +503,7 @@ def test_can_pass_plotly_kwargs_to_tt():
         height=800,
         showlegend=True,
         hovermode="closest",
+        unit_system=middle_earth.UNIT_SYSTEM,
     )
 
 
@@ -511,6 +517,7 @@ def test_fail_if_selection_type_is_all_paths_and_less_than_two_primary_nodes():
             selection_type="all_paths",
             policy_date_str="2025-01-01",
             node_colormap=middle_earth.COLORMAP,
+            unit_system=middle_earth.UNIT_SYSTEM,
         )
 
 
@@ -523,6 +530,7 @@ def test_fail_if_invalid_selection_type():
             selection_type="invalid_selection_type",  # ty: ignore[invalid-argument-type]
             policy_date_str="2025-01-01",
             node_colormap=middle_earth.COLORMAP,
+            unit_system=middle_earth.UNIT_SYSTEM,
         )
 
 
@@ -544,6 +552,7 @@ def test_node_colormap_functionality():
         primary_nodes={"payroll_tax__amount_y"},
         policy_date_str="2025-01-01",
         node_colormap=top_level_colormap,
+        unit_system=middle_earth.UNIT_SYSTEM,
     )
     assert fig_tt is not None
 
@@ -577,6 +586,7 @@ def test_node_colormap_functionality():
         primary_nodes={"payroll_tax__amount_y"},
         policy_date_str="2025-01-01",
         node_colormap=hierarchical_colormap,
+        unit_system=middle_earth.UNIT_SYSTEM,
     )
     assert fig_tt_hierarchical is not None
 
@@ -601,6 +611,7 @@ def test_node_colormap_fallback_to_default():
         primary_nodes={"payroll_tax__amount_y"},
         policy_date_str="2025-01-01",
         node_colormap=partial_colormap,
+        unit_system=middle_earth.UNIT_SYSTEM,
     )
     assert fig is not None
 
@@ -720,6 +731,7 @@ def test_node_colormap_glob_patterns_in_plot():
         policy_date_str="2025-01-01",
         selection_type="neighbors",
         node_colormap=glob_colormap,
+        unit_system=middle_earth.UNIT_SYSTEM,
     )
     assert fig is not None
 
@@ -825,6 +837,7 @@ def test_node_colormap_doublestar_in_plot():
         selection_type="ancestors",
         selection_depth=2,
         node_colormap=doublestar_colormap,
+        unit_system=middle_earth.UNIT_SYSTEM,
     )
     assert fig is not None
 
@@ -880,6 +893,7 @@ def test_node_colormap_qname_strings():
         policy_date_str="2025-01-01",
         selection_type="neighbors",
         node_colormap=qname_colormap,
+        unit_system=middle_earth.UNIT_SYSTEM,
     )
     assert fig is not None
 
@@ -901,5 +915,6 @@ def test_node_colormap_qname_and_tuple_mixed():
         selection_type="ancestors",
         selection_depth=2,
         node_colormap=mixed_colormap,
+        unit_system=middle_earth.UNIT_SYSTEM,
     )
     assert fig is not None

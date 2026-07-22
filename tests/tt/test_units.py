@@ -114,7 +114,6 @@ def test_hectare_is_an_area():
 _BASE_SPELLINGS = [
     "CURRENCY",
     "DIMENSIONLESS",
-    "PERSON_COUNT",
     "HOURS",
     "SQUARE_METER",
     "HECTARE",
@@ -134,12 +133,25 @@ def test_coerce_to_composite_unit_round_trips_base_spellings(spelling):
     assert str(token) == spelling
 
 
+def test_person_count_is_not_a_base_spelling():
+    """A head count is the plain dimensionless unit, so ``PERSON_COUNT`` is not a
+    base of its own — declare ``DIMENSIONLESS`` (per group level) instead."""
+    with pytest.raises(UnitDefinitionError, match="Unknown compositional base"):
+        parse_compositional_unit("PERSON_COUNT_PER_HH")
+
+
+def test_person_count_declaration_is_rejected():
+    """A ``unit: PERSON_COUNT_PER_HH`` declaration is rejected."""
+    with pytest.raises(UnitDefinitionError, match="invalid unit declaration"):
+        coerce_to_composite_unit(value="PERSON_COUNT_PER_HH", where="test")
+
+
 @pytest.mark.parametrize(
     "spelling",
     [
         "CURRENCY_PER_MONTH",
         "CURRENCY_PER_MONTH_PER_BG",
-        "PERSON_COUNT_PER_BG",
+        "DIMENSIONLESS_PER_BG",
         "DIMENSIONLESS_PER_YEAR",
         "HOURS_PER_WEEK",
     ],
@@ -597,13 +609,13 @@ def test_policy_input_rejects_invalid_unit_at_decoration():
         (AggType.MEAN, TTSIMUnit.CURRENCY.PER_MONTH, TTSIMUnit.CURRENCY.PER_MONTH),
         (AggType.MIN, TTSIMUnit.CURRENCY.PER_MONTH, TTSIMUnit.CURRENCY.PER_MONTH),
         (AggType.MAX, TTSIMUnit.CURRENCY.PER_MONTH, TTSIMUnit.CURRENCY.PER_MONTH),
-        # A COUNT is a head count at its target level: the dimensionless
-        # PERSON_COUNT base per target, independent of source (GEP 10). At the
-        # default individual target that is bare PERSON_COUNT.
+        # A COUNT is a head count at its target level: the dimensionless base
+        # per target, independent of source (GEP 10). At the default individual
+        # target that is bare DIMENSIONLESS.
         (
             AggType.COUNT,
             TTSIMUnit.CURRENCY.PER_MONTH,
-            TTSIMUnit.PERSON_COUNT,
+            TTSIMUnit.DIMENSIONLESS,
         ),
         # ANY / ALL yield booleans at the target level (GEP 10), independent of
         # the source; at the individual target, bare DIMENSIONLESS.
@@ -622,23 +634,23 @@ def test_unit_for_aggregation_preserves_unannotated_source():
     # COUNT mints a head count and ANY/ALL a boolean, both independent of source.
     assert (
         unit_for_aggregation(source_unit=UNSET_UNIT, agg_type=AggType.COUNT)
-        == TTSIMUnit.PERSON_COUNT
+        == TTSIMUnit.DIMENSIONLESS
     )
 
 
 def test_unit_for_aggregation_sum_over_boolean_is_a_head_count():
     # A SUM over a boolean counts the persons its flag is true for, so the minted
-    # token is a head count's — the same one a COUNT mints (GEP 10) — not a leveled
-    # DIMENSIONLESS. This keeps the minter in step with the resolver, which derives
-    # the SUM-over-boolean as a head count too, so the build does not reject the
-    # framework's own auto-assigned token. At the individual target it is bare.
+    # token is a head count's — the same one a COUNT mints (GEP 10). This keeps the
+    # minter in step with the resolver, which derives the SUM-over-boolean as a head
+    # count too, so the build does not reject the framework's own auto-assigned
+    # token. At the individual target it is bare.
     assert (
         unit_for_aggregation(
             source_unit=TTSIMUnit.DIMENSIONLESS,
             agg_type=AggType.SUM,
             source_is_boolean=True,
         )
-        == TTSIMUnit.PERSON_COUNT
+        == TTSIMUnit.DIMENSIONLESS
     )
     assert (
         unit_for_aggregation(
@@ -647,7 +659,7 @@ def test_unit_for_aggregation_sum_over_boolean_is_a_head_count():
             target_level="fam",
             source_is_boolean=True,
         )
-        == TTSIMUnit.PERSON_COUNT.PER_FAM
+        == TTSIMUnit.DIMENSIONLESS.PER_FAM
     )
 
 
@@ -694,8 +706,8 @@ def test_auto_aggregation_carries_the_target_level():
 def test_auto_aggregation_over_a_boolean_source_mints_a_head_count():
     # Requesting the group aggregate of a boolean (e.g. `is_adult_fam`) auto-generates
     # a SUM node. Over a boolean that SUM is a head count, so the framework mints
-    # `PERSON_COUNT_PER_FAM`, matching what the resolver derives — the regression
-    # that used to fail the build on any boolean group aggregate (GEP 10).
+    # `DIMENSIONLESS_PER_FAM` — the same unit the resolver derives, so the
+    # declaration check passes for any boolean group aggregate (GEP 10).
     aggs = create_agg_by_group_functions(
         column_functions={
             "is_adult": policy_function(
@@ -709,7 +721,7 @@ def test_auto_aggregation_over_a_boolean_source_mints_a_head_count():
     )
     assert (
         aggs["is_adult_fam"].unit  # ty: ignore[unresolved-attribute]
-        == TTSIMUnit.PERSON_COUNT.PER_FAM
+        == TTSIMUnit.DIMENSIONLESS.PER_FAM
     )
 
 
@@ -900,9 +912,9 @@ def test_builder_round_trips_with_level():
 
 def test_builder_generic_per_level_matches_attribute():
     assert (
-        TTSIMUnit.PERSON_COUNT.PER_LEVEL("bg")
-        == TTSIMUnit.PERSON_COUNT.PER_BG
-        == parse_compositional_unit("PERSON_COUNT_PER_BG")
+        TTSIMUnit.DIMENSIONLESS.PER_LEVEL("bg")
+        == TTSIMUnit.DIMENSIONLESS.PER_BG
+        == parse_compositional_unit("DIMENSIONLESS_PER_BG")
     )
 
 
@@ -912,9 +924,8 @@ def test_builder_generic_per_level_matches_attribute():
         ("CURRENCY", "CURRENCY", None, None, None),
         ("CURRENCY_PER_MONTH", "CURRENCY", None, "MONTH", None),
         ("CURRENCY_PER_SQUARE_METER", "CURRENCY", "SQUARE_METER", None, None),
-        ("PERSON_COUNT_PER_BG", "PERSON_COUNT", None, None, "BG"),
-        ("DIMENSIONLESS_PER_YEAR", "DIMENSIONLESS", None, "YEAR", None),
         ("DIMENSIONLESS_PER_BG", "DIMENSIONLESS", None, None, "BG"),
+        ("DIMENSIONLESS_PER_YEAR", "DIMENSIONLESS", None, "YEAR", None),
         ("HOURS_PER_WEEK", "HOURS", None, "WEEK", None),
         ("CURRENCY_PER_HOURS", "CURRENCY", "HOURS", None, None),
         (
@@ -1002,10 +1013,10 @@ def test_compositional_unit_resolves_to_expected_pint_unit(spelling, expected):
 
 
 def test_person_per_level_resolves_to_head_count():
-    # PERSON_COUNT_PER_BG is a head count at bg: a dimensionless 1 / [bg], the unit
+    # DIMENSIONLESS_PER_BG is a head count at bg: a dimensionless 1 / [bg], the unit
     # a COUNT aggregation to bg mints (GEP 10).
     compositional = resolve_compositional_unit(
-        parse_compositional_unit("PERSON_COUNT_PER_BG"), registry=REGISTRY
+        parse_compositional_unit("DIMENSIONLESS_PER_BG"), registry=REGISTRY
     )
     assert units_are_equivalent(
         left=compositional,
@@ -1021,8 +1032,8 @@ def test_terminal_per_person_equals_the_bare_unit():
     assert str(TTSIMUnit.CURRENCY.PER_MONTH.PER_PERSON) == str(
         TTSIMUnit.CURRENCY.PER_MONTH
     )
-    assert TTSIMUnit.PERSON_COUNT.PER_PERSON == TTSIMUnit.PERSON_COUNT
-    assert str(TTSIMUnit.PERSON_COUNT.PER_PERSON) == str(TTSIMUnit.PERSON_COUNT)
+    assert TTSIMUnit.DIMENSIONLESS.PER_PERSON == TTSIMUnit.DIMENSIONLESS
+    assert str(TTSIMUnit.DIMENSIONLESS.PER_PERSON) == str(TTSIMUnit.DIMENSIONLESS)
 
 
 def test_terminal_per_person_parses_and_resolves_to_bare():

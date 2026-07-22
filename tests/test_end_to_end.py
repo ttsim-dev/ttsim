@@ -10,7 +10,7 @@ import pytest
 from mettsim import middle_earth
 
 from ttsim import InputData, MainTarget, OrigPolicyObjects, TTTargets, main
-from ttsim.tt import AggType, Unit, agg_by_group_function
+from ttsim.tt import AggType, TTSIMUnit, agg_by_group_function
 from ttsim.tt.column_objects_param_function import policy_function, policy_input
 from ttsim.typing import FloatColumn
 
@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 
 DF_WITH_NESTED_COLUMNS = pd.DataFrame(
     {
-        ("geburtsjahr",): [2015, 1995, 1995],
+        ("birth_year",): [2015, 1995, 1995],
         ("kin_id",): [0, 0, 0],
         ("p_id",): [2, 0, 1],
         ("p_id_parent_1",): [0, -1, -1],
@@ -36,7 +36,7 @@ DF_WITH_NESTED_COLUMNS = pd.DataFrame(
 
 DF_WITH_QNAME_COLUMNS = pd.DataFrame(
     {
-        "geburtsjahr": [2015, 1995, 1995],
+        "birth_year": [2015, 1995, 1995],
         "kin_id": [0, 0, 0],
         "p_id": [2, 0, 1],
         "p_id_parent_1": [0, -1, -1],
@@ -52,7 +52,7 @@ DF_WITH_QNAME_COLUMNS = pd.DataFrame(
 
 DF_FOR_MAPPER = pd.DataFrame(
     {
-        "geburtsjahr": [2015, 1995, 1995],
+        "birth_year": [2015, 1995, 1995],
         "kin_id": [0, 0, 0],
         "p_id": [2, 0, 1],
         "parent_1": [0, -1, -1],
@@ -67,7 +67,7 @@ DF_FOR_MAPPER = pd.DataFrame(
 
 
 INPUT_QNAME_DATA = {
-    "geburtsjahr": numpy.array([2015, 1995, 1995]),
+    "birth_year": numpy.array([2015, 1995, 1995]),
     "kin_id": numpy.array([0, 0, 0]),
     "p_id": numpy.array([2, 0, 1]),
     "p_id_parent_1": numpy.array([0, -1, -1]),
@@ -81,7 +81,7 @@ INPUT_QNAME_DATA = {
 
 
 INPUT_DF_MAPPER = {
-    "geburtsjahr": "geburtsjahr",
+    "birth_year": "birth_year",
     "kin_id": "kin_id",
     "p_id": "p_id",
     "p_id_parent_1": "parent_1",
@@ -101,7 +101,7 @@ INPUT_DF_MAPPER = {
 
 
 INPUT_TREE_DATA = {
-    "geburtsjahr": numpy.array([2015, 1995, 1995]),
+    "birth_year": numpy.array([2015, 1995, 1995]),
     "kin_id": numpy.array([0, 0, 0]),
     "p_id": numpy.array([2, 0, 1]),
     "p_id_parent_1": numpy.array([0, -1, -1]),
@@ -117,7 +117,7 @@ INPUT_TREE_DATA = {
 
 
 INPUT_FLAT_DATA = {
-    ("geburtsjahr",): numpy.array([2015, 1995, 1995]),
+    ("birth_year",): numpy.array([2015, 1995, 1995]),
     ("kin_id",): numpy.array([0, 0, 0]),
     ("p_id",): numpy.array([2, 0, 1]),
     ("p_id_parent_1",): numpy.array([0, -1, -1]),
@@ -157,17 +157,17 @@ EXPECTED_TT_RESULTS = pd.DataFrame(
 )
 
 
-@policy_input(unit=Unit.DIMENSIONLESS)
+@policy_input(unit=TTSIMUnit.DIMENSIONLESS)
 def p_id() -> int:
     pass
 
 
-@policy_input(unit=Unit.CURRENCY.PER_MONTH)
+@policy_input(unit=TTSIMUnit.CURRENCY.PER_MONTH)
 def income_m() -> float:
     pass
 
 
-@policy_function(vectorization_strategy="vectorize", unit=Unit.CURRENCY.PER_MONTH)
+@policy_function(vectorization_strategy="vectorize", unit=TTSIMUnit.CURRENCY.PER_MONTH)
 def benefit_m(income_m: float) -> float:
     return income_m * 0.5
 
@@ -200,6 +200,7 @@ def test_end_to_end(input_data_arg, backend: Literal["numpy", "jax"]):
         policy_date_str="2025-01-01",
         rounding=False,
         orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+        unit_system=middle_earth.UNIT_SYSTEM,
         backend=backend,
     )
     pd.testing.assert_frame_equal(
@@ -239,6 +240,7 @@ def test_results_shapes_render_payroll_tax_amount_y(
         policy_date_str="2025-01-01",
         rounding=False,
         orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+        unit_system=middle_earth.UNIT_SYSTEM,
         backend=backend,
     )
 
@@ -283,6 +285,7 @@ def test_uint_wage_input_does_not_underflow(
         policy_date_str="2025-01-01",
         rounding=False,
         orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+        unit_system=middle_earth.UNIT_SYSTEM,
         backend=backend,
     )
     amount_y = result["payroll_tax"]["amount_y"]
@@ -312,6 +315,7 @@ def test_df_with_qname_columns_has_qname_string_columns(
         policy_date_str="2025-01-01",
         rounding=False,
         orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+        unit_system=middle_earth.UNIT_SYSTEM,
         backend=backend,
     )
     assert list(result.columns) == [
@@ -376,7 +380,7 @@ def test_cloudpickle_round_trip_preserves_tt_function_output(tmp_path):
         from ttsim import InputData, OrigPolicyObjects, TTTargets, main
 
         data = {
-            ("geburtsjahr",): np.array([1995, 1995]),
+            ("birth_year",): np.array([1995, 1995]),
             ("kin_id",): np.array([0, 0]),
             ("p_id",): np.array([0, 1]),
             ("p_id_parent_1",): np.array([-1, -1]),
@@ -393,6 +397,7 @@ def test_cloudpickle_round_trip_preserves_tt_function_output(tmp_path):
             policy_date_str="2025-01-01",
             input_data=InputData.flat(data),
             orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+            unit_system=middle_earth.UNIT_SYSTEM,
             tt_targets=TTTargets.tree({"payroll_tax": {"amount_y": None}}),
             backend="numpy",
         )
@@ -422,29 +427,30 @@ def test_cloudpickle_round_trip_with_inline_policy_environment(tmp_path):
 
         from ttsim import InputData, TTTargets, main
         from ttsim.tt import (
-            Unit,
+            TTSIMUnit,
+            UnitSystem,
             policy_function,
             policy_input,
-            register_currency,
-            register_statutory_currencies,
         )
 
-        # A bare-ttsim run registers no policy package, so it must register a
-        # base currency and the statutory-currency mapping itself (GEP 10).
-        register_currency(name="euro", base=True)
-        register_statutory_currencies({"0001-01-01": "euro"})
+        # A bare-ttsim run ships no policy package, so it declares its own unit
+        # system — a base currency and the statutory-currency mapping (GEP 10).
+        UNIT_SYSTEM = UnitSystem(
+            base_currency="euro",
+            statutory_currencies={"0001-01-01": "euro"},
+        )
 
 
-        @policy_input(unit=Unit.DIMENSIONLESS)
+        @policy_input(unit=TTSIMUnit.DIMENSIONLESS)
         def p_id() -> int: ...
 
 
-        @policy_input(unit=Unit.CURRENCY.PER_MONTH)
+        @policy_input(unit=TTSIMUnit.CURRENCY.PER_MONTH)
         def income_m() -> float: ...
 
 
         @policy_function(
-            vectorization_strategy="vectorize", unit=Unit.CURRENCY.PER_MONTH
+            vectorization_strategy="vectorize", unit=TTSIMUnit.CURRENCY.PER_MONTH
         )
         def benefit_m(income_m: float) -> float:
             return income_m * 0.5
@@ -453,6 +459,7 @@ def test_cloudpickle_round_trip_with_inline_policy_environment(tmp_path):
         env = {"p_id": p_id, "income_m": income_m, "benefit_m": benefit_m}
         kwargs = dict(
             policy_environment=env,
+            unit_system=UNIT_SYSTEM,
             input_data=InputData.tree({
                 "p_id": np.array([0, 1, 2]),
                 "income_m": np.array([1000.0, 2000.0, 3000.0]),
@@ -483,6 +490,7 @@ def test_can_create_input_template(backend: Literal["numpy", "jax"]):
         main_target=MainTarget.templates.input_data_dtypes.tree,
         policy_date_str="2025-01-01",
         orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+        unit_system=middle_earth.UNIT_SYSTEM,
         backend=backend,
         tt_targets=TTTargets.tree(TARGETS_TREE),
     )
@@ -499,6 +507,7 @@ def test_modify_evaluation_date_after_creating_policy_environment(
         main_target=MainTarget.policy_environment,
         policy_date_str="2000-01-01",
         orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+        unit_system=middle_earth.UNIT_SYSTEM,
         backend=backend,
     )
     input_data = InputData.tree(
@@ -520,6 +529,7 @@ def test_modify_evaluation_date_after_creating_policy_environment(
             {"property_tax": {"amount_y": "property_tax_amount_y"}}
         ),
         backend=backend,
+        unit_system=middle_earth.UNIT_SYSTEM,
     )
     expected = pd.DataFrame(
         {
@@ -538,7 +548,7 @@ def test_modify_evaluation_date_after_creating_policy_environment(
 def test_different_evaluation_dates_across_data_rows(
     backend: Literal["numpy", "jax"], xnp: ModuleType
 ):
-    @policy_function(unit=Unit.YEARS)
+    @policy_function(unit=TTSIMUnit.YEARS)
     def f(evaluation_year: int) -> int:
         return evaluation_year
 
@@ -556,6 +566,7 @@ def test_different_evaluation_dates_across_data_rows(
         ),
         tt_targets=TTTargets.tree({"f": None}),
         backend=backend,
+        unit_system=middle_earth.UNIT_SYSTEM,
     )
 
     expected = pd.DataFrame(
@@ -584,6 +595,7 @@ def test_input_data_as_targets(xnp: ModuleType, backend: Literal["numpy", "jax"]
         ),
         tt_targets=TTTargets.tree({"kin_id": None, "payroll_tax": {"amount_y": None}}),
         orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+        unit_system=middle_earth.UNIT_SYSTEM,
         backend=backend,
         include_warn_nodes=False,
     )
@@ -618,6 +630,7 @@ def test_input_data_reordering_with_distinct_values(
         # Request input columns as outputs to see if they maintain correct order
         tt_targets=TTTargets.tree({"age": None, "wealth": None}),
         orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+        unit_system=middle_earth.UNIT_SYSTEM,
         backend=backend,
         include_warn_nodes=False,
     )
@@ -659,18 +672,19 @@ def test_derived_time_converted_scalar_can_partialled(xnp, backend):
         evaluation_date_str="2024-01-01",
         backend=backend,
         include_warn_nodes=False,
+        unit_system=middle_earth.UNIT_SYSTEM,
     )
     assert root_nodes == set()
 
 
-@policy_input(unit=Unit.DIMENSIONLESS)
+@policy_input(unit=TTSIMUnit.DIMENSIONLESS)
 def broadcast_x() -> float:
     pass
 
 
 @policy_function(
     vectorization_strategy="not_required",
-    unit=Unit.DIMENSIONLESS,
+    unit=TTSIMUnit.DIMENSIONLESS,
     verify_units=False,  # not_required body returns a column, not a scalar
 )
 def cumulative_broadcast_x(broadcast_x: FloatColumn, xnp: ModuleType) -> FloatColumn:
@@ -680,12 +694,12 @@ def cumulative_broadcast_x(broadcast_x: FloatColumn, xnp: ModuleType) -> FloatCo
     return xnp.cumsum(broadcast_x)
 
 
-@agg_by_group_function(agg_type=AggType.SUM, unit=Unit.DIMENSIONLESS)
+@agg_by_group_function(agg_type=AggType.SUM, unit=TTSIMUnit.DIMENSIONLESS)
 def broadcast_x_fam(broadcast_x: float, fam_id: int) -> float:
     pass
 
 
-@policy_input(unit=Unit.DIMENSIONLESS)
+@policy_input(unit=TTSIMUnit.DIMENSIONLESS)
 def fam_id() -> int:
     pass
 
@@ -710,6 +724,7 @@ def test_scalar_input_to_not_required_function_is_broadcast(xnp, backend):
         evaluation_date_str="2024-01-01",
         backend=backend,
         include_warn_nodes=False,
+        unit_system=middle_earth.UNIT_SYSTEM,
     )
     numpy.testing.assert_array_equal(
         results["cumulative_broadcast_x"],
@@ -737,18 +752,19 @@ def test_scalar_input_to_not_required_function_is_baked_in(xnp, backend):
         evaluation_date_str="2024-01-01",
         backend=backend,
         include_warn_nodes=False,
+        unit_system=middle_earth.UNIT_SYSTEM,
     )
     assert "broadcast_x" not in root_nodes
     assert root_nodes == set()
 
 
-@policy_input(unit=Unit.CURRENCY.PER_MONTH)
+@policy_input(unit=TTSIMUnit.CURRENCY.PER_MONTH)
 def bonus_m() -> float:
     pass
 
 
 @policy_function(
-    vectorization_strategy="vectorize", unit=Unit.CURRENCY.PER_YEAR.PER_FAM
+    vectorization_strategy="vectorize", unit=TTSIMUnit.CURRENCY.PER_YEAR.PER_FAM
 )
 def doubled_y_fam(bonus_y_fam: float) -> float:
     return 2.0 * bonus_y_fam
@@ -787,6 +803,7 @@ def test_auto_aggregation_resolves_dtype_from_sibling_time_unit(
         rounding=False,
         backend=backend,
         include_warn_nodes=False,
+        unit_system=middle_earth.UNIT_SYSTEM,
     )
     expected = pd.DataFrame(
         {("doubled_y_fam",): [3600.0, 3600.0, 4800.0]},

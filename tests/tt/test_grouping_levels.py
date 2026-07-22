@@ -619,17 +619,12 @@ def test_resolved_aggregation_min_over_leveled_calendar_point_swaps_level():
     assert units_are_equivalent(left=result, right=expected, registry=REGISTRY)
 
 
-# ----------------------------------------------------------------------------
-# PERSON_COUNT: a declarable head count (dimensionless / [level])
-# ----------------------------------------------------------------------------
-
-
-def test_person_count_at_group_level_matches_a_count():
-    # A PERSON_COUNT_PER_HH column resolves to 1/[hh] — the same unit a COUNT
+def test_declared_head_count_at_group_level_matches_a_count():
+    # A DIMENSIONLESS_PER_HH column resolves to 1/[hh] — the same unit a COUNT
     # aggregation to hh mints, so a declaration and an aggregation compose and
     # compare cleanly (GEP 10).
     at_hh = resolve_compositional_param_unit(
-        unit=TTSIMUnit.PERSON_COUNT.PER_HH, where="test", registry=REGISTRY
+        unit=TTSIMUnit.DIMENSIONLESS.PER_HH, where="test", registry=REGISTRY
     )
     assert units_are_equivalent(
         left=at_hh,
@@ -638,36 +633,23 @@ def test_person_count_at_group_level_matches_a_count():
     )
 
 
-def test_bare_person_count_is_dimensionless():
-    # A bare PERSON_COUNT is a dimensionless count — a readable spelling of the
-    # plain number, no person level (GEP 10).
-    resolved = resolve_compositional_param_unit(
-        unit=TTSIMUnit.PERSON_COUNT, where="test", registry=REGISTRY
-    )
-    assert units_are_equivalent(
-        left=resolved,
-        right=REGISTRY.dimensionless,
-        registry=REGISTRY,
-    )
-
-
-def test_person_count_per_person_normalizes_to_bare_dimensionless():
+def test_head_count_per_person_normalizes_to_bare_dimensionless():
     # A head count per individual is dimensionless: the `_PER_PERSON` suffix
-    # normalizes away, so PERSON_COUNT_PER_PERSON is bare PERSON_COUNT.
+    # normalizes away, leaving the bare unit.
     at_person = resolve_compositional_param_unit(
-        unit=TTSIMUnit.PERSON_COUNT.PER_PERSON, where="test", registry=REGISTRY
+        unit=TTSIMUnit.DIMENSIONLESS.PER_PERSON, where="test", registry=REGISTRY
     )
     assert units_are_equivalent(
         left=at_person, right=REGISTRY.dimensionless, registry=REGISTRY
     )
 
 
-def test_declared_person_per_group_bridges_like_a_count():
-    # A *declared* PERSON_COUNT_PER_HH divides a per-[hh] amount down to a bare
+def test_declared_head_count_per_group_bridges_like_a_count():
+    # A *declared* DIMENSIONLESS_PER_HH divides a per-[hh] amount down to a bare
     # per-person one, exactly as an aggregated COUNT would: the two are
     # interchangeable.
     headcount_at_hh = resolve_compositional_param_unit(
-        unit=TTSIMUnit.PERSON_COUNT.PER_HH, where="test", registry=REGISTRY
+        unit=TTSIMUnit.DIMENSIONLESS.PER_HH, where="test", registry=REGISTRY
     )
     per_hh = divide_by_grouping_level(
         unit=parse_unit("CURRENCY / month", registry=REGISTRY),
@@ -681,14 +663,14 @@ def test_declared_person_per_group_bridges_like_a_count():
     assert units_are_equivalent(left=bridged, right=expected, registry=REGISTRY)
 
 
-def test_count_aggregation_token_is_bare_person_count_at_individual_target():
-    # COUNT mints PERSON_COUNT at its target level; at the individual target (an
-    # agg_by_p_id COUNT) that is bare PERSON_COUNT = dimensionless.
+def test_count_aggregation_token_is_bare_dimensionless_at_individual_target():
+    # COUNT mints a head count at its target level; at the individual target (an
+    # agg_by_p_id COUNT) that is the bare dimensionless unit.
     assert (
         unit_for_aggregation(
             source_unit=TTSIMUnit.DIMENSIONLESS, agg_type=AggType.COUNT
         )
-        == TTSIMUnit.PERSON_COUNT
+        == TTSIMUnit.DIMENSIONLESS
     )
 
 

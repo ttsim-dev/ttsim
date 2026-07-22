@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from mettsim import middle_earth
 
 from ttsim import InputData, MainTarget, OrigPolicyObjects, TTTargets, main
-from ttsim.tt import Unit
+from ttsim.tt import TTSIMUnit
 from ttsim.tt.column_objects_param_function import policy_function, policy_input
 from ttsim.tt.param_objects import DictParam, ScalarParam
 
@@ -19,7 +19,7 @@ par1 = ScalarParam(
     end_date=datetime.date(2025, 12, 31),
     name={"de": "Ein int param", "en": "Some int param"},
     description={"de": "Ein int param", "en": "Some int param"},
-    unit=Unit.DIMENSIONLESS,
+    unit=TTSIMUnit.DIMENSIONLESS,
     note=None,
     reference=None,
 )
@@ -30,38 +30,38 @@ par2 = DictParam(
     end_date=datetime.date(2025, 12, 31),
     name={"de": "Ein dict param", "en": "Some dict param"},
     description={"de": "Ein dict param", "en": "Some dict param"},
-    unit=Unit.DIMENSIONLESS,
+    unit=TTSIMUnit.DIMENSIONLESS,
     note=None,
     reference=None,
 )
 
 
-@policy_input(unit=Unit.DIMENSIONLESS)
+@policy_input(unit=TTSIMUnit.DIMENSIONLESS)
 def kin_id() -> int:
     pass
 
 
-@policy_input(unit=Unit.DIMENSIONLESS)
+@policy_input(unit=TTSIMUnit.DIMENSIONLESS)
 def inp1() -> int:
     pass
 
 
-@policy_input(unit=Unit.DIMENSIONLESS)
+@policy_input(unit=TTSIMUnit.DIMENSIONLESS)
 def inp2() -> float:
     pass
 
 
-@policy_function(unit=Unit.DIMENSIONLESS)
+@policy_function(unit=TTSIMUnit.DIMENSIONLESS)
 def x(inp1_kin: int, par1: int, par2: dict[str, int]) -> int:
     return inp1_kin + par1 + par2["a"] + par2["b"]
 
 
-@policy_function(unit=Unit.DIMENSIONLESS)
+@policy_function(unit=TTSIMUnit.DIMENSIONLESS)
 def y(inp2: float, par2: dict[str, int]) -> float:
     return inp2 + par2["b"]
 
 
-@policy_function(unit=Unit.DIMENSIONLESS)
+@policy_function(unit=TTSIMUnit.DIMENSIONLESS)
 def z(a__x: int, a__y: float) -> float:
     return a__x + a__y
 
@@ -209,6 +209,7 @@ def test_returns_root_nodes_when_injecting_unrelated_input_data(xnp: ModuleType)
         main_target=MainTarget.templates.input_data_dtypes.tree,
         policy_date_str="2000-01-01",
         orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+        unit_system=middle_earth.UNIT_SYSTEM,
         tt_targets=TTTargets.tree({"wealth_tax": {"amount_y": None}}),
         input_data=InputData.tree(
             tree={
@@ -227,7 +228,7 @@ def test_returns_root_nodes_when_injecting_unrelated_input_data(xnp: ModuleType)
     # Inputs for fam_id
     assert "p_id_spouse" in template
     assert "p_id" in template
-    assert "geburtsjahr" in template  # `age` is now computed from it (GEP 10)
+    assert "birth_year" in template  # `age` is now computed from it (GEP 10)
     assert "p_id_parent_1" in template
     assert "p_id_parent_2" in template
 
@@ -237,10 +238,11 @@ def test_template_df_with_nested_columns():
         main_target=MainTarget.templates.input_data_dtypes.df_with_nested_columns,
         policy_date_str="2000-01-01",
         orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+        unit_system=middle_earth.UNIT_SYSTEM,
         tt_targets=TTTargets.tree({"wealth_tax": {"amount_y": None}}),
     )
     assert actual.columns.tolist() == [
-        ("geburtsjahr",),
+        ("birth_year",),
         ("kin_id",),
         ("p_id",),
         ("p_id_parent_1",),

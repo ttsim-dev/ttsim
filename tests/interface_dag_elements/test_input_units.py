@@ -235,31 +235,6 @@ def test_group_level_tag_does_not_match_a_bare_declaration():
         )
 
 
-def test_person_count_tag_matches_a_dimensionless_declaration():
-    # A count is dimensionless (GEP 10): a bare PERSON_COUNT tag and a plain
-    # DIMENSIONLESS declaration are the same unit, so they agree.
-    register_grouping_levels(["hh"], registry=REGISTRY)
-    fail_if_input_units_are_inconsistent(
-        input_units={"n_children": _resolved(TTSIMUnit.PERSON_COUNT)},
-        resolved_units={"n_children": _resolved(TTSIMUnit.DIMENSIONLESS)},
-        unit_system=SYSTEM,
-        input_unit_tokens={"n_children": TTSIMUnit.PERSON_COUNT},
-        declared_unit_tokens={"n_children": TTSIMUnit.DIMENSIONLESS},
-    )
-
-
-def test_person_count_tag_matching_its_declaration_passes():
-    register_grouping_levels(["hh"], registry=REGISTRY)
-    n = _resolved(TTSIMUnit.PERSON_COUNT)
-    fail_if_input_units_are_inconsistent(
-        input_units={"n_children": n},
-        resolved_units={"n_children": n},
-        unit_system=SYSTEM,
-        input_unit_tokens={"n_children": TTSIMUnit.PERSON_COUNT},
-        declared_unit_tokens={"n_children": TTSIMUnit.PERSON_COUNT},
-    )
-
-
 def test_input_share_at_group_suffix_stays_level_less():
     # A group suffix must not force a level onto a level-less quantity.
     register_grouping_levels(["hh"], registry=REGISTRY)
