@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from types import ModuleType
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import dags.tree as dt
 import numpy
@@ -12,6 +12,7 @@ from mettsim import middle_earth
 from ttsim import InputData, MainTarget, OrigPolicyObjects, TTTargets, main
 from ttsim.tt import AggType, TTSIMUnit, agg_by_group_function
 from ttsim.tt.column_objects_param_function import policy_function, policy_input
+from ttsim.tt.units import UnitAnnotatedColumn
 from ttsim.typing import FloatColumn
 
 if TYPE_CHECKING:
@@ -811,4 +812,112 @@ def test_auto_aggregation_resolves_dtype_from_sibling_time_unit(
     )
     pd.testing.assert_frame_equal(
         expected, result, check_dtype=False, check_index_type=False
+    )
+
+
+def _bare_payroll_tree(factor: float = 1.0) -> dict[str, Any]:
+    """A two-person payroll-tax input tree of plain arrays."""
+    return {
+        "p_id": numpy.array([0, 1]),
+        "kin_id": numpy.array([0, 0]),
+        "p_id_spouse": numpy.array([1, 0]),
+        "p_id_parent_1": numpy.array([-1, -1]),
+        "p_id_parent_2": numpy.array([-1, -1]),
+        "birth_year": numpy.array([1995, 1995]),  # age 30 in 2025
+        "parent_is_noble": numpy.array([False, False]),
+        "wealth": numpy.array([100.0, 200.0]) * factor,
+        "payroll_tax": {
+            "child_tax_credit": {"p_id_recipient": numpy.array([-1, -1])},
+            "income": {"gross_wage_y": numpy.array([10000.0, 0.0]) * factor},
+        },
+    }
+
+
+def _annotated_payroll_tree(currency: str, factor: float = 1.0) -> dict[str, Any]:
+    """`_bare_payroll_tree` with every leaf a `UnitAnnotatedColumn` (GEP 10).
+
+    Ids and the person-level boolean are ``TTSIMUnit.DIMENSIONLESS`` (the person leaf
+    is implied, never spelled); the birth year is a calendar year; wealth is a
+    concrete-currency stock; the wage a concrete-currency flow per year. The
+    concrete currency is reached off the `TTSIMUnit` builder (``TTSIMUnit.CASTAR``,
+    ``TTSIMUnit.SILVER_PENNY``), injected when the policy system registered it.
+    """
+    money = getattr(TTSIMUnit, currency)
+
+    def col(values: Any, unit: Any) -> UnitAnnotatedColumn:
+        return UnitAnnotatedColumn(values=values, unit=unit)
+
+    return {
+        "p_id": col(values=numpy.array([0, 1]), unit=TTSIMUnit.DIMENSIONLESS),
+        "kin_id": col(values=numpy.array([0, 0]), unit=TTSIMUnit.DIMENSIONLESS),
+        "p_id_spouse": col(values=numpy.array([1, 0]), unit=TTSIMUnit.DIMENSIONLESS),
+        "p_id_parent_1": col(
+            values=numpy.array([-1, -1]), unit=TTSIMUnit.DIMENSIONLESS
+        ),
+        "p_id_parent_2": col(
+            values=numpy.array([-1, -1]), unit=TTSIMUnit.DIMENSIONLESS
+        ),
+        "birth_year": col(
+            values=numpy.array([1995, 1995]), unit=TTSIMUnit.CALENDAR_YEAR
+        ),  # age 30
+        "parent_is_noble": col(
+            values=numpy.array([False, False]), unit=TTSIMUnit.DIMENSIONLESS
+        ),
+        "wealth": col(values=numpy.array([100.0, 200.0]) * factor, unit=money),
+        "payroll_tax": {
+            "child_tax_credit": {
+                "p_id_recipient": col(
+                    values=numpy.array([-1, -1]), unit=TTSIMUnit.DIMENSIONLESS
+                )
+            },
+            "income": {
+                "gross_wage_y": col(
+                    values=numpy.array([10000.0, 0.0]) * factor, unit=money.PER_YEAR
+                )
+            },
+        },
+    }
+
+
+def test_unit_annotated_input_and_output_round_trip(
+    backend: Literal["numpy", "jax"],
+):
+    """A pint-tagged input tree in and a pint-tagged output tree out, end to end.
+
+    Feeds silver-penny-tagged input (x4) into a run with castar data currency
+    and requests the annotated results tree: the boundary converts the input
+    and the output leaf carries the precise data-currency unit, with a
+    magnitude equal to the bare castar run.
+    """
+    bare = main(
+        main_target=MainTarget.results.tree,
+        policy_date_str="2025-01-01",
+        input_data=InputData.tree(_bare_payroll_tree()),
+        orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+        tt_targets=TTTargets.tree({"payroll_tax": {"amount_y": None}}),
+        rounding=False,
+        data_currency="CASTAR",
+        backend=backend,
+        unit_system=middle_earth.UNIT_SYSTEM,
+    )
+    tagged = main(
+        main_target=MainTarget.results.tree_with_unit_annotations,
+        policy_date_str="2025-01-01",
+        input_data=InputData.tree_with_unit_annotations(
+            _annotated_payroll_tree(currency="SILVER_PENNY", factor=4.0)
+        ),
+        orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+        tt_targets=TTTargets.tree({"payroll_tax": {"amount_y": None}}),
+        rounding=False,
+        data_currency="CASTAR",
+        backend=backend,
+        unit_system=middle_earth.UNIT_SYSTEM,
+    )
+    amount = tagged["payroll_tax"]["amount_y"]
+    assert isinstance(amount, UnitAnnotatedColumn)
+    assert amount.unit == TTSIMUnit.CASTAR.PER_YEAR
+    assert str(amount.unit) == "CASTAR_PER_YEAR"
+    numpy.testing.assert_allclose(
+        numpy.asarray(amount.values),
+        numpy.asarray(bare["payroll_tax"]["amount_y"]),
     )
