@@ -1,0 +1,28 @@
+---
+info:
+  note: >-
+    The progressive king's levy on wealth. At 1900 the schedule rises from a zero
+    entry rate to a 0.2 top rate at the 1000-silver-penny bracket ceiling, a
+    Progressionsfaktor of (0.2 - 0) / (2 * 1000) = 0.0001 per silver penny. Inside
+    the bracket the levy is 0.0001 * wealth^2, so wealth 500 pays 0.0001 * 500^2 =
+    25; above the ceiling it is 100 + 0.2 * (wealth - 1000), so wealth 2000 pays
+    100 + 0.2 * 1000 = 300.
+  precision_atol: 0.01
+  source: ''
+inputs:
+  assumed: {}
+  provided:
+    p_id:
+      - 0
+      - 1
+    kin_id:
+      - 0
+      - 1
+    wealth:
+      - 500
+      - 2000
+outputs:
+  kings_levy:
+    amount_y:
+      - 25.0
+      - 300.0
