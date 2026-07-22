@@ -6,13 +6,16 @@ subsistence_income_level:
   description:
     de: Dict, da es sich über die Jahre ändert, aber der Paramtername gleich bleibt.
     en: Dict, because it changes over time, but the parameter name remains the same.
-  unit: Euros
-  reference_period: Month
   type: dict
   1900-01-01:
+    unit: SILVER_PENNY_PER_MONTH
     per_spouse: 500.0
   2020-01-01:
-    per_individual: 500.0
+    note: >-
+      Re-legislated per individual at the currency reform of 2020;
+      denominated in castar (125 castar = 500 silver pennies).
+    unit: CASTAR_PER_MONTH
+    per_individual: 125.0
 max_number_of_family_members:
   name:
     de: Maximalzahl der zu berücksichtigenden Personen
@@ -20,8 +23,7 @@ max_number_of_family_members:
   description:
     de: Erst nach Reform 2020 relevant.
     en: Only relevant after 2020 reform.
-  unit: null
-  reference_period: null
+  unit: DIMENSIONLESS_PER_FAM
   type: scalar
   2020-01-01:
     value: 4
@@ -32,8 +34,18 @@ max_age_children:
   description:
     de: In Mittelerde passiert nichts, niemals.
     en: In Middle Earth nothing happens, ever.
-  unit: Years
-  reference_period: null
+  unit: YEARS
   type: scalar
   1900-01-01:
     value: 18
+age_of_maturity:
+  name:
+    de: Volljährigkeitsalter
+    en: Age of maturity
+  description:
+    de: Hobbits werden mit 33 Jahren volljährig.
+    en: Hobbits come of age at 33.
+  unit: YEARS
+  type: scalar
+  1900-01-01:
+    value: 33

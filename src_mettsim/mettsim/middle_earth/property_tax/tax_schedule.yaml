@@ -8,8 +8,8 @@ tax_schedule:
       Vermögenssteuer auf Landbesitz. Bemisst sich an Größe des landwirtschaftlich
       nutzbaren Landes in Hektar.
     en: Wealth tax on land. Depends on size of arable land in hectares.
-  unit: Euros
-  reference_period: null
+  input_unit: HECTARE
+  output_unit: SILVER_PENNY_PER_YEAR
   type: piecewise_constant
   1900-01-01:
     intervals:
@@ -19,3 +19,16 @@ tax_schedule:
         intercept: 1000
       - interval: '[100, inf)'
         intercept: 10000
+  2020-01-01:
+    note: >-
+      Pure redenomination at the currency reform of 2020: the amounts are
+      re-expressed in castar (1 castar = 4 silver pennies); the hectare
+      brackets carry over.
+    output_unit: CASTAR_PER_YEAR
+    intervals:
+      - interval: (-inf, 10)
+        intercept: 0
+      - interval: '[10, 100)'
+        intercept: 250
+      - interval: '[100, inf)'
+        intercept: 2500

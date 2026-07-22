@@ -4,16 +4,43 @@ raw_bounties_per_orc:
     de: Belohnung für das Jagen von Orks (tot oder lebendig)
     en: Bounty for orc hunting (dead or alive)
   description:
-    de: Test für den Typ require_converter
-    en: Test the require_converter type
-  unit: Euros
-  reference_period: null
+    de: >-
+      Test für einen require_converter mit Einheiten je Leaf (GEP 10): Die
+      Currency-Leaves liegen auf einer verschachtelten Ebene und müssen in der
+      gesetzlichen Währung ihrer Ära deklariert sein; die Altersgrenze trägt
+      ihre eigene Einheit.
+    en: >-
+      Exercises a require_converter with a per-leaf `unit:` mapping (GEP 10):
+      the currency leaves sit at a nested level and must be declared in their
+      era's statutory currency; the age bound carries its own unit.
+  unit:
+    small_orc: SILVER_PENNY
+    large_orc:
+      peasant_hunter: SILVER_PENNY
+      noble_hunter: SILVER_PENNY
+    minimum_hunter_age: YEARS
   type: require_converter
   1900-01-01:
     small_orc: 100
     large_orc:
       peasant_hunter: 200
       noble_hunter: 100
+    minimum_hunter_age: 20
+  2020-01-01:
+    note: >-
+      Pure redenomination at the currency reform of 2020
+      (1 castar = 4 silver pennies); the age bound carries over.
+    unit:
+      small_orc: CASTAR
+      large_orc:
+        peasant_hunter: CASTAR
+        noble_hunter: CASTAR
+      minimum_hunter_age: YEARS
+    small_orc: 25
+    large_orc:
+      peasant_hunter: 50
+      noble_hunter: 25
+    minimum_hunter_age: 20
 bounty_topup_by_age:
   name:
     de: Altersabhängiger Gefahrenzulagenfaktor
@@ -21,8 +48,8 @@ bounty_topup_by_age:
   description:
     de: Test für den Typ sparse_to_consecutive_int_lookup_table
     en: Test the sparse_to_consecutive_int_lookup_table type
-  unit: Euros
-  reference_period: null
+  input_unit: YEARS
+  output_unit: DIMENSIONLESS
   type: sparse_to_consecutive_int_lookup_table
   1900-01-01:
     0: 1.0

@@ -11,25 +11,32 @@ inputs:
         - 0
         - 2
         - 1
+        - 0
       small_orcs_hunted:
         - 2
         - 0
         - 0
+        - 2
     p_id:
       - 0
       - 1
       - 2
+      - 3
     parent_is_noble:
       - false
       - false
       - true
-    age:
-      - 0
-      - 60
-      - 100
+      - false
+    birth_year:
+      - 1900
+      - 1840
+      - 1800
+      - 1870
 outputs:
   orc_hunting_bounty:
     amount:
-      - 200.0
+      # First hunter is below the minimum hunter age.
+      - 0.0
       - 600.0
       - 150.0
+      - 200.0
