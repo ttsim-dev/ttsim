@@ -25,3 +25,30 @@ raw_kings_levy_schedule:
     bracket_ceiling: 250
     entry_rate: 0.0
     top_rate: 0.2
+raw_kings_levy_child_rebate:
+  name:
+    de: Rohdaten für den Kinderfreibetrag beim Königszehnt
+    en: Raw data for the king's levy child rebate
+  description:
+    de: >-
+      Test für einen require_converter, der eine Nachschlagetabelle mit
+      Achsen-Einheiten baut (GEP 10).
+    en: >-
+      Exercises a require_converter that builds a lookup table keyed by the
+      kinstead's number of dependants, declaring per-axis units (GEP 10).
+  input_unit: DIMENSIONLESS
+  output_unit: SILVER_PENNY_PER_YEAR
+  type: require_converter
+  1900-01-01:
+    0: 0
+    1: 40
+    2: 80
+  2020-01-01:
+    note: >-
+      Pure redenomination at the currency reform of 2020 (1 castar = 4 silver
+      pennies); the integer keys are dimensionless and carry over.
+    input_unit: DIMENSIONLESS
+    output_unit: CASTAR_PER_YEAR
+    0: 0
+    1: 10
+    2: 20
