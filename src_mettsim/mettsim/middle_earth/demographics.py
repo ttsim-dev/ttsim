@@ -1,6 +1,12 @@
 from __future__ import annotations
 
-from ttsim.tt import AggType, TTSIMUnit, agg_by_group_function, policy_function
+from ttsim.tt import (
+    AggType,
+    TTSIMUnit,
+    agg_by_group_function,
+    cast_ttsim_unit,
+    policy_function,
+)
 
 
 @agg_by_group_function(agg_type=AggType.COUNT, unit=TTSIMUnit.DIMENSIONLESS.PER_KIN)
@@ -63,3 +69,29 @@ def coming_of_age_celebration(age: int) -> bool:
     (111th) birthday.
     """
     return age == 33 or age == 111
+
+
+@policy_function(vectorization_strategy="vectorize", unit=TTSIMUnit.DIMENSIONLESS)
+def of_age(age: int) -> bool:
+    """Whether the person has reached the age of majority.
+
+    A bare `33` carries no unit, so an ordering comparison against the duration
+    `age` would mix a plain number with a quantity. Tagging the bound states the
+    unit the literal is written in, and the comparison screens like any other.
+    """
+    return age >= cast_ttsim_unit(33, TTSIMUnit.YEARS)
+
+
+@policy_function(
+    vectorization_strategy="vectorize", unit=TTSIMUnit.DIMENSIONLESS.PER_KIN
+)
+def number_of_dependants_kin(number_of_individuals_kin: int) -> int:
+    """The kinstead's members other than its head.
+
+    Head counts live at their group's level, so the one head subtracted here has
+    to be written at that level too: a bare `1` is level-less and would make the
+    subtraction mix `[kin]` with nothing.
+    """
+    return number_of_individuals_kin - cast_ttsim_unit(
+        1, TTSIMUnit.DIMENSIONLESS.PER_KIN
+    )

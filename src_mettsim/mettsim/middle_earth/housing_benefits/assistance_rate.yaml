@@ -10,3 +10,22 @@ assistance_rate:
   type: scalar
   1900-01-01:
     value: 0.5
+taper_coefficients:
+  name:
+    de: Koeffizienten der Abschmelzformel
+    en: Coefficients of the taper formula
+  description:
+    de: >-
+      Empirisch angepasste Koeffizienten. Das Produkt aus `b` und einem
+      Geldbetrag ist per Konstruktion der Anpassung eine reine Zahl, nicht
+      aufgrund der Einheitenalgebra (GEP 10).
+    en: >-
+      Fitted coefficients. The product of `b` and a currency amount is a pure
+      number by construction of the fit rather than by unit algebra (GEP 10).
+  unit:
+    a: DIMENSIONLESS
+    b: DIMENSIONLESS
+  type: dict
+  1900-01-01:
+    a: 0.6
+    b: 0.0001

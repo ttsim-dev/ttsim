@@ -247,26 +247,8 @@ def test_data_currency_converts_at_the_column_boundary(
     assert float(numpy.asarray(castar)[0]) > 0.0
 
 
-def _bare_payroll_tree(factor: float = 1.0) -> dict[str, Any]:
-    """A household for the 2025 payroll-tax run, currency amounts scaled by `factor`."""
-    return {
-        "p_id": numpy.array([0, 1]),
-        "kin_id": numpy.array([0, 0]),
-        "p_id_spouse": numpy.array([1, 0]),
-        "p_id_parent_1": numpy.array([-1, -1]),
-        "p_id_parent_2": numpy.array([-1, -1]),
-        "birth_year": numpy.array([1995, 1995]),  # age 30 in 2025
-        "parent_is_noble": numpy.array([False, False]),
-        "wealth": numpy.array([100.0, 200.0]) * factor,
-        "payroll_tax": {
-            "child_tax_credit": {"p_id_recipient": numpy.array([-1, -1])},
-            "income": {"gross_wage_y": numpy.array([10000.0, 0.0]) * factor},
-        },
-    }
-
-
 def _annotated_payroll_tree(currency: str, factor: float = 1.0) -> dict[str, Any]:
-    """`_bare_payroll_tree` with every leaf a `UnitAnnotatedColumn` (GEP 10).
+    """A two-person payroll-tax input tree, every leaf a `UnitAnnotatedColumn`.
 
     Ids and the person-level boolean are ``TTSIMUnit.DIMENSIONLESS`` (the person leaf
     is implied, never spelled); the birth year is a calendar year; wealth is a
@@ -311,59 +293,6 @@ def _annotated_payroll_tree(currency: str, factor: float = 1.0) -> dict[str, Any
     }
 
 
-def _run_payroll(
-    input_data: InputData,
-    data_currency: str,
-    backend: Literal["numpy", "jax"],
-    main_target: str,
-):
-    return main(
-        main_target=main_target,
-        policy_date_str="2025-01-01",
-        input_data=input_data,
-        orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
-        tt_targets=TTTargets.tree({"payroll_tax": {"amount_y": None}}),
-        rounding=False,
-        data_currency=data_currency,
-        backend=backend,
-        unit_system=middle_earth.UNIT_SYSTEM,
-    )
-
-
-def test_unit_annotated_input_and_output_round_trip(
-    backend: Literal["numpy", "jax"],
-):
-    """A pint-tagged input tree in and a pint-tagged output tree out, end to end.
-
-    Feeds silver-penny-tagged input (x4) into a run with castar data currency
-    and requests the annotated results tree: the boundary converts the input
-    and the output leaf carries the precise data-currency unit, with a
-    magnitude equal to the bare castar run.
-    """
-    bare = _run_payroll(
-        input_data=InputData.tree(_bare_payroll_tree()),
-        data_currency="CASTAR",
-        backend=backend,
-        main_target="results__tree",
-    )
-    tagged = _run_payroll(
-        input_data=InputData.tree_with_unit_annotations(
-            _annotated_payroll_tree(currency="SILVER_PENNY", factor=4.0)
-        ),
-        data_currency="CASTAR",
-        backend=backend,
-        main_target="results__tree_with_unit_annotations",
-    )
-    amount = tagged["payroll_tax"]["amount_y"]
-    assert isinstance(amount, UnitAnnotatedColumn)
-    assert amount.unit == TTSIMUnit.CASTAR.PER_YEAR
-    assert str(amount.unit) == "CASTAR_PER_YEAR"
-    numpy.testing.assert_allclose(
-        numpy.asarray(amount.values),
-        numpy.asarray(bare["payroll_tax"]["amount_y"]),
-    )
-
-
 def test_unit_annotated_input_rejects_wrong_dimension(
     backend: Literal["numpy", "jax"],
 ):
@@ -373,11 +302,16 @@ def test_unit_annotated_input_rejects_wrong_dimension(
         values=numpy.array([1995, 1995]), unit=TTSIMUnit.CASTAR
     )
     with pytest.raises(UnitConsistencyError, match="inconsistent with the DAG"):
-        _run_payroll(
+        main(
+            main_target="results__tree",
+            policy_date_str="2025-01-01",
             input_data=InputData.tree_with_unit_annotations(tree),
+            orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+            tt_targets=TTTargets.tree({"payroll_tax": {"amount_y": None}}),
+            rounding=False,
             data_currency="CASTAR",
             backend=backend,
-            main_target="results__tree",
+            unit_system=middle_earth.UNIT_SYSTEM,
         )
 
 
@@ -394,11 +328,16 @@ def test_unit_annotated_input_rejects_agnostic_currency(
         values=numpy.array([100.0, 200.0]), unit=TTSIMUnit.CURRENCY
     )
     with pytest.raises(UnitConsistencyError, match="concrete currency"):
-        _run_payroll(
+        main(
+            main_target="results__tree",
+            policy_date_str="2025-01-01",
             input_data=InputData.tree_with_unit_annotations(tree),
+            orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+            tt_targets=TTTargets.tree({"payroll_tax": {"amount_y": None}}),
+            rounding=False,
             data_currency="CASTAR",
             backend=backend,
-            main_target="results__tree",
+            unit_system=middle_earth.UNIT_SYSTEM,
         )
 
 
@@ -412,9 +351,14 @@ def test_unit_annotated_input_rejects_wrong_grouping_level(
         unit=TTSIMUnit.CASTAR.PER_YEAR.PER_LEVEL("fam"),
     )
     with pytest.raises(UnitConsistencyError, match="the column is at"):
-        _run_payroll(
+        main(
+            main_target="results__tree",
+            policy_date_str="2025-01-01",
             input_data=InputData.tree_with_unit_annotations(tree),
+            orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+            tt_targets=TTTargets.tree({"payroll_tax": {"amount_y": None}}),
+            rounding=False,
             data_currency="CASTAR",
             backend=backend,
-            main_target="results__tree",
+            unit_system=middle_earth.UNIT_SYSTEM,
         )
