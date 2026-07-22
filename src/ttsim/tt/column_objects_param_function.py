@@ -63,6 +63,7 @@ from ttsim.tt.type_resolution import (
 from ttsim.tt.units import (
     UNSET_UNIT,
     CompositeUnit,
+    InputOutputUnit,
 )
 from ttsim.tt.vectorization import vectorize_function
 from ttsim.typing import DashedISOString, IntColumn, UnorderedQNames
@@ -1175,7 +1176,7 @@ class ParamFunction(Generic[FunArgTypes, ReturnType]):
     description: str
     warn_msg_if_included: str | None = None
     fail_msg_if_included: str | None = None
-    unit: CompositeUnit = UNSET_UNIT
+    unit: CompositeUnit | InputOutputUnit = UNSET_UNIT
     verify_units: bool = True
 
     def __post_init__(self) -> None:
@@ -1235,7 +1236,7 @@ def param_function(
     end_date: str | datetime.date = DEFAULT_END_DATE,
     warn_msg_if_included: str | None = None,
     fail_msg_if_included: str | None = None,
-    unit: CompositeUnit,
+    unit: CompositeUnit | InputOutputUnit,
     verify_units: bool = True,
 ) -> Callable[[Callable[..., Any]], ParamFunction[..., Any]]:
     """Decorate a function to make it a `ParamFunction`.
@@ -1244,8 +1245,17 @@ def param_function(
     flat homogenous dictionary, or a set of parameters of a piecewise polynomial
     function) to custom representations. They must not use any data columns (i.e.,
     arrays of the same length as `p_id`). Use `policy_function` / `PolicyFunction` for
-    functions that operate on data columns. A ParamFunction returning a structured
-    value declares ``unit=UNSET_UNIT`` (GEP 10).
+    functions that operate on data columns (GEP 10):
+
+    - a ParamFunction returning a **scalar quantity** declares that quantity's
+      ``unit=`` (a :class:`~ttsim.tt.units.CompositeUnit`);
+    - one building a **schedule** (a ``PiecewisePolynomialParamValue`` or a
+      ``ConsecutiveIntLookupTableParamValue``) declares its domain and range with
+      ``unit=InputOutputUnit(input_unit=…, output_unit=…)`` and states
+      ``verify_units=False`` (a schedule builder's body cannot be unit-checked);
+    - one building any other **structured value** (a dataclass of related
+      parameters) declares ``unit=UNSET_UNIT``; each plucked value's unit comes
+      from the return type's field annotations.
 
     As a consequence, the arguments of the decorated function must be found in the
     params tree. They are typically defined as outermost keys in the yaml files with

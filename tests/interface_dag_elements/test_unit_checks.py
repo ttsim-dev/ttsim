@@ -33,6 +33,7 @@ from ttsim.tt import (
     UNSET_UNIT,
     AggType,
     FKType,
+    InputOutputUnit,
     RoundingSpec,
     TTSIMUnit,
     agg_by_group_function,
@@ -3259,19 +3260,36 @@ def test_resolved_return_structure_handles_a_runtime_mapping_annotation():
 
 
 # Annotated schedule fields: a lookup nested in a parameter dataclass declares its
-# output unit at the field, so `params.field.look_up(...)` screens without a cast
+# two axes at the field with `InputOutputUnit`, so `params.field.look_up(...)`
+# screens its index against the input axis and produces the output axis, no cast
 # (GEP 10)
 
 
 @dataclass(frozen=True)
 class _AnnotatedRentBounds:
     max_age: Annotated[int, TTSIMUnit.YEARS]
-    rate_m: Annotated[ConsecutiveIntLookupTableParamValue, TTSIMUnit.CURRENCY.PER_MONTH]
+    rate_m: Annotated[
+        ConsecutiveIntLookupTableParamValue,
+        InputOutputUnit(
+            input_unit=TTSIMUnit.YEARS, output_unit=TTSIMUnit.CURRENCY.PER_MONTH
+        ),
+    ]
 
 
 @dataclass(frozen=True)
 class _AnnotatedLookupRate:
-    factor: Annotated[ConsecutiveIntLookupTableParamValue, TTSIMUnit.DIMENSIONLESS]
+    factor: Annotated[
+        ConsecutiveIntLookupTableParamValue,
+        InputOutputUnit(
+            input_unit=TTSIMUnit.YEARS, output_unit=TTSIMUnit.DIMENSIONLESS
+        ),
+    ]
+    stufe_rate_m: Annotated[
+        ConsecutiveIntLookupTableParamValue,
+        InputOutputUnit(
+            input_unit=TTSIMUnit.DIMENSIONLESS, output_unit=TTSIMUnit.CURRENCY.PER_MONTH
+        ),
+    ]
     bounds: _AnnotatedRentBounds
 
 
@@ -3282,6 +3300,11 @@ def annotated_lookup_rate(xnp: ModuleType) -> _AnnotatedLookupRate:
         factor=ConsecutiveIntLookupTableParamValue(
             xnp=xnp,
             values_to_look_up=xnp.array([1.0, 2.0]),
+            bases_to_subtract=xnp.array([1]),
+        ),
+        stufe_rate_m=ConsecutiveIntLookupTableParamValue(
+            xnp=xnp,
+            values_to_look_up=xnp.array([30.0, 40.0]),
             bases_to_subtract=xnp.array([1]),
         ),
         bounds=_AnnotatedRentBounds(
@@ -3362,13 +3385,14 @@ def test_annotated_schedule_field_resolves_through_nested_dataclass():
 
 
 def test_annotated_schedule_field_look_up_by_a_literal_index_is_evaluable():
-    """A schedule field keyed by a bare literal resolves to the field's output
-    unit without an opt-out, just as a top-level schedule parameter does: the
-    index need not carry a unit for the output to be known (GEP 10)."""
+    """A schedule field with a dimensionless input axis keyed by a bare literal
+    resolves to the field's output unit without an opt-out, just as a top-level
+    schedule parameter does: a dimensionless index need not be a quantity for the
+    output to be known (GEP 10)."""
 
     @policy_function(unit=TTSIMUnit.CURRENCY.PER_MONTH)
     def rent_m(annotated_lookup_rate: _AnnotatedLookupRate) -> float:
-        return annotated_lookup_rate.bounds.rate_m.look_up(1)
+        return annotated_lookup_rate.stufe_rate_m.look_up(1)
 
     fail_if_environment_units_are_inconsistent(
         env={
@@ -3467,60 +3491,8 @@ def test_never_plucked_malformed_field_annotation_is_rejected():
         )
 
 
-@param_function(unit=UNSET_UNIT)
-def built_schedule(
-    raw_schedule: RawParamValue, xnp: ModuleType
-) -> PiecewisePolynomialParamValue:
-    """A converter-built schedule: opaque to the unit check (GEP 10)."""
-    return PiecewisePolynomialParamValue(
-        thresholds=xnp.asarray(raw_schedule["thresholds"]),
-        intercepts=xnp.asarray(raw_schedule["intercepts"]),
-        coefficients=xnp.asarray(raw_schedule["coefficients"]),
-    )
-
-
-def test_piecewise_call_on_converter_built_schedule_is_cast_at_the_call():
-    @policy_function(unit=TTSIMUnit.CURRENCY.PER_YEAR)
-    def levy_y(
-        bonus_y: float,
-        built_schedule: PiecewisePolynomialParamValue,
-        xnp: ModuleType,
-    ) -> float:
-        return cast_ttsim_unit(
-            value=piecewise_polynomial(x=bonus_y, parameters=built_schedule, xnp=xnp),
-            unit=TTSIMUnit.CURRENCY.PER_YEAR,
-        )
-
-    fail_if_environment_units_are_inconsistent(
-        env={"bonus_y": bonus_y, "built_schedule": built_schedule, "levy_y": levy_y},
-        grouping_levels=GROUPING_LEVELS,
-        unit_system=UNIT_SYSTEM,
-    )
-
-
-def test_piecewise_call_on_converter_built_schedule_without_cast_is_caught():
-    @policy_function(unit=TTSIMUnit.CURRENCY.PER_YEAR)
-    def levy_y(
-        bonus_y: float,
-        built_schedule: PiecewisePolynomialParamValue,
-        xnp: ModuleType,
-    ) -> float:
-        return piecewise_polynomial(x=bonus_y, parameters=built_schedule, xnp=xnp)
-
-    with pytest.raises(UnitConsistencyError, match="at the pluck"):
-        fail_if_environment_units_are_inconsistent(
-            env={
-                "bonus_y": bonus_y,
-                "built_schedule": built_schedule,
-                "levy_y": levy_y,
-            },
-            grouping_levels=GROUPING_LEVELS,
-            unit_system=UNIT_SYSTEM,
-        )
-
-
-# Converter-built schedules from input/output-unit require_converters screen
-# like parameter-declared ones (GEP 10)
+# A schedule builder declares its two axes with `unit=InputOutputUnit(...)` and
+# opts out of body verification; consumers screen against those axes (GEP 10)
 
 
 def make_raw_levy_schedule() -> RawParam:
@@ -3533,11 +3505,16 @@ def make_raw_levy_schedule() -> RawParam:
     )
 
 
-@param_function(unit=UNSET_UNIT)
+@param_function(
+    unit=InputOutputUnit(
+        input_unit=TTSIMUnit.CURRENCY, output_unit=TTSIMUnit.CURRENCY.PER_YEAR
+    ),
+    verify_units=False,
+)
 def levy_schedule(
     raw_levy_schedule: RawParamValue, xnp: ModuleType
 ) -> PiecewisePolynomialParamValue:
-    """A converter with input/output units declared: consumers screen against them."""
+    """A schedule builder declaring its two axes: consumers screen against them."""
     return PiecewisePolynomialParamValue(
         thresholds=xnp.asarray([0.0, raw_levy_schedule["ceiling"]]),
         intercepts=xnp.asarray([0.0, 0.0]),
@@ -3610,12 +3587,20 @@ def test_axes_declared_schedule_output_reaches_the_consumer_declaration():
         )
 
 
-def test_axes_consumer_without_schedule_return_annotation_is_rejected():
-    @param_function(unit=UNSET_UNIT)
+def test_input_output_unit_on_non_schedule_return_is_rejected():
+    """A quantity or dict return declaring `InputOutputUnit(...)` is a contract
+    error: only a schedule has two axes (GEP 10)."""
+
+    @param_function(
+        unit=InputOutputUnit(
+            input_unit=TTSIMUnit.CURRENCY, output_unit=TTSIMUnit.CURRENCY.PER_YEAR
+        ),
+        verify_units=False,
+    )
     def levy_params(raw_levy_schedule: RawParamValue) -> dict[str, float]:
         return dict(raw_levy_schedule)
 
-    with pytest.raises(UnitConsistencyError, match="annotated as returning"):
+    with pytest.raises(UnitConsistencyError, match="not annotated as returning"):
         fail_if_environment_units_are_inconsistent(
             env={
                 "raw_levy_schedule": make_raw_levy_schedule(),
@@ -3626,30 +3611,121 @@ def test_axes_consumer_without_schedule_return_annotation_is_rejected():
         )
 
 
-def test_axes_consumer_with_quantity_unit_is_rejected():
-    @param_function(unit=TTSIMUnit.CURRENCY.PER_YEAR)
-    def levy_ceiling_y(raw_levy_schedule: RawParamValue) -> float:
-        return raw_levy_schedule["ceiling"]
+def test_schedule_return_with_quantity_unit_is_rejected():
+    """A schedule-returning param function must declare `InputOutputUnit(...)`, not
+    a single quantity unit (GEP 10)."""
 
-    with pytest.raises(UnitConsistencyError, match="UNSET_UNIT"):
+    @param_function(unit=TTSIMUnit.CURRENCY.PER_YEAR, verify_units=False)
+    def levy_schedule_bad(
+        raw_levy_schedule: RawParamValue, xnp: ModuleType
+    ) -> PiecewisePolynomialParamValue:
+        return PiecewisePolynomialParamValue(
+            thresholds=xnp.asarray([0.0, raw_levy_schedule["ceiling"]]),
+            intercepts=xnp.asarray([0.0, 0.0]),
+            coefficients=xnp.asarray([[0.0], [raw_levy_schedule["top_rate"]]]),
+        )
+
+    with pytest.raises(UnitConsistencyError, match="InputOutputUnit"):
         fail_if_environment_units_are_inconsistent(
             env={
                 "raw_levy_schedule": make_raw_levy_schedule(),
-                "levy_ceiling_y": levy_ceiling_y,
+                "levy_schedule_bad": levy_schedule_bad,
             },
             grouping_levels=GROUPING_LEVELS,
             unit_system=UNIT_SYSTEM,
         )
 
 
-def test_schedule_param_function_declared_unit_flows_into_look_up_without_cast():
-    """A schedule-returning ``@param_function`` may declare its **own** output
-    unit (rather than deriving it from a require_converter's axes): ``look_up``
-    then yields that unit at the consumer with no ``cast_ttsim_unit``. Used where the
-    raw keeps honest per-key units that cannot collapse to a single axis (GEP
-    10)."""
+def test_schedule_return_with_unset_unit_is_rejected():
+    """A schedule-returning param function may not declare `unit=UNSET_UNIT`: that
+    marks a structured value, not a schedule (GEP 10)."""
 
-    @param_function(unit=TTSIMUnit.SQUARE_METER.PER_FAM)
+    @param_function(unit=UNSET_UNIT)
+    def levy_schedule_unset(
+        raw_levy_schedule: RawParamValue, xnp: ModuleType
+    ) -> PiecewisePolynomialParamValue:
+        return PiecewisePolynomialParamValue(
+            thresholds=xnp.asarray([0.0, raw_levy_schedule["ceiling"]]),
+            intercepts=xnp.asarray([0.0, 0.0]),
+            coefficients=xnp.asarray([[0.0], [raw_levy_schedule["top_rate"]]]),
+        )
+
+    with pytest.raises(UnitConsistencyError, match="InputOutputUnit"):
+        fail_if_environment_units_are_inconsistent(
+            env={
+                "raw_levy_schedule": make_raw_levy_schedule(),
+                "levy_schedule_unset": levy_schedule_unset,
+            },
+            grouping_levels=GROUPING_LEVELS,
+            unit_system=UNIT_SYSTEM,
+        )
+
+
+def test_schedule_builder_without_verify_units_false_is_rejected():
+    """A schedule builder's body cannot be unit-verified, so it must state
+    `verify_units=False` explicitly (GEP 10)."""
+
+    @param_function(
+        unit=InputOutputUnit(
+            input_unit=TTSIMUnit.CURRENCY, output_unit=TTSIMUnit.CURRENCY.PER_YEAR
+        ),
+    )
+    def levy_schedule_verified(
+        raw_levy_schedule: RawParamValue, xnp: ModuleType
+    ) -> PiecewisePolynomialParamValue:
+        return PiecewisePolynomialParamValue(
+            thresholds=xnp.asarray([0.0, raw_levy_schedule["ceiling"]]),
+            intercepts=xnp.asarray([0.0, 0.0]),
+            coefficients=xnp.asarray([[0.0], [raw_levy_schedule["top_rate"]]]),
+        )
+
+    with pytest.raises(UnitConsistencyError, match="verify_units=False"):
+        fail_if_environment_units_are_inconsistent(
+            env={
+                "raw_levy_schedule": make_raw_levy_schedule(),
+                "levy_schedule_verified": levy_schedule_verified,
+            },
+            grouping_levels=GROUPING_LEVELS,
+            unit_system=UNIT_SYSTEM,
+        )
+
+
+def test_lookup_table_builder_with_currency_input_unit_is_rejected():
+    """A lookup table is keyed by consecutive integers, so its `input_unit` may
+    not be a currency (GEP 10)."""
+
+    @param_function(
+        unit=InputOutputUnit(
+            input_unit=TTSIMUnit.CURRENCY, output_unit=TTSIMUnit.CURRENCY.PER_YEAR
+        ),
+        verify_units=False,
+    )
+    def levy_lookup_bad(xnp: ModuleType) -> ConsecutiveIntLookupTableParamValue:
+        return ConsecutiveIntLookupTableParamValue(
+            xnp=xnp,
+            values_to_look_up=xnp.array([45.0, 60.0]),
+            bases_to_subtract=xnp.array([1]),
+        )
+
+    with pytest.raises(UnitConsistencyError, match="input axis is never a currency"):
+        fail_if_environment_units_are_inconsistent(
+            env={"levy_lookup_bad": levy_lookup_bad},
+            grouping_levels=GROUPING_LEVELS,
+            unit_system=UNIT_SYSTEM,
+        )
+
+
+def test_schedule_builder_declared_axes_flow_into_look_up_without_cast():
+    """A lookup-table builder declares its two axes with `InputOutputUnit`;
+    ``look_up`` screens its index against the input axis and yields the output at
+    the consumer with no ``cast_ttsim_unit`` (GEP 10)."""
+
+    @param_function(
+        unit=InputOutputUnit(
+            input_unit=TTSIMUnit.YEARS, output_unit=TTSIMUnit.SQUARE_METER.PER_FAM
+        ),
+        verify_units=False,
+    )
     def eligible_area(xnp: ModuleType) -> ConsecutiveIntLookupTableParamValue:
         return ConsecutiveIntLookupTableParamValue(
             xnp=xnp,
@@ -3674,11 +3750,16 @@ def test_schedule_param_function_declared_unit_flows_into_look_up_without_cast()
     )
 
 
-def test_schedule_param_function_declared_unit_screens_a_mismatched_consumer():
-    """The declared output unit is a real contract: a ``look_up`` result fed into
+def test_schedule_builder_declared_axes_screen_a_mismatched_consumer():
+    """The declared output axis is a real contract: a ``look_up`` result fed into
     a disagreeing consumer declaration is caught (GEP 10)."""
 
-    @param_function(unit=TTSIMUnit.SQUARE_METER.PER_FAM)
+    @param_function(
+        unit=InputOutputUnit(
+            input_unit=TTSIMUnit.YEARS, output_unit=TTSIMUnit.SQUARE_METER.PER_FAM
+        ),
+        verify_units=False,
+    )
     def eligible_area(xnp: ModuleType) -> ConsecutiveIntLookupTableParamValue:
         return ConsecutiveIntLookupTableParamValue(
             xnp=xnp,
@@ -3704,25 +3785,56 @@ def test_schedule_param_function_declared_unit_screens_a_mismatched_consumer():
         )
 
 
-def test_converter_of_two_input_output_unit_params_is_rejected():
-    @param_function(unit=UNSET_UNIT)
-    def merged_schedule(
-        raw_levy_schedule: RawParamValue,
-        raw_second_levy_schedule: RawParamValue,  # noqa: ARG001
-        xnp: ModuleType,
-    ) -> PiecewisePolynomialParamValue:
-        return PiecewisePolynomialParamValue(
-            thresholds=xnp.asarray([0.0, raw_levy_schedule["ceiling"]]),
-            intercepts=xnp.asarray([0.0, 0.0]),
-            coefficients=xnp.asarray([[0.0], [0.0]]),
+# Field-marker mismatches: a schedule field needs `InputOutputUnit`, a scalar field
+# a single `CompositeUnit` (GEP 10)
+
+
+@dataclass(frozen=True)
+class _ScheduleFieldWithBareUnit:
+    rate_m: Annotated[ConsecutiveIntLookupTableParamValue, TTSIMUnit.CURRENCY.PER_MONTH]
+
+
+@param_function(unit=UNSET_UNIT)
+def bare_unit_schedule_field(xnp: ModuleType) -> _ScheduleFieldWithBareUnit:
+    return _ScheduleFieldWithBareUnit(
+        rate_m=ConsecutiveIntLookupTableParamValue(
+            xnp=xnp,
+            values_to_look_up=xnp.array([1.0, 2.0]),
+            bases_to_subtract=xnp.array([1]),
+        )
+    )
+
+
+def test_bare_unit_on_schedule_field_is_rejected():
+    with pytest.raises(UnitDefinitionError, match="InputOutputUnit"):
+        fail_if_environment_units_are_inconsistent(
+            env={"bare_unit_schedule_field": bare_unit_schedule_field},
+            grouping_levels=GROUPING_LEVELS,
+            unit_system=UNIT_SYSTEM,
         )
 
-    with pytest.raises(UnitConsistencyError, match="exactly one"):
+
+@dataclass(frozen=True)
+class _ScalarFieldWithIOUnit:
+    amount_m: Annotated[
+        float,
+        InputOutputUnit(
+            input_unit=TTSIMUnit.YEARS, output_unit=TTSIMUnit.CURRENCY.PER_MONTH
+        ),
+    ]
+
+
+@param_function(unit=UNSET_UNIT)
+def io_unit_scalar_field(raw_child_rate: RawParamValue) -> _ScalarFieldWithIOUnit:
+    return _ScalarFieldWithIOUnit(amount_m=raw_child_rate["amount_m"])
+
+
+def test_input_output_unit_on_scalar_field_is_rejected():
+    with pytest.raises(UnitDefinitionError, match="not a lookup/piecewise value"):
         fail_if_environment_units_are_inconsistent(
             env={
-                "raw_levy_schedule": make_raw_levy_schedule(),
-                "raw_second_levy_schedule": make_raw_levy_schedule(),
-                "merged_schedule": merged_schedule,
+                "raw_child_rate": make_raw_child_rate(),
+                "io_unit_scalar_field": io_unit_scalar_field,
             },
             grouping_levels=GROUPING_LEVELS,
             unit_system=UNIT_SYSTEM,

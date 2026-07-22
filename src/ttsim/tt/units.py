@@ -637,9 +637,10 @@ def cast_ttsim_unit(
 #: Sentinel with two readings, told apart by the node type (GEP 10):
 #:
 #: - on a ``@param_function``, ``unit=UNSET_UNIT`` is the *explicit* declaration
-#:   of a structured output (a dataclass of related parameters, a converter-built
-#:   schedule) that is not a quantity: the body is not unit-checked and consumers
-#:   state each plucked value's unit with ``cast_ttsim_unit``;
+#:   of a structured output — a dataclass of related parameters — that is not a
+#:   quantity: the body is not unit-checked and each plucked value's unit comes
+#:   from the return type's field annotations (or a ``cast_ttsim_unit`` at the
+#:   pluck for an unannotated field);
 #: - everywhere else a real unit is mandatory, so the sentinel only survives as a
 #:   dataclass field default (the ``unit`` field needs one for field-ordering),
 #:   marking an *omitted* declaration that the mandatory-units check reports.
@@ -647,6 +648,33 @@ def cast_ttsim_unit(
 #: It is a :class:`CompositeUnit` so the field type is clean; its base never
 #: resolves and it is only ever compared by identity.
 UNSET_UNIT: CompositeUnit = CompositeUnit(base="__UNSET__")
+
+
+@dataclass(frozen=True)
+class InputOutputUnit:
+    """The two axes of a schedule builder's output (GEP 10).
+
+    A ``@param_function`` whose body builds a schedule — a
+    :class:`~ttsim.tt.param_objects.PiecewisePolynomialParamValue` or a
+    :class:`~ttsim.tt.param_objects.ConsecutiveIntLookupTableParamValue` — is a
+    *function between quantities*, not a single quantity, so it declares the
+    domain and range of that function instead of one ``unit=``:
+    ``unit=InputOutputUnit(input_unit=TTSIMUnit.CURRENCY,
+    output_unit=TTSIMUnit.CURRENCY.PER_YEAR)``. The framework screens each
+    ``look_up`` / ``piecewise_polynomial`` argument against ``input_unit`` and
+    hands the consumer the ``output_unit``. A schedule-typed field of a parameter
+    dataclass states the same pair in its ``Annotated[…]`` metadata.
+
+    Both axes are currency-agnostic compositional units, exactly like a
+    column/function declaration: a schedule builder runs in the statutory
+    currency of the policy date, whichever that is.
+    """
+
+    input_unit: CompositeUnit
+    """The unit each domain argument (``look_up`` index, ``piecewise_polynomial``
+    ``x``) is screened against."""
+    output_unit: CompositeUnit
+    """The unit the schedule produces at every call site."""
 
 
 def token_is_agnostic_currency(token: CompositeUnit | None) -> bool:

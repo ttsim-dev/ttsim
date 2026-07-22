@@ -83,6 +83,7 @@ from ttsim.tt.units import (
     TIME_UNIT_ID_TO_PINT_NAME,
     UNSET_UNIT,
     CompositeUnit,
+    InputOutputUnit,
     UnitAnnotatedColumn,
     _grouping_levels_with_exponent,
     _unit_level_denominator,
@@ -322,25 +323,26 @@ def resolve_environment_units(
                 resolved[qname] = agg_unit
         elif isinstance(obj, ParamFunction) and _returns_a_schedule(obj):
             token = getattr(obj, "unit", UNSET_UNIT)
-            if token is not UNSET_UNIT:
-                # A schedule-returning param function's `unit=` is its schedule's
-                # OUTPUT axis (as a require_converter's `output_unit:` is), not a
-                # column unit: resolve it the parameter way — concrete currency
-                # allowed, no name-suffix rules — so `look_up`/`piecewise_polynomial`
-                # consumers screen against it. The raw-axis derivation stays the
-                # fallback when the function declares `unit=UNSET_UNIT` (GEP 10).
-                resolved[qname] = resolve_compositional_param_unit(
-                    unit=cast("CompositeUnit", token),
+            if isinstance(token, InputOutputUnit):
+                # A schedule-returning param function declares its schedule's two
+                # axes with `unit=InputOutputUnit(...)`; the environment-level
+                # resolved unit is the OUTPUT axis (what `look_up` /
+                # `piecewise_polynomial` consumers receive), resolved the parameter
+                # way — no name-suffix rules (GEP 10). A malformed declaration (a
+                # quantity unit or `UNSET_UNIT` on a schedule return) is left
+                # unresolved here and reported by the schedule contract check.
+                resolved[qname] = _resolve_schedule_declaration_axis(
+                    unit=token.output_unit,
                     registry=registry,
                     where=f"Schedule param function {qname!r}",
                 )
         else:  # ColumnObject | scalar ParamFunction
             token = getattr(obj, "unit", UNSET_UNIT)
-            if token is not UNSET_UNIT:
+            if isinstance(token, CompositeUnit) and token is not UNSET_UNIT:
                 leaf_name = dt.tree_path_from_qname(qname)[-1]
                 match = pattern.fullmatch(leaf_name)
                 resolved[qname] = _resolve_leveled_column_unit(
-                    token=cast("CompositeUnit", token),
+                    token=token,
                     match=match,
                     registry=registry,
                 )
@@ -584,9 +586,10 @@ def fail_if_environment_units_are_missing(
 
     - a dict or require_converter parameter with per-leaf units must cover every
       leaf of the value active at the policy date;
-    - a ``@param_function`` declaring ``unit=UNSET_UNIT`` is exempt — its output
-      is a structured value, not a quantity, and the decorator requires the
-      argument, so the sentinel is never an omission (GEP 10);
+    - a ``@param_function`` declaring ``unit=UNSET_UNIT`` (a structured value) or
+      ``unit=InputOutputUnit(...)`` (a schedule builder) is exempt — its output is
+      not a single quantity, and its units live in the field annotations or the
+      declaration itself, so neither is an omission (GEP 10);
     - a rounding spec on a currency-valued function must declare its own unit (its
       magnitudes are statutory numbers in a concrete currency, like a parameter's
       — GEP 10); a missing one is reported as ``<qname> (rounding_spec)``.
@@ -602,7 +605,13 @@ def fail_if_environment_units_are_missing(
         if qname in FRAMEWORK_DATE_NODE_UNITS:
             continue
         declared_unit = getattr(obj, "unit", UNSET_UNIT)
-        if isinstance(obj, ParamFunction) and declared_unit is UNSET_UNIT:
+        if isinstance(obj, ParamFunction) and (
+            declared_unit is UNSET_UNIT or isinstance(declared_unit, InputOutputUnit)
+        ):
+            # A structured value (`UNSET_UNIT`) states its units in the return
+            # type's field annotations; a schedule builder (`InputOutputUnit`)
+            # states them in the declaration itself. Either way the param
+            # function has declared its unit — it is not an omission (GEP 10).
             continue
         if isinstance(obj, ParamMappingObject | RawParam) and (
             isinstance(obj, ParamMappingObject)
@@ -799,9 +808,9 @@ def fail_if_environment_units_are_inconsistent(
       and agg_type; its declared token is checked against that derivation, the same
       declared-vs-produced contract a body is held to;
     - a **rounding spec** is checked against its function's unit
-      (:func:`_rounding_spec_declaration_inconsistency`), and a **converter** of an
-      input/output-unit ``require_converter`` against the axes contract
-      (:func:`_axes_converter_contract_errors`).
+      (:func:`_rounding_spec_declaration_inconsistency`), and every **param
+      function** against the schedule contract keyed off its ``unit=`` and return
+      annotation (:func:`_schedule_param_function_contract_errors`).
 
     Time-conversion variants and group-creation functions are unit-assigned by
     construction and need no check.
@@ -845,7 +854,7 @@ def fail_if_environment_units_are_inconsistent(
         env=env, resolved_units=resolved_units, registry=registry
     )
     errors.extend(_rounding_spec_declaration_errors(env=env))
-    errors.extend(_axes_converter_contract_errors(env=env))
+    errors.extend(_schedule_param_function_contract_errors(env=env))
     errors.extend(
         _body_verification_errors(
             env=env,
@@ -1371,37 +1380,6 @@ def _return_annotation_name(func: Any) -> str:  # noqa: ANN401
     return name.rsplit(".", maxsplit=1)[-1]
 
 
-def _axes_declaring_raw_dependencies(
-    obj: ParamFunction,
-    env: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
-) -> list[tuple[str, RawParam]]:
-    """The input/output-unit ``require_converter`` parameters a param function reads."""
-    out: list[tuple[str, RawParam]] = []
-    for dep in sorted(obj.dependencies):
-        raw = env.get(dep)
-        if isinstance(raw, RawParam) and (
-            raw.input_unit is not UNSET_UNIT or raw.output_unit is not UNSET_UNIT
-        ):
-            out.append((dep, raw))
-    return out
-
-
-def _resolved_raw_param_axis(
-    token: Any,  # noqa: ANN401
-    qname: str,
-    registry: pint.UnitRegistry,
-) -> pint.Unit | None:
-    """Resolve one declared axis of an input/output-unit ``require_converter``."""
-    if token is UNSET_UNIT:
-        return None
-    where = f"Parameter {qname!r}"
-    unit_token = cast("CompositeUnit", token)
-    _fail_if_param_token_is_agnostic_currency(token=unit_token, where=where)
-    return resolve_compositional_param_unit(
-        unit=unit_token, registry=registry, where=where
-    )
-
-
 def _dataclass_or_none(obj: Any) -> type | None:  # noqa: ANN401
     """``obj`` if it is a dataclass type, else ``None``."""
     return obj if isinstance(obj, type) and dataclasses.is_dataclass(obj) else None
@@ -1461,15 +1439,18 @@ def _resolved_return_structure(func: Any) -> tuple[type | None, type | None]:  #
 
 @dataclasses.dataclass(frozen=True)
 class _ScheduleFieldKind:
-    """A parameter dataclass field typed as a schedule and carrying its output unit.
+    """A parameter dataclass field typed as a schedule and carrying its two axes.
 
-    A field annotated ``Annotated[<schedule type>, <unit>]`` declares the
-    schedule's OUTPUT axis at the field, exactly as a schedule-returning
-    ``@param_function`` declares it in its ``unit=`` — so a pluck of the field
-    yields a :class:`_UnitCheckSchedule` whose ``look_up`` /
-    ``piecewise_polynomial`` produces this unit, its index unscreened (GEP 10).
+    A field annotated ``Annotated[<schedule type>, InputOutputUnit(...)]`` declares
+    the schedule's INPUT and OUTPUT axes at the field, exactly as a
+    schedule-returning ``@param_function`` declares them in its ``unit=`` — so a
+    pluck of the field yields a :class:`_UnitCheckSchedule` that screens each
+    ``look_up`` / ``piecewise_polynomial`` argument against ``input_unit`` and
+    produces ``output_unit`` (GEP 10).
     """
 
+    input_unit: pint.Unit
+    """The resolved unit each domain argument is screened against."""
     output_unit: pint.Unit
     """The resolved unit the schedule produces."""
 
@@ -1482,8 +1463,8 @@ def _structured_field_kinds(
     Maps each field to what its pluck yields:
 
     - an ``Annotated[<scalar>, TTSIMUnit…]`` field → the resolved unit;
-    - an ``Annotated[<schedule type>, TTSIMUnit…]`` field → a
-      :class:`_ScheduleFieldKind` carrying the schedule's output unit;
+    - an ``Annotated[<schedule type>, InputOutputUnit(...)]`` field → a
+      :class:`_ScheduleFieldKind` carrying the schedule's input and output axes;
     - a nested-dataclass field → its class (whose plucks resolve recursively);
     - anything else (a bare scalar, dict, array) is absent — the pluck stays
       opaque and is cast at the site (GEP 10).
@@ -1495,8 +1476,10 @@ def _structured_field_kinds(
     system's registry, so the memo cannot be shared across systems.
 
     Raises:
-        UnitDefinitionError: If a field annotates several units, annotates a
-            non-scalar, non-schedule field, or pins a concrete currency.
+        UnitDefinitionError: If a field annotates several units, mismatches the
+            marker to the field kind (a bare ``CompositeUnit`` on a schedule field,
+            an ``InputOutputUnit`` on a scalar field), annotates a non-scalar,
+            non-schedule field, or pins a concrete currency.
     """
     memo = unit_system.field_units_by_class
     if cls in memo:
@@ -1509,39 +1492,90 @@ def _structured_field_kinds(
     kinds: dict[str, pint.Unit | type | _ScheduleFieldKind] = {}
     for field in dataclasses.fields(cls):
         hint = hints.get(field.name, field.type)
-        tokens = [
-            token
-            for token in getattr(hint, "__metadata__", ())
-            if isinstance(token, CompositeUnit)
-        ]
+        metadata = getattr(hint, "__metadata__", ())
+        composite_tokens = [t for t in metadata if isinstance(t, CompositeUnit)]
+        io_tokens = [t for t in metadata if isinstance(t, InputOutputUnit)]
         base = get_args(hint)[0] if hasattr(hint, "__metadata__") else hint
         where = f"Field '{cls.__name__}.{field.name}'"
-        if len(tokens) > 1:
+        is_schedule = isinstance(base, type) and issubclass(base, _SCHEDULE_VALUE_TYPES)
+        if len(composite_tokens) + len(io_tokens) > 1:
+            spelled = [str(t) for t in composite_tokens] + [
+                "InputOutputUnit(...)" for _ in io_tokens
+            ]
             raise UnitDefinitionError(
-                f"{where}: annotates {len(tokens)} units "
-                f"({', '.join(str(t) for t in tokens)}); a field states exactly "
-                f"one (GEP 10)."
+                f"{where}: annotates {len(spelled)} units ({', '.join(spelled)}); a "
+                f"field states exactly one (GEP 10)."
             )
-        if tokens:
+        if is_schedule:
+            kinds[field.name] = _schedule_field_kind(
+                io_tokens=io_tokens,
+                composite_tokens=composite_tokens,
+                unit_system=unit_system,
+                where=where,
+            )
+        elif io_tokens:
+            raise UnitDefinitionError(
+                f"{where}: annotates `InputOutputUnit(...)`, which declares a "
+                f"schedule's two axes, but the field is not a lookup/piecewise "
+                f"value; a scalar field states a single unit (GEP 10)."
+            )
+        elif composite_tokens:
             resolved = resolve_compositional_field_unit(
-                unit=tokens[0], registry=unit_system.registry, where=where
+                unit=composite_tokens[0], registry=unit_system.registry, where=where
             )
             if base in (int, float, bool):
                 kinds[field.name] = resolved
-            elif isinstance(base, type) and issubclass(base, _SCHEDULE_VALUE_TYPES):
-                # The unit is the schedule's output axis, declared at the field.
-                kinds[field.name] = _ScheduleFieldKind(output_unit=resolved)
             else:
                 raise UnitDefinitionError(
-                    f"{where}: a unit annotation must sit on a scalar field "
-                    f"(int/float/bool) or a schedule field (a lookup/piecewise "
-                    f"value); this structured or container field has no single unit "
-                    f"— cast at the pluck instead (GEP 10)."
+                    f"{where}: a single unit annotation must sit on a scalar field "
+                    f"(int/float/bool); this structured or container field has no "
+                    f"single unit — cast at the pluck instead (GEP 10)."
                 )
         elif isinstance(base, type) and dataclasses.is_dataclass(base):
             kinds[field.name] = base
     memo[cls] = kinds
     return kinds
+
+
+def _schedule_field_kind(
+    io_tokens: list[InputOutputUnit],
+    composite_tokens: list[CompositeUnit],
+    unit_system: UnitSystem,
+    where: str,
+) -> _ScheduleFieldKind:
+    """Resolve a schedule-typed field's declared axes into a kind.
+
+    A schedule field states its two axes with exactly one ``InputOutputUnit`` in
+    its ``Annotated[...]`` metadata. A bare ``CompositeUnit`` there declares a
+    single quantity, which a schedule (a function between quantities) is not, so
+    it is rejected with a pointer to ``InputOutputUnit`` (GEP 10).
+
+    Raises:
+        UnitDefinitionError: If the field carries a bare ``CompositeUnit`` marker,
+            or no ``InputOutputUnit`` at all.
+    """
+    if composite_tokens:
+        raise UnitDefinitionError(
+            f"{where}: a schedule field (a lookup/piecewise value) is a function "
+            f"between quantities, so it declares both axes with "
+            f"`InputOutputUnit(input_unit=…, output_unit=…)`, not the single unit "
+            f"`{composite_tokens[0]}` (GEP 10)."
+        )
+    if not io_tokens:
+        raise UnitDefinitionError(
+            f"{where}: a schedule field (a lookup/piecewise value) must annotate "
+            f"`InputOutputUnit(input_unit=…, output_unit=…)` declaring its two axes "
+            f"(GEP 10)."
+        )
+    io_token = io_tokens[0]
+    return _ScheduleFieldKind(
+        input_unit=resolve_compositional_field_unit(
+            unit=io_token.input_unit, registry=unit_system.registry, where=where
+        ),
+        output_unit=resolve_compositional_field_unit(
+            unit=io_token.output_unit, registry=unit_system.registry, where=where
+        ),
+    )
 
 
 def _fail_if_structured_field_annotations_are_invalid(
@@ -1606,42 +1640,17 @@ def _resolve_structured_field_annotations(
 def _param_function_stand_in(
     qname: str,
     obj: ParamFunction,
-    env: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
     unit_system: UnitSystem,
-) -> _UnitCheckSchedule | _UnitCheckStructuredValue:
+) -> _UnitCheckStructuredValue:
     """The unit check's stand-in for a structured param-function output (GEP 10).
 
-    - A converter of a **single** input/output-unit ``require_converter`` that is
-      annotated as returning a schedule type gets a :class:`_UnitCheckSchedule`
-      carrying its input and output units: the per-axis conversion already assumes
-      the declared units describe the typed output, so consumers screen against
-      them as for a parameter-declared schedule — no cast at the call.
-    - **Everything else** stays a :class:`_UnitCheckStructuredValue`, typed with the
-      return dataclass where one resolves so annotated plucks carry their field
-      units.
-
-    A converter that breaks the axes contract is reported by
-    :func:`_axes_converter_contract_errors`.
+    A ``@param_function(unit=UNSET_UNIT)`` builds a dataclass of related
+    parameters, so its stand-in is a :class:`_UnitCheckStructuredValue` typed with
+    the return dataclass where one resolves — annotated plucks then carry their
+    field units, and an unannotated pluck stays opaque and is cast at the site.
+    A schedule builder (``unit=InputOutputUnit(...)``) is handled separately as a
+    :class:`_UnitCheckSchedule` in :func:`_representative_values_by_qname`.
     """
-    axes_deps = _axes_declaring_raw_dependencies(obj=obj, env=env)
-    if (
-        len(axes_deps) == 1
-        and _return_annotation_name(obj.function) in _SCHEDULE_RETURN_TYPE_NAMES
-    ):
-        raw_qname, raw = axes_deps[0]
-        output_unit = _resolved_raw_param_axis(
-            token=raw.output_unit, qname=raw_qname, registry=unit_system.registry
-        )
-        if output_unit is not None:
-            return _UnitCheckSchedule(
-                input_unit=_resolved_raw_param_axis(
-                    token=raw.input_unit,
-                    qname=raw_qname,
-                    registry=unit_system.registry,
-                ),
-                output_unit=output_unit,
-                unit_system=unit_system,
-            )
     cls, item_cls = _resolved_return_structure(obj.function)
     return _UnitCheckStructuredValue(
         producer=qname,
@@ -1651,71 +1660,94 @@ def _param_function_stand_in(
     )
 
 
-def _token_declares_a_currency(token: Any) -> bool:  # noqa: ANN401
-    """Whether a coerced unit token carries a currency base (agnostic or concrete)."""
-    return isinstance(token, CompositeUnit) and (
-        token_is_agnostic_currency(token) or token_source_currency(token) is not None
-    )
+def _token_declares_a_currency(token: CompositeUnit) -> bool:
+    """Whether a compositional unit carries a currency base (agnostic or concrete)."""
+    return token_is_agnostic_currency(token) or token_source_currency(token) is not None
 
 
-def _axes_converter_contract_errors(
+def _schedule_param_function_contract_errors(
     env: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
 ) -> list[str]:
-    """Check the promise a parameter with input/output units makes about its output.
+    """Check every param function's ``unit=`` against its return annotation (GEP 10).
 
-    A ``require_converter`` that declares ``input_unit:`` / ``output_unit:``
-    promises that the param function reading it builds a schedule (a piecewise
-    polynomial or a lookup table), whose call sites the framework screens
-    against the declared axes. The promise is broken — reported at build
-    time — when the param function:
+    A schedule builder is a function between quantities, declared with
+    ``unit=InputOutputUnit(...)``; a scalar/structured param function is not. The
+    contract, keyed off the decorator and the return type, is broken — reported at
+    build time — when a param function:
 
-    - reads more than one such parameter (the schedule's axes are defined
-      against exactly one);
-    - declares a quantity ``unit=`` (a schedule is a structured value, so it must
-      declare ``unit=UNSET_UNIT``);
-    - is not annotated as returning a ``PiecewisePolynomialParamValue`` or a
-      ``ConsecutiveIntLookupTableParamValue``;
-    - builds a lookup table from a currency ``input_unit:`` (a lookup table is
-      keyed by consecutive integers, so its input axis is never a currency).
+    - declares ``unit=InputOutputUnit(...)`` but is not annotated as returning a
+      ``PiecewisePolynomialParamValue`` or a ``ConsecutiveIntLookupTableParamValue``
+      (only a schedule has two axes);
+    - is annotated as returning one of those schedule types but declares a quantity
+      ``unit=`` or ``unit=UNSET_UNIT`` instead of ``unit=InputOutputUnit(...)``;
+    - builds a ``ConsecutiveIntLookupTableParamValue`` from an ``InputOutputUnit``
+      whose ``input_unit`` is a currency (a lookup table is keyed by consecutive
+      integers, so its input axis is never a currency);
+    - declares ``unit=InputOutputUnit(...)`` but leaves ``verify_units`` at its
+      default ``True`` (a schedule builder's body builds a table, not a scalar, so
+      it cannot be unit-verified — the skip must be stated explicitly).
     """
     errors: list[str] = []
     for qname, obj in env.items():
         if not isinstance(obj, ParamFunction):
             continue
-        axes_deps = _axes_declaring_raw_dependencies(obj=obj, env=env)
-        if not axes_deps:
+        declares_io = isinstance(obj.unit, InputOutputUnit)
+        returns_schedule = (
+            _return_annotation_name(obj.function) in _SCHEDULE_RETURN_TYPE_NAMES
+        )
+        if declares_io and not returns_schedule:
+            errors.append(
+                f"{qname}: declares `unit=InputOutputUnit(...)`, which states a "
+                f"schedule's two axes, but is not annotated as returning a "
+                f"PiecewisePolynomialParamValue or a "
+                f"ConsecutiveIntLookupTableParamValue (GEP 10)."
+            )
             continue
-        names = ", ".join(f"'{dep}'" for dep, _ in axes_deps)
-        return_type = _return_annotation_name(obj.function)
-        if len(axes_deps) > 1:
+        if returns_schedule and not declares_io:
             errors.append(
-                f"{qname}: reads {len(axes_deps)} parameters that map between an "
-                f"input and an output unit ({names}); the built schedule's axes "
-                f"are defined against exactly one (GEP 10)."
+                f"{qname}: is annotated as returning a schedule "
+                f"(PiecewisePolynomialParamValue / "
+                f"ConsecutiveIntLookupTableParamValue), so it must declare its two "
+                f"axes with `unit=InputOutputUnit(input_unit=…, output_unit=…)`, not "
+                f"`unit={_spell_token(obj.unit)}` (GEP 10)."
             )
-        elif obj.unit is not UNSET_UNIT:
+            continue
+        if not declares_io:
+            continue
+        io_unit = obj.unit
+        builds_lookup_table = (
+            _return_annotation_name(obj.function)
+            == "ConsecutiveIntLookupTableParamValue"
+        )
+        if builds_lookup_table and _token_declares_a_currency(io_unit.input_unit):
             errors.append(
-                f"{qname}: reads the input/output-unit parameter {names} but "
-                f"declares a quantity `unit={obj.unit}`; it builds a schedule (a "
-                f"structured value), so it must declare `unit=UNSET_UNIT` (GEP 10)."
+                f"{qname}: builds a lookup table but declares a currency "
+                f"`input_unit={io_unit.input_unit}`; a lookup table is keyed by "
+                f"consecutive integers, so its input axis is never a currency "
+                f"(GEP 10)."
             )
-        elif return_type not in _SCHEDULE_RETURN_TYPE_NAMES:
+        if obj.verify_units:
             errors.append(
-                f"{qname}: reads the input/output-unit parameter {names}, so it "
-                f"must be annotated as returning a PiecewisePolynomialParamValue or "
-                f"a ConsecutiveIntLookupTableParamValue — the declared input and "
-                f"output units describe that schedule, and its call sites are "
-                f"screened against them (GEP 10)."
-            )
-        elif return_type == "ConsecutiveIntLookupTableParamValue" and (
-            _token_declares_a_currency(axes_deps[0][1].input_unit)
-        ):
-            errors.append(
-                f"{qname}: builds a lookup table from {names}, whose `input_unit:` "
-                f"is a currency; a lookup table is keyed by consecutive integers, "
-                f"so its input axis is never a currency (GEP 10)."
+                f"{qname}: declares `unit=InputOutputUnit(...)` but leaves "
+                f"`verify_units=True`; a schedule builder's body builds a table, not "
+                f"a scalar, so it cannot be unit-verified — state "
+                f"`verify_units=False` explicitly (GEP 10)."
             )
     return errors
+
+
+def _resolve_schedule_declaration_axis(
+    unit: CompositeUnit, registry: pint.UnitRegistry, where: str
+) -> pint.Unit:
+    """Resolve one axis of a schedule builder's ``InputOutputUnit`` declaration.
+
+    Both axes are currency-agnostic compositional units, resolved the parameter
+    way — spelled period and level stand as given, an omitted level is bare, and
+    the agnostic ``CURRENCY`` resolves to the ``[currency]`` dimension — so a
+    schedule's declared axis and a concrete-currency parameter or agnostic column
+    argument compare as equivalent (GEP 10).
+    """
+    return resolve_compositional_param_unit(unit=unit, registry=registry, where=where)
 
 
 def _resolve_schedule_input_unit(
@@ -1746,13 +1778,14 @@ def _representative_values_by_qname(
     - A ``piecewise_*``/lookup-table parameter becomes a :class:`_UnitCheckSchedule`
       carrying its input/output axes, so a consumer's ``piecewise_polynomial`` /
       ``look_up`` call resolves to the output unit.
+    - A schedule-building param function (``unit=InputOutputUnit(...)``) becomes a
+      :class:`_UnitCheckSchedule` carrying the declared axes, so its consumers
+      screen and resolve exactly as for a schedule parameter.
     - A dict parameter with a scalar ``unit:`` declaration becomes a dict of
       uniform representative quantities mirroring its value structure, so
       subscripting works inside a consumer's unit check.
     - A structured param function (``unit=UNSET_UNIT``) becomes its
-      :func:`_param_function_stand_in` — a schedule where a ``require_converter``
-      declares input and output units for it, a :class:`_UnitCheckStructuredValue`
-      otherwise.
+      :func:`_param_function_stand_in` — a :class:`_UnitCheckStructuredValue`.
     """
     registry = unit_system.registry
     out: dict[str, Any] = {}
@@ -1767,12 +1800,18 @@ def _representative_values_by_qname(
         elif (
             isinstance(obj, ParamFunction)
             and _returns_a_schedule(obj)
+            and isinstance(obj.unit, InputOutputUnit)
             and not isinstance(unit, dict)
         ):
-            # A schedule param function that declares its own output unit: its
-            # `look_up`/`piecewise_polynomial` yields that unit, the key unscreened.
+            # A schedule builder declares its two axes with
+            # `unit=InputOutputUnit(...)`: `look_up`/`piecewise_polynomial` screens
+            # each domain argument against the input axis and yields the output.
             out[qname] = _UnitCheckSchedule(
-                input_unit=None,
+                input_unit=_resolve_schedule_declaration_axis(
+                    unit=obj.unit.input_unit,
+                    registry=registry,
+                    where=f"Schedule param function {qname!r}",
+                ),
                 output_unit=cast("pint.Unit", unit),
                 unit_system=unit_system,
             )
@@ -1787,7 +1826,7 @@ def _representative_values_by_qname(
     for qname, obj in env.items():
         if isinstance(obj, ParamFunction) and obj.unit is UNSET_UNIT:
             out[qname] = _param_function_stand_in(
-                qname=qname, obj=obj, env=env, unit_system=unit_system
+                qname=qname, obj=obj, unit_system=unit_system
             )
     return out
 
@@ -2510,13 +2549,11 @@ class _UnitCheckStructuredValue:
                 label=label,
             )
         if isinstance(resolved, _ScheduleFieldKind):
-            # A schedule-typed field declares only its output unit; the pluck
-            # yields a schedule whose `look_up`/`piecewise_polynomial` produces
-            # that unit. Its input axis is undeclared (`UNSET_UNIT`), so the index
-            # is unscreened — as a schedule param function's own output-only
-            # declaration is.
+            # A schedule-typed field declares both axes; the pluck yields a
+            # schedule that screens each `look_up`/`piecewise_polynomial` argument
+            # against `input_unit` and produces `output_unit`.
             return _UnitCheckSchedule(
-                input_unit=UNSET_UNIT,
+                input_unit=resolved.input_unit,
                 output_unit=resolved.output_unit,
                 unit_system=self._unit_system,
                 explorer_holder=self._explorer_holder,
@@ -2625,20 +2662,19 @@ class _UnitCheckSchedule:
     ``piecewise_polynomial(x, parameters=…)`` or ``….look_up(idx)`` on it and gets
     an array. The unit check needs only the unit that falls out. This stand-in
     carries the resolved ``input_unit``/``output_unit`` axes — a schedule
-    parameter's own, or those a ``require_converter`` declares for its
-    converter's typed output: it screens each domain argument against
-    ``input_unit`` (as ``+`` screens an operand) and produces the
-    ``output_unit``. The domain is not screened when ``input_unit`` carries no
-    declared axis: ``None`` for a schedule parameter that left it unset, or
-    :data:`UNSET_UNIT` for a schedule-typed dataclass field (which declares only
-    its output unit).
+    parameter's own, a schedule builder's ``InputOutputUnit`` declaration, or a
+    schedule-typed dataclass field's: it screens each domain argument against
+    ``input_unit`` (as ``+`` screens an operand) and produces the ``output_unit``.
+    The domain is not screened when ``input_unit`` is ``None`` — a schedule
+    parameter that left its input axis unset (a multi-dimensional look-up, whose
+    per-index verification is deferred by design, GEP 10).
     """
 
     __slots__ = ("explorer_holder", "input_unit", "output_unit", "unit_system")
 
     def __init__(
         self,
-        input_unit: pint.Unit | CompositeUnit | None,
+        input_unit: pint.Unit | None,
         output_unit: pint.Unit,
         unit_system: UnitSystem,
         explorer_holder: list[_PathExplorer | None] | None = None,
@@ -2649,12 +2685,10 @@ class _UnitCheckSchedule:
         self.explorer_holder = explorer_holder
 
     def _produce(self, domain_args: tuple[Any, ...]) -> _UnitCheckQuantity:
-        # An undeclared input axis (`None` or `UNSET_UNIT`) leaves the index
-        # unscreened: a schedule may be a multi-dimensional look-up, so per-index
-        # input-axis verification is deferred by design (GEP 10).
-        screen_domain = (
-            self.input_unit is not None and self.input_unit is not UNSET_UNIT
-        )
+        # An undeclared input axis (`None`) leaves the index unscreened: a schedule
+        # may be a multi-dimensional look-up, so per-index input-axis verification
+        # is deferred by design (GEP 10).
+        screen_domain = self.input_unit is not None
         explorer: _PathExplorer | None = None
         all_indices_are_scalar_literals = True
         for arg in domain_args:
@@ -2662,12 +2696,12 @@ class _UnitCheckSchedule:
                 explorer = arg._explorer  # noqa: SLF001
                 if screen_domain and not units_are_equivalent(
                     left=cast("pint.Unit", arg.q.units),
-                    right=cast("pint.Unit", self.input_unit),
+                    right=self.input_unit,
                     registry=self.unit_system.registry,
                 ):
                     raise _UnitMixError(
                         op="look-up",
-                        left=cast("pint.Unit", self.input_unit),
+                        left=self.input_unit,
                         right=cast("pint.Unit", arg.q.units),
                     )
             elif not _is_scalar_literal(arg):
@@ -2703,16 +2737,14 @@ class _UnitCheckSchedule:
         """Whether a bare literal is a legitimate index for this schedule.
 
         A bare Python literal is a dimensionless, person-level value. It matches
-        an undeclared input axis (``None`` / :data:`UNSET_UNIT`, unscreened by
-        design) or a declared dimensionless one. A dimensionful axis (a currency,
-        an area, a calendar point) is never keyed by a bare literal, so such an
-        index is not admissible and the body must opt out.
+        an undeclared input axis (``None``, unscreened by design) or a declared
+        dimensionless one. A dimensionful axis (a currency, an area, a calendar
+        point) is never keyed by a bare literal, so such an index is not
+        admissible and the body must opt out.
         """
-        if self.input_unit is None or self.input_unit is UNSET_UNIT:
+        if self.input_unit is None:
             return True
-        return self.unit_system.registry.Quantity(
-            1.0, cast("pint.Unit", self.input_unit)
-        ).dimensionless
+        return self.unit_system.registry.Quantity(1.0, self.input_unit).dimensionless
 
     def look_up(self, *args: Any) -> _UnitCheckQuantity:  # noqa: ANN401
         return self._produce(args)

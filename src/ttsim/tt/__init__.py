@@ -45,6 +45,7 @@ from ttsim.tt.shared import join
 from ttsim.tt.units import (
     UNSET_UNIT,
     CompositeUnit,
+    InputOutputUnit,
     TTSIMUnit,
     UnitAnnotatedColumn,
     cast_ttsim_unit,
@@ -63,6 +64,7 @@ __all__ = [
     "DictParam",
     "FKType",
     "GroupCreationFunction",
+    "InputOutputUnit",
     "ParamFunction",
     "ParamMappingObject",
     "ParamObject",
