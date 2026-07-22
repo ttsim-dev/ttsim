@@ -25,9 +25,6 @@ def child_in_household_for_bug_reproducer(p_id: int) -> bool:
 
 
 @policy_function(
-    # The rounding spec pins down a concrete currency, which must be the
-    # statutory one at the policy date (GEP 10); the reproducer's policy case
-    # runs in the castar era, so restrict the function to it.
     start_date="2020-01-01",
     leaf_name="net_wealth_parents",
     rounding_spec=RoundingSpec(

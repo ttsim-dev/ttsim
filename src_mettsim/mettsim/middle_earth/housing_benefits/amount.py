@@ -32,13 +32,7 @@ def benefit_per_member_m(
     amount_m_fam: float,
     eligibility__number_of_individuals_fam: int,
 ) -> float:
-    """The housing benefit each family member receives.
-
-    A genuine per-capita split, not an average: the family's benefit is a fam-level
-    amount computed from the family's situation, so dividing it by the head count
-    cancels the level — ``(CURRENCY/month/[fam]) / (1/[fam]) = CURRENCY/month`` —
-    and the per-person result is bare (GEP 10).
-    """
+    """The housing benefit each family member receives."""
     return amount_m_fam / eligibility__number_of_individuals_fam
 
 

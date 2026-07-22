@@ -5,14 +5,9 @@ raw_bounties_per_orc:
     en: Bounty for orc hunting (dead or alive)
   description:
     de: >-
-      Test für einen require_converter mit Einheiten je Leaf (GEP 10): Die
-      Currency-Leaves liegen auf einer verschachtelten Ebene und müssen in der
-      gesetzlichen Währung ihrer Ära deklariert sein; die Altersgrenze trägt
-      ihre eigene Einheit.
+      Test für einen require_converter mit Einheiten je Leaf (GEP 10).
     en: >-
-      Exercises a require_converter with a per-leaf `unit:` mapping (GEP 10):
-      the currency leaves sit at a nested level and must be declared in their
-      era's statutory currency; the age bound carries its own unit.
+      Exercises a require_converter with a per-leaf `unit:` mapping (GEP 10).
   unit:
     small_orc: SILVER_PENNY
     large_orc:

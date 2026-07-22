@@ -20,10 +20,6 @@ tax_schedule:
       - interval: '[100, inf)'
         intercept: 10000
   2020-01-01:
-    note: >-
-      Pure redenomination at the currency reform of 2020: the amounts are
-      re-expressed in castar (1 castar = 4 silver pennies); the hectare
-      brackets carry over.
     output_unit: CASTAR_PER_YEAR
     intervals:
       - interval: (-inf, 10)

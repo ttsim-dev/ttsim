@@ -37,10 +37,6 @@ tax_schedule_standard:
       - interval: '[100, inf)'
         slope: 0.3
   2020-01-01:
-    note: >-
-      Pure redenomination at the currency reform of 2020: bracket bounds are
-      re-expressed in castar (1 castar = 4 silver pennies); the rates are
-      dimensionless and carry over.
     input_unit: CASTAR_PER_YEAR
     output_unit: CASTAR_PER_YEAR
     intervals:
@@ -71,10 +67,6 @@ tax_schedule_reduced:
       - interval: '[100, inf)'
         slope: 0.15
   2020-01-01:
-    note: >-
-      Pure redenomination at the currency reform of 2020: bracket bounds are
-      re-expressed in castar (1 castar = 4 silver pennies); the rates are
-      dimensionless and carry over.
     input_unit: CASTAR_PER_YEAR
     output_unit: CASTAR_PER_YEAR
     intervals:

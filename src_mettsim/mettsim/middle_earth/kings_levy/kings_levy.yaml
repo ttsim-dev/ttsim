@@ -5,20 +5,9 @@ raw_kings_levy_schedule:
     en: Raw data for the king's levy schedule
   description:
     de: >-
-      Test für einen require_converter mit Achsen-Einheiten (GEP 10): Der
-      Konverter berechnet aus dem Eingangs- und dem Spitzensatz einen
-      Progressionsfaktor (den quadratischen Koeffizienten) mit der Einheit
-      1/Währung. Die Achsen-Einheiten beschreiben das gebaute Schedule und
-      screenen seine Aufrufstellen; die Zahlenwerte selbst werden nie
-      skaliert — jede Ära deklariert ihr Schedule in ihrer gesetzlichen
-      Währung.
+      Test für einen require_converter mit Achsen-Einheiten (GEP 10).
     en: >-
-      Exercises a require_converter that declares per-axis units (GEP 10): the
-      converter turns an entry rate and a top rate into a Progressionsfaktor
-      (the quadratic coefficient), which carries units 1/currency. The declared
-      axes describe the built schedule and screen its call sites; the values
-      themselves are never rescaled — each era declares its schedule in its
-      statutory currency.
+      Exercises a require_converter that declares per-axis units (GEP 10).
   input_unit: SILVER_PENNY
   output_unit: SILVER_PENNY_PER_YEAR
   type: require_converter

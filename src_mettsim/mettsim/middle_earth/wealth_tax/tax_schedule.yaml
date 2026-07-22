@@ -22,9 +22,6 @@ wealth_above_which_individual_is_exempt:
   1900-01-01:
     value: 10000
   2020-01-01:
-    note: >-
-      Pure redenomination at the currency reform of 2020
-      (1 castar = 4 silver pennies).
     unit: CASTAR
     value: 2500
 wealth_above_which_family_is_exempt:
@@ -39,9 +36,6 @@ wealth_above_which_family_is_exempt:
   1900-01-01:
     value: 20000
   2020-01-01:
-    note: >-
-      Pure redenomination at the currency reform of 2020
-      (1 castar = 4 silver pennies).
     unit: CASTAR_PER_FAM
     value: 5000
 wealth_above_which_kin_is_exempt:
@@ -56,8 +50,5 @@ wealth_above_which_kin_is_exempt:
   1900-01-01:
     value: 8000
   2020-01-01:
-    note: >-
-      Pure redenomination at the currency reform of 2020
-      (1 castar = 4 silver pennies).
     unit: CASTAR_PER_KIN
     value: 2000
