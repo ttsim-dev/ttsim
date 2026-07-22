@@ -789,7 +789,7 @@ def test_numeric_driven_branch_with_dimensionless_arm_does_not_false_positive():
     )
 
 
-# Dry-run robustness: representative magnitudes are all 1.0, so a body may
+# Unit-check robustness: representative magnitudes are all 1.0, so a body may
 # divide by a zero-magnitude difference of same-unit quantities or call the
 # builtin ``round`` — both are dimensionally fine and must check cleanly.
 
@@ -798,7 +798,7 @@ def test_division_by_zero_magnitude_difference_infers_the_quotient_unit():
     """A body dividing by ``a - b`` of two equal-unit flows checks cleanly.
 
     The two monthly flows are each represented at magnitude 1.0, so their
-    difference is 0; the dry-run cares only about the quotient's *unit*
+    difference is 0; the unit check cares only about the quotient's *unit*
     (``currency / (currency/month) = months``), not that the magnitude is
     finite.
     """
@@ -896,7 +896,7 @@ def _policy_month() -> ScalarParam:
 
 def test_calendar_point_difference_is_a_duration_in_years():
     """The motivating S1 pattern: ``now - birth_year`` is a duration, declared
-    ``YEARS``; the dry-run accepts it through pint's offset algebra."""
+    ``YEARS``; the unit check accepts it through pint's offset algebra."""
 
     @policy_function(unit=TTSIMUnit.YEARS)
     def age(policy_year: int, geburtsjahr: int) -> int:
@@ -933,8 +933,8 @@ def test_duration_shifts_a_calendar_point_to_a_calendar_point():
 
 
 def test_adding_two_calendar_points_is_caught():
-    """``point + point`` has no affine meaning; pint refuses it and the dry-run
-    reports a calendar misuse (GEP 10)."""
+    """``point + point`` has no affine meaning; pint refuses it and the unit
+    check reports a calendar misuse (GEP 10)."""
 
     @policy_function(unit=TTSIMUnit.CALENDAR_YEAR)
     def nonsense(policy_year: int, geburtsjahr: int) -> int:
@@ -1100,9 +1100,9 @@ def test_adding_a_currency_to_a_calendar_point_is_reported_as_a_calendar_misuse(
 
 
 def test_flow_time_converter_body_passes():
-    """``per_m_to_per_y`` rebases a monthly flow to a yearly one; the dry-run models
-    the period rebase, so the body checks against its ``_y`` declaration with no
-    opt-out (GEP 10, time converters)."""
+    """``per_m_to_per_y`` rebases a monthly flow to a yearly one; the unit check
+    models the period rebase, so the body checks against its ``_y`` declaration with
+    no opt-out (GEP 10, time converters)."""
 
     @policy_input(unit=TTSIMUnit.CURRENCY.PER_MONTH)
     def betrag_m() -> float:
@@ -1262,12 +1262,12 @@ def test_error_names_a_comparison_driven_branch():
 
 
 def test_boolean_body_bad_comparison_is_caught():
-    """A boolean-returning body is dry-run like any other (GEP 10).
+    """A boolean-returning body is unit-checked like any other (GEP 10).
 
     Its truth-value output carries no unit, but the comparison inside it does:
     ``wealth`` is a ``CURRENCY`` stock and ``bonus_y`` a ``CURRENCY / year``
-    flow, so the ``>=`` mixes non-equivalent units. Before, the boolean output
-    made the whole body skip the check and this slipped through silently.
+    flow, so the ``>=`` mixes non-equivalent units. A boolean output does not
+    exempt the body — the comparison inside it is checked all the same.
     """
 
     @policy_function(unit=TTSIMUnit.DIMENSIONLESS)
@@ -1308,7 +1308,7 @@ def test_boolean_body_with_logical_ops_passes():
 
 def test_logical_op_on_unit_carrying_operand_is_caught():
     """A logical operator applied to a real quantity (not a truth value) is a
-    bug the run-time arrays would silently swallow, so the dry-run rejects it.
+    bug the run-time arrays would silently swallow, so the unit check rejects it.
 
     ``age`` is a ``YEARS`` quantity, so ``age & is_exempt`` ANDs a duration into
     a logical combination — caught on either side via the reflected dunders.
@@ -1364,7 +1364,7 @@ def test_not_of_a_leveled_boolean_keeps_its_level():
 
 def test_not_of_a_non_boolean_quantity_is_caught():
     """``not`` on a non-boolean (a currency) is a bug that ``~`` catches; its scalar
-    spelling must too — the dry-run models ``not`` as ``logical_not`` (GEP 10)."""
+    spelling must too — the unit check models ``not`` as ``logical_not`` (GEP 10)."""
 
     @policy_function(unit=TTSIMUnit.DIMENSIONLESS)
     def flag(income_m: float) -> bool:
@@ -1469,7 +1469,7 @@ def test_python_or_of_mixed_levels_is_rewritten_and_downcasts_to_bare():
     """Author-written ``or`` combines leveled booleans exactly like ``|`` (GEP 10).
 
     Python ``or`` short-circuits through ``__bool__`` and on its own would return a
-    single, uncombined operand; the dry-run rewrites ``and``/``or`` to ``&``/``|``
+    single, uncombined operand; the unit check rewrites ``and``/``or`` to ``&``/``|``
     first (mirroring the array vectorizer), so a fam-level ``or`` a bare indicator
     downcasts to a bare, individual boolean, matching the bare ``DIMENSIONLESS``
     declaration at the unsuffixed name — the ``wealth_tax.exempt_from_wealth_tax``
@@ -1889,7 +1889,7 @@ def test_cast_tags_a_dimensioned_literal_in_an_ordering_comparison():
 
 
 def test_cast_in_a_vectorized_body_is_screened_identically():
-    """The dry-run's ``xnp`` shim and the cast compose: a literal cap tagged in
+    """The unit check's ``xnp`` stand-in and the cast compose: a literal cap tagged in
     place inside ``xnp.minimum`` passes where the bare literal would be
     rejected (GEP 10)."""
 
@@ -2151,7 +2151,7 @@ def test_adding_different_period_flows_is_caught():
     """``_m + _y`` is unit-blind at run time, so it must be flagged.
 
     pint would silently auto-convert ``CURRENCY / month + CURRENCY / year`` to
-    the left operand's unit during the dry-run (matching the ``_m`` declaration)
+    the left operand's unit during the unit check (matching the ``_m`` declaration)
     and hide the bug; the additive unit check rejects the non-equivalent operands
     before pint sees them (GEP 10).
     """
@@ -2170,7 +2170,7 @@ def test_adding_different_period_flows_is_caught():
 
 def test_adding_stock_and_flow_is_caught():
     """A cross-dimension addition (stock + flow) raises a ``DimensionalityError``
-    in pint, which the dry-run otherwise swallows; the additive check flags it."""
+    in pint, which the unit check otherwise swallows; the additive check flags it."""
 
     @policy_function(unit=TTSIMUnit.CURRENCY)
     def stock_plus_flow(wealth: float, income_m: float) -> float:
@@ -2254,29 +2254,29 @@ def test_zero_literal_falls_back_to_declaration():
     )
 
 
-def test_undryrunnable_body_without_opt_out_is_rejected():
-    # A body the dry-run cannot evaluate is not waved through silently (GEP 10):
+def test_unevaluable_body_without_opt_out_is_rejected():
+    # A body the unit check cannot evaluate is not waved through silently (GEP 10):
     # the author must opt out explicitly with verify_units=False.
     @policy_function(unit=TTSIMUnit.CURRENCY)
-    def not_dry_runnable(wealth: float) -> float:
+    def not_evaluable(wealth: float) -> float:
         return wealth.this_attribute_does_not_exist()  # ty: ignore[unresolved-attribute]
 
     with pytest.raises(UnitConsistencyError, match="verify_units=False"):
         fail_if_environment_units_are_inconsistent(
-            env={"wealth": wealth, "not_dry_runnable": not_dry_runnable},
+            env={"wealth": wealth, "not_evaluable": not_evaluable},
             grouping_levels=GROUPING_LEVELS,
             unit_system=UNIT_SYSTEM,
         )
 
 
-def test_undryrunnable_body_with_opt_out_passes():
+def test_unevaluable_body_with_opt_out_passes():
     # The same body, explicitly opted out, is accepted: its declared unit stands.
     @policy_function(unit=TTSIMUnit.CURRENCY, verify_units=False)
-    def not_dry_runnable(wealth: float) -> float:
+    def not_evaluable(wealth: float) -> float:
         return wealth.this_attribute_does_not_exist()  # ty: ignore[unresolved-attribute]
 
     fail_if_environment_units_are_inconsistent(
-        env={"wealth": wealth, "not_dry_runnable": not_dry_runnable},
+        env={"wealth": wealth, "not_evaluable": not_evaluable},
         grouping_levels=GROUPING_LEVELS,
         unit_system=UNIT_SYSTEM,
     )
@@ -2286,7 +2286,7 @@ def test_undryrunnable_body_with_opt_out_passes():
 # join primitives are screened at their edges (GEP 10). Their happy paths run
 # end-to-end through the mettsim worked example (housing_benefits: minimum +
 # look_up, payroll/property tax: piecewise, child_tax_credit: join), so these
-# tests pin only what a silent shim regression would hide from that check —
+# tests pin only what a silent stand-in regression would hide from that check —
 # a screen that stops screening fails no test anywhere else.
 
 
@@ -2470,7 +2470,7 @@ def test_scalar_max_with_a_bare_nonzero_literal_bound_is_caught():
 
 
 def test_unmodelled_xnp_op_demands_opt_out():
-    """An xnp op the dry-run does not model falls through to raw NumPy and is
+    """An xnp op the unit check does not model falls through to raw NumPy and is
     reported as needing ``verify_units=False`` — never silently passed (GEP 10)."""
 
     @policy_function(
@@ -2552,7 +2552,7 @@ def test_lookup_call_with_wrong_domain_unit_is_caught():
         )
 
 
-def test_lookup_indexed_by_a_computed_literal_counter_is_dry_runnable():
+def test_lookup_indexed_by_a_computed_literal_counter_is_evaluable():
     """A lookup keyed by a dimensionless counter built from literals resolves to
     the schedule's output unit without an opt-out: the output unit is fixed by the
     schedule regardless of the index (GEP 10). The body anchors on its own branch
@@ -2633,7 +2633,7 @@ def test_schedule_with_a_dimensionful_input_axis_rejects_a_bare_literal_index():
 
 def test_join_target_level_disagreeing_with_the_declaration_is_caught():
     """A ``join`` gather hands on the target column's unit, grouping level
-    included (GEP 10) — proven by contradiction: were the shim to drop the
+    included (GEP 10) — proven by contradiction: were the stand-in to drop the
     unit, this level mismatch could not be detected. (mettsim's checked join
     body gathers a dimensionless target, so it cannot pin this.)"""
 
@@ -2703,7 +2703,7 @@ def test_concrete_mismatch_is_caught():
 
 
 def test_dict_param_subscripting_is_verifiable():
-    """Per-leaf units make dict-consuming bodies dry-runnable (GEP 10, #121)."""
+    """Per-leaf units make dict-consuming bodies unit-checkable (GEP 10, #121)."""
     schedule = DictParam(
         value={"child_amount_y": 100.0, "max_age": 18},
         unit={"child_amount_y": "CASTAR_PER_YEAR", "max_age": "YEARS"},
@@ -2745,7 +2745,7 @@ def test_dict_param_subscripting_is_verifiable():
         )
 
 
-def test_uniform_dict_param_is_subscriptable_in_dry_run():
+def test_uniform_dict_param_is_subscriptable_in_unit_check():
     subsistence = DictParam(
         value={"per_spouse": 500.0},
         unit=CASTAR_PER_MONTH,
@@ -3234,7 +3234,7 @@ def test_annotated_schedule_field_resolves_through_nested_dataclass():
     )
 
 
-def test_annotated_schedule_field_look_up_by_a_literal_index_is_dry_runnable():
+def test_annotated_schedule_field_look_up_by_a_literal_index_is_evaluable():
     """A schedule field keyed by a bare literal resolves to the field's output
     unit without an opt-out, just as a top-level schedule parameter does: the
     index need not carry a unit for the output to be known (GEP 10)."""
@@ -3344,7 +3344,7 @@ def test_never_plucked_malformed_field_annotation_is_rejected():
 def built_schedule(
     raw_schedule: RawParamValue, xnp: ModuleType
 ) -> PiecewisePolynomialParamValue:
-    """A converter-built schedule: opaque to the dry-run (GEP 10)."""
+    """A converter-built schedule: opaque to the unit check (GEP 10)."""
     return PiecewisePolynomialParamValue(
         thresholds=xnp.asarray(raw_schedule["thresholds"]),
         intercepts=xnp.asarray(raw_schedule["intercepts"]),
@@ -3606,8 +3606,8 @@ def test_converter_of_two_input_output_unit_params_is_rejected():
 
 
 def test_verify_units_false_skips_body_inference():
-    # A body whose dry-run would otherwise flag a mismatch (stock * share is a
-    # stock, not the declared yearly flow) is not dry-run when it opts out; the
+    # A body the unit check would otherwise flag a mismatch in (stock * share is
+    # a stock, not the declared yearly flow) is not checked when it opts out; the
     # declared unit still stands (GEP 10).
     @policy_function(unit=TTSIMUnit.CURRENCY.PER_YEAR, verify_units=False)
     def amount_optout_y(wealth: float, tax_rate: float, is_exempt: bool) -> float:
@@ -4094,10 +4094,10 @@ def test_per_capita_division_bridges_via_head_count():
 
 
 def test_cast_unit_literal_clamp_floor_inside_max_is_checkable():
-    """A ``cast_ttsim_unit(0, …)`` clamp floor inside ``max()`` is dry-run-
-    checkable: the tagged literal participates in the ordering screen like any
-    quantity, so the body infers its declared unit rather than reporting as
-    un-evaluable (GEP 10)."""
+    """A ``cast_ttsim_unit(0, …)`` clamp floor inside ``max()`` is checkable: the
+    tagged literal participates in the ordering screen like any quantity, so the
+    body infers its declared unit rather than reporting as un-evaluable
+    (GEP 10)."""
 
     @policy_input(unit=TTSIMUnit.CURRENCY.PER_MONTH)
     def wage_m() -> float: ...
@@ -4114,7 +4114,7 @@ def test_cast_unit_literal_clamp_floor_inside_max_is_checkable():
 
 
 def test_cast_unit_literal_participates_in_every_screened_op():
-    """A cast literal is a first-class dry-run operand across the screened ops, not
+    """A cast literal is a first-class unit-check operand across the screened ops, not
     only ``max``/``min``: arithmetic (``*``/``+``), an ordering comparison, and a
     ``where`` (ternary) all check with a cast literal on one side (GEP 10)."""
 
@@ -4162,7 +4162,7 @@ def test_cross_group_level_subtraction_in_a_body_is_caught():
     ``income_m_fam`` is ``CURRENCY/month/[fam]`` and ``income_m_kin``
     ``CURRENCY/month/[kin]``. Broadcast replicates each onto persons but leaves
     the *unit* level untouched, so the subtraction stays ``[fam] - [kin]`` — the
-    headline cross-level bug the dry-run must reject.
+    headline cross-level bug the unit check must reject.
     """
 
     @policy_input(unit=TTSIMUnit.CURRENCY.PER_MONTH.PER_FAM)
@@ -4222,7 +4222,7 @@ def test_person_versus_group_level_ordering_comparison_is_caught():
 
     The canonical "person income below a group threshold" shape: ``income_m``
     (bare) against ``schwelle_m_fam`` (``[fam]``). Ordering two non-equivalent
-    quantities is rejected — a distinct dry-run path from `<`.
+    quantities is rejected — a distinct unit-check path from `<`.
     """
 
     @policy_input(unit=TTSIMUnit.CURRENCY.PER_MONTH)

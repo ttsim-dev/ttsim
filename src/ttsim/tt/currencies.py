@@ -109,7 +109,7 @@ class UnitSystem:
         init=False, repr=False, default_factory=dict
     )
     """Memo of the resolved unit annotations of each parameter dataclass the
-    dry-run has seen, keyed by class. Each value maps a field name to what its
+    unit check has seen, keyed by class. Each value maps a field name to what its
     pluck yields — a resolved ``pint.Unit``, a nested dataclass ``type``, or a
     schedule-field marker built in :mod:`ttsim.interface_dag_elements.unit_checks`
     (kept loose here so this module owns no private name from that layer). The

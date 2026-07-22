@@ -9,19 +9,21 @@ assembled policy environment on two counts:
   date nodes get theirs assigned here. Identifiers and booleans are
   ``DIMENSIONLESS``.
 - **Each function body agrees with its declaration.** Every ``@policy_function``
-  / ``@param_function`` body is dry-run on representative quantities built from
-  its producers' resolved units. A body that cannot be evaluated symbolically
-  must opt out with ``verify_units=False``, so every un-verified body is visible.
-  A single deliberate irregularity — policy-mandated cross-level arithmetic, a
-  dimensioned constant — re-tags itself with ``cast_ttsim_unit`` instead, keeping the
-  rest of the body checked.
+  / ``@param_function`` body is unit-checked on representative quantities built
+  from its producers' resolved units. A body the check cannot evaluate must opt
+  out with ``verify_units=False``, so every un-verified body is visible. A single
+  deliberate irregularity — policy-mandated cross-level arithmetic, a dimensioned
+  constant — re-tags itself with ``cast_ttsim_unit`` instead, keeping the rest of
+  the body checked.
 
-The dry-run wraps each ``Quantity(1.0, unit)`` in a :class:`_DryRunQuantity`,
-whose arithmetic propagates units while a :class:`_PathExplorer` drives its
-branch decisions — so a body is checked down every reachable path. ``+``, ``-``
-and the ordering comparisons additionally require equivalent operands, because
-at run time there is no pint to convert between them. pint runs only at
-build time; no live array is ever wrapped.
+Checking a body is an abstract interpretation over units: the real body runs, but
+on stand-in values carrying a unit and no meaningful magnitude. Each
+``Quantity(1.0, unit)`` is wrapped in a :class:`_UnitCheckQuantity`, whose
+arithmetic propagates units while a :class:`_PathExplorer` drives its branch
+decisions — so a body is checked down every reachable path. ``+``, ``-`` and the
+ordering comparisons additionally require equivalent operands, because at run
+time there is no pint to convert between them. pint runs only at build time; no
+live array is ever wrapped.
 """
 
 from __future__ import annotations
@@ -121,12 +123,12 @@ FRAMEWORK_DATE_NODE_UNITS: Mapping[str, str] = {
 }
 
 
-class _DryRunXnp:
-    """The dry-run's ``xnp``: NumPy with the unit-bearing ops routed through
-    ``_DryRunQuantity``'s checks, so a vectorized (``not_required``) body is checked
+class _UnitCheckXnp:
+    """The unit check's ``xnp``: NumPy with the unit-bearing ops routed through
+    ``_UnitCheckQuantity``'s checks, so a vectorized (``not_required``) body is checked
     at full parity with a scalar one.
 
-    ``_DryRunQuantity`` sets ``__array_ufunc__ = None`` to force ``+``/``-``/… onto
+    ``_UnitCheckQuantity`` sets ``__array_ufunc__ = None`` to force ``+``/``-``/… onto
     its checking dunders, which also stops NumPy ufuncs (``numpy.maximum`` …) from
     running. So the array ops a body calls are intercepted here and routed to the
     *same* checking primitives the operators use:
@@ -200,11 +202,11 @@ class _DryRunXnp:
         return getattr(numpy, name)
 
 
-#: Representative values for the framework arguments in a dry-run. The
-#: dry-run always executes in NumPy + pint (NEP 18), regardless of the
+#: Representative values for the framework arguments in a unit check. The
+#: check always executes in NumPy + pint (NEP 18), regardless of the
 #: backend of the actual run.
 _NON_UNIT_ARGUMENT_VALUES: Mapping[str, Any] = {
-    "xnp": _DryRunXnp(),
+    "xnp": _UnitCheckXnp(),
     "dnp": numpy,
     "backend": "numpy",
     "num_segments": 1,
@@ -213,7 +215,7 @@ _NON_UNIT_ARGUMENT_VALUES: Mapping[str, Any] = {
 
 _BOOL_KINDS = frozenset({ResolvedKind.BOOL_SCALAR, ResolvedKind.BOOL_COLUMN})
 
-#: The logical operators a dry-run screens for boolean (dimensionless) operands.
+#: The logical operators the unit check screens for boolean (dimensionless) operands.
 _LOGICAL_OPS = frozenset({"&", "|", "^", "~"})
 
 
@@ -783,7 +785,7 @@ def fail_if_environment_units_are_inconsistent(
 
     Each kind of node is checked against its declaration:
 
-    - a ``@policy_function`` / ``@param_function`` **body** is dry-run on
+    - a ``@policy_function`` / ``@param_function`` **body** is unit-checked on
       representative values built from its producers' resolved units (the DAG
       edges) — see the module docstring for the conservative rules and the
       branch-exploration strategy;
@@ -861,11 +863,11 @@ def _anchor_schedules_on_body_explorer(
 
     A bare-literal ``look_up`` on such a schedule anchors on the current body's
     branch path via this shared, per-body-updated cell (see
-    :meth:`_DryRunSchedule._produce`). A schedule plucked from a structured field
-    is anchored where it is rebuilt per run instead (:func:`_wrap_for_dry_run`).
+    :meth:`_UnitCheckSchedule._produce`). A schedule plucked from a structured field
+    is anchored where it is rebuilt per run instead (:func:`_wrap_for_unit_check`).
     """
     for value in representative_values.values():
-        if isinstance(value, _DryRunSchedule):
+        if isinstance(value, _UnitCheckSchedule):
             value.explorer_holder = explorer_holder
 
 
@@ -876,18 +878,18 @@ def _body_verification_errors(
     boolean_nodes: set[str],
     unit_system: UnitSystem,
 ) -> list[str]:
-    """Dry-run every human-written scalar body and collect its inference errors.
+    """Unit-check every human-written scalar body and collect its inference errors.
 
-    Only ``@policy_function`` / ``@param_function`` bodies are dry-run; everything
+    Only ``@policy_function`` / ``@param_function`` bodies are unit-checked; everything
     else (aggregations, time-conversions, group ids) is unit-assigned by
     construction. A body is skipped when it is an unimplemented-period stub, has
     no resolved unit, opts out (``verify_units=False``), declares a structured
     unit, or has an unannotated producer.
     """
     registry = unit_system.registry
-    # The helper shims close over this run's registry, so they are built per run
+    # The helper stand-ins close over this run's registry, so they are built per run
     # rather than once at import.
-    dry_run_helper_shims, explorer_holder = _dry_run_helper_shims(
+    unit_check_helper_stand_ins, explorer_holder = _unit_check_helper_stand_ins(
         unit_system=unit_system
     )
     _anchor_schedules_on_body_explorer(
@@ -913,7 +915,7 @@ def _body_verification_errors(
             continue
         parameters = tuple(inspect.signature(obj.function).parameters)
         boolean_parameters = tuple(p for p in parameters if p in boolean_nodes)
-        base_kwargs = _base_dry_run_kwargs(
+        base_kwargs = _base_unit_check_kwargs(
             parameters=parameters,
             boolean_parameters=boolean_parameters,
             representative_values=representative_values,
@@ -933,7 +935,7 @@ def _body_verification_errors(
                 func=obj.function,
                 module="xnp",
                 module_obj=_NON_UNIT_ARGUMENT_VALUES["xnp"],
-                extra_globals=dry_run_helper_shims,
+                extra_globals=unit_check_helper_stand_ins,
             ),
             declared=declared,
             boolean_values=boolean_values,
@@ -1084,7 +1086,7 @@ def fail_if_input_units_are_inconsistent(
 
 
 def node_is_boolean(qname: str, obj: Any) -> bool:  # noqa: ANN401
-    """Whether a node's output is boolean (used to build the dry-run's symbolic
+    """Whether a node's output is boolean (used to build the unit check's stand-in
     values and drive its branch exploration; orthogonal to the declared unit)."""
     try:
         if isinstance(obj, PolicyInput):
@@ -1304,7 +1306,7 @@ def _representative_value(
     resolved_unit: pint.Unit | dict[str | int, Any],
     registry: pint.UnitRegistry,
 ) -> Any:  # noqa: ANN401
-    """A representative dry-run value: ``Quantity(1.0, unit)``, or a dict thereof."""
+    """A representative unit-check value: ``Quantity(1.0, unit)``, or a dict thereof."""
     if isinstance(resolved_unit, dict):
         return {
             key: _representative_value(
@@ -1458,7 +1460,7 @@ class _ScheduleFieldKind:
     A field annotated ``Annotated[<schedule type>, <unit>]`` declares the
     schedule's OUTPUT axis at the field, exactly as a schedule-returning
     ``@param_function`` declares it in its ``unit=`` — so a pluck of the field
-    yields a :class:`_DryRunSchedule` whose ``look_up`` /
+    yields a :class:`_UnitCheckSchedule` whose ``look_up`` /
     ``piecewise_polynomial`` produces this unit, its index unscreened (GEP 10).
     """
 
@@ -1469,7 +1471,7 @@ class _ScheduleFieldKind:
 def _structured_field_kinds(
     cls: type, unit_system: UnitSystem
 ) -> dict[str, pint.Unit | type | _ScheduleFieldKind] | None:
-    """Resolve a parameter dataclass's field annotations for the dry-run.
+    """Resolve a parameter dataclass's field annotations for the unit check.
 
     Maps each field to what its pluck yields:
 
@@ -1580,7 +1582,7 @@ def _resolve_structured_field_annotations(
     A dataclass reachable only through a *nested* mapping-of-dataclass field
     (``foo: dict[str, Inner]``) is not walked: such a field is opaque at pluck
     time too (only a producer's top-level return resolves an ``item_cls``), so
-    the eager walk and the dry-run agree on what is reachable.
+    the eager walk and the unit check agree on what is reachable.
     """
     if cls in visited:
         return
@@ -1600,15 +1602,15 @@ def _param_function_stand_in(
     obj: ParamFunction,
     env: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
     unit_system: UnitSystem,
-) -> _DryRunSchedule | _DryRunStructuredValue:
-    """The dry-run stand-in for a structured param-function output (GEP 10).
+) -> _UnitCheckSchedule | _UnitCheckStructuredValue:
+    """The unit check's stand-in for a structured param-function output (GEP 10).
 
     - A converter of a **single** input/output-unit ``require_converter`` that is
-      annotated as returning a schedule type gets a :class:`_DryRunSchedule`
+      annotated as returning a schedule type gets a :class:`_UnitCheckSchedule`
       carrying its input and output units: the per-axis conversion already assumes
       the declared units describe the typed output, so consumers screen against
       them as for a parameter-declared schedule — no cast at the call.
-    - **Everything else** stays a :class:`_DryRunStructuredValue`, typed with the
+    - **Everything else** stays a :class:`_UnitCheckStructuredValue`, typed with the
       return dataclass where one resolves so annotated plucks carry their field
       units.
 
@@ -1625,7 +1627,7 @@ def _param_function_stand_in(
             token=raw.output_unit, qname=raw_qname, registry=unit_system.registry
         )
         if output_unit is not None:
-            return _DryRunSchedule(
+            return _UnitCheckSchedule(
                 input_unit=_resolved_raw_param_axis(
                     token=raw.input_unit,
                     qname=raw_qname,
@@ -1635,7 +1637,7 @@ def _param_function_stand_in(
                 unit_system=unit_system,
             )
     cls, item_cls = _resolved_return_structure(obj.function)
-    return _DryRunStructuredValue(
+    return _UnitCheckStructuredValue(
         producer=qname,
         unit_system=unit_system,
         cls=cls,
@@ -1733,17 +1735,17 @@ def _representative_values_by_qname(
     resolved_units: Mapping[str, pint.Unit | dict[str | int, Any]],
     unit_system: UnitSystem,
 ) -> dict[str, Any]:
-    """Representative dry-run values for every unit-resolved node.
+    """Representative unit-check values for every unit-resolved node.
 
-    - A ``piecewise_*``/lookup-table parameter becomes a :class:`_DryRunSchedule`
+    - A ``piecewise_*``/lookup-table parameter becomes a :class:`_UnitCheckSchedule`
       carrying its input/output axes, so a consumer's ``piecewise_polynomial`` /
       ``look_up`` call resolves to the output unit.
     - A dict parameter with a scalar ``unit:`` declaration becomes a dict of
       uniform representative quantities mirroring its value structure, so
-      subscripting works inside a consumer's dry-run.
+      subscripting works inside a consumer's unit check.
     - A structured param function (``unit=UNSET_UNIT``) becomes its
       :func:`_param_function_stand_in` — a schedule where a ``require_converter``
-      declares input and output units for it, a :class:`_DryRunStructuredValue`
+      declares input and output units for it, a :class:`_UnitCheckStructuredValue`
       otherwise.
     """
     registry = unit_system.registry
@@ -1751,7 +1753,7 @@ def _representative_values_by_qname(
     for qname, unit in resolved_units.items():
         obj = env.get(qname)
         if isinstance(obj, ParamMappingObject) and not isinstance(unit, dict):
-            out[qname] = _DryRunSchedule(
+            out[qname] = _UnitCheckSchedule(
                 input_unit=_resolve_schedule_input_unit(obj=obj, registry=registry),
                 output_unit=cast("pint.Unit", unit),
                 unit_system=unit_system,
@@ -1763,7 +1765,7 @@ def _representative_values_by_qname(
         ):
             # A schedule param function that declares its own output unit: its
             # `look_up`/`piecewise_polynomial` yields that unit, the key unscreened.
-            out[qname] = _DryRunSchedule(
+            out[qname] = _UnitCheckSchedule(
                 input_unit=None,
                 output_unit=cast("pint.Unit", unit),
                 unit_system=unit_system,
@@ -1784,7 +1786,7 @@ def _representative_values_by_qname(
     return out
 
 
-def _base_dry_run_kwargs(
+def _base_unit_check_kwargs(
     parameters: tuple[str, ...],
     boolean_parameters: tuple[str, ...],
     representative_values: Mapping[str, Any],
@@ -1792,7 +1794,7 @@ def _base_dry_run_kwargs(
     """Representative kwargs for a body's non-boolean parameters.
 
     Returns ``None`` if any parameter has no representative value (an
-    unannotated producer): the body cannot be dry-run and its declared
+    unannotated producer): the body cannot be evaluated and its declared
     unit is the fallback.
     """
     out: dict[str, Any] = {}
@@ -1808,7 +1810,7 @@ def _base_dry_run_kwargs(
     return out
 
 
-# Caps on the path-exploring dry-run (see ``_PathExplorer``): only a pathological
+# Caps on the path-exploring unit check (see ``_PathExplorer``): only a pathological
 # body (deep independent branching, or a data-driven loop) hits them, so the build
 # check can never blow up.
 _MAX_PATHS = 1024
@@ -1819,7 +1821,7 @@ _MAX_NAMED_DECISIONS = 4
 
 
 class _PathBudgetExceededError(TTSIMError):
-    """A single dry-run made too many branch decisions (likely a loop)."""
+    """A single unit-check run made too many branch decisions (likely a loop)."""
 
 
 class _UnitMixError(TTSIMError):
@@ -1830,9 +1832,9 @@ class _UnitMixError(TTSIMError):
     ``monthly_flow + yearly_flow`` (or compares them) just adds or compares the
     bare arrays — no conversion happens. The two operands must therefore already
     be in equivalent units (same dimension *and* period). pint would mask such a
-    bug during the dry-run — silently auto-converting a same-dimension mismatch
+    bug during the unit check — silently auto-converting a same-dimension mismatch
     (``CURRENCY / month + CURRENCY / year``) or raising a swallowed
-    ``DimensionalityError`` on a cross-dimension one — so ``_DryRunQuantity`` checks
+    ``DimensionalityError`` on a cross-dimension one — so ``_UnitCheckQuantity`` checks
     before delegating instead.
     """
 
@@ -1883,7 +1885,7 @@ class _PathExplorer:
 
         ``label`` names the condition consulted — an argument tested directly, a
         comparison of named operands — so a failure can report the branch in the
-        body's own terms (:meth:`branch_detail`); ``None`` where the dry-run has
+        body's own terms (:meth:`branch_detail`); ``None`` where the unit check has
         no name for it.
         """
         if self._index >= _MAX_DECISIONS_PER_RUN:
@@ -1926,10 +1928,10 @@ class _PathExplorer:
 
 
 def _unwrap(value: Any) -> Any:  # noqa: ANN401
-    return value.q if isinstance(value, _DryRunQuantity) else value
+    return value.q if isinstance(value, _UnitCheckQuantity) else value
 
 
-class _DryRunQuantity:
+class _UnitCheckQuantity:
     """A pint ``Quantity`` wrapped so branch decisions route to a ``_PathExplorer``.
 
     Arithmetic forwards to the wrapped quantity, so units propagate exactly as
@@ -1937,7 +1939,7 @@ class _DryRunQuantity:
     instead return an explorer-controlled value, so the explorer — not the
     representative magnitude — decides which branch is taken; the magnitude is
     always ``1.0`` and never matters. Anything the wrapper cannot model raises,
-    which the caller treats as "not dry-runnable on this path" and falls back to
+    which the caller treats as "not evaluable on this path" and falls back to
     the declaration — so the wrapper can never produce a false positive.
     """
 
@@ -1970,15 +1972,15 @@ class _DryRunQuantity:
     def _registry(self) -> pint.UnitRegistry:
         return self._unit_system.registry
 
-    def _wrap(self, q: Any) -> _DryRunQuantity:  # noqa: ANN401
-        return _DryRunQuantity(
+    def _wrap(self, q: Any) -> _UnitCheckQuantity:  # noqa: ANN401
+        return _UnitCheckQuantity(
             q=q, explorer=self._explorer, unit_system=self._unit_system
         )
 
     def _controlled_bool_at(
         self, level: str | None, label: str | None = None
-    ) -> _DryRunQuantity:
-        return _DryRunQuantity(
+    ) -> _UnitCheckQuantity:
+        return _UnitCheckQuantity(
             q=_boolean_quantity(level=level, registry=self._registry),
             explorer=self._explorer,
             unit_system=self._unit_system,
@@ -1988,7 +1990,7 @@ class _DryRunQuantity:
     def _composed_label(self, other: Any, op: str) -> str | None:  # noqa: ANN401
         """Describe ``self <op> other`` for branch naming, if either side has
         a name; a bare literal operand shows as itself."""
-        if isinstance(other, _DryRunQuantity):
+        if isinstance(other, _UnitCheckQuantity):
             right = other._label  # noqa: SLF001
         elif isinstance(other, int | float | numpy.number | numpy.bool_):
             right = repr(other)
@@ -2018,7 +2020,7 @@ class _DryRunQuantity:
                 return other_level
         return None
 
-    def _logical_result(self, other: Any, op: str) -> _DryRunQuantity:  # noqa: ANN401
+    def _logical_result(self, other: Any, op: str) -> _UnitCheckQuantity:  # noqa: ANN401
         """Combine two booleans under a logical operator ``&``/``|``/``^``.
 
         Logical operators combine truth values. Each operand must be a (possibly
@@ -2033,7 +2035,7 @@ class _DryRunQuantity:
             unit=cast("pint.Unit", self.q.units), registry=self._registry
         )
         other_q = _unwrap(other)
-        if isinstance(other_q, _DryRunStructuredValue):
+        if isinstance(other_q, _UnitCheckStructuredValue):
             other_q._raise_used_as_quantity(op)  # noqa: SLF001
         if isinstance(other_q, pint.Quantity):
             other_is_boolean, other_level = _boolean_level(
@@ -2075,7 +2077,7 @@ class _DryRunQuantity:
         ordering or a ``where`` later.
         """
         other_q = _unwrap(other)
-        if isinstance(other_q, _DryRunStructuredValue):
+        if isinstance(other_q, _UnitCheckStructuredValue):
             other_q._raise_used_as_quantity(op)  # noqa: SLF001
         self_is_point = is_calendar_point_unit(
             unit=cast("pint.Unit", self.q.units), registry=self._registry
@@ -2118,7 +2120,7 @@ class _DryRunQuantity:
         lenient.
         """
         other_q = _unwrap(other)
-        if isinstance(other_q, _DryRunStructuredValue):
+        if isinstance(other_q, _UnitCheckStructuredValue):
             other_q._raise_used_as_quantity(op)  # noqa: SLF001
         if isinstance(other_q, pint.Quantity) and not units_are_equivalent(
             left=cast("pint.Unit", self.q.units),
@@ -2156,28 +2158,28 @@ class _DryRunQuantity:
 
     # Ordering comparisons are unit-blind at run time, so a non-equivalent
     # unit-carrying operand is a bug; the explorer still forces which branch runs.
-    def __lt__(self, other: Any) -> _DryRunQuantity:  # noqa: ANN401
+    def __lt__(self, other: Any) -> _UnitCheckQuantity:  # noqa: ANN401
         self._fail_if_ordering_operand_is_invalid(other=other, op="<")
         return self._controlled_bool_at(
             level=self._comparison_level(other),
             label=self._composed_label(other=other, op="<"),
         )
 
-    def __le__(self, other: Any) -> _DryRunQuantity:  # noqa: ANN401
+    def __le__(self, other: Any) -> _UnitCheckQuantity:  # noqa: ANN401
         self._fail_if_ordering_operand_is_invalid(other=other, op="<=")
         return self._controlled_bool_at(
             level=self._comparison_level(other),
             label=self._composed_label(other=other, op="<="),
         )
 
-    def __gt__(self, other: Any) -> _DryRunQuantity:  # noqa: ANN401
+    def __gt__(self, other: Any) -> _UnitCheckQuantity:  # noqa: ANN401
         self._fail_if_ordering_operand_is_invalid(other=other, op=">")
         return self._controlled_bool_at(
             level=self._comparison_level(other),
             label=self._composed_label(other=other, op=">"),
         )
 
-    def __ge__(self, other: Any) -> _DryRunQuantity:  # noqa: ANN401
+    def __ge__(self, other: Any) -> _UnitCheckQuantity:  # noqa: ANN401
         self._fail_if_ordering_operand_is_invalid(other=other, op=">=")
         return self._controlled_bool_at(
             level=self._comparison_level(other),
@@ -2186,37 +2188,37 @@ class _DryRunQuantity:
 
     # ``==``/``!=`` are deliberately *not* unit-screened: they are routinely used
     # polymorphically (sentinels, ``x == 0``) and are not magnitude comparisons.
-    def __eq__(self, other: object) -> _DryRunQuantity:  # ty: ignore[invalid-method-override]
+    def __eq__(self, other: object) -> _UnitCheckQuantity:  # ty: ignore[invalid-method-override]
         return self._controlled_bool_at(
             level=self._comparison_level(other),
             label=self._composed_label(other=other, op="=="),
         )
 
-    def __ne__(self, other: object) -> _DryRunQuantity:  # ty: ignore[invalid-method-override]
+    def __ne__(self, other: object) -> _UnitCheckQuantity:  # ty: ignore[invalid-method-override]
         return self._controlled_bool_at(
             level=self._comparison_level(other),
             label=self._composed_label(other=other, op="!="),
         )
 
-    def __and__(self, other: Any) -> _DryRunQuantity:  # noqa: ANN401
+    def __and__(self, other: Any) -> _UnitCheckQuantity:  # noqa: ANN401
         return self._logical_result(other=other, op="&")
 
-    def __rand__(self, other: Any) -> _DryRunQuantity:  # noqa: ANN401
+    def __rand__(self, other: Any) -> _UnitCheckQuantity:  # noqa: ANN401
         return self._logical_result(other=other, op="&")
 
-    def __or__(self, other: Any) -> _DryRunQuantity:  # noqa: ANN401
+    def __or__(self, other: Any) -> _UnitCheckQuantity:  # noqa: ANN401
         return self._logical_result(other=other, op="|")
 
-    def __ror__(self, other: Any) -> _DryRunQuantity:  # noqa: ANN401
+    def __ror__(self, other: Any) -> _UnitCheckQuantity:  # noqa: ANN401
         return self._logical_result(other=other, op="|")
 
-    def __xor__(self, other: Any) -> _DryRunQuantity:  # noqa: ANN401
+    def __xor__(self, other: Any) -> _UnitCheckQuantity:  # noqa: ANN401
         return self._logical_result(other=other, op="^")
 
-    def __rxor__(self, other: Any) -> _DryRunQuantity:  # noqa: ANN401
+    def __rxor__(self, other: Any) -> _UnitCheckQuantity:  # noqa: ANN401
         return self._logical_result(other=other, op="^")
 
-    def __invert__(self) -> _DryRunQuantity:
+    def __invert__(self) -> _UnitCheckQuantity:
         is_boolean, level = _boolean_level(
             unit=cast("pint.Unit", self.q.units), registry=self._registry
         )
@@ -2233,26 +2235,26 @@ class _DryRunQuantity:
 
     # Addition and subtraction require equivalent units (see ``_UnitMixError``);
     # multiplication, division, and powers legitimately combine different units.
-    def __add__(self, other: Any) -> _DryRunQuantity:  # noqa: ANN401
+    def __add__(self, other: Any) -> _UnitCheckQuantity:  # noqa: ANN401
         self._fail_if_additive_operand_is_invalid(other=other, op="+")
         return self._wrap(self.q + _unwrap(other))
 
-    def __radd__(self, other: Any) -> _DryRunQuantity:  # noqa: ANN401
+    def __radd__(self, other: Any) -> _UnitCheckQuantity:  # noqa: ANN401
         self._fail_if_additive_operand_is_invalid(other=other, op="+")
         return self._wrap(_unwrap(other) + self.q)
 
-    def __sub__(self, other: Any) -> _DryRunQuantity:  # noqa: ANN401
+    def __sub__(self, other: Any) -> _UnitCheckQuantity:  # noqa: ANN401
         self._fail_if_additive_operand_is_invalid(other=other, op="-")
         return self._wrap(self.q - _unwrap(other))
 
-    def __rsub__(self, other: Any) -> _DryRunQuantity:  # noqa: ANN401
+    def __rsub__(self, other: Any) -> _UnitCheckQuantity:  # noqa: ANN401
         self._fail_if_additive_operand_is_invalid(other=other, op="-")
         return self._wrap(_unwrap(other) - self.q)
 
-    def __mul__(self, other: Any) -> _DryRunQuantity:  # noqa: ANN401
+    def __mul__(self, other: Any) -> _UnitCheckQuantity:  # noqa: ANN401
         return self._wrap(self.q * _unwrap(other))
 
-    def __rmul__(self, other: Any) -> _DryRunQuantity:  # noqa: ANN401
+    def __rmul__(self, other: Any) -> _UnitCheckQuantity:  # noqa: ANN401
         return self._wrap(_unwrap(other) * self.q)
 
     def _nonzero_like(self, value: Any) -> Any:  # noqa: ANN401
@@ -2260,7 +2262,7 @@ class _DryRunQuantity:
 
         Representative magnitudes are all ``1.0``, so a difference of two equal
         quantities (``midijobgrenze_m - minijobgrenze_m``) is a zero-magnitude
-        quantity whose *unit* is nonetheless well-defined. The dry-run cares only
+        quantity whose *unit* is nonetheless well-defined. The unit check cares only
         about units, so when a division by such a value raises
         ``ZeroDivisionError`` the quotient's unit is recovered by re-dividing by
         a same-unit magnitude-1.0 stand-in (a bare literal becomes ``1.0``).
@@ -2269,62 +2271,62 @@ class _DryRunQuantity:
             return self._registry.Quantity(1.0, value.units)
         return 1.0
 
-    def __truediv__(self, other: Any) -> _DryRunQuantity:  # noqa: ANN401
+    def __truediv__(self, other: Any) -> _UnitCheckQuantity:  # noqa: ANN401
         divisor = _unwrap(other)
         try:
             return self._wrap(self.q / divisor)
         except ZeroDivisionError:
             return self._wrap(self.q / self._nonzero_like(divisor))
 
-    def __rtruediv__(self, other: Any) -> _DryRunQuantity:  # noqa: ANN401
+    def __rtruediv__(self, other: Any) -> _UnitCheckQuantity:  # noqa: ANN401
         dividend = _unwrap(other)
         try:
             return self._wrap(dividend / self.q)
         except ZeroDivisionError:
             return self._wrap(dividend / self._nonzero_like(self.q))
 
-    def __floordiv__(self, other: Any) -> _DryRunQuantity:  # noqa: ANN401
+    def __floordiv__(self, other: Any) -> _UnitCheckQuantity:  # noqa: ANN401
         divisor = _unwrap(other)
         try:
             return self._wrap(self.q // divisor)
         except ZeroDivisionError:
             return self._wrap(self.q // self._nonzero_like(divisor))
 
-    def __rfloordiv__(self, other: Any) -> _DryRunQuantity:  # noqa: ANN401
+    def __rfloordiv__(self, other: Any) -> _UnitCheckQuantity:  # noqa: ANN401
         dividend = _unwrap(other)
         try:
             return self._wrap(dividend // self.q)
         except ZeroDivisionError:
             return self._wrap(dividend // self._nonzero_like(self.q))
 
-    def __mod__(self, other: Any) -> _DryRunQuantity:  # noqa: ANN401
+    def __mod__(self, other: Any) -> _UnitCheckQuantity:  # noqa: ANN401
         return self._wrap(self.q % _unwrap(other))
 
-    def __rmod__(self, other: Any) -> _DryRunQuantity:  # noqa: ANN401
+    def __rmod__(self, other: Any) -> _UnitCheckQuantity:  # noqa: ANN401
         return self._wrap(_unwrap(other) % self.q)
 
-    def __pow__(self, other: Any) -> _DryRunQuantity:  # noqa: ANN401
+    def __pow__(self, other: Any) -> _UnitCheckQuantity:  # noqa: ANN401
         return self._wrap(self.q ** _unwrap(other))
 
-    def __rpow__(self, other: Any) -> _DryRunQuantity:  # noqa: ANN401
+    def __rpow__(self, other: Any) -> _UnitCheckQuantity:  # noqa: ANN401
         return self._wrap(_unwrap(other) ** self.q)
 
-    def __neg__(self) -> _DryRunQuantity:
+    def __neg__(self) -> _UnitCheckQuantity:
         return self._wrap(-self.q)
 
-    def __pos__(self) -> _DryRunQuantity:
+    def __pos__(self) -> _UnitCheckQuantity:
         return self._wrap(+self.q)
 
-    def __abs__(self) -> _DryRunQuantity:
+    def __abs__(self) -> _UnitCheckQuantity:
         return self._wrap(abs(self.q))
 
-    def __round__(self, ndigits: int | None = None) -> _DryRunQuantity:
+    def __round__(self, ndigits: int | None = None) -> _UnitCheckQuantity:
         # `round` is unit-preserving (the vectorized `xnp.round` is handled the
         # same way), so a body using the builtin `round(x)` keeps its unit.
         return self._wrap(self.q)
 
 
-def _wrap_for_dry_run(
+def _wrap_for_unit_check(
     value: Any,  # noqa: ANN401
     explorer: _PathExplorer,
     unit_system: UnitSystem,
@@ -2332,7 +2334,7 @@ def _wrap_for_dry_run(
 ) -> Any:  # noqa: ANN401
     """Wrap unit-carrying representative values; pass framework args through.
 
-    Quantities (and the leaves of dict-param trees) become ``_DryRunQuantity`` so the
+    Quantities (and the leaves of dict-param trees) become ``_UnitCheckQuantity`` so the
     explorer controls branches on them; ``xnp``/``num_segments``/… stay raw.
     ``label`` is the argument name the body sees, carried on the stand-in so a
     branch decision on it can be named in an error. A structured stand-in is
@@ -2342,11 +2344,11 @@ def _wrap_for_dry_run(
     bare-literal ``look_up`` on the run's branch path.
     """
     if isinstance(value, pint.Quantity):
-        return _DryRunQuantity(
+        return _UnitCheckQuantity(
             q=value, explorer=explorer, unit_system=unit_system, label=label
         )
-    if isinstance(value, _DryRunStructuredValue):
-        return _DryRunStructuredValue(
+    if isinstance(value, _UnitCheckStructuredValue):
+        return _UnitCheckStructuredValue(
             producer=value._producer,  # noqa: SLF001
             unit_system=unit_system,
             cls=value._cls,  # noqa: SLF001
@@ -2357,7 +2359,7 @@ def _wrap_for_dry_run(
         )
     if isinstance(value, dict):
         return {
-            key: _wrap_for_dry_run(
+            key: _wrap_for_unit_check(
                 value=leaf,
                 explorer=explorer,
                 unit_system=unit_system,
@@ -2368,8 +2370,8 @@ def _wrap_for_dry_run(
     return value
 
 
-class _ScheduleNotDryRunnableError(Exception):
-    """A schedule/lookup/join call the dry-run cannot resolve to a unit.
+class _ScheduleNotEvaluableError(Exception):
+    """A schedule/lookup/join call the unit check cannot resolve to a unit.
 
     Raised when a function-like parameter carries no axes (a converter-produced
     or unannotated schedule) or a gather has no unit-carrying target — caught by
@@ -2389,8 +2391,8 @@ class _StructuredValueUsedAsQuantityError(Exception):
         self.op = op
 
 
-class _DryRunStructuredValue:
-    """The dry-run stand-in for a structured param-function output
+class _UnitCheckStructuredValue:
+    """The unit check's stand-in for a structured param-function output
     (``unit=UNSET_UNIT``, GEP 10). A pluck off an ``Annotated`` scalar field of
     the producer's return dataclass resolves to a quantity at the field's
     declared unit; a nested-dataclass pluck resolves recursively. Everything
@@ -2436,15 +2438,15 @@ class _DryRunStructuredValue:
         self._item_cls = item_cls
         # The body's live explorer cell, handed to a schedule plucked from a
         # schedule-typed field so a bare-literal `look_up` anchors on the body's
-        # branch path (see `_DryRunSchedule._produce`). Carried through nested
+        # branch path (see `_UnitCheckSchedule._produce`). Carried through nested
         # plucks so a schedule any depth down still anchors.
         self._explorer_holder = explorer_holder
 
     def _raise_used_as_quantity(self, op: str) -> NoReturn:
         raise _StructuredValueUsedAsQuantityError(producer=self._producer, op=op)
 
-    def _opaque(self) -> _DryRunStructuredValue:
-        return _DryRunStructuredValue(
+    def _opaque(self) -> _UnitCheckStructuredValue:
+        return _UnitCheckStructuredValue(
             producer=self._producer,
             unit_system=self._unit_system,
             explorer_holder=self._explorer_holder,
@@ -2467,7 +2469,7 @@ class _DryRunStructuredValue:
             quantity = self._unit_system.registry.Quantity(1.0, resolved)
             if self._explorer is None:
                 return quantity
-            return _DryRunQuantity(
+            return _UnitCheckQuantity(
                 q=quantity,
                 explorer=self._explorer,
                 unit_system=self._unit_system,
@@ -2479,14 +2481,14 @@ class _DryRunStructuredValue:
             # that unit. Its input axis is undeclared (`UNSET_UNIT`), so the index
             # is unscreened — as a schedule param function's own output-only
             # declaration is.
-            return _DryRunSchedule(
+            return _UnitCheckSchedule(
                 input_unit=UNSET_UNIT,
                 output_unit=resolved.output_unit,
                 unit_system=self._unit_system,
                 explorer_holder=self._explorer_holder,
             )
         if resolved is not None:
-            return _DryRunStructuredValue(
+            return _UnitCheckStructuredValue(
                 producer=self._producer,
                 unit_system=self._unit_system,
                 cls=resolved,
@@ -2496,13 +2498,13 @@ class _DryRunStructuredValue:
             )
         return self._opaque()
 
-    def __getitem__(self, _key: Any) -> _DryRunStructuredValue:  # noqa: ANN401
+    def __getitem__(self, _key: Any) -> _UnitCheckStructuredValue:  # noqa: ANN401
         if self._item_cls is None:
             return self._opaque()
         # A mapping producer's value is the same dataclass at every key, so the
         # key itself is irrelevant — subscripting yields a stand-in of that class.
         label = f"{self._label}[…]" if self._label is not None else None
-        return _DryRunStructuredValue(
+        return _UnitCheckStructuredValue(
             producer=self._producer,
             unit_system=self._unit_system,
             cls=self._item_cls,
@@ -2511,7 +2513,7 @@ class _DryRunStructuredValue:
             explorer_holder=self._explorer_holder,
         )
 
-    def __call__(self, *_args: Any, **_kwargs: Any) -> _DryRunStructuredValue:  # noqa: ANN401
+    def __call__(self, *_args: Any, **_kwargs: Any) -> _UnitCheckStructuredValue:  # noqa: ANN401
         return self._opaque()
 
 
@@ -2554,23 +2556,23 @@ _STRUCTURED_VALUE_FORBIDDEN_OPS: Mapping[str, str] = {
 
 
 def _structured_value_forbidden_op(op: str) -> Callable[..., Any]:
-    def method(self: _DryRunStructuredValue, *_a: Any, **_k: Any) -> Any:  # noqa: ANN401
+    def method(self: _UnitCheckStructuredValue, *_a: Any, **_k: Any) -> Any:  # noqa: ANN401
         return self._raise_used_as_quantity(op)
 
     return method
 
 
 for _dunder, _op in _STRUCTURED_VALUE_FORBIDDEN_OPS.items():
-    setattr(_DryRunStructuredValue, _dunder, _structured_value_forbidden_op(_op))
+    setattr(_UnitCheckStructuredValue, _dunder, _structured_value_forbidden_op(_op))
 del _dunder, _op
 
 
-class _DryRunSchedule:
-    """A dry-run stand-in for a ``piecewise_*``/lookup-table parameter value.
+class _UnitCheckSchedule:
+    """The unit check's stand-in for a ``piecewise_*``/lookup-table parameter value.
 
     Such a parameter is a *function between quantities*: a body calls
     ``piecewise_polynomial(x, parameters=…)`` or ``….look_up(idx)`` on it and gets
-    an array. The dry-run needs only the unit that falls out. This stand-in
+    an array. The unit check needs only the unit that falls out. This stand-in
     carries the resolved ``input_unit``/``output_unit`` axes — a schedule
     parameter's own, or those a ``require_converter`` declares for its
     converter's typed output: it screens each domain argument against
@@ -2595,7 +2597,7 @@ class _DryRunSchedule:
         self.unit_system = unit_system
         self.explorer_holder = explorer_holder
 
-    def _produce(self, domain_args: tuple[Any, ...]) -> _DryRunQuantity:
+    def _produce(self, domain_args: tuple[Any, ...]) -> _UnitCheckQuantity:
         # An undeclared input axis (`None` or `UNSET_UNIT`) leaves the index
         # unscreened: a schedule may be a multi-dimensional look-up, so per-index
         # input-axis verification is deferred by design (GEP 10).
@@ -2605,7 +2607,7 @@ class _DryRunSchedule:
         explorer: _PathExplorer | None = None
         all_indices_are_scalar_literals = True
         for arg in domain_args:
-            if isinstance(arg, _DryRunQuantity):
+            if isinstance(arg, _UnitCheckQuantity):
                 explorer = arg._explorer  # noqa: SLF001
                 if screen_domain and not units_are_equivalent(
                     left=cast("pint.Unit", arg.q.units),
@@ -2639,8 +2641,8 @@ class _DryRunSchedule:
                 self.explorer_holder[0] if self.explorer_holder is not None else None
             )
         if explorer is None:
-            raise _ScheduleNotDryRunnableError
-        return _DryRunQuantity(
+            raise _ScheduleNotEvaluableError
+        return _UnitCheckQuantity(
             q=self.unit_system.registry.Quantity(1.0, self.output_unit),
             explorer=explorer,
             unit_system=self.unit_system,
@@ -2661,7 +2663,7 @@ class _DryRunSchedule:
             1.0, cast("pint.Unit", self.input_unit)
         ).dimensionless
 
-    def look_up(self, *args: Any) -> _DryRunQuantity:  # noqa: ANN401
+    def look_up(self, *args: Any) -> _UnitCheckQuantity:  # noqa: ANN401
         return self._produce(args)
 
 
@@ -2669,60 +2671,60 @@ def _is_scalar_literal(value: Any) -> bool:  # noqa: ANN401
     """Whether ``value`` is a genuine numeric scalar (a bare or computed literal).
 
     A body's arithmetic on Python/NumPy number literals stays a plain number;
-    every dry-run stand-in (a quantity, a structured value, a schedule) is
+    every unit-check stand-in (a quantity, a structured value, a schedule) is
     something else. `bool` counts — it is an `int` subclass.
     """
     return isinstance(value, int | float | numpy.integer | numpy.floating)
 
 
-def _piecewise_polynomial_dry_run(x: Any, parameters: Any, xnp: Any) -> Any:  # noqa: ANN401, ARG001
-    """Dry-run shim for ``piecewise_polynomial``.
+def _piecewise_polynomial_for_unit_check(x: Any, parameters: Any, xnp: Any) -> Any:  # noqa: ANN401, ARG001
+    """Unit-check stand-in for ``piecewise_polynomial``.
 
     Screen ``x`` against the schedule's ``input_unit`` and produce its
     ``output_unit``. A schedule built from an input/output-unit
-    ``require_converter`` arrives as a :class:`_DryRunSchedule` too and
+    ``require_converter`` arrives as a :class:`_UnitCheckSchedule` too and
     screens the same way; only a unit-less converter-built schedule stays
-    opaque — the caller casts the result. Anything else is not dry-runnable
+    opaque — the caller casts the result. Anything else cannot be evaluated
     here.
     """
-    if isinstance(parameters, _DryRunSchedule):
+    if isinstance(parameters, _UnitCheckSchedule):
         return parameters._produce((x,))  # noqa: SLF001
-    if isinstance(parameters, _DryRunStructuredValue):
+    if isinstance(parameters, _UnitCheckStructuredValue):
         return parameters
-    raise _ScheduleNotDryRunnableError
+    raise _ScheduleNotEvaluableError
 
 
-def _join_dry_run(
+def _join_for_unit_check(
     foreign_key: Any,  # noqa: ANN401, ARG001
     primary_key: Any,  # noqa: ANN401, ARG001
     target: Any,  # noqa: ANN401
     value_if_foreign_key_is_missing: Any,  # noqa: ANN401, ARG001
     xnp: Any,  # noqa: ANN401, ARG001
 ) -> Any:  # noqa: ANN401
-    """Dry-run shim for ``join``.
+    """Unit-check stand-in for ``join``.
 
     A person-to-person gather preserves the ``target`` column's unit and level
     (the keys are dimensionless ``p_id``s, the missing-value a sentinel literal).
     """
-    if isinstance(target, _DryRunQuantity):
+    if isinstance(target, _UnitCheckQuantity):
         return target._wrap(target.q)  # noqa: SLF001
-    raise _ScheduleNotDryRunnableError
+    raise _ScheduleNotEvaluableError
 
 
-def _cast_ttsim_unit_dry_run(
+def _cast_ttsim_unit_for_unit_check(
     value: Any,  # noqa: ANN401
     unit: str | CompositeUnit,
     unit_system: UnitSystem,
     explorer_holder: list[_PathExplorer | None],
 ) -> Any:  # noqa: ANN401
-    """Dry-run shim for ``cast_ttsim_unit``.
+    """Unit-check stand-in for ``cast_ttsim_unit``.
 
     The cast is total: whatever flowed in — a quantity at another unit or
     level, a bare literal, an attribute plucked off a structured value — the
     stand-in flowing out carries the stated unit, resolved like a declaration
     (currency-agnostic; an omitted level is level-neutral, the person level
     spelled ``PER_PERSON``). The result stays on the body's
-    path: a ``_DryRunQuantity`` input keeps its explorer, and any other input
+    path: a ``_UnitCheckQuantity`` input keeps its explorer, and any other input
     (a bare literal) is wrapped with the body's explorer (``explorer_holder``),
     so a cast literal orders and combines like any quantity — ``max(x,
     cast_ttsim_unit(0, …))`` screens instead of reading as un-evaluable. A malformed
@@ -2734,22 +2736,22 @@ def _cast_ttsim_unit_dry_run(
         unit=token, registry=unit_system.registry, where="A `cast_ttsim_unit` call"
     )
     quantity = unit_system.registry.Quantity(1.0, resolved)
-    if isinstance(value, _DryRunQuantity):
+    if isinstance(value, _UnitCheckQuantity):
         return value._wrap(quantity)  # noqa: SLF001
     explorer = explorer_holder[0]
     if explorer is None:
         return quantity
-    return _DryRunQuantity(q=quantity, explorer=explorer, unit_system=unit_system)
+    return _UnitCheckQuantity(q=quantity, explorer=explorer, unit_system=unit_system)
 
 
-def _time_conversion_shim(
+def _time_conversion_stand_in(
     from_pint: str, to_pint: str, registry: pint.UnitRegistry, *, is_flow: bool
 ) -> Callable[[Any], Any]:
-    """Build a dry-run shim for one ``ttsim.unit_converters`` time converter.
+    """Build the unit-check stand-in for one ``ttsim.unit_converters`` time converter.
 
     A converter restates a value on a different time period by multiplying by a
-    whole number — a *dimensionless* factor pint cannot see — so the shim rebases
-    the period token instead: a duration converter (``m_to_y``) swaps the
+    whole number — a *dimensionless* factor pint cannot see — so the stand-in
+    rebases the period token instead: a duration converter (``m_to_y``) swaps the
     numerator period (``MONTHS`` -> ``YEARS``), a flow converter
     (``per_m_to_per_y``) the denominator flow period (``CURRENCY/month`` ->
     ``CURRENCY/year``). A bare literal (no unit to rebase) flows through
@@ -2759,66 +2761,66 @@ def _time_conversion_shim(
     from_q = registry.Quantity(1.0, from_pint)
     to_q = registry.Quantity(1.0, to_pint)
 
-    def shim(value: Any) -> Any:  # noqa: ANN401
-        if not isinstance(value, _DryRunQuantity):
+    def stand_in(value: Any) -> Any:  # noqa: ANN401
+        if not isinstance(value, _UnitCheckQuantity):
             return value
         rebased = value.q * from_q / to_q if is_flow else value.q / from_q * to_q
         return value._wrap(rebased)  # noqa: SLF001
 
-    return shim
+    return stand_in
 
 
-def _time_conversion_shims(registry: pint.UnitRegistry) -> dict[str, Any]:
-    """A dry-run shim for every ``<a>_to_<b>`` / ``per_<a>_to_per_<b>`` converter."""
-    shims: dict[str, Any] = {}
+def _time_conversion_stand_ins(registry: pint.UnitRegistry) -> dict[str, Any]:
+    """A stand-in for every ``<a>_to_<b>`` / ``per_<a>_to_per_<b>`` converter."""
+    stand_ins: dict[str, Any] = {}
     for from_id, from_pint in TIME_UNIT_ID_TO_PINT_NAME.items():
         for to_id, to_pint in TIME_UNIT_ID_TO_PINT_NAME.items():
             if from_id == to_id:
                 continue
-            shims[f"{from_id}_to_{to_id}"] = _time_conversion_shim(
+            stand_ins[f"{from_id}_to_{to_id}"] = _time_conversion_stand_in(
                 from_pint=from_pint,
                 to_pint=to_pint,
                 registry=registry,
                 is_flow=False,
             )
-            shims[f"per_{from_id}_to_per_{to_id}"] = _time_conversion_shim(
+            stand_ins[f"per_{from_id}_to_per_{to_id}"] = _time_conversion_stand_in(
                 from_pint=from_pint,
                 to_pint=to_pint,
                 registry=registry,
                 is_flow=True,
             )
-    return shims
+    return stand_ins
 
 
-def _dry_run_helper_shims(
+def _unit_check_helper_stand_ins(
     unit_system: UnitSystem,
 ) -> tuple[Mapping[str, Any], list[_PathExplorer | None]]:
-    """The module-level helpers swapped for unit-only shims in a body's scope.
+    """The module-level helpers swapped for unit-only stand-ins in a body's scope.
 
-    Each shim mints quantities in ``unit_system``'s registry, so the set is
+    Each stand-in mints quantities in ``unit_system``'s registry, so the set is
     built per run rather than shared. The returned ``explorer_holder`` lets the
-    ``cast_ttsim_unit`` shim reach the explorer of the body currently under
+    ``cast_ttsim_unit`` stand-in reach the explorer of the body currently under
     verification — :func:`_verify_one_body` sets it per body — so a cast literal
     becomes an explorer-carrying quantity rather than a bare pint one.
     """
     explorer_holder: list[_PathExplorer | None] = [None]
-    shims: Mapping[str, Any] = {
-        "piecewise_polynomial": _piecewise_polynomial_dry_run,
-        "join": _join_dry_run,
+    stand_ins: Mapping[str, Any] = {
+        "piecewise_polynomial": _piecewise_polynomial_for_unit_check,
+        "join": _join_for_unit_check,
         "cast_ttsim_unit": functools.partial(
-            _cast_ttsim_unit_dry_run,
+            _cast_ttsim_unit_for_unit_check,
             unit_system=unit_system,
             explorer_holder=explorer_holder,
         ),
-        "max": _scalar_clamp_dry_run(op="maximum"),
-        "min": _scalar_clamp_dry_run(op="minimum"),
-        **_time_conversion_shims(unit_system.registry),
+        "max": _scalar_clamp_for_unit_check(op="maximum"),
+        "min": _scalar_clamp_for_unit_check(op="minimum"),
+        **_time_conversion_stand_ins(unit_system.registry),
     }
-    return shims, explorer_holder
+    return stand_ins, explorer_holder
 
 
-def _scalar_clamp_dry_run(op: str) -> Any:  # noqa: ANN401
-    """Shim the scalar ``max``/``min`` builtins to screen like the vectorized ops.
+def _scalar_clamp_for_unit_check(op: str) -> Any:  # noqa: ANN401
+    """Stand in for scalar ``max``/``min``, screening like the vectorized ops.
 
     A scalar body's ``max(a, b)``/``min(a, b)`` runs the Python builtin, which
     returns one operand *whole* — so on the branch where a bare ``0`` floor wins
@@ -2829,14 +2831,14 @@ def _scalar_clamp_dry_run(op: str) -> Any:  # noqa: ANN401
     one-iterable spellings (GEP 1) both fold through the same screen.
     """
 
-    def shim(*args: Any) -> Any:  # noqa: ANN401
+    def stand_in(*args: Any) -> Any:  # noqa: ANN401
         items = list(args[0]) if len(args) == 1 else list(args)
         result = items[0]
         for item in items[1:]:
             result = _clamping_op(left=result, right=item, op=op)
         return result
 
-    return shim
+    return stand_in
 
 
 def _clamping_op(left: Any, right: Any, op: str) -> Any:  # noqa: ANN401
@@ -2847,8 +2849,8 @@ def _clamping_op(left: Any, right: Any, op: str) -> Any:  # noqa: ANN401
     operands must be equivalent, a bare non-zero literal bound is rejected — and
     the result carries the quantity's unit.
     """
-    quantity = left if isinstance(left, _DryRunQuantity) else right
-    if not isinstance(quantity, _DryRunQuantity):
+    quantity = left if isinstance(left, _UnitCheckQuantity) else right
+    if not isinstance(quantity, _UnitCheckQuantity):
         return getattr(numpy, op)(left, right)
     other = right if quantity is left else left
     quantity._fail_if_ordering_operand_is_invalid(other=other, op=op)  # noqa: SLF001
@@ -2859,8 +2861,8 @@ def _where_op(x: Any, y: Any) -> Any:  # noqa: ANN401
     """``xnp.where``: the two branches become one column, so they must carry
     equivalent units (as for an ordering comparison — no forward pint op runs,
     so calendar points screen by identity); the result carries that unit."""
-    quantity = x if isinstance(x, _DryRunQuantity) else y
-    if not isinstance(quantity, _DryRunQuantity):
+    quantity = x if isinstance(x, _UnitCheckQuantity) else y
+    if not isinstance(quantity, _UnitCheckQuantity):
         return numpy.where(True, x, y)  # noqa: FBT003
     other = y if quantity is x else x
     quantity._fail_if_other_unit_is_not_equivalent(other=other, op="where")  # noqa: SLF001
@@ -2871,7 +2873,7 @@ def _clip_op(value: Any, a_min: Any, a_max: Any) -> Any:  # noqa: ANN401
     """``xnp.clip``: each bound is screened against the value as an ordering
     operand (so a bare non-zero literal bound is rejected); the unit is preserved.
     """
-    if not isinstance(value, _DryRunQuantity):
+    if not isinstance(value, _UnitCheckQuantity):
         return numpy.clip(value, a_min, a_max)
     for bound in (a_min, a_max):
         if bound is not None:
@@ -2881,22 +2883,22 @@ def _clip_op(value: Any, a_min: Any, a_max: Any) -> Any:  # noqa: ANN401
 
 def _unit_preserving_op(value: Any) -> Any:  # noqa: ANN401
     """A unit-preserving reduction/unary op (``sum``/``floor``/``abs``/…)."""
-    if isinstance(value, _DryRunQuantity):
+    if isinstance(value, _UnitCheckQuantity):
         return value._wrap(value.q)  # noqa: SLF001
     return value
 
 
 def _opt_out_required_error(qname: str, reason: str) -> str:
-    """Message demanding an explicit opt-out for a body the dry-run cannot check.
+    """Message demanding an explicit opt-out for a body the unit check cannot evaluate.
 
-    A body that cannot be evaluated symbolically is *not* waved through silently:
+    A body the unit check cannot evaluate is *not* waved through silently:
     the author must mark it ``verify_units=False`` so that every un-verified body
     is a visible, deliberate choice. The declared unit still
     stands and the body's edges are still checked — only its internal inference
     is skipped.
     """
     return (
-        f"{qname}: its body cannot be unit-checked by the dry-run ({reason}). "
+        f"{qname}: its body cannot be unit-checked ({reason}). "
         f"Set `verify_units=False` on its decorator to opt out of body inference "
         f"— its declared unit and its edges stay checked (GEP 10)."
     )
@@ -2928,7 +2930,7 @@ def _arithmetic_misuse_message(
 ) -> str:
     """Message for a body that combines quantities unsoundly under ``+``/``-``/order.
 
-    Dispatches the ways the dry-run catches such a body: an explicit
+    Dispatches the ways the unit check catches such a body: an explicit
     :class:`_UnitMixError` (non-equivalent units, a logical operator on a real
     quantity, a bare-literal threshold), a
     :class:`_StructuredValueUsedAsQuantityError` (an un-cast pluck off a
@@ -2995,7 +2997,7 @@ def _verify_one_body(
     unit_system: UnitSystem,
     explorer_holder: list[_PathExplorer | None],
 ) -> str | None:
-    """Dry-run one body on every reachable branch path; return an error or ``None``.
+    """Unit-check one body on every reachable branch path; return an error or ``None``.
 
     The body runs once per path through the branch tree (see ``_PathExplorer``);
     each run that infers a concrete unit must match the declaration. A body that
@@ -3004,7 +3006,7 @@ def _verify_one_body(
     time, where no pint conversion happens. A run that infers a dimensionless
     result (e.g. an early ``return 0.0`` guard) falls back to the declaration on
     that path. A run that *raises* — a body using a lookup table, a piecewise
-    polynomial, ``join``, or a raw ``xnp`` op the dry-run cannot evaluate — is
+    polynomial, ``join``, or a raw ``xnp`` op the unit check cannot evaluate — is
     reported as needing an explicit ``verify_units=False`` opt-out (callers reach
     this only for bodies that have not already opted out).
 
@@ -3014,8 +3016,8 @@ def _verify_one_body(
     combinations fail as well.
     """
     explorer = _PathExplorer()
-    # The `cast_ttsim_unit` shim reaches this body's explorer here, so a cast literal
-    # (`max(x, cast_ttsim_unit(0, …))`) becomes an explorer-carrying quantity.
+    # The `cast_ttsim_unit` stand-in reaches this body's explorer here, so a cast
+    # literal (`max(x, cast_ttsim_unit(0, …))`) becomes an explorer-carrying quantity.
     explorer_holder[0] = explorer
     paths = 0
     branch_errors: list[str] = []
@@ -3032,7 +3034,7 @@ def _verify_one_body(
         paths += 1
         explorer.start_run()
         kwargs = {
-            name: _wrap_for_dry_run(
+            name: _wrap_for_unit_check(
                 value=value,
                 explorer=explorer,
                 unit_system=unit_system,
@@ -3142,7 +3144,7 @@ def _non_quantity_result_error(
     """The screen for a result that is neither a quantity nor a plain scalar:
     a bare structured pluck names its cast; any other opaque return — a
     dataclass, a tuple — must opt out."""
-    if isinstance(inferred, _DryRunStructuredValue):
+    if isinstance(inferred, _UnitCheckStructuredValue):
         return (
             f"{qname}: returns a value plucked off the structured parameter "
             f"'{inferred._producer}' without stating its unit; annotate the "  # noqa: SLF001
@@ -3150,7 +3152,7 @@ def _non_quantity_result_error(
         )
     return _opt_out_required_error(
         qname=qname,
-        reason="it returns a value the dry-run cannot unit-check — a dataclass, "
+        reason="it returns a value the unit check cannot handle — a dataclass, "
         "a tuple, or another non-scalar",
     )
 
@@ -3190,7 +3192,7 @@ def _inferred_result_error(
     detail: str,
     unit_system: UnitSystem,
 ) -> str | None:
-    """Check one dry-run result against the declaration.
+    """Check one inferred result against the declaration.
 
     An opaque return — a dataclass, a tuple, … — is neither a checkable quantity
     nor a plain scalar, so it must opt out. A concrete ``Quantity`` must match the

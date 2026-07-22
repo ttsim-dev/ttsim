@@ -190,22 +190,22 @@ def recompile_with_logical_ops_as_calls(
 
     Python ``and``/``or`` short-circuit through ``__bool__`` and yield one operand
     whole, and ``not`` consumes ``__bool__`` and returns a plain ``bool``, so none
-    of them can combine or preserve a custom object. The unit-check dry-run reuses
+    of them can combine or preserve a custom object. The unit check reuses
     the array vectorizer's :func:`_boolop_to_call` / :func:`_not_to_call` rewrites,
-    binding ``module`` to ``module_obj`` (an ``xnp`` shim whose ``logical_*`` route
+    binding ``module`` to ``module_obj`` (an ``xnp`` stand-in whose ``logical_*`` route
     through the leveled-boolean combine) so author-written ``and``/``or``/``not``
     are checked the way they run — a ``not`` on a leveled boolean keeps its level,
     exactly as ``~`` does. The numeric runtime is untouched.
 
     ``extra_globals`` rebinds module-level names in the recompiled body's scope —
-    the dry-run uses it to swap ``piecewise_polynomial``/``join`` for unit-only
-    shims, so a body that calls them is checked rather than executed. When it is
+    the unit check uses it to swap ``piecewise_polynomial``/``join`` for unit-only
+    stand-ins, so a body that calls them is checked rather than executed. When it is
     given, the body is rebound even if it has no ``and``/``or`` (the rebinding,
     not the rewrite, is then the point).
 
     A function with no ``and``/``or`` and no ``extra_globals`` is returned
     unchanged. Falls back to the original when source is unavailable (a builtin, a
-    C function, a REPL definition) or unparseable, so the dry-run sees the original
+    C function, a REPL definition) or unparseable, so the unit check sees the original
     body.
     """
     if _is_lambda_function(func):

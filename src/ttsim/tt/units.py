@@ -13,7 +13,7 @@ pint is a build-time tool only — it never wraps a live array (a
 :class:`pint.Quantity` is not a JAX pytree and does not trace under ``jit``). It
 serves two build-time jobs:
 
-- the dry-run dimensionality check (:mod:`ttsim.interface_dag_elements.unit_checks`);
+- the build-time dimensionality check (:mod:`ttsim.interface_dag_elements.unit_checks`);
 - sourcing the time- and currency-conversion factors baked into the numeric
   workers.
 
@@ -615,9 +615,9 @@ def cast_ttsim_unit(
 ) -> _CastValueT:
     """Re-tag ``value`` with ``unit`` for the build-time unit check (GEP 10).
 
-    The expression-level escape hatch of the dry-run. Like ``typing.cast``, it
+    The expression-level escape hatch of the unit check. Like ``typing.cast``, it
     is the identity at run time — ``value`` comes back unchanged, scalar or
-    column, so the numeric path and JAX tracing are untouched. Only the dry-run
+    column, so the numeric path and JAX tracing are untouched. Only the unit check
     gives the call meaning: the stand-in flowing through it is re-tagged with the
     stated unit wholesale — dimension, flow period, and grouping level, resolved
     like a declaration (currency-agnostic; an omitted level is bare, i.e. both
@@ -646,7 +646,7 @@ def cast_ttsim_unit(
 #:
 #: - on a ``@param_function``, ``unit=UNSET_UNIT`` is the *explicit* declaration
 #:   of a structured output (a dataclass of related parameters, a converter-built
-#:   schedule) that is not a quantity: the body is not dry-run and consumers
+#:   schedule) that is not a quantity: the body is not unit-checked and consumers
 #:   state each plucked value's unit with ``cast_ttsim_unit``;
 #: - everywhere else a real unit is mandatory, so the sentinel only survives as a
 #:   dataclass field default (the ``unit`` field needs one for field-ordering),
@@ -762,7 +762,7 @@ def build_registry() -> pint.UnitRegistry:
       opposed to a *duration*. pint models a point as an offset unit, whose
       offset must be **non-zero** or pint silently treats it as a plain
       (multiplicative) unit and loses the affine algebra that forbids
-      ``point + point``. The epoch is otherwise irrelevant — the dry-run only
+      ``point + point``. The epoch is otherwise irrelevant — the unit check only
       ever uses magnitude ``1.0`` and the runtime path is bare arrays — so we
       pick the 1900-01-01 epoch, aligned across the three axes. Subtracting two
       points yields pint's companion ``delta_calendar_*`` *duration* unit, which
@@ -1040,7 +1040,7 @@ def is_calendar_point_unit(unit: pint.Unit, registry: pint.UnitRegistry) -> bool
     - two points cannot be added, a point cannot be scaled, and points on
       different calendar axes cannot be combined.
 
-    Callers that implement the affine ``+``/``-`` rules (the build-time dry-run)
+    Callers that implement the affine ``+``/``-`` rules (the build-time unit check)
     detect a point this way and delegate the operation to pint rather than to the
     magnitude-equivalence check, which would wrongly reject the valid
     ``point + duration``. Detection is by the very property that defines an offset

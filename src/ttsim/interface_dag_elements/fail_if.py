@@ -1005,7 +1005,7 @@ def tt_units_are_inconsistent(
 ) -> None:
     """Fail if a function body infers a unit that contradicts its declaration.
 
-    Each body is dry-run on representative values built from its producers'
+    Each body is unit-checked on representative values built from its producers'
     resolved units, across every reachable branch path, without any user data. A
     mismatch is flagged when the inferred unit is concrete (non-dimensionless) and
     disagrees with the declaration; a dimensionless inference (e.g. an early
@@ -1013,7 +1013,7 @@ def tt_units_are_inconsistent(
 
     Raises:
         UnitConsistencyError: If any body infers a concrete unit that
-            disagrees with its declaration, or cannot be dry-run and has not
+            disagrees with its declaration, or cannot be evaluated and has not
             opted out via `verify_units=False`.
     """
     fail_if_environment_units_are_inconsistent(
