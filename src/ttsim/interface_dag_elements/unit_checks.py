@@ -332,7 +332,7 @@ def resolve_environment_units(
                 # name-suffix rules (GEP 10). A malformed declaration (a
                 # quantity unit or `UNSET_UNIT` on a schedule return) is left
                 # unresolved here and reported by the schedule contract check.
-                resolved[qname] = _resolve_schedule_declaration_axis(
+                resolved[qname] = resolve_compositional_field_unit(
                     unit=token.output_unit,
                     registry=registry,
                     where=f"Schedule param function {qname!r}",
@@ -1742,23 +1742,6 @@ def _schedule_param_function_contract_errors(
     return errors
 
 
-def _resolve_schedule_declaration_axis(
-    unit: CompositeUnit, registry: pint.UnitRegistry, where: str
-) -> pint.Unit:
-    """Resolve one axis of a schedule builder's ``InputOutputUnit`` declaration.
-
-    Both axes are currency-agnostic compositional units, exactly like a
-    column/function declaration or a schedule-typed field: a concrete-currency
-    axis is rejected (a builder runs in the statutory currency of the policy
-    date, whichever that is), the spelled period and level stand as given, an
-    omitted level is bare, and the agnostic ``CURRENCY`` resolves to the
-    ``[currency]`` dimension — so a schedule's declared axis and a
-    concrete-currency parameter or agnostic column argument compare as equivalent
-    (GEP 10).
-    """
-    return resolve_compositional_field_unit(unit=unit, registry=registry, where=where)
-
-
 def _resolve_schedule_input_unit(
     obj: ParamMappingObject, registry: pint.UnitRegistry
 ) -> pint.Unit | None:
@@ -1816,7 +1799,7 @@ def _representative_values_by_qname(
             # `unit=InputOutputUnit(...)`: `look_up`/`piecewise_polynomial` screens
             # each domain argument against the input axis and yields the output.
             out[qname] = _UnitCheckSchedule(
-                input_unit=_resolve_schedule_declaration_axis(
+                input_unit=resolve_compositional_field_unit(
                     unit=obj.unit.input_unit,
                     registry=registry,
                     where=f"Schedule param function {qname!r}",
