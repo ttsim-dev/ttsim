@@ -4112,6 +4112,77 @@ def test_schedule_field_with_tuple_input_axes_positional_mismatch_is_caught():
         )
 
 
+# The decorator-site rules are mirrored at schedule fields, and fire eagerly —
+# whether or not any body plucks the field (GEP 10)
+
+
+@dataclass(frozen=True)
+class _PiecewiseFieldWithTupleAxes:
+    schedule: Annotated[
+        PiecewisePolynomialParamValue,
+        InputOutputUnit(
+            input_unit=(TTSIMUnit.CURRENCY, TTSIMUnit.DIMENSIONLESS),
+            output_unit=TTSIMUnit.CURRENCY.PER_YEAR,
+        ),
+    ]
+
+
+@param_function(unit=UNSET_UNIT)
+def piecewise_field_with_tuple_axes(
+    xnp: ModuleType,
+) -> _PiecewiseFieldWithTupleAxes:
+    """A structured builder with a never-plucked piecewise field carrying a tuple."""
+    return _PiecewiseFieldWithTupleAxes(
+        schedule=PiecewisePolynomialParamValue(
+            thresholds=xnp.asarray([0.0, 1000.0]),
+            intercepts=xnp.asarray([0.0, 0.0]),
+            coefficients=xnp.asarray([[0.0], [0.2]]),
+        )
+    )
+
+
+def test_tuple_input_axis_on_piecewise_field_is_rejected():
+    """`piecewise_polynomial` takes one domain argument, so a tuple `input_unit`
+    on a piecewise-typed field is a definition error, caught eagerly even though
+    no body plucks the field (GEP 10)."""
+    with pytest.raises(UnitDefinitionError, match="single domain argument"):
+        fail_if_environment_units_are_inconsistent(
+            env={"piecewise_field_with_tuple_axes": piecewise_field_with_tuple_axes},
+            grouping_levels=GROUPING_LEVELS,
+            unit_system=UNIT_SYSTEM,
+        )
+
+
+@dataclass(frozen=True)
+class _LookupFieldWithCurrencyAxis:
+    table: Annotated[
+        ConsecutiveIntLookupTableParamValue,
+        InputOutputUnit(
+            input_unit=(TTSIMUnit.DIMENSIONLESS, TTSIMUnit.CURRENCY),
+            output_unit=TTSIMUnit.CURRENCY.PER_MONTH,
+        ),
+    ]
+
+
+@param_function(unit=UNSET_UNIT)
+def lookup_field_with_currency_axis(
+    xnp: ModuleType,
+) -> _LookupFieldWithCurrencyAxis:
+    """A structured builder with a never-plucked lookup field keyed by a currency."""
+    return _LookupFieldWithCurrencyAxis(table=_two_axis_lookup(xnp))
+
+
+def test_currency_input_axis_on_lookup_field_is_rejected():
+    """A lookup table is keyed by consecutive integers, so no axis of a lookup-typed
+    field may be a currency; caught eagerly even without a pluck (GEP 10)."""
+    with pytest.raises(UnitDefinitionError, match="keyed by consecutive integers"):
+        fail_if_environment_units_are_inconsistent(
+            env={"lookup_field_with_currency_axis": lookup_field_with_currency_axis},
+            grouping_levels=GROUPING_LEVELS,
+            unit_system=UNIT_SYSTEM,
+        )
+
+
 # Per-function body opt-out (verify_units=False)
 
 

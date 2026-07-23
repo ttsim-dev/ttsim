@@ -1515,6 +1515,7 @@ def _structured_field_kinds(
             )
         if is_schedule:
             kinds[field.name] = _schedule_field_kind(
+                base=cast("type", base),
                 io_tokens=io_tokens,
                 composite_tokens=composite_tokens,
                 unit_system=unit_system,
@@ -1545,6 +1546,7 @@ def _structured_field_kinds(
 
 
 def _schedule_field_kind(
+    base: type,
     io_tokens: list[InputOutputUnit],
     composite_tokens: list[CompositeUnit],
     unit_system: UnitSystem,
@@ -1557,9 +1559,16 @@ def _schedule_field_kind(
     single quantity, which a schedule (a function between quantities) is not, so
     it is rejected with a pointer to ``InputOutputUnit`` (GEP 10).
 
+    The same type-specific axis rules the decorator enforces hold here, keyed off
+    the field's schedule type: a ``PiecewisePolynomialParamValue`` field takes one
+    domain argument, so a tuple ``input_unit`` is rejected; a
+    ``ConsecutiveIntLookupTableParamValue`` field is keyed by consecutive integers,
+    so no ``input_unit`` axis may be a currency.
+
     Raises:
         UnitDefinitionError: If the field carries a bare ``CompositeUnit`` marker,
-            or no ``InputOutputUnit`` at all.
+            no ``InputOutputUnit`` at all, a tuple ``input_unit`` on a piecewise
+            field, or a currency axis on a lookup-table field.
     """
     if composite_tokens:
         raise UnitDefinitionError(
@@ -1575,6 +1584,28 @@ def _schedule_field_kind(
             f"(GEP 10)."
         )
     io_token = io_tokens[0]
+    input_axes = (
+        io_token.input_unit
+        if isinstance(io_token.input_unit, tuple)
+        else (io_token.input_unit,)
+    )
+    if issubclass(base, PiecewisePolynomialParamValue) and isinstance(
+        io_token.input_unit, tuple
+    ):
+        raise UnitDefinitionError(
+            f"{where}: declares a tuple `input_unit` but is a piecewise polynomial, "
+            f"which takes a single domain argument; a tuple of positional axes is "
+            f"only for a multi-dimensional lookup table (GEP 10)."
+        )
+    if issubclass(base, ConsecutiveIntLookupTableParamValue) and any(
+        _token_declares_a_currency(cast("CompositeUnit", axis)) for axis in input_axes
+    ):
+        raise UnitDefinitionError(
+            f"{where}: is a lookup table keyed by consecutive integers, so no "
+            f"`input_unit` axis may be a currency (got "
+            f"`input_unit={io_token.input_unit}`); the integer keys are never "
+            f"rescaled between currencies (GEP 10)."
+        )
     return _ScheduleFieldKind(
         input_unit=_resolve_input_axes(
             input_unit=io_token.input_unit, registry=unit_system.registry, where=where
