@@ -28,9 +28,13 @@ import pint
 from pint.util import to_units_container
 
 from ttsim.exceptions import UnitDefinitionError
-from ttsim.tt.grouping_levels import register_grouping_levels
+from ttsim.tt.grouping_levels import (
+    define_grouping_level_dimensions,
+    register_grouping_levels,
+)
 from ttsim.tt.units import (
     _ALLOWED_UNIT_TOKENS,
+    _COMPOSITIONAL_BASE_TO_PINT,
     CURRENCY_TOKEN,
     CompositeUnit,
     TTSIMUnit,
@@ -64,10 +68,12 @@ class UnitSystem:
 
     Raises:
         UnitDefinitionError: If a currency name clashes with a unit the shared
-            vocabulary already defines, if a definition does not resolve to the
+            vocabulary already defines or differs only in case from another
+            registered currency, if a definition does not resolve to the
             ``[currency]`` dimension or does not reference exactly one of this
-            system's currencies, or if the statutory-currency mapping is empty
-            or names a currency the system does not have.
+            system's currencies, or if the statutory-currency mapping is empty,
+            is keyed by anything other than an ISO date, or names a currency the
+            system does not have.
     """
 
     base_currency: str
@@ -129,6 +135,10 @@ class UnitSystem:
             "statutory_currency_by_start_date",
             self._parsed_statutory_currencies(),
         )
+        # Registry-local, and the last step that can reject anything; running it
+        # here keeps every global mutation below unfailable.
+        define_grouping_level_dimensions(names=self.grouping_levels, registry=registry)
+        self._publish_currencies()
         register_grouping_levels(names=self.grouping_levels, registry=registry)
 
     def currency_conversion_factor(
@@ -180,6 +190,10 @@ class UnitSystem:
         reference; every other currency is defined relative to an
         already-defined one, so all of them chain back to the base and are
         interconvertible.
+
+        Definitions land in the system's own registry, which is discarded with a
+        system whose construction fails; :meth:`_publish_currencies` does the
+        process-global half once every check has passed.
         """
         self._define_one_currency(name=self.base_currency, definition=CURRENCY_TOKEN)
         defined = {self.base_currency}
@@ -190,6 +204,16 @@ class UnitSystem:
             self._define_one_currency(name=name, definition=definition)
             defined.add(name)
         for name in self.currencies:
+            self._fail_if_builder_base_is_taken(name=name)
+
+    def _publish_currencies(self) -> None:
+        """Widen the process-global vocabulary by this system's currencies.
+
+        Runs only once every check has passed — including the statutory-mapping
+        one — so a system whose construction raises leaves the vocabulary as it
+        found it.
+        """
+        for name in self.currencies:
             _ALLOWED_UNIT_TOKENS.add(name)
             _registered_currencies.add(name)
             # Surface the concrete currency on the `TTSIMUnit` builder (`TTSIMUnit.EUR`,
@@ -198,6 +222,35 @@ class UnitSystem:
             # still rejects a concrete base (`resolve_compositional_column_unit`);
             # this only makes it reachable.
             setattr(TTSIMUnit, name.upper(), CompositeUnit(base=name.upper()))
+
+    def _fail_if_builder_base_is_taken(self, name: str) -> None:
+        """Reject a currency whose `TTSIMUnit` base another unit already owns.
+
+        A currency reaches the builder namespace under its upper-cased name, and
+        :func:`ttsim.tt.units.parse_compositional_unit` matches a base against that
+        same upper-cased form. Two names that differ only in case would therefore
+        share one base — one silently shadowing the other on the builder, and the
+        shared base naming neither of them unambiguously. The clash counts whether
+        the other name belongs to this system or to one already registered.
+        """
+        base = name.upper()
+        shadowed = sorted(
+            other
+            for other in _registered_currencies | self.currencies
+            if other != name and other.upper() == base
+        )
+        if shadowed:
+            raise UnitDefinitionError(
+                f"Cannot register currency {name!r}: currency "
+                f"{', '.join(repr(other) for other in shadowed)} already claims the "
+                f"unit base {base!r}. Currency names must differ by more than case "
+                f"(GEP 10)."
+            )
+        if base in _COMPOSITIONAL_BASE_TO_PINT:
+            raise UnitDefinitionError(
+                f"Cannot register currency {name!r}: {base!r} is a non-currency unit "
+                f"base. Pick a name outside the shared unit vocabulary (GEP 10)."
+            )
 
     def _define_one_currency(self, name: str, definition: str) -> None:
         """Define one currency in the registry, checking it lands in ``[currency]``."""
@@ -259,8 +312,8 @@ class UnitSystem:
         """Parse and sort the statutory-currency mapping.
 
         Raises:
-            UnitDefinitionError: If the mapping is empty or names a currency this
-                system does not define.
+            UnitDefinitionError: If the mapping is empty, is keyed by anything other
+                than an ISO date, or names a currency this system does not define.
         """
         if not self.statutory_currencies:
             raise UnitDefinitionError(
@@ -276,11 +329,34 @@ class UnitSystem:
                 f"policy system. Declare every statutory currency as the "
                 f"`base_currency` or in `other_currencies` (GEP 10)."
             )
-        return tuple(
-            sorted(
-                (datetime.date.fromisoformat(start_date), name)
-                for start_date, name in self.statutory_currencies.items()
-            )
+        return tuple(sorted(self._parsed_start_dates()))
+
+    def _parsed_start_dates(self) -> Iterator[tuple[datetime.date, str]]:
+        """Each start date parsed, rejecting any spelling but dashed ``YYYY-MM-DD``.
+
+        `date.fromisoformat` also accepts the basic (``20200101``) and week-date
+        (``2021-W01-1``) forms, so the round-trip comparison — not the parse alone
+        — is what pins the one documented spelling.
+        """
+        for start_date, name in self.statutory_currencies.items():
+            try:
+                parsed = datetime.date.fromisoformat(start_date)
+            except ValueError as error:
+                raise UnitDefinitionError(
+                    self._bad_start_date_message(start_date=start_date, name=name)
+                ) from error
+            if start_date != parsed.isoformat():
+                raise UnitDefinitionError(
+                    self._bad_start_date_message(start_date=start_date, name=name)
+                )
+            yield parsed, name
+
+    @staticmethod
+    def _bad_start_date_message(start_date: str, name: str) -> str:
+        return (
+            f"`statutory_currencies` is keyed by the dashed ISO date a currency "
+            f"becomes statutory; {start_date!r} (mapped to {name!r}) is not one. "
+            f"Spell it YYYY-MM-DD (GEP 10)."
         )
 
 
@@ -290,13 +366,15 @@ def isolated_currency_registration() -> Iterator[None]:
 
     A :class:`UnitSystem` keeps its currency definitions and level dimensions to
     itself, but it also widens the process-global vocabulary — the currency
-    *names* a declaration may spell and the pint tokens a unit may combine — so
-    that a `CompositeUnit` can be classified without a system in scope. This
-    block restores both sets, so a system built inside it leaves the vocabulary
-    as it found it.
+    *names* a declaration may spell, the pint tokens a unit may combine, and the
+    concrete currency bases injected on :class:`TTSIMUnit` — so that a
+    `CompositeUnit` can be classified without a system in scope. This block
+    restores all three, so a system built inside it leaves the vocabulary as it
+    found it.
     """
     saved_currencies = set(_registered_currencies)
     saved_tokens = set(_ALLOWED_UNIT_TOKENS)
+    saved_bases = set(vars(TTSIMUnit))
     try:
         yield
     finally:
@@ -304,3 +382,5 @@ def isolated_currency_registration() -> Iterator[None]:
         _registered_currencies.update(saved_currencies)
         _ALLOWED_UNIT_TOKENS.clear()
         _ALLOWED_UNIT_TOKENS.update(saved_tokens)
+        for base in set(vars(TTSIMUnit)) - saved_bases:
+            delattr(TTSIMUnit, base)

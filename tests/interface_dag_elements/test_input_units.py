@@ -304,10 +304,9 @@ def test_input_units_period_mismatch_is_left_to_the_suffix_guard():
 
 
 def test_input_units_currency_tag_on_non_currency_column_raises():
-    # A currency tag on a non-currency (dimensionless) column: dividing currency
-    # out of both sides used to leave equal residuals and pass, while the boundary
-    # would silently rescale the data by the currency factor on a non-base run.
-    # The currency-presence mismatch is now rejected (defect #3, GEP 10).
+    # A currency tag on a column declared dimensionless is rejected: the boundary
+    # would otherwise rescale the data by the currency factor on a non-base run
+    # (GEP 10).
     resolved = {"flag": _resolved(TTSIMUnit.DIMENSIONLESS)}
     with pytest.raises(UnitConsistencyError, match="one carries a currency"):
         fail_if_input_units_are_inconsistent(
@@ -319,7 +318,7 @@ def test_input_units_currency_tag_on_non_currency_column_raises():
 
 def test_input_units_non_currency_tag_on_currency_column_raises():
     # The converse: a dimensionless tag on a declared-currency column would skip
-    # the currency conversion the column needs (defect #3, GEP 10).
+    # the currency conversion the column needs (GEP 10).
     resolved = {"wage": _resolved(TTSIMUnit.CURRENCY)}
     with pytest.raises(UnitConsistencyError, match="one carries a currency"):
         fail_if_input_units_are_inconsistent(

@@ -505,10 +505,10 @@ class _UnitNamespaceMeta(type):
 
     Concrete currency bases (``TTSIMUnit.EUR``, ``TTSIMUnit.DM``,
     ``TTSIMUnit.SILVER_PENNY``)
-    are injected onto :class:`TTSIMUnit` by :func:`register_currency` at registration
-    time — they cannot be hard-wired class attributes because the currency
-    vocabulary is discovered per package. At runtime an injected base is a real
-    attribute, so this metaclass adds no ``__getattr__``; under type checking it
+    are injected onto :class:`TTSIMUnit` by :class:`~ttsim.tt.currencies.UnitSystem`
+    as it defines its currencies — they cannot be hard-wired class attributes because
+    the currency vocabulary is discovered per package. At runtime an injected base is
+    a real attribute, so this metaclass adds no ``__getattr__``; under type checking it
     declares one so ``TTSIMUnit.EUR`` type-checks (mirroring
     :class:`CompositeUnit`'s builder-step hint).
     """
@@ -527,8 +527,8 @@ class TTSIMUnit(metaclass=_UnitNamespaceMeta):
     <level>`` (``TTSIMUnit.CURRENCY.PER_MONTH.PER_BG``).
 
     The agnostic currency base ``CURRENCY`` lives here permanently; each concrete
-    currency base (``EUR``, ``DM``, ``SILVER_PENNY``) is injected by
-    :func:`register_currency` when its package registers it, so concrete bases
+    currency base (``EUR``, ``DM``, ``SILVER_PENNY``) is injected by the
+    :class:`~ttsim.tt.currencies.UnitSystem` that defines it, so concrete bases
     can tag a :class:`UnitAnnotatedColumn` of input data (``TTSIMUnit.EUR.PER_MONTH``)
     even though a column/function declaration must stay agnostic.
     """

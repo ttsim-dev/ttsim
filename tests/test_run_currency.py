@@ -14,6 +14,7 @@ import warnings
 from typing import Any
 
 import numpy as np
+import pint
 import pytest
 from mettsim import middle_earth
 
@@ -28,7 +29,7 @@ from ttsim.interface_dag_elements.warn_if import (
 )
 from ttsim.tt.currencies import UnitSystem
 from ttsim.tt.param_objects import RawParam
-from ttsim.tt.units import UNSET_UNIT, TTSIMUnit
+from ttsim.tt.units import UNSET_UNIT, TTSIMUnit, _registered_currencies
 from ttsim.warnings import PotentialCurrencyMismatchWarning
 
 POLICY_DATE = datetime.date(2020, 1, 1)
@@ -381,9 +382,8 @@ def test_guard_checks_dict_param_leaves():
 
 
 def test_guard_walks_int_keyed_per_leaf_mappings():
-    # GEP-3 allows int dict keys (e.g. satz_nach_kindanzahl); the per-leaf unit
-    # walk must accept an int in the path rather than tripping the beartype claw
-    # on a `tuple[str, ...]` annotation (defect #4, GEP 10).
+    # GEP-3 allows int dict keys (e.g. satz_nach_kindanzahl), so the per-leaf unit
+    # walk accepts an int in the path (GEP 10).
     spec = {
         **_HEADER,
         "unit": {1: "SILVER_PENNY_PER_MONTH", 2: "SILVER_PENNY_PER_MONTH"},
@@ -565,6 +565,125 @@ def test_annotated_results_label_a_parameter_in_the_statutory_currency():
     )
     labels = {qname: leaf.unit.base for qname, leaf in annotated.items()}
     assert labels == {"a_param_m": "SILVER_PENNY", "a_column_m": "CASTAR"}
+
+
+def test_annotated_results_label_each_leaf_of_a_dict_parameter():
+    """A requested `dict` parameter is annotated leaf by leaf, each leaf carrying
+    the unit its per-leaf mapping resolved to, in the computation currency."""
+    system = _fresh_system()
+    registry = system.registry
+    annotated = tree_with_unit_annotations(
+        tree={"rates": {"low": 25.0, "high": 50.0}},
+        raw_results__from_input_data={},
+        raw_results__params={"rates": {"low": 25.0, "high": 50.0}},
+        unit_checks__resolved_units={
+            "rates": {
+                "low": registry.parse_units("CURRENCY / month"),
+                "high": registry.parse_units("CURRENCY / year"),
+            }
+        },
+        data_currency="CASTAR",
+        computation_currency="SILVER_PENNY",
+        unit_system=system,
+    )
+    assert {key: str(leaf.unit) for key, leaf in annotated["rates"].items()} == {
+        "low": "SILVER_PENNY_PER_MONTH",
+        "high": "SILVER_PENNY_PER_YEAR",
+    }
+
+
+def test_annotated_results_spread_one_unit_over_a_uniform_dict_parameter():
+    """A `dict` parameter declaring a single unit for the whole structure has that
+    unit applied to each of its leaves."""
+    system = _fresh_system()
+    annotated = tree_with_unit_annotations(
+        tree={"rates": {"low": 25.0, "high": 50.0}},
+        raw_results__from_input_data={},
+        raw_results__params={"rates": {"low": 25.0, "high": 50.0}},
+        unit_checks__resolved_units={
+            "rates": system.registry.parse_units("CURRENCY / month")
+        },
+        data_currency="CASTAR",
+        computation_currency="SILVER_PENNY",
+        unit_system=system,
+    )
+    assert {key: str(leaf.unit) for key, leaf in annotated["rates"].items()} == {
+        "low": "SILVER_PENNY_PER_MONTH",
+        "high": "SILVER_PENNY_PER_MONTH",
+    }
+
+
+def test_annotated_results_leave_an_unresolved_dict_parameter_leaf_bare():
+    """A `dict` parameter leaf its resolved unit mapping does not cover stays a
+    plain value rather than silently borrowing a sibling's unit."""
+    system = _fresh_system()
+    annotated = tree_with_unit_annotations(
+        tree={"rates": {"low": 25.0, "high": 50.0}},
+        raw_results__from_input_data={},
+        raw_results__params={"rates": {"low": 25.0, "high": 50.0}},
+        unit_checks__resolved_units={
+            "rates": {"low": system.registry.parse_units("CURRENCY / month")}
+        },
+        data_currency="CASTAR",
+        computation_currency="SILVER_PENNY",
+        unit_system=system,
+    )
+    assert annotated["rates"]["high"] == 50.0
+
+
+def test_currencies_differing_only_in_case_are_rejected():
+    """Two currency names projecting to the same `TTSIMUnit` base are rejected — one
+    would silently shadow the other on the builder namespace."""
+    with pytest.raises(UnitDefinitionError, match="already claims the unit base"):
+        _fresh_system(other_currencies={"castar": "CASTAR / 4"})
+
+
+def test_currency_named_after_a_non_currency_base_is_rejected():
+    """A currency whose name projects onto a non-currency unit base is rejected."""
+    with pytest.raises(UnitDefinitionError, match="non-currency unit base"):
+        _fresh_system(other_currencies={"HECTARE": "CASTAR / 4"})
+
+
+def test_failed_construction_registers_no_currency():
+    """A `UnitSystem` whose construction raises leaves the process-global currency
+    vocabulary and the `TTSIMUnit` builder exactly as it found them."""
+    before = set(_registered_currencies), set(vars(TTSIMUnit))
+    with pytest.raises(UnitDefinitionError):
+        _fresh_system(
+            base_currency="MITHRIL",
+            other_currencies={"MITHRIL_BIT": "MITHRIL / 4"},
+            statutory_currencies={"not-a-date": "MITHRIL"},
+        )
+    assert (set(_registered_currencies), set(vars(TTSIMUnit))) == before
+
+
+def test_non_iso_statutory_currency_key_names_the_offending_key():
+    """A `statutory_currencies` key that is not an ISO date raises the unit-system
+    error naming the key, not a bare `ValueError`."""
+    with pytest.raises(UnitDefinitionError, match="'01-01-0001'"):
+        _fresh_system(statutory_currencies={"01-01-0001": "CASTAR"})
+
+
+@pytest.mark.parametrize("start_date", ["00010101", "2021-W01-1"])
+def test_undashed_statutory_currency_key_is_rejected(start_date):
+    """Only the dashed `YYYY-MM-DD` spelling is accepted, though
+    `date.fromisoformat` would also parse the basic and week-date forms."""
+    with pytest.raises(UnitDefinitionError, match="dashed ISO date"):
+        _fresh_system(statutory_currencies={start_date: "CASTAR"})
+
+
+def test_failed_grouping_level_registration_publishes_no_currency():
+    """A malformed grouping level aborts construction without widening the global
+    currency vocabulary."""
+    before = set(_registered_currencies), set(vars(TTSIMUnit))
+    with pytest.raises(pint.errors.DefinitionSyntaxError):
+        _fresh_system(
+            base_currency="MITHRIL",
+            other_currencies={},
+            statutory_currencies={"0001-01-01": "MITHRIL"},
+            grouping_levels=["["],
+        )
+    assert (set(_registered_currencies), set(vars(TTSIMUnit))) == before
 
 
 def test_annotated_results_label_a_declarationless_dimensionless_target_as_such():

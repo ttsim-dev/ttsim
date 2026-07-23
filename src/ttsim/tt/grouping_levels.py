@@ -68,11 +68,26 @@ def register_grouping_levels(names: Iterable[str], registry: pint.UnitRegistry) 
         names: The grouping-level names to register (e.g. ``["hh", "bg"]``).
         registry: The policy system's registry to define the dimensions in.
     """
+    names = list(names)
+    define_grouping_level_dimensions(names=names, registry=registry)
+    for name in names:
+        _ALLOWED_UNIT_TOKENS.add(_grouping_level_unit_name(name))
+    # Packages that use the builder at import time call
+    # `register_unit_builder_levels` directly, before their declarations run.
+    register_unit_builder_levels(names)
+
+
+def define_grouping_level_dimensions(
+    names: Iterable[str], registry: pint.UnitRegistry
+) -> None:
+    """Define each grouping level's base dimension in ``registry``.
+
+    The registry-local half of :func:`register_grouping_levels`, and the only half
+    that can reject a name — a caller that must not widen the process-global
+    vocabulary until every name is known to be definable runs this first.
+    Defining an already-known level is a tolerated no-op.
+    """
     for name in names:
         unit_name = _grouping_level_unit_name(name)
         if unit_name not in registry:
             registry.define(f"{unit_name} = [{unit_name}]")
-        _ALLOWED_UNIT_TOKENS.add(unit_name)
-    # Packages that use the builder at import time call
-    # `register_unit_builder_levels` directly, before their declarations run.
-    register_unit_builder_levels(names)

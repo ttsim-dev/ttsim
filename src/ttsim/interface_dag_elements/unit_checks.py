@@ -3305,11 +3305,13 @@ def _run_one_path(
         # A malformed `cast_ttsim_unit` token is a definition error, not an
         # un-evaluable body; report it as itself.
         raise
-    except Exception:  # noqa: BLE001
+    except Exception as err:  # noqa: BLE001
         return _opt_out_required_error(
             qname=qname,
-            reason="it uses an operation pint cannot evaluate symbolically — a "
-            "piecewise polynomial, a lookup table, `join`, or a raw `xnp` op",
+            reason=f"evaluating it raised {type(err).__name__}: {err} — either an "
+            "operation pint cannot evaluate symbolically (a piecewise polynomial, a "
+            "lookup table, `join`, a raw `xnp` op) or a defect in the body itself, "
+            "which this message reproduces verbatim so the two can be told apart",
         ), True
     return _inferred_result_error(
         qname=qname,

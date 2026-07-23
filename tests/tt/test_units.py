@@ -86,11 +86,6 @@ def _return_true() -> bool:
     return True
 
 
-# ----------------------------------------------------------------------------
-# The unit vocabulary
-# ----------------------------------------------------------------------------
-
-
 def test_currency_token_anchors_currency_dimension():
     assert REGISTRY.Quantity(1.0, CURRENCY_TOKEN).dimensionality == {"[currency]": 1}
 
@@ -104,11 +99,6 @@ def test_quarter_year_is_a_quarter_of_a_year():
 
 def test_hectare_is_an_area():
     assert REGISTRY.Quantity(1.0, "hectare").dimensionality == {"[length]": 2}
-
-
-# ----------------------------------------------------------------------------
-# The Unit token enumeration (the declaration surface)
-# ----------------------------------------------------------------------------
 
 
 _BASE_SPELLINGS = [
@@ -163,7 +153,7 @@ def test_coerce_to_composite_unit_round_trips_compositional_spellings(spelling):
 
 
 def test_coerce_to_composite_unit_rejects_none():
-    # `None` is no longer a dimensionless declaration (GEP 10): it reaches
+    # `None` is not a dimensionless declaration (GEP 10): it reaches
     # `coerce_to_composite_unit` only through an internal bug, so the package claw
     # rejects it before the body runs.
     with pytest.raises(BeartypeCallHintViolation):
@@ -173,9 +163,9 @@ def test_coerce_to_composite_unit_rejects_none():
 @pytest.mark.parametrize(
     "value",
     [
-        # The old pint-string surface is gone: one token = one meaning. (Bare
-        # "CURRENCY" is now the agnostic stock token TTSIMUnit.CURRENCY, so it is
-        # valid — only composite/pint spellings remain rejected.)
+        # One token = one meaning, so a composite or pint-style spelling is
+        # rejected. (Bare "CURRENCY" is the agnostic stock token
+        # TTSIMUnit.CURRENCY, hence valid and absent from this list.)
         "CURRENCY / year",
         "year",
         "hectare",
@@ -194,11 +184,6 @@ def test_compositional_flow_is_marked_by_a_period():
     assert TTSIMUnit.CURRENCY.PER_MONTH.is_flow
     assert not TTSIMUnit.CURRENCY.is_flow
     assert not TTSIMUnit.YEARS.is_flow
-
-
-# ----------------------------------------------------------------------------
-# parse_unit and the closed pint-token vocabulary (internal surfaces)
-# ----------------------------------------------------------------------------
 
 
 @pytest.mark.parametrize(
@@ -251,11 +236,6 @@ def test_parse_unit_rejects_unparseable_string():
         parse_unit("this is not a unit", registry=REGISTRY)
 
 
-# ----------------------------------------------------------------------------
-# UnitSystem currencies
-# ----------------------------------------------------------------------------
-
-
 def test_base_currency_is_a_currency_dimension():
     assert SYSTEM.registry.Quantity(1.0, "CASTAR").dimensionality == {"[currency]": 1}
 
@@ -267,11 +247,6 @@ def test_relative_currency_bakes_correct_factor():
         / SYSTEM.registry.Quantity(1.0, "CASTAR")
     ).to("dimensionless")
     assert factor.magnitude == pytest.approx(0.25)
-
-
-# ----------------------------------------------------------------------------
-# Currency declaration tokens (a system's currencies extend the vocabulary)
-# ----------------------------------------------------------------------------
 
 
 @pytest.mark.parametrize(
@@ -324,11 +299,6 @@ def test_currency_agnostic_base_rejected_on_column_at_resolution():
             where="A column",
             registry=REGISTRY,
         )
-
-
-# ----------------------------------------------------------------------------
-# units_are_equivalent
-# ----------------------------------------------------------------------------
 
 
 def test_same_unit_is_equivalent():
@@ -434,11 +404,6 @@ def test_duration_token_is_equivalent_to_the_plain_time_unit():
     )
 
 
-# ----------------------------------------------------------------------------
-# Decorator integration
-# ----------------------------------------------------------------------------
-
-
 def test_policy_function_stores_unit():
     @policy_function(unit=TTSIMUnit.CURRENCY.PER_MONTH)
     def betrag_m(satz: float, anzahl: int) -> float:
@@ -472,11 +437,6 @@ def test_policy_function_explicit_dimensionless():
         return x
 
     assert some_share.unit is TTSIMUnit.DIMENSIONLESS
-
-
-# ----------------------------------------------------------------------------
-# #118: time as a dimension — suffix/reference_period resolution
-# ----------------------------------------------------------------------------
 
 
 @pytest.mark.parametrize(
@@ -531,11 +491,6 @@ def test_flow_period_resolution_distinguishes_month_and_year():
     assert not units_are_equivalent(left=betrag_m, right=betrag_y, registry=REGISTRY)
 
 
-# ----------------------------------------------------------------------------
-# #118: pint-sourced conversion factors and duration conversion
-# ----------------------------------------------------------------------------
-
-
 def test_unit_converter_factors_sourced_from_pint():
     # The stock converters multiply by the period-per-year factor; check that
     # factor against pint via the public converter functions.
@@ -566,11 +521,6 @@ def test_duration_conversion_year_to_month():
     assert months.magnitude == pytest.approx(24.0)
 
 
-# ----------------------------------------------------------------------------
-# #119: mandatory units
-# ----------------------------------------------------------------------------
-
-
 def test_fail_if_units_are_missing_reports_unannotated_nodes():
     with pytest.raises(UnitDefinitionError, match="kindergeld__betrag_m"):
         fail_if_units_are_missing(
@@ -595,11 +545,6 @@ def test_policy_input_rejects_invalid_unit_at_decoration():
         @policy_input(unit="kelvin")  # ty: ignore[invalid-argument-type]
         def temperature() -> float:
             """Some input."""
-
-
-# ----------------------------------------------------------------------------
-# #119: auto-assigned units for aggregation nodes
-# ----------------------------------------------------------------------------
 
 
 @pytest.mark.parametrize(
@@ -749,11 +694,6 @@ def test_token_is_agnostic_currency():
     )
 
 
-# ----------------------------------------------------------------------------
-# #120: currency conversion factor
-# ----------------------------------------------------------------------------
-
-
 def test_currency_conversion_factor():
     # silver_penny = castar / 4, defined by the system's currencies.
     assert SYSTEM.currency_conversion_factor(
@@ -772,11 +712,6 @@ def test_currency_conversion_factor_rejects_unknown_currency():
         SYSTEM.currency_conversion_factor(
             source_currency="CASTAR", target_currency="dragon_hoard"
         )
-
-
-# ----------------------------------------------------------------------------
-# #120: Layer-2 boundary — validate and strip pint-tagged inputs
-# ----------------------------------------------------------------------------
 
 
 def test_strip_at_boundary_converts_to_data_currency():
@@ -892,11 +827,6 @@ def test_strip_at_boundary_passes_non_currency_tag_through():
     assert bare == pytest.approx([5.0])
 
 
-# ----------------------------------------------------------------------------
-# Compositional units (GEP 10 compositional units) — builder, parser, formatter
-# ----------------------------------------------------------------------------
-
-
 def test_builder_round_trips_with_flat_spelling():
     # The fluent `.py` builder and the flat YAML string are the same unit.
     built = TTSIMUnit.CURRENCY.PER_SQUARE_METER.PER_MONTH
@@ -1000,8 +930,7 @@ def test_is_flow_property():
     ],
 )
 def test_compositional_unit_resolves_to_expected_pint_unit(spelling, expected):
-    # The leftover-token migration map: every compositional spelling resolves to
-    # the identical pint unit the legacy token used to produce.
+    # Every compositional spelling resolves to the pint unit it names.
     compositional = resolve_compositional_unit(
         parse_compositional_unit(spelling), registry=REGISTRY
     )
@@ -1102,11 +1031,6 @@ def test_resolve_compositional_unit_rejects_unregistered_level():
         )
 
 
-# ----------------------------------------------------------------------------
-# Model change 1: the [hours] dimension (GEP 10 compositional units)
-# ----------------------------------------------------------------------------
-
-
 def test_working_hour_is_its_own_dimension():
     # Working hours are `[hours]`, isolated from pint's `[time]`, so they cannot
     # convert to a period and a `working_hour / week` flow does not collapse to a
@@ -1148,11 +1072,6 @@ def test_hours_per_week_rebases_period_only():
     )
     # Different periods are not equivalent (a 52/12 factor apart).
     assert not units_are_equivalent(left=per_week, right=per_month, registry=REGISTRY)
-
-
-# ----------------------------------------------------------------------------
-# `cast_ttsim_unit` and level resolution (GEP 10)
-# ----------------------------------------------------------------------------
 
 
 def test_cast_unit_is_the_identity_at_run_time():

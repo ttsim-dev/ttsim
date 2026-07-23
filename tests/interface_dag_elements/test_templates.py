@@ -228,7 +228,7 @@ def test_returns_root_nodes_when_injecting_unrelated_input_data(xnp: ModuleType)
     # Inputs for fam_id
     assert "p_id_spouse" in template
     assert "p_id" in template
-    assert "birth_year" in template  # `age` is now computed from it (GEP 10)
+    assert "birth_year" in template  # `age` is computed from it (GEP 10)
     assert "p_id_parent_1" in template
     assert "p_id_parent_2" in template
 
