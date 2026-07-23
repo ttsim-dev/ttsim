@@ -36,20 +36,12 @@ def p_id_spouse() -> int:
 
 @policy_input(unit=TTSIMUnit.CALENDAR_YEAR)
 def birth_year() -> int:
-    """Year of birth: a point on the calendar, not a duration (GEP 10).
-
-    The person's age is computed from it (``demographics.age``): subtracting two
-    calendar years yields a duration in years.
-    """
+    """Year of birth."""
 
 
 @policy_input(unit=TTSIMUnit.DIMENSIONLESS)
 def birth_month() -> int:
-    """Month of birth (1-12): a cyclic ordinal, hence ``DIMENSIONLESS`` (GEP 10).
-
-    Unlike :func:`birth_year`, a month-of-year is not a point on a running
-    calendar but a recurring label, so it carries no calendar-month unit.
-    """
+    """Month of birth (1-12)."""
 
 
 @policy_input(unit=TTSIMUnit.DIMENSIONLESS)

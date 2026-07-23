@@ -2,8 +2,7 @@
 
 The rounding step is statutory: § 4 rounds down to whole silver pennies until
 the currency reform of 2020 and to quarter-castars — the same magnitude,
-restated — from 2020 on. Rounding magnitudes are never converted (GEP 10), so
-the function is split at the changeover.
+restated — from 2020 on, so the function is split at the changeover.
 """
 
 from __future__ import annotations

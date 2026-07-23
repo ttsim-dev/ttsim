@@ -10,18 +10,17 @@ assistance_rate:
   type: scalar
   1900-01-01:
     value: 0.5
-taper_coefficients:
+deduction_coefficients:
   name:
-    de: Koeffizienten der Abschmelzformel
-    en: Coefficients of the taper formula
+    de: Koeffizienten des Abzugs
+    en: Coefficients of the deduction
   description:
     de: >-
-      Empirisch angepasste Koeffizienten. Das Produkt aus `b` und einem
-      Geldbetrag ist per Konstruktion der Anpassung eine reine Zahl, nicht
-      aufgrund der Einheitenalgebra (GEP 10).
+      Empirisch angepasste Koeffizienten des Einkommensanteils `a - b *
+      Einkommen`, der nach dem Abzug verbleibt.
     en: >-
-      Fitted coefficients. The product of `b` and a currency amount is a pure
-      number by construction of the fit rather than by unit algebra (GEP 10).
+      Empirically fitted coefficients of the income share `a - b * income` that
+      remains after the deduction.
   unit:
     a: DIMENSIONLESS
     b: DIMENSIONLESS

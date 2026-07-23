@@ -5,11 +5,15 @@ raw_kings_levy_schedule:
     en: Raw data for the king's levy schedule
   description:
     de: >-
-      Test für einen require_converter mit Achsen-Einheiten (GEP 10).
+      Obergrenze der progressiven Zone sowie Eingangs- und Spitzensatz des
+      Königszehnt.
     en: >-
-      Exercises a require_converter that declares per-axis units (GEP 10).
-  input_unit: SILVER_PENNY
-  output_unit: SILVER_PENNY_PER_YEAR
+      Ceiling of the progressive bracket along with the entry and top marginal
+      rates of the king's levy.
+  unit:
+    bracket_ceiling: SILVER_PENNY
+    entry_rate: DIMENSIONLESS
+    top_rate: DIMENSIONLESS
   type: require_converter
   1900-01-01:
     bracket_ceiling: 1000
@@ -20,8 +24,10 @@ raw_kings_levy_schedule:
       Pure redenomination at the currency reform of 2020: the bracket ceiling
       is re-expressed in castar (1 castar = 4 silver pennies); the rates are
       dimensionless and carry over.
-    input_unit: CASTAR
-    output_unit: CASTAR_PER_YEAR
+    unit:
+      bracket_ceiling: CASTAR
+      entry_rate: DIMENSIONLESS
+      top_rate: DIMENSIONLESS
     bracket_ceiling: 250
     entry_rate: 0.0
     top_rate: 0.2
@@ -31,11 +37,10 @@ raw_kings_levy_child_rebate:
     en: Raw data for the king's levy child rebate
   description:
     de: >-
-      Test für einen require_converter, der eine Nachschlagetabelle mit
-      Achsen-Einheiten baut (GEP 10).
+      Jährlicher Freibetrag der Sippe nach Anzahl der unterhaltsberechtigten
+      Kinder.
     en: >-
-      Exercises a require_converter that builds a lookup table keyed by the
-      kinstead's number of dependants, declaring per-axis units (GEP 10).
+      The kinstead's yearly rebate by its number of dependent children.
   input_unit: DIMENSIONLESS
   output_unit: SILVER_PENNY_PER_YEAR
   type: require_converter

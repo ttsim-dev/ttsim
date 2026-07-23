@@ -53,22 +53,23 @@ def max_amount_m_fam(
     vectorization_strategy="vectorize",
     unit=TTSIMUnit.CURRENCY.PER_MONTH.PER_FAM,
 )
-def income_after_taper_m_fam(
+def income_after_deduction_m_fam(
     income__amount_m_fam: float,
-    taper_coefficients: dict[str, float],
+    deduction_coefficients: dict[str, float],
     xnp: ModuleType,
 ) -> float:
-    """The family's income after the fitted taper is applied.
+    """The family's income after the statutory deduction.
 
-    The taper rate is a fitted expression: `b` multiplies a monthly currency
-    amount, and the product is a pure number because that is what the fit says,
-    not because the units cancel. Tagging just that product keeps the rest of the
-    expression — including the currency the result is denominated in — checked.
+    The share of income that remains, `a - b * income`, shrinks as income rises
+    and never falls below zero.
     """
-    rate = taper_coefficients["a"] - cast_ttsim_unit(
-        taper_coefficients["b"] * income__amount_m_fam, TTSIMUnit.DIMENSIONLESS
+    # `b` is an empirically fitted coefficient: its product with a monthly
+    # currency amount is a pure number by construction of the fit, not by unit
+    # algebra, so it is the product alone that states its unit.
+    remaining_share = deduction_coefficients["a"] - cast_ttsim_unit(
+        deduction_coefficients["b"] * income__amount_m_fam, TTSIMUnit.DIMENSIONLESS
     )
-    return income__amount_m_fam * xnp.maximum(rate, 0.0)
+    return income__amount_m_fam * xnp.maximum(remaining_share, 0.0)
 
 
 @policy_function(unit=TTSIMUnit.CURRENCY.PER_MONTH.PER_FAM)
@@ -76,12 +77,9 @@ def benefit_share_m_fam(
     amount_m_fam: float,
     eligibility__number_of_individuals_fam: int,
 ) -> float:
-    """Each member's share of the family's housing benefit, held at family level.
-
-    Dividing a family total by the family's head count cancels `[fam]` in the
-    algebra, but the share is reported for the family rather than for whichever
-    member is looked at, so it is tagged back to the level it is consumed at.
-    """
+    """Each member's share of the family's housing benefit, held at family level."""
+    # The share is reported for the family, not for whichever member is looked
+    # at, so it is tagged back to the level it is consumed at.
     return cast_ttsim_unit(
         amount_m_fam / eligibility__number_of_individuals_fam,
         TTSIMUnit.CURRENCY.PER_MONTH.PER_FAM,

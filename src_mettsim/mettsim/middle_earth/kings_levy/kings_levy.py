@@ -25,6 +25,9 @@ if TYPE_CHECKING:
         input_unit=TTSIMUnit.CURRENCY,
         output_unit=TTSIMUnit.CURRENCY.PER_YEAR,
     ),
+    # A schedule builder's body builds a table, not a scalar, so there is no
+    # single result the unit check could infer; the declared axes are the
+    # contract, screened where consumers look the schedule up (GEP 10).
     verify_units=False,
 )
 def kings_levy_schedule(
@@ -34,12 +37,8 @@ def kings_levy_schedule(
     """Build the king's levy schedule from raw rates.
 
     The marginal rate rises linearly from ``entry_rate`` at zero wealth to
-    ``top_rate`` at ``bracket_ceiling``; this converts to a quadratic
-    coefficient (a Progressionsfaktor) of units 1/currency. ttsim cannot read
-    that convention out of the raw blob, so the builder declares its two axes
-    with ``InputOutputUnit`` — a currency wealth in, a yearly currency flow out —
-    and opts out of body verification, because the quadratic term scales by
-    ``1 / f_in`` rather than by a single uniform factor.
+    ``top_rate`` at ``bracket_ceiling``, which the piecewise-quadratic schedule
+    expresses as a quadratic coefficient (a Progressionsfaktor).
     """
     ceiling = raw_kings_levy_schedule["bracket_ceiling"]
     entry_rate = raw_kings_levy_schedule["entry_rate"]
@@ -76,21 +75,14 @@ def amount_y(
         input_unit=TTSIMUnit.DIMENSIONLESS.PER_KIN,
         output_unit=TTSIMUnit.CURRENCY.PER_YEAR.PER_KIN,
     ),
+    # See `kings_levy_schedule` above.
     verify_units=False,
 )
 def child_rebate_schedule(
     raw_kings_levy_child_rebate: RawParamValue,
     xnp: ModuleType,
 ) -> ConsecutiveIntLookupTableParamValue:
-    """Build the kinstead's levy rebate keyed by its number of dependants.
-
-    A lookup table is keyed by consecutive integers — here the kinstead's count
-    of dependent children — so its input axis is a (kin-level) dimensionless
-    count, never a currency; the output is a yearly currency rebate for the
-    kinstead. The builder declares both axes with ``InputOutputUnit`` and opts
-    out of body verification, since ttsim cannot read the table's units off the
-    raw integer-keyed blob.
-    """
+    """Build the kinstead's levy rebate keyed by its number of dependants."""
     # The raw blob is keyed by the (integer) number of dependants; RawParamValue
     # types its keys as `str | int`, so narrow to the int-keyed lookup dict.
     return get_consecutive_int_lookup_table_param_value(
