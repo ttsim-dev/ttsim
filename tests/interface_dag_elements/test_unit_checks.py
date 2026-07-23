@@ -3707,7 +3707,7 @@ def test_lookup_table_builder_with_currency_input_unit_is_rejected():
             bases_to_subtract=xnp.array([1]),
         )
 
-    with pytest.raises(UnitConsistencyError, match="input axis is never a currency"):
+    with pytest.raises(UnitConsistencyError, match="keyed by consecutive integers"):
         fail_if_environment_units_are_inconsistent(
             env={"levy_lookup_bad": levy_lookup_bad},
             grouping_levels=GROUPING_LEVELS,
@@ -3868,6 +3868,244 @@ def test_input_output_unit_on_scalar_field_is_rejected():
             env={
                 "raw_child_rate": make_raw_child_rate(),
                 "io_unit_scalar_field": io_unit_scalar_field,
+            },
+            grouping_levels=GROUPING_LEVELS,
+            unit_system=UNIT_SYSTEM,
+        )
+
+
+# Multi-dimensional lookups: a tuple `input_unit` screens each `look_up` argument
+# against its own axis positionally (GEP 10)
+
+
+def _two_axis_lookup(xnp: ModuleType) -> ConsecutiveIntLookupTableParamValue:
+    return ConsecutiveIntLookupTableParamValue(
+        xnp=xnp,
+        values_to_look_up=xnp.array([1.0, 2.0]),
+        bases_to_subtract=xnp.array([1]),
+    )
+
+
+@param_function(
+    unit=InputOutputUnit(
+        input_unit=(TTSIMUnit.DIMENSIONLESS, TTSIMUnit.YEARS),
+        output_unit=TTSIMUnit.CURRENCY.PER_MONTH,
+    ),
+    verify_units=False,
+)
+def two_axis_table(xnp: ModuleType) -> ConsecutiveIntLookupTableParamValue:
+    return _two_axis_lookup(xnp)
+
+
+def test_tuple_input_axes_screen_look_up_arguments_positionally():
+    """A two-axis lookup screens argument 0 against axis 0 and argument 1 against
+    axis 1; a call whose units match each axis passes (GEP 10)."""
+
+    @policy_function(unit=TTSIMUnit.CURRENCY.PER_MONTH)
+    def benefit_m(
+        geburtsmonat: int,
+        statutory_age: int,
+        two_axis_table: ConsecutiveIntLookupTableParamValue,
+    ) -> float:
+        return two_axis_table.look_up(geburtsmonat, statutory_age)
+
+    fail_if_environment_units_are_inconsistent(
+        env={
+            "geburtsmonat": geburtsmonat,
+            "statutory_age": statutory_age,
+            "two_axis_table": two_axis_table,
+            "benefit_m": benefit_m,
+        },
+        grouping_levels=GROUPING_LEVELS,
+        unit_system=UNIT_SYSTEM,
+    )
+
+
+def test_tuple_input_axes_positional_mismatch_is_caught():
+    """Swapping the arguments screens the year-valued age against the dimensionless
+    axis 0, a non-equivalent-unit look-up (GEP 10)."""
+
+    @policy_function(unit=TTSIMUnit.CURRENCY.PER_MONTH)
+    def benefit_m(
+        geburtsmonat: int,
+        statutory_age: int,
+        two_axis_table: ConsecutiveIntLookupTableParamValue,
+    ) -> float:
+        return two_axis_table.look_up(statutory_age, geburtsmonat)
+
+    with pytest.raises(UnitConsistencyError, match="non-equivalent units"):
+        fail_if_environment_units_are_inconsistent(
+            env={
+                "geburtsmonat": geburtsmonat,
+                "statutory_age": statutory_age,
+                "two_axis_table": two_axis_table,
+                "benefit_m": benefit_m,
+            },
+            grouping_levels=GROUPING_LEVELS,
+            unit_system=UNIT_SYSTEM,
+        )
+
+
+def test_tuple_input_axes_wrong_argument_count_is_caught():
+    """A call supplying a different number of arguments than declared axes is a
+    unit-check error naming the counts (GEP 10)."""
+
+    @policy_function(unit=TTSIMUnit.CURRENCY.PER_MONTH)
+    def benefit_m(
+        statutory_age: int,
+        two_axis_table: ConsecutiveIntLookupTableParamValue,
+    ) -> float:
+        return two_axis_table.look_up(statutory_age)
+
+    with pytest.raises(UnitConsistencyError, match="2 input axes with 1 argument"):
+        fail_if_environment_units_are_inconsistent(
+            env={
+                "statutory_age": statutory_age,
+                "two_axis_table": two_axis_table,
+                "benefit_m": benefit_m,
+            },
+            grouping_levels=GROUPING_LEVELS,
+            unit_system=UNIT_SYSTEM,
+        )
+
+
+def test_tuple_input_axis_currency_element_on_lookup_table_is_rejected():
+    """A lookup table is keyed by consecutive integers, so no axis of a tuple
+    `input_unit` may be a currency (GEP 10)."""
+
+    @param_function(
+        unit=InputOutputUnit(
+            input_unit=(TTSIMUnit.DIMENSIONLESS, TTSIMUnit.CURRENCY),
+            output_unit=TTSIMUnit.CURRENCY.PER_MONTH,
+        ),
+        verify_units=False,
+    )
+    def bad_table(xnp: ModuleType) -> ConsecutiveIntLookupTableParamValue:
+        return _two_axis_lookup(xnp)
+
+    with pytest.raises(UnitConsistencyError, match="keyed by consecutive integers"):
+        fail_if_environment_units_are_inconsistent(
+            env={"bad_table": bad_table},
+            grouping_levels=GROUPING_LEVELS,
+            unit_system=UNIT_SYSTEM,
+        )
+
+
+def test_tuple_input_axis_on_piecewise_builder_is_rejected():
+    """`piecewise_polynomial` takes one domain argument, so a tuple `input_unit`
+    on a piecewise builder is a contract error (GEP 10)."""
+
+    @param_function(
+        unit=InputOutputUnit(
+            input_unit=(TTSIMUnit.CURRENCY, TTSIMUnit.DIMENSIONLESS),
+            output_unit=TTSIMUnit.CURRENCY.PER_YEAR,
+        ),
+        verify_units=False,
+    )
+    def bad_piecewise(
+        raw_levy_schedule: RawParamValue, xnp: ModuleType
+    ) -> PiecewisePolynomialParamValue:
+        return PiecewisePolynomialParamValue(
+            thresholds=xnp.asarray([0.0, raw_levy_schedule["ceiling"]]),
+            intercepts=xnp.asarray([0.0, 0.0]),
+            coefficients=xnp.asarray([[0.0], [raw_levy_schedule["top_rate"]]]),
+        )
+
+    with pytest.raises(UnitConsistencyError, match="single domain argument"):
+        fail_if_environment_units_are_inconsistent(
+            env={
+                "raw_levy_schedule": make_raw_levy_schedule(),
+                "bad_piecewise": bad_piecewise,
+            },
+            grouping_levels=GROUPING_LEVELS,
+            unit_system=UNIT_SYSTEM,
+        )
+
+
+def test_tuple_input_axis_concrete_currency_element_is_rejected():
+    """A concrete-currency element in a tuple `input_unit` is rejected — builder
+    axes are agnostic, and the message names the builder, not "a field
+    annotation" (GEP 10)."""
+
+    @param_function(
+        unit=InputOutputUnit(
+            input_unit=(TTSIMUnit.DIMENSIONLESS, CASTAR),
+            output_unit=TTSIMUnit.CURRENCY.PER_MONTH,
+        ),
+        verify_units=False,
+    )
+    def concrete_axis_table(xnp: ModuleType) -> ConsecutiveIntLookupTableParamValue:
+        return _two_axis_lookup(xnp)
+
+    with pytest.raises(
+        UnitDefinitionError, match=r"concrete_axis_table.*concrete currency"
+    ):
+        fail_if_environment_units_are_inconsistent(
+            env={"concrete_axis_table": concrete_axis_table},
+            grouping_levels=GROUPING_LEVELS,
+            unit_system=UNIT_SYSTEM,
+        )
+
+
+@dataclass(frozen=True)
+class _TwoAxisFieldRate:
+    table: Annotated[
+        ConsecutiveIntLookupTableParamValue,
+        InputOutputUnit(
+            input_unit=(TTSIMUnit.DIMENSIONLESS, TTSIMUnit.YEARS),
+            output_unit=TTSIMUnit.CURRENCY.PER_MONTH,
+        ),
+    ]
+
+
+@param_function(unit=UNSET_UNIT)
+def two_axis_field_rate(xnp: ModuleType) -> _TwoAxisFieldRate:
+    return _TwoAxisFieldRate(table=_two_axis_lookup(xnp))
+
+
+def test_schedule_field_with_tuple_input_axes_screens_positionally():
+    """A schedule-typed field may declare a tuple `input_unit`; the plucked lookup
+    screens each argument against its own axis (GEP 10)."""
+
+    @policy_function(unit=TTSIMUnit.CURRENCY.PER_MONTH)
+    def benefit_m(
+        geburtsmonat: int,
+        statutory_age: int,
+        two_axis_field_rate: _TwoAxisFieldRate,
+    ) -> float:
+        return two_axis_field_rate.table.look_up(geburtsmonat, statutory_age)
+
+    fail_if_environment_units_are_inconsistent(
+        env={
+            "geburtsmonat": geburtsmonat,
+            "statutory_age": statutory_age,
+            "two_axis_field_rate": two_axis_field_rate,
+            "benefit_m": benefit_m,
+        },
+        grouping_levels=GROUPING_LEVELS,
+        unit_system=UNIT_SYSTEM,
+    )
+
+
+def test_schedule_field_with_tuple_input_axes_positional_mismatch_is_caught():
+    """The field's tuple axes are really applied: swapping the arguments screens
+    the year-valued age against the dimensionless axis 0 (GEP 10)."""
+
+    @policy_function(unit=TTSIMUnit.CURRENCY.PER_MONTH)
+    def benefit_m(
+        geburtsmonat: int,
+        statutory_age: int,
+        two_axis_field_rate: _TwoAxisFieldRate,
+    ) -> float:
+        return two_axis_field_rate.table.look_up(statutory_age, geburtsmonat)
+
+    with pytest.raises(UnitConsistencyError, match="non-equivalent units"):
+        fail_if_environment_units_are_inconsistent(
+            env={
+                "geburtsmonat": geburtsmonat,
+                "statutory_age": statutory_age,
+                "two_axis_field_rate": two_axis_field_rate,
+                "benefit_m": benefit_m,
             },
             grouping_levels=GROUPING_LEVELS,
             unit_system=UNIT_SYSTEM,

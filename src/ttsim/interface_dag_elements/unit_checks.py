@@ -1455,8 +1455,9 @@ class _ScheduleFieldKind:
     produces ``output_unit`` (GEP 10).
     """
 
-    input_unit: pint.Unit
-    """The resolved unit each domain argument is screened against."""
+    input_unit: pint.Unit | tuple[pint.Unit, ...]
+    """The resolved input axis (or positional axes) each domain argument is
+    screened against."""
     output_unit: pint.Unit
     """The resolved unit the schedule produces."""
 
@@ -1575,8 +1576,8 @@ def _schedule_field_kind(
         )
     io_token = io_tokens[0]
     return _ScheduleFieldKind(
-        input_unit=resolve_compositional_field_unit(
-            unit=io_token.input_unit, registry=unit_system.registry, where=where
+        input_unit=_resolve_input_axes(
+            input_unit=io_token.input_unit, registry=unit_system.registry, where=where
         ),
         output_unit=resolve_compositional_field_unit(
             unit=io_token.output_unit, registry=unit_system.registry, where=where
@@ -1687,8 +1688,11 @@ def _schedule_param_function_contract_errors(
     - is annotated as returning one of those schedule types but declares a quantity
       ``unit=`` or ``unit=UNSET_UNIT`` instead of ``unit=InputOutputUnit(...)``;
     - builds a ``ConsecutiveIntLookupTableParamValue`` from an ``InputOutputUnit``
-      whose ``input_unit`` is a currency (a lookup table is keyed by consecutive
-      integers, so its input axis is never a currency);
+      whose ``input_unit`` is (or, for a tuple, contains) a currency (a lookup
+      table is keyed by consecutive integers, so no input axis is ever a currency);
+    - builds a ``PiecewisePolynomialParamValue`` from a tuple ``input_unit``
+      (piecewise takes one domain argument; a tuple is only for a multi-dimensional
+      lookup table);
     - declares ``unit=InputOutputUnit(...)`` but leaves ``verify_units`` at its
       default ``True`` (a schedule builder's body builds a table, not a scalar, so
       it cannot be unit-verified — the skip must be stated explicitly).
@@ -1725,11 +1729,26 @@ def _schedule_param_function_contract_errors(
             _return_annotation_name(obj.function)
             == "ConsecutiveIntLookupTableParamValue"
         )
-        if builds_lookup_table and _token_declares_a_currency(io_unit.input_unit):
+        input_axes = (
+            io_unit.input_unit
+            if isinstance(io_unit.input_unit, tuple)
+            else (io_unit.input_unit,)
+        )
+        if not builds_lookup_table and isinstance(io_unit.input_unit, tuple):
+            errors.append(
+                f"{qname}: declares a tuple `input_unit` but builds a piecewise "
+                f"polynomial, which takes a single domain argument; a tuple of "
+                f"positional axes is only for a multi-dimensional lookup table "
+                f"(GEP 10)."
+            )
+        if builds_lookup_table and any(
+            _token_declares_a_currency(cast("CompositeUnit", axis))
+            for axis in input_axes
+        ):
             errors.append(
                 f"{qname}: builds a lookup table but declares a currency "
                 f"`input_unit={io_unit.input_unit}`; a lookup table is keyed by "
-                f"consecutive integers, so its input axis is never a currency "
+                f"consecutive integers, so no input axis is ever a currency "
                 f"(GEP 10)."
             )
         if obj.verify_units:
@@ -1757,6 +1776,30 @@ def _resolve_schedule_input_unit(
         unit=cast("CompositeUnit", obj.input_unit),
         registry=registry,
         where="A schedule input axis",
+    )
+
+
+def _resolve_input_axes(
+    input_unit: CompositeUnit | tuple[CompositeUnit, ...],
+    registry: pint.UnitRegistry,
+    where: str,
+) -> pint.Unit | tuple[pint.Unit, ...]:
+    """Resolve a schedule declaration's input axis or axes (GEP 10).
+
+    A single :class:`CompositeUnit` resolves to one pint unit, screened against
+    every ``look_up`` argument; a tuple resolves to a tuple of pint units screened
+    positionally (argument ``i`` against axis ``i``). Each axis is agnostic — a
+    concrete currency is rejected element-wise, exactly as for a scalar field.
+    """
+    if isinstance(input_unit, tuple):
+        return tuple(
+            resolve_compositional_field_unit(
+                unit=cast("CompositeUnit", axis), registry=registry, where=where
+            )
+            for axis in input_unit
+        )
+    return resolve_compositional_field_unit(
+        unit=input_unit, registry=registry, where=where
     )
 
 
@@ -1795,12 +1838,13 @@ def _representative_values_by_qname(
             and isinstance(obj.unit, InputOutputUnit)
             and not isinstance(unit, dict)
         ):
-            # A schedule builder declares its two axes with
-            # `unit=InputOutputUnit(...)`: `look_up`/`piecewise_polynomial` screens
-            # each domain argument against the input axis and yields the output.
+            # A schedule builder declares its axes with `unit=InputOutputUnit(...)`:
+            # `look_up`/`piecewise_polynomial` screens each domain argument against
+            # the input axis (a single axis applied to every argument, or a tuple
+            # screened positionally) and yields the output.
             out[qname] = _UnitCheckSchedule(
-                input_unit=resolve_compositional_field_unit(
-                    unit=obj.unit.input_unit,
+                input_unit=_resolve_input_axes(
+                    input_unit=obj.unit.input_unit,
                     registry=registry,
                     where=f"Schedule param function {qname!r}",
                 ),
@@ -2445,6 +2489,21 @@ class _ScheduleNotEvaluableError(Exception):
     """
 
 
+class _LookupArityError(Exception):
+    """A multi-dimensional ``look_up`` call supplies the wrong number of arguments.
+
+    A lookup declaring a tuple ``input_unit`` screens each argument against its
+    own axis positionally, so the call must supply exactly as many arguments as
+    declared axes. Caught by :func:`_verify_one_body` and reported against the
+    calling body, naming both counts.
+    """
+
+    def __init__(self, declared: int, supplied: int) -> None:
+        super().__init__()
+        self.declared = declared
+        self.supplied = supplied
+
+
 class _StructuredValueUsedAsQuantityError(Exception):
     """A value plucked off a structured parameter was used as a quantity —
     caught by :func:`_verify_one_body` and reported with the
@@ -2657,16 +2716,22 @@ class _UnitCheckSchedule:
     parameter's own, a schedule builder's ``InputOutputUnit`` declaration, or a
     schedule-typed dataclass field's: it screens each domain argument against
     ``input_unit`` (as ``+`` screens an operand) and produces the ``output_unit``.
-    The domain is not screened when ``input_unit`` is ``None`` — a schedule
-    parameter that left its input axis unset (a multi-dimensional look-up, whose
-    per-index verification is deferred by design, GEP 10).
+
+    ``input_unit`` takes three forms:
+
+    - a single :class:`pint.Unit` — screened against every ``look_up`` argument
+      (a one-dimensional look-up, or a piecewise ``x``);
+    - a ``tuple`` of :class:`pint.Unit` — screened positionally (argument ``i``
+      against axis ``i``); the call must supply exactly as many arguments as
+      declared axes, else a :class:`_LookupArityError`;
+    - ``None`` — unscreened; a schedule parameter that left its input axis unset.
     """
 
     __slots__ = ("explorer_holder", "input_unit", "output_unit", "unit_system")
 
     def __init__(
         self,
-        input_unit: pint.Unit | None,
+        input_unit: pint.Unit | tuple[pint.Unit, ...] | None,
         output_unit: pint.Unit,
         unit_system: UnitSystem,
         explorer_holder: list[_PathExplorer | None] | None = None,
@@ -2677,23 +2742,28 @@ class _UnitCheckSchedule:
         self.explorer_holder = explorer_holder
 
     def _produce(self, domain_args: tuple[Any, ...]) -> _UnitCheckQuantity:
-        # An undeclared input axis (`None`) leaves the index unscreened: a schedule
-        # may be a multi-dimensional look-up, so per-index input-axis verification
-        # is deferred by design (GEP 10).
-        screen_domain = self.input_unit is not None
+        if isinstance(self.input_unit, tuple) and len(domain_args) != len(
+            self.input_unit
+        ):
+            raise _LookupArityError(
+                declared=len(self.input_unit), supplied=len(domain_args)
+            )
         explorer: _PathExplorer | None = None
         all_indices_are_scalar_literals = True
-        for arg in domain_args:
+        for position, arg in enumerate(domain_args):
+            # A single declared axis screens every argument; a tuple screens
+            # positionally; `None` leaves the argument unscreened.
+            axis = self._axis_at(position)
             if isinstance(arg, _UnitCheckQuantity):
                 explorer = arg._explorer  # noqa: SLF001
-                if screen_domain and not units_are_equivalent(
+                if axis is not None and not units_are_equivalent(
                     left=cast("pint.Unit", arg.q.units),
-                    right=self.input_unit,
+                    right=axis,
                     registry=self.unit_system.registry,
                 ):
                     raise _UnitMixError(
                         op="look-up",
-                        left=self.input_unit,
+                        left=axis,
                         right=cast("pint.Unit", arg.q.units),
                     )
             elif not _is_scalar_literal(arg):
@@ -2725,18 +2795,40 @@ class _UnitCheckSchedule:
             unit_system=self.unit_system,
         )
 
+    def _axis_at(self, position: int) -> pint.Unit | None:
+        """The input axis screening the argument at ``position``.
+
+        A single declared axis screens every argument; a tuple screens
+        positionally (the arity is checked before this is reached); ``None`` leaves
+        the argument unscreened.
+        """
+        if isinstance(self.input_unit, tuple):
+            return self.input_unit[position]
+        return self.input_unit
+
     def _literal_index_is_admissible(self) -> bool:
-        """Whether a bare literal is a legitimate index for this schedule.
+        """Whether bare literals are legitimate indices for this schedule.
 
         A bare Python literal is a dimensionless, person-level value. It matches
         an undeclared input axis (``None``, unscreened by design) or a declared
         dimensionless one. A dimensionful axis (a currency, an area, a calendar
         point) is never keyed by a bare literal, so such an index is not
-        admissible and the body must opt out.
+        admissible and the body must opt out. Every declared axis — the one axis,
+        or each element of a tuple — must be admissible.
         """
         if self.input_unit is None:
             return True
-        return self.unit_system.registry.Quantity(1.0, self.input_unit).dimensionless
+        axes = (
+            self.input_unit
+            if isinstance(self.input_unit, tuple)
+            else (self.input_unit,)
+        )
+        return all(
+            self.unit_system.registry.Quantity(
+                1.0, cast("pint.Unit", axis)
+            ).dimensionless
+            for axis in axes
+        )
 
     def look_up(self, *args: Any) -> _UnitCheckQuantity:  # noqa: ANN401
         return self._produce(args)
@@ -3160,6 +3252,14 @@ def _run_one_path(
             qname=qname,
             reason=f"it makes more than {_MAX_DECISIONS_PER_RUN} branch decisions "
             "in one run — a data-driven loop?",
+        ), True
+    except _LookupArityError as err:
+        return (
+            f"{qname}: calls a lookup declaring {err.declared} input "
+            f"{'axis' if err.declared == 1 else 'axes'} with {err.supplied} "
+            f"argument{'' if err.supplied == 1 else 's'} — a multi-dimensional "
+            f"lookup screens each argument against the corresponding axis, so the "
+            f"counts must match (GEP 10)."
         ), True
     except (
         _UnitMixError,

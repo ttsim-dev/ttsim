@@ -489,9 +489,14 @@ def resolve_compositional_cast_unit(
 def resolve_compositional_field_unit(
     unit: CompositeUnit, *, registry: pint.UnitRegistry, where: str
 ) -> pint.Unit:
-    """Resolve a parameter dataclass field annotation's compositional unit (GEP 10)."""
+    """Resolve an agnostic axis declaration's compositional unit (GEP 10).
+
+    Serves both a parameter dataclass field annotation and a schedule builder's
+    ``InputOutputUnit`` axis; the ``where`` string names the site, so the message
+    reads correctly at either. A concrete-currency base is rejected at both.
+    """
     return _resolve_agnostic_body_unit(
-        unit=unit, registry=registry, where=where, what="a field annotation"
+        unit=unit, registry=registry, where=where, what="the declaration"
     )
 
 
@@ -665,14 +670,24 @@ class InputOutputUnit:
     hands the consumer the ``output_unit``. A schedule-typed field of a parameter
     dataclass states the same pair in its ``Annotated[…]`` metadata.
 
+    A multi-dimensional :class:`ConsecutiveIntLookupTableParamValue` is keyed by
+    several axes at once — e.g. ``look_up(anzahl_personen_hh, mietstufe_hh)`` —
+    whose units may differ. Pass a **tuple** of :class:`CompositeUnit` as
+    ``input_unit`` to screen each ``look_up`` argument against the corresponding
+    axis positionally; the call must supply exactly as many arguments as declared
+    axes. A tuple is only for lookup tables — ``piecewise_polynomial`` takes one
+    domain argument, so a tuple on a piecewise builder is a contract error.
+
     Both axes are currency-agnostic compositional units, exactly like a
     column/function declaration: a schedule builder runs in the statutory
     currency of the policy date, whichever that is.
     """
 
-    input_unit: CompositeUnit
+    input_unit: CompositeUnit | tuple[CompositeUnit, ...]
     """The unit each domain argument (``look_up`` index, ``piecewise_polynomial``
-    ``x``) is screened against."""
+    ``x``) is screened against — a single :class:`CompositeUnit` applied to every
+    argument, or a tuple screened positionally (argument ``i`` against axis
+    ``i``)."""
     output_unit: CompositeUnit
     """The unit the schedule produces at every call site."""
 
