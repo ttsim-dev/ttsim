@@ -29,7 +29,12 @@ from ttsim.interface_dag_elements.warn_if import (
 )
 from ttsim.tt.currencies import UnitSystem
 from ttsim.tt.param_objects import RawParam
-from ttsim.tt.units import UNSET_UNIT, TTSIMUnit, _registered_currencies
+from ttsim.tt.units import (
+    UNSET_UNIT,
+    TTSIMUnit,
+    _registered_currencies,
+    parse_compositional_unit,
+)
 from ttsim.warnings import PotentialCurrencyMismatchWarning
 
 POLICY_DATE = datetime.date(2020, 1, 1)
@@ -664,6 +669,21 @@ def test_grouping_level_colliding_with_a_period_step_is_rejected():
     a `month` level would turn `PER_MONTH` into a level for the whole process."""
     with pytest.raises(UnitDefinitionError, match="already a unit denominator"):
         _fresh_system(grouping_levels=["month"])
+
+
+def test_currency_name_spelling_the_denominator_delimiter_is_rejected():
+    """A currency name containing `_PER_` is refused: its base would parse back as a
+    base plus a denominator, so the token would not round-trip."""
+    with pytest.raises(UnitDefinitionError, match="would parse back as"):
+        _fresh_system(other_currencies={"GOLD_PER_OUNCE": "CASTAR / 4"})
+
+
+def test_registered_currency_token_round_trips_through_the_parser():
+    """Every registered currency's builder token parses back to the same unit."""
+    system = _fresh_system()
+    for name in sorted(system.currencies):
+        token = getattr(TTSIMUnit, name.upper())
+        assert parse_compositional_unit(str(token)) == token
 
 
 def test_person_is_rejected_as_a_grouping_level():

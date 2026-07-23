@@ -35,6 +35,7 @@ from ttsim.tt.grouping_levels import (
 from ttsim.tt.units import (
     _ALLOWED_UNIT_TOKENS,
     _COMPOSITIONAL_BASE_TO_PINT,
+    _PER,
     CURRENCY_TOKEN,
     CompositeUnit,
     TTSIMUnit,
@@ -245,8 +246,19 @@ class UnitSystem:
         share one base — one silently shadowing the other on the builder, and the
         shared base naming neither of them unambiguously. The clash counts whether
         the other name belongs to this system or to one already registered.
+
+        A name spelling the ``_PER_`` denominator delimiter is refused for the same
+        reason: its base would parse back as a base plus a denominator, so the
+        token would not round-trip.
         """
         base = name.upper()
+        if _PER in base:
+            raise UnitDefinitionError(
+                f"Cannot register currency {name!r}: {_PER!r} separates a unit from "
+                f"its denominator, so the base {base!r} would parse back as "
+                f"{base.split(_PER)[0]!r} denominated by "
+                f"{base.split(_PER, 1)[1]!r}. Pick a name without it (GEP 10)."
+            )
         shadowed = sorted(
             other
             for other in _registered_currencies | self.currencies

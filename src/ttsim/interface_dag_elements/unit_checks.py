@@ -1499,7 +1499,7 @@ def _resolvable_type_hints(cls: type) -> dict[str, Any]:
     """
     try:
         return get_type_hints(cls, include_extras=True)
-    except NameError:
+    except _UNRESOLVABLE_ANNOTATION_ERRORS:
         pass
     hints: dict[str, Any] = {}
     for klass in reversed(cls.__mro__):
@@ -1519,6 +1519,11 @@ def _resolvable_type_hints(cls: type) -> dict[str, Any]:
 #: Distinguishes an annotation that cannot be resolved from one resolving to `None`.
 _UNRESOLVABLE = object()
 
+#: What resolving an annotation raises when the annotation cannot be resolved. The
+#: whole-class attempt and the per-field fallback share the set, so a class that the
+#: fallback could still salvage never escapes as an error from the first attempt.
+_UNRESOLVABLE_ANNOTATION_ERRORS = (NameError, AttributeError, SyntaxError, TypeError)
+
 
 def _resolve_one_annotation(
     name: str,
@@ -1529,7 +1534,7 @@ def _resolve_one_annotation(
     holder = type("_SingleAnnotation", (), {"__annotations__": {name: annotation}})
     try:
         return get_type_hints(holder, globalns=namespace, include_extras=True)[name]
-    except (NameError, AttributeError, SyntaxError, TypeError):
+    except _UNRESOLVABLE_ANNOTATION_ERRORS:
         return _UNRESOLVABLE
 
 

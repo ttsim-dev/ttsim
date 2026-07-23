@@ -625,7 +625,17 @@ def _time_variant_input_stub(
 def _aggregated_input_stub(
     qname: str, match: re.Match[str], lookup: dict[str, Any]
 ) -> PolicyInput | None:
-    """A stub for data at a group-aggregate name, from its SUM source's unit."""
+    """A stub for data at a group-aggregate name, from its SUM source's unit.
+
+    Returns ``None`` when the source declares no unit — there is then nothing to
+    derive the stub's unit from, and the mandatory-units check reports the input.
+    A source that declares a unit but whose column kind does not resolve is an
+    error rather than a missing stub: the stub would otherwise be dropped and the
+    input would silently escape currency conversion and unit validation.
+
+    Raises:
+        TypeResolutionError: If the source declares a unit but no resolvable kind.
+    """
     source_name = match.group("base_name_with_time_unit")
     source_unit = getattr(lookup.get(source_name), "unit", UNSET_UNIT)
     if source_unit is UNSET_UNIT:
@@ -638,8 +648,15 @@ def _aggregated_input_stub(
             },
             qname_policy_environment=lookup,
         )
-    except TypeResolutionError:
-        return None
+    except TypeResolutionError as error:
+        msg = (
+            f"Cannot derive the unit of input {qname!r} from its aggregation source "
+            f"{source_name!r}: the source declares a unit but its column kind does "
+            f"not resolve, and a SUM over a boolean carries a different unit than one "
+            f"over a number. Declare {source_name!r} with a resolvable data type "
+            f"(GEP 10)."
+        )
+        raise TypeResolutionError(msg) from error
     return _input_column_stub(
         qname=qname,
         unit=unit_for_aggregation(

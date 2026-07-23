@@ -4958,7 +4958,7 @@ def test_structured_field_kinds_skips_only_the_unresolvable_field():
     @dataclass
     class SpecWithOneUnresolvableField:
         rate: Annotated[float, TTSIMUnit.DIMENSIONLESS]
-        nested_forward_ref: Annotated[float, TTSIMUnit.DIMENSIONLESS]
+        nested_forward_ref: Annotated["float", TTSIMUnit.DIMENSIONLESS]  # noqa: UP037
         opaque: OnlyVisibleToTypeCheckers  # noqa: F821  # ty: ignore[unresolved-reference]
 
     kinds = _structured_field_kinds(
