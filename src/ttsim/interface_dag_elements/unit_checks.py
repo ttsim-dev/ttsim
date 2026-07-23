@@ -85,6 +85,7 @@ from ttsim.tt.units import (
     CompositeUnit,
     InputOutputUnit,
     UnitAnnotatedColumn,
+    UserNestedUnitAnnotatedData,
     _grouping_levels_with_exponent,
     _unit_level_denominator,
     _unit_without_grouping_levels,
@@ -998,10 +999,7 @@ def fail_if_not_all_leaves_are_unit_annotated_columns(
 
 
 def flatten_unit_annotated_input_tree(
-    # Widened to one level the way `NestedData` is in `ttsim.typing`: beartype
-    # cannot resolve a recursive alias whose inner name is the alias itself. A
-    # bare leaf is the very thing this function reports, so `Any` is the leaf type.
-    tree: Mapping[str, Any],
+    tree: UserNestedUnitAnnotatedData,
 ) -> dict[tuple[str, ...], UnitAnnotatedColumn]:
     """Flatten the unit-annotated input tree, rejecting any bare leaf.
 
@@ -1481,6 +1479,60 @@ class _ScheduleFieldKind:
     """The resolved unit the schedule produces."""
 
 
+def _resolvable_type_hints(cls: type) -> dict[str, Any]:
+    """The class's type hints, dropping only those that do not resolve.
+
+    ``get_type_hints`` is all-or-nothing: one name visible only under
+    ``TYPE_CHECKING`` makes it raise for the whole class. Falling back to a
+    per-field resolution keeps a single unresolvable annotation from disabling
+    the unit check on every other field.
+
+    Each class in the MRO is resolved against its *own* defining module, base
+    before derived, so an inherited field keeps the meaning it has where it was
+    declared and a derived class still shadows it. A field whose own annotation
+    does not resolve is dropped rather than left with an inherited stand-in.
+
+    Every field goes back through ``get_type_hints``, one at a time, so a nested
+    forward reference (``list["Foo"]``) resolves as fully as it would have in the
+    whole-class call — evaluating the annotation string alone would leave the
+    inner name a `ForwardRef` and the field wrongly opaque.
+    """
+    try:
+        return get_type_hints(cls, include_extras=True)
+    except NameError:
+        pass
+    hints: dict[str, Any] = {}
+    for klass in reversed(cls.__mro__):
+        module = sys.modules.get(getattr(klass, "__module__", ""))
+        namespace = {**(vars(module) if module else {}), **vars(klass)}
+        for name, annotation in klass.__dict__.get("__annotations__", {}).items():
+            resolved = _resolve_one_annotation(
+                name=name, annotation=annotation, namespace=namespace
+            )
+            if resolved is _UNRESOLVABLE:
+                hints.pop(name, None)
+            else:
+                hints[name] = resolved
+    return hints
+
+
+#: Distinguishes an annotation that cannot be resolved from one resolving to `None`.
+_UNRESOLVABLE = object()
+
+
+def _resolve_one_annotation(
+    name: str,
+    annotation: Any,  # noqa: ANN401
+    namespace: dict[str, Any],
+) -> Any:  # noqa: ANN401
+    """One field's annotation resolved, or :data:`_UNRESOLVABLE`."""
+    holder = type("_SingleAnnotation", (), {"__annotations__": {name: annotation}})
+    try:
+        return get_type_hints(holder, globalns=namespace, include_extras=True)[name]
+    except (NameError, AttributeError, SyntaxError, TypeError):
+        return _UNRESOLVABLE
+
+
 def _structured_field_kinds(
     cls: type, unit_system: UnitSystem
 ) -> dict[str, pint.Unit | type | _ScheduleFieldKind] | None:
@@ -1495,8 +1547,10 @@ def _structured_field_kinds(
     - anything else (a bare scalar, dict, array) is absent — the pluck stays
       opaque and is cast at the site (GEP 10).
 
-    Returns ``None`` when the annotations do not resolve at runtime (a name
-    imported only under ``TYPE_CHECKING``), leaving every pluck opaque.
+    A field whose annotation does not resolve at runtime (a name imported only
+    under ``TYPE_CHECKING``) is skipped individually, so its pluck stays opaque
+    while its siblings are still resolved and validated. ``None`` comes back only
+    when the class carries no resolvable annotation at all.
 
     Memoized per class on ``unit_system``: a resolved unit belongs to that
     system's registry, so the memo cannot be shared across systems.
@@ -1510,9 +1564,8 @@ def _structured_field_kinds(
     memo = unit_system.field_units_by_class
     if cls in memo:
         return memo[cls]
-    try:
-        hints = get_type_hints(cls, include_extras=True)
-    except NameError:
+    hints = _resolvable_type_hints(cls=cls)
+    if not hints:
         memo[cls] = None
         return None
     kinds: dict[str, pint.Unit | type | _ScheduleFieldKind] = {}

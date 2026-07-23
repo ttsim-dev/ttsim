@@ -14,6 +14,7 @@ from ttsim.interface_dag_elements.shared import (
     get_re_pattern_for_specific_time_units_and_groupings,
     insert_path_and_value,
     merge_trees,
+    param_has_substantive_content,
     to_datetime,
     upsert_path_and_value,
     upsert_tree,
@@ -326,3 +327,21 @@ def test_to_datetime_with_invalid_format_raises():
 
     with pytest.raises(ValueError, match="YYYY-MM-DD"):
         to_datetime("2024/06/15")  # Wrong separator
+
+
+@pytest.mark.parametrize(
+    "entry",
+    [
+        {"unit": "EUR"},
+        {"input_unit": "EUR", "output_unit": "EUR"},
+        {"unit": "EUR", "note": "re-denominated", "reference": "BGBl. I S. 1"},
+    ],
+)
+def test_entry_restating_only_the_unit_has_no_substantive_content(entry):
+    """A dated entry carrying only a unit restatement re-denominates what the
+    previous entry established; it does not revive a revoked parameter."""
+    assert not param_has_substantive_content(entry)
+
+
+def test_entry_with_a_value_beside_the_unit_has_substantive_content():
+    assert param_has_substantive_content({"value": 1.0, "unit": "EUR"})

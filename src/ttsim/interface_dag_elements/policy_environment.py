@@ -12,6 +12,7 @@ import numpy
 from ttsim.exceptions import UnitDefinitionError
 from ttsim.interface_dag_elements.interface_node_objects import interface_function
 from ttsim.interface_dag_elements.shared import (
+    UNIT_DECLARATION_KEYS,
     merge_trees,
     param_has_substantive_content,
     upsert_tree,
@@ -65,7 +66,6 @@ PARAM_MAPPING_OBJECT_TYPES: frozenset[str] = PIECEWISE_TYPES | frozenset(
     LOOKUP_TABLE_CONVERTERS
 )
 
-_UNIT_DECLARATION_KEYS = ("unit", "input_unit", "output_unit")
 
 if TYPE_CHECKING:
     from types import ModuleType
@@ -273,7 +273,7 @@ def _fail_if_param_currency_is_not_statutory(
     """
     declared = {
         currency
-        for key in _UNIT_DECLARATION_KEYS
+        for key in UNIT_DECLARATION_KEYS
         for currency in _collect_currencies_in_param_units(cleaned_spec.get(key))
     }
     non_statutory = sorted(declared - {computation_currency})
@@ -390,7 +390,7 @@ def _forward_fill_unit_fields(
         _fail_if_updates_previous_restates_unit(
             leaf_name=leaf_name, entry=entry, date=date
         )
-        for unit_key in _UNIT_DECLARATION_KEYS:
+        for unit_key in UNIT_DECLARATION_KEYS:
             if unit_key not in entry:
                 continue
             _fail_if_partial_unit_mapping_restatement(
@@ -443,7 +443,7 @@ def _fail_if_updates_previous_restates_unit(
     (GEP 10).
     """
     if entry.get("updates_previous", False) and any(
-        unit_key in entry for unit_key in _UNIT_DECLARATION_KEYS
+        unit_key in entry for unit_key in UNIT_DECLARATION_KEYS
     ):
         raise UnitDefinitionError(
             f"Parameter {leaf_name!r}: the dated entry at {date} both merges "
@@ -491,8 +491,8 @@ def _clean_one_param_spec(
     current_spec: dict[str | int, Any] = copy.deepcopy(spec[policy_dates[idx - 1]])
     out["note"] = current_spec.pop("note", None)
     out["reference"] = current_spec.pop("reference", None)
-    # Strip the (already forward-filled) units so a dated entry that only
-    # restates the unit is not mistaken for substantive content.
+    # The units are already forward-filled onto `out`; strip them here so they
+    # cannot leak into the assembled value below.
     _strip_unit_overrides(current=current_spec)
 
     if not param_has_substantive_content(current_spec):
@@ -527,7 +527,7 @@ def _strip_unit_overrides(current: dict[str | int, Any]) -> None:
     (:func:`_fail_if_updates_previous_restates_unit`), so a stripped entry never
     both merges and changes the unit.
     """
-    for unit_key in _UNIT_DECLARATION_KEYS:
+    for unit_key in UNIT_DECLARATION_KEYS:
         current.pop(unit_key, None)
 
 

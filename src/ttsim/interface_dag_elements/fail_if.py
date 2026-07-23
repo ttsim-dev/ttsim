@@ -51,6 +51,7 @@ from ttsim.tt.param_objects import (
 from ttsim.tt.units import (
     UNSET_UNIT,
     CompositeUnit,
+    UserNestedUnitAnnotatedData,
     token_is_agnostic_currency,
 )
 from ttsim.typing import (
@@ -1028,7 +1029,7 @@ def tt_units_are_inconsistent(
     include_if_any_element_present=["input_data__tree_with_unit_annotations"]
 )
 def not_all_input_leaves_are_unit_annotated_columns(
-    input_data__tree_with_unit_annotations: NestedData,
+    input_data__tree_with_unit_annotations: UserNestedUnitAnnotatedData,
 ) -> None:
     """Reject a unit-annotated input tree with any bare (untagged) leaf.
 
@@ -1047,7 +1048,7 @@ def not_all_input_leaves_are_unit_annotated_columns(
     include_if_any_element_present=["input_data__tree_with_unit_annotations"]
 )
 def input_currency_is_not_concrete(
-    input_data__tree_with_unit_annotations: NestedData,
+    input_data__tree_with_unit_annotations: UserNestedUnitAnnotatedData,
 ) -> None:
     """Fail if a currency-bearing input column names the agnostic ``CURRENCY``.
 

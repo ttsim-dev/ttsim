@@ -26,6 +26,7 @@ from ttsim.interface_dag_elements.unit_checks import (
 from ttsim.tt.currencies import UnitSystem
 from ttsim.tt.units import (
     CompositeUnit,
+    UserNestedUnitAnnotatedData,
     input_strip_unit,
     resolve_compositional_unit,
     strip_input_quantity_at_boundary,
@@ -76,7 +77,7 @@ def qname() -> QNameData:
 
 
 @interface_input()
-def tree_with_unit_annotations() -> NestedData:
+def tree_with_unit_annotations() -> UserNestedUnitAnnotatedData:
     """The input data as a nested dict of :class:`UnitAnnotatedColumn` leaves.
 
     Like :func:`tree`, but each leaf tags its column with a concrete unit, opting
@@ -204,7 +205,7 @@ def flat_from_qname(
     leaf_name="flat",
 )
 def flat_from_tree_with_unit_annotations(
-    tree_with_unit_annotations: NestedData,
+    tree_with_unit_annotations: UserNestedUnitAnnotatedData,
     data_currency: str,
     unit_system: UnitSystem,
 ) -> FlatData:
@@ -229,7 +230,7 @@ def flat_from_tree_with_unit_annotations(
     leaf_name="units",
 )
 def units_from_tree_with_unit_annotations(
-    tree_with_unit_annotations: NestedData,
+    tree_with_unit_annotations: UserNestedUnitAnnotatedData,
     unit_system: UnitSystem,
 ) -> dict[str, pint.Unit]:
     """Each input column's resolved (agnostic) tag, with its grouping level, by qname.
@@ -253,7 +254,7 @@ def units_from_tree_with_unit_annotations(
     leaf_name="unit_tokens",
 )
 def unit_tokens_from_tree_with_unit_annotations(
-    tree_with_unit_annotations: NestedData,
+    tree_with_unit_annotations: UserNestedUnitAnnotatedData,
 ) -> dict[str, CompositeUnit]:
     """Each input column's *declared tag* as a compositional token, by qname.
 

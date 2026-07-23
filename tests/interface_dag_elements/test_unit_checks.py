@@ -22,6 +22,7 @@ from ttsim.interface_dag_elements.automatically_added_functions import (
 from ttsim.interface_dag_elements.unit_checks import (
     FRAMEWORK_DATE_NODE_UNITS,
     _resolved_return_structure,
+    _structured_field_kinds,
     declared_unit_tokens,
     fail_if_environment_units_are_inconsistent,
     fail_if_environment_units_are_missing,
@@ -4947,3 +4948,39 @@ def test_max_over_bare_source_carries_the_target_group_level():
     fail_if_environment_units_are_inconsistent(
         env=env, grouping_levels=GROUPING_LEVELS, unit_system=UNIT_SYSTEM
     )
+
+
+def test_structured_field_kinds_skips_only_the_unresolvable_field():
+    """A field whose annotation names something visible only to type checkers stays
+    opaque, while a sibling whose annotation nests a forward reference inside
+    ``Annotated`` still resolves to its unit."""
+
+    @dataclass
+    class SpecWithOneUnresolvableField:
+        rate: Annotated[float, TTSIMUnit.DIMENSIONLESS]
+        nested_forward_ref: Annotated[float, TTSIMUnit.DIMENSIONLESS]
+        opaque: OnlyVisibleToTypeCheckers  # noqa: F821  # ty: ignore[unresolved-reference]
+
+    kinds = _structured_field_kinds(
+        cls=SpecWithOneUnresolvableField, unit_system=UNIT_SYSTEM
+    )
+    assert kinds == {
+        "rate": REGISTRY.dimensionless,
+        "nested_forward_ref": REGISTRY.dimensionless,
+    }
+
+
+def test_structured_field_kinds_keeps_inherited_annotations():
+    """A subclass with one unresolvable annotation keeps the resolved units of the
+    fields it inherits."""
+
+    @dataclass
+    class BaseSpec:
+        rate: Annotated[float, TTSIMUnit.DIMENSIONLESS]
+
+    @dataclass
+    class DerivedSpec(BaseSpec):
+        opaque: AlsoOnlyVisibleToTypeCheckers  # noqa: F821  # ty: ignore[unresolved-reference]
+
+    kinds = _structured_field_kinds(cls=DerivedSpec, unit_system=UNIT_SYSTEM)
+    assert kinds == {"rate": REGISTRY.dimensionless}

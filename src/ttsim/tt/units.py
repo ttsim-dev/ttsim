@@ -42,7 +42,7 @@ import math
 import re
 from collections.abc import Iterator, Mapping
 from dataclasses import dataclass, field, replace
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, Any, TypeAlias, TypeVar
 
 import pint
 from pint.util import to_units_container
@@ -601,6 +601,21 @@ class UnitAnnotatedColumn:
 
     values: Any
     unit: CompositeUnit
+
+
+if TYPE_CHECKING:
+    UserNestedUnitAnnotatedData: TypeAlias = Mapping[
+        str, "UnitAnnotatedColumn | UserNestedUnitAnnotatedData"
+    ]
+    """Tree mapping TTSIM paths to unit-annotated columns.
+
+    The leaf type is what separates it from `ttsim.typing.UserNestedData`, whose
+    leaves are bare columns.
+    """
+else:
+    # Widened to one level for beartype, like `NestedData` in `ttsim.typing`: the
+    # recursive alias's stringified inner name is not resolvable at runtime.
+    UserNestedUnitAnnotatedData = Mapping[str, UnitAnnotatedColumn | Mapping]
 
 
 _CastValueT = TypeVar("_CastValueT")

@@ -9,6 +9,7 @@ import pandas as pd
 from beartype import beartype
 
 from ttsim._beartype_conf import INPUT_DATA_CONF, TT_TARGETS_CONF
+from ttsim.tt.units import UserNestedUnitAnnotatedData
 from ttsim.typing import (
     FlatColumnObjectsParamFunctions,
     FlatOrigParamSpecs,
@@ -101,7 +102,7 @@ class InputData(MainArg):
     # and plain sequences alongside backend arrays. Canonicalization to the
     # narrow `NestedData` / `FlatData` / `QNameData` forms happens downstream.
     tree: UserNestedData | None
-    tree_with_unit_annotations: UserNestedData | None
+    tree_with_unit_annotations: UserNestedUnitAnnotatedData | None
     flat: UserFlatData | None
     qname: UserQNameData | None
 
@@ -150,7 +151,7 @@ class InputData(MainArg):
     @classmethod
     @beartype(conf=INPUT_DATA_CONF)
     def tree_with_unit_annotations(
-        cls, tree_with_unit_annotations: UserNestedData
+        cls, tree_with_unit_annotations: UserNestedUnitAnnotatedData
     ) -> InputData:
         """A nested dict whose every leaf is a ``UnitAnnotatedColumn`` carrying
         the column's unit (GEP 10).

@@ -30,6 +30,12 @@ _DASHED_ISO_DATE_REGEX = re.compile(r"\d{4}-\d{2}-\d{2}")
 
 _PARAM_METADATA_KEYS = frozenset({"note", "reference"})
 
+#: The keys a dated parameter entry may restate its unit under (GEP 10). The
+#: single source of truth for the policy-environment build (which forward-fills
+#: them and strips them off the assembled value) and for
+#: `param_has_substantive_content` (which does not count them as content).
+UNIT_DECLARATION_KEYS = ("unit", "input_unit", "output_unit")
+
 #: Names of the arguments the framework partials into every column/param function
 #: (the backend handles, the population size, the segment count). The single
 #: source of truth shared by `specialized_environment` (which supplies their
@@ -48,10 +54,17 @@ def param_has_substantive_content(
     Parameters do not have substantive content if they are empty or contain only
     note and reference metadata. This happens when a parameter is revoked/abolished
     and we have just passed a reference and a note to document this.
+
+    A unit restatement is not content either: an entry carrying only ``unit:``
+    re-denominates whatever the previous entry established, so a revoked
+    parameter stays revoked through a currency changeover. Every caller shares
+    this one definition, so a parameter's active periods cannot disagree with
+    whether the policy environment builds it.
     """
     if isinstance(entry, list):
         return bool(entry)
-    return any(k not in _PARAM_METADATA_KEYS for k in entry)
+    ignored = _PARAM_METADATA_KEYS.union(UNIT_DECLARATION_KEYS)
+    return any(k not in ignored for k in entry)
 
 
 def to_datetime(date: datetime.date | DashedISOString) -> datetime.date:
