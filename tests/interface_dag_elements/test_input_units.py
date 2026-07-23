@@ -179,7 +179,7 @@ def test_input_currency_non_currency_columns_pass():
 def test_input_level_must_match_declared():
     # A `_hh` column declares the hh level; a bare tag contradicts it. Compared
     # against the declared resolved unit, not the name suffix directly.
-    register_grouping_levels(["hh"], registry=REGISTRY)
+    register_grouping_levels(names=["hh"], registry=REGISTRY)
     with pytest.raises(UnitConsistencyError, match="level"):
         fail_if_input_units_are_inconsistent(
             input_units={
@@ -197,7 +197,7 @@ def test_input_level_must_match_declared():
 
 
 def test_input_level_matching_declared_passes():
-    register_grouping_levels(["hh"], registry=REGISTRY)
+    register_grouping_levels(names=["hh"], registry=REGISTRY)
     miete = _column(
         TTSIMUnit.CURRENCY.PER_MONTH.PER_HH, time_unit_id="m", grouping_level="hh"
     )
@@ -212,7 +212,7 @@ def test_input_level_matching_declared_passes():
 def test_bare_tag_matches_a_normalized_per_person_declaration():
     # A `_PER_PERSON` declaration normalizes to bare, so a bare tag matches it: a
     # per-person amount and a level-neutral amount are the same bare unit (GEP 10).
-    register_grouping_levels(["hh"], registry=REGISTRY)
+    register_grouping_levels(names=["hh"], registry=REGISTRY)
     betrag = _column(TTSIMUnit.CURRENCY.PER_MONTH.PER_PERSON, time_unit_id="m")
     fail_if_input_units_are_inconsistent(
         input_units={"betrag_m": _resolved(TTSIMUnit.CURRENCY.PER_MONTH)},
@@ -224,7 +224,7 @@ def test_bare_tag_matches_a_normalized_per_person_declaration():
 def test_group_level_tag_does_not_match_a_bare_declaration():
     # A group-level tag is distinct from a bare declaration (GEP 10): the level is
     # declared, not read off the suffix, so the mismatch is caught via the tokens.
-    register_grouping_levels(["hh"], registry=REGISTRY)
+    register_grouping_levels(names=["hh"], registry=REGISTRY)
     with pytest.raises(UnitConsistencyError, match="level"):
         fail_if_input_units_are_inconsistent(
             input_units={"betrag_m": _resolved(TTSIMUnit.CURRENCY.PER_MONTH.PER_HH)},
@@ -237,7 +237,7 @@ def test_group_level_tag_does_not_match_a_bare_declaration():
 
 def test_input_share_at_group_suffix_stays_level_less():
     # A group suffix must not force a level onto a level-less quantity.
-    register_grouping_levels(["hh"], registry=REGISTRY)
+    register_grouping_levels(names=["hh"], registry=REGISTRY)
     fail_if_input_units_are_inconsistent(
         input_units={"rate_hh": _resolved(TTSIMUnit.DIMENSIONLESS)},
         resolved_units={"rate_hh": _resolved(TTSIMUnit.DIMENSIONLESS)},

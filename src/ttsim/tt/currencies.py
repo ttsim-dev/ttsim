@@ -39,6 +39,7 @@ from ttsim.tt.units import (
     CompositeUnit,
     TTSIMUnit,
     _registered_currencies,
+    _unit_builder_levels,
     _unit_is_currency,
     build_registry,
 )
@@ -122,6 +123,18 @@ class UnitSystem:
     units are this system's registry's, so the memo is the system's."""
 
     def __post_init__(self) -> None:
+        # Snapshot the caller's containers: everything derived below (the parsed
+        # dates, the currency set, the registry) would otherwise silently disagree
+        # with them if the caller mutated theirs afterwards.
+        object.__setattr__(
+            self,
+            "statutory_currencies",
+            MappingProxyType(dict(self.statutory_currencies)),
+        )
+        object.__setattr__(
+            self, "other_currencies", MappingProxyType(dict(self.other_currencies))
+        )
+        object.__setattr__(self, "grouping_levels", tuple(self.grouping_levels))
         registry = build_registry()
         object.__setattr__(self, "registry", registry)
         object.__setattr__(
@@ -366,15 +379,17 @@ def isolated_currency_registration() -> Iterator[None]:
 
     A :class:`UnitSystem` keeps its currency definitions and level dimensions to
     itself, but it also widens the process-global vocabulary — the currency
-    *names* a declaration may spell, the pint tokens a unit may combine, and the
-    concrete currency bases injected on :class:`TTSIMUnit` — so that a
-    `CompositeUnit` can be classified without a system in scope. This block
-    restores all three, so a system built inside it leaves the vocabulary as it
-    found it.
+    *names* a declaration may spell, the pint tokens a unit may combine, the
+    concrete currency bases injected on :class:`TTSIMUnit`, and the ``PER_<level>``
+    steps injected on :class:`CompositeUnit` — so that a `CompositeUnit` can be
+    classified without a system in scope. This block restores all of them, so a
+    system built inside it leaves the vocabulary as it found it.
     """
     saved_currencies = set(_registered_currencies)
     saved_tokens = set(_ALLOWED_UNIT_TOKENS)
     saved_bases = set(vars(TTSIMUnit))
+    saved_levels = set(_unit_builder_levels)
+    saved_steps = set(vars(CompositeUnit))
     try:
         yield
     finally:
@@ -382,5 +397,9 @@ def isolated_currency_registration() -> Iterator[None]:
         _registered_currencies.update(saved_currencies)
         _ALLOWED_UNIT_TOKENS.clear()
         _ALLOWED_UNIT_TOKENS.update(saved_tokens)
+        _unit_builder_levels.clear()
+        _unit_builder_levels.update(saved_levels)
         for base in set(vars(TTSIMUnit)) - saved_bases:
             delattr(TTSIMUnit, base)
+        for step in set(vars(CompositeUnit)) - saved_steps:
+            delattr(CompositeUnit, step)

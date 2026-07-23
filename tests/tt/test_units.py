@@ -200,7 +200,7 @@ def test_compositional_flow_is_marked_by_a_period():
     ],
 )
 def test_parse_unit_accepts_known_units(unit_str):
-    parse_unit(unit_str, registry=REGISTRY)
+    parse_unit(unit_str=unit_str, registry=REGISTRY)
 
 
 @pytest.mark.parametrize(
@@ -220,7 +220,7 @@ def test_parse_unit_accepts_known_units(unit_str):
 )
 def test_parse_unit_rejects_unknown_unit_tokens(unit_str):
     with pytest.raises(UnitDefinitionError, match="does not know about"):
-        parse_unit(unit_str, registry=REGISTRY)
+        parse_unit(unit_str=unit_str, registry=REGISTRY)
 
 
 @pytest.mark.parametrize("unit_str", ["dimensionless", ""])
@@ -228,12 +228,12 @@ def test_parse_unit_rejects_dimensionless_spellings(unit_str):
     # There is exactly one way to declare a dimensionless quantity:
     # `DIMENSIONLESS` — a pint-string spelling is rejected.
     with pytest.raises(UnitDefinitionError, match="DIMENSIONLESS"):
-        parse_unit(unit_str, registry=REGISTRY)
+        parse_unit(unit_str=unit_str, registry=REGISTRY)
 
 
 def test_parse_unit_rejects_unparseable_string():
     with pytest.raises(UnitDefinitionError, match="parse"):
-        parse_unit("this is not a unit", registry=REGISTRY)
+        parse_unit(unit_str="this is not a unit", registry=REGISTRY)
 
 
 def test_base_currency_is_a_currency_dimension():
@@ -303,16 +303,16 @@ def test_currency_agnostic_base_rejected_on_column_at_resolution():
 
 def test_same_unit_is_equivalent():
     assert units_are_equivalent(
-        left=parse_unit("hectare", registry=REGISTRY),
-        right=parse_unit("hectare", registry=REGISTRY),
+        left=parse_unit(unit_str="hectare", registry=REGISTRY),
+        right=parse_unit(unit_str="hectare", registry=REGISTRY),
         registry=REGISTRY,
     )
 
 
 def test_base_currency_equivalent_to_currency_token():
     assert units_are_equivalent(
-        left=parse_unit("CASTAR", registry=REGISTRY),
-        right=parse_unit("CURRENCY", registry=REGISTRY),
+        left=parse_unit(unit_str="CASTAR", registry=REGISTRY),
+        right=parse_unit(unit_str="CURRENCY", registry=REGISTRY),
         registry=REGISTRY,
     )
 
@@ -320,16 +320,16 @@ def test_base_currency_equivalent_to_currency_token():
 def test_month_and_year_flows_are_not_equivalent():
     # Same dimensionality ([currency] / [time]) but different magnitude.
     assert not units_are_equivalent(
-        left=parse_unit("CURRENCY / month", registry=REGISTRY),
-        right=parse_unit("CURRENCY / year", registry=REGISTRY),
+        left=parse_unit(unit_str="CURRENCY / month", registry=REGISTRY),
+        right=parse_unit(unit_str="CURRENCY / year", registry=REGISTRY),
         registry=REGISTRY,
     )
 
 
 def test_different_dimensions_are_not_equivalent():
     assert not units_are_equivalent(
-        left=parse_unit("CURRENCY", registry=REGISTRY),
-        right=parse_unit("hectare", registry=REGISTRY),
+        left=parse_unit(unit_str="CURRENCY", registry=REGISTRY),
+        right=parse_unit(unit_str="hectare", registry=REGISTRY),
         registry=REGISTRY,
     )
 
@@ -338,8 +338,8 @@ def test_calendar_point_is_equivalent_to_itself():
     # A calendar point (affine offset unit) cannot be divided; equivalence is
     # decided by identity (GEP 10).
     assert units_are_equivalent(
-        left=parse_unit("calendar_year", registry=REGISTRY),
-        right=parse_unit("calendar_year", registry=REGISTRY),
+        left=parse_unit(unit_str="calendar_year", registry=REGISTRY),
+        right=parse_unit(unit_str="calendar_year", registry=REGISTRY),
         registry=REGISTRY,
     )
 
@@ -347,44 +347,46 @@ def test_calendar_point_is_equivalent_to_itself():
 def test_calendar_point_is_not_equivalent_to_a_duration():
     # The S1 distinction: a year on the calendar is not a duration in years.
     assert not units_are_equivalent(
-        left=parse_unit("calendar_year", registry=REGISTRY),
-        right=parse_unit("delta_calendar_year", registry=REGISTRY),
+        left=parse_unit(unit_str="calendar_year", registry=REGISTRY),
+        right=parse_unit(unit_str="delta_calendar_year", registry=REGISTRY),
         registry=REGISTRY,
     )
     assert not units_are_equivalent(
-        left=parse_unit("calendar_year", registry=REGISTRY),
-        right=parse_unit("year", registry=REGISTRY),
+        left=parse_unit(unit_str="calendar_year", registry=REGISTRY),
+        right=parse_unit(unit_str="year", registry=REGISTRY),
         registry=REGISTRY,
     )
 
 
 def test_calendar_points_on_different_axes_are_not_equivalent():
     assert not units_are_equivalent(
-        left=parse_unit("calendar_year", registry=REGISTRY),
-        right=parse_unit("calendar_month", registry=REGISTRY),
+        left=parse_unit(unit_str="calendar_year", registry=REGISTRY),
+        right=parse_unit(unit_str="calendar_month", registry=REGISTRY),
         registry=REGISTRY,
     )
 
 
 def test_is_calendar_point_unit():
     assert is_calendar_point_unit(
-        parse_unit("calendar_year", registry=REGISTRY), registry=REGISTRY
+        unit=parse_unit(unit_str="calendar_year", registry=REGISTRY), registry=REGISTRY
     )
     assert is_calendar_point_unit(
-        parse_unit("calendar_month", registry=REGISTRY), registry=REGISTRY
+        unit=parse_unit(unit_str="calendar_month", registry=REGISTRY), registry=REGISTRY
     )
     assert is_calendar_point_unit(
-        parse_unit("calendar_day", registry=REGISTRY), registry=REGISTRY
+        unit=parse_unit(unit_str="calendar_day", registry=REGISTRY), registry=REGISTRY
     )
     # Durations and ordinary units are not points.
     assert not is_calendar_point_unit(
-        parse_unit("delta_calendar_year", registry=REGISTRY), registry=REGISTRY
+        unit=parse_unit(unit_str="delta_calendar_year", registry=REGISTRY),
+        registry=REGISTRY,
     )
     assert not is_calendar_point_unit(
-        parse_unit("year", registry=REGISTRY), registry=REGISTRY
+        unit=parse_unit(unit_str="year", registry=REGISTRY), registry=REGISTRY
     )
     assert not is_calendar_point_unit(
-        parse_unit("CURRENCY / month", registry=REGISTRY), registry=REGISTRY
+        unit=parse_unit(unit_str="CURRENCY / month", registry=REGISTRY),
+        registry=REGISTRY,
     )
 
 
@@ -393,13 +395,13 @@ def test_duration_token_is_equivalent_to_the_plain_time_unit():
     # are ratio 1 against year / month / day, so existing duration declarations
     # are unchanged.
     assert units_are_equivalent(
-        left=resolve_compositional_unit(TTSIMUnit.YEARS, registry=REGISTRY),
-        right=parse_unit("year", registry=REGISTRY),
+        left=resolve_compositional_unit(unit=TTSIMUnit.YEARS, registry=REGISTRY),
+        right=parse_unit(unit_str="year", registry=REGISTRY),
         registry=REGISTRY,
     )
     assert units_are_equivalent(
-        left=resolve_compositional_unit(TTSIMUnit.MONTHS, registry=REGISTRY),
-        right=parse_unit("month", registry=REGISTRY),
+        left=resolve_compositional_unit(unit=TTSIMUnit.MONTHS, registry=REGISTRY),
+        right=parse_unit(unit_str="month", registry=REGISTRY),
         registry=REGISTRY,
     )
 
@@ -465,16 +467,20 @@ def test_policy_function_explicit_dimensionless():
     ],
 )
 def test_resolve_compositional_unit_period_mapping(token, expected):
-    resolved = resolve_compositional_unit(token, registry=REGISTRY)
+    resolved = resolve_compositional_unit(unit=token, registry=REGISTRY)
     assert units_are_equivalent(
-        left=resolved, right=parse_unit(expected, registry=REGISTRY), registry=REGISTRY
+        left=resolved,
+        right=parse_unit(unit_str=expected, registry=REGISTRY),
+        registry=REGISTRY,
     )
 
 
 def test_resolve_compositional_unit_dimensionless():
     # A share, a rate, a head count: declared `TTSIMUnit.DIMENSIONLESS`.
     assert units_are_equivalent(
-        left=resolve_compositional_unit(TTSIMUnit.DIMENSIONLESS, registry=REGISTRY),
+        left=resolve_compositional_unit(
+            unit=TTSIMUnit.DIMENSIONLESS, registry=REGISTRY
+        ),
         right=REGISTRY.dimensionless,
         registry=REGISTRY,
     )
@@ -483,10 +489,10 @@ def test_resolve_compositional_unit_dimensionless():
 def test_flow_period_resolution_distinguishes_month_and_year():
     """A monthly flow and its yearly variant resolve to non-equivalent units."""
     betrag_m = resolve_compositional_unit(
-        TTSIMUnit.CURRENCY.PER_MONTH, registry=REGISTRY
+        unit=TTSIMUnit.CURRENCY.PER_MONTH, registry=REGISTRY
     )
     betrag_y = resolve_compositional_unit(
-        TTSIMUnit.CURRENCY.PER_YEAR, registry=REGISTRY
+        unit=TTSIMUnit.CURRENCY.PER_YEAR, registry=REGISTRY
     )
     assert not units_are_equivalent(left=betrag_m, right=betrag_y, registry=REGISTRY)
 
@@ -622,8 +628,8 @@ def test_time_conversion_variants_rebased_period():
     betrag_y_unit = variants["betrag_y"].unit  # ty: ignore[unresolved-attribute]
     assert betrag_y_unit == TTSIMUnit.CURRENCY.PER_YEAR
     assert units_are_equivalent(
-        left=resolve_compositional_unit(betrag_y_unit, registry=REGISTRY),
-        right=parse_unit("CURRENCY / year", registry=REGISTRY),
+        left=resolve_compositional_unit(unit=betrag_y_unit, registry=REGISTRY),
+        right=parse_unit(unit_str="CURRENCY / year", registry=REGISTRY),
         registry=REGISTRY,
     )
 
@@ -932,11 +938,11 @@ def test_is_flow_property():
 def test_compositional_unit_resolves_to_expected_pint_unit(spelling, expected):
     # Every compositional spelling resolves to the pint unit it names.
     compositional = resolve_compositional_unit(
-        parse_compositional_unit(spelling), registry=REGISTRY
+        unit=parse_compositional_unit(spelling), registry=REGISTRY
     )
     assert units_are_equivalent(
         left=compositional,
-        right=parse_unit(expected, registry=REGISTRY),
+        right=parse_unit(unit_str=expected, registry=REGISTRY),
         registry=REGISTRY,
     )
 
@@ -945,7 +951,7 @@ def test_person_per_level_resolves_to_head_count():
     # DIMENSIONLESS_PER_BG is a head count at bg: a dimensionless 1 / [bg], the unit
     # a COUNT aggregation to bg mints (GEP 10).
     compositional = resolve_compositional_unit(
-        parse_compositional_unit("DIMENSIONLESS_PER_BG"), registry=REGISTRY
+        unit=parse_compositional_unit("DIMENSIONLESS_PER_BG"), registry=REGISTRY
     )
     assert units_are_equivalent(
         left=compositional,
@@ -969,10 +975,10 @@ def test_terminal_per_person_parses_and_resolves_to_bare():
     # A terminal `_PER_PERSON` is the deprecated per-person spelling: it carries no
     # grouping level and resolves to the bare unit (GEP 10).
     parsed = parse_compositional_unit("CURRENCY_PER_MONTH_PER_PERSON")
-    resolved = resolve_compositional_unit(parsed, registry=REGISTRY)
+    resolved = resolve_compositional_unit(unit=parsed, registry=REGISTRY)
     assert units_are_equivalent(
         left=resolved,
-        right=parse_unit("CURRENCY / month", registry=REGISTRY),
+        right=parse_unit(unit_str="CURRENCY / month", registry=REGISTRY),
         registry=REGISTRY,
     )
 
@@ -993,11 +999,11 @@ def test_per_person_before_a_period_is_rejected():
 
 def test_fluent_terminal_per_person_resolves_to_bare():
     resolved = resolve_compositional_unit(
-        TTSIMUnit.CURRENCY.PER_MONTH.PER_PERSON, registry=REGISTRY
+        unit=TTSIMUnit.CURRENCY.PER_MONTH.PER_PERSON, registry=REGISTRY
     )
     assert units_are_equivalent(
         left=resolved,
-        right=parse_unit("CURRENCY / month", registry=REGISTRY),
+        right=parse_unit(unit_str="CURRENCY / month", registry=REGISTRY),
         registry=REGISTRY,
     )
 
@@ -1016,10 +1022,10 @@ def test_fluent_per_person_before_a_period_is_rejected():
 def test_concrete_currency_base_resolves_like_agnostic():
     # For dimensionality a concrete currency means exactly what CURRENCY means.
     concrete = resolve_compositional_unit(
-        parse_compositional_unit("CASTAR_PER_MONTH"), registry=REGISTRY
+        unit=parse_compositional_unit("CASTAR_PER_MONTH"), registry=REGISTRY
     )
     agnostic = resolve_compositional_unit(
-        parse_compositional_unit("CURRENCY_PER_MONTH"), registry=REGISTRY
+        unit=parse_compositional_unit("CURRENCY_PER_MONTH"), registry=REGISTRY
     )
     assert units_are_equivalent(left=concrete, right=agnostic, registry=REGISTRY)
 
@@ -1027,7 +1033,7 @@ def test_concrete_currency_base_resolves_like_agnostic():
 def test_resolve_compositional_unit_rejects_unregistered_level():
     with pytest.raises(UnitDefinitionError, match="grouping level"):
         resolve_compositional_unit(
-            parse_compositional_unit("CURRENCY_PER_NEVERLAND"), registry=REGISTRY
+            unit=parse_compositional_unit("CURRENCY_PER_NEVERLAND"), registry=REGISTRY
         )
 
 
@@ -1038,7 +1044,7 @@ def test_working_hour_is_its_own_dimension():
     assert REGISTRY.Quantity(1.0, "working_hour").dimensionality == {"[hours]": 1}
     assert not REGISTRY.Quantity(1.0, "working_hour").is_compatible_with("day")
     hours_per_week = resolve_compositional_unit(
-        TTSIMUnit.HOURS.PER_WEEK, registry=REGISTRY
+        unit=TTSIMUnit.HOURS.PER_WEEK, registry=REGISTRY
     )
     assert REGISTRY.Quantity(1.0, hours_per_week).dimensionality == {
         "[hours]": 1,
@@ -1050,17 +1056,17 @@ def test_bare_time_hour_is_no_longer_an_admissible_token():
     # There is exactly one spelling for working hours; pint's `[time]` `hour` is
     # not admissible (GEP 10).
     with pytest.raises(UnitDefinitionError, match="does not know about"):
-        parse_unit("working_hour / hour", registry=REGISTRY)
+        parse_unit(unit_str="working_hour / hour", registry=REGISTRY)
 
 
 def test_hours_per_week_rebases_period_only():
     # The one conversion working hours admit: re-basing the [time] period
     # (week -> month) leaves the [hours] numerator untouched.
     per_week = resolve_compositional_unit(
-        parse_compositional_unit("HOURS_PER_WEEK"), registry=REGISTRY
+        unit=parse_compositional_unit("HOURS_PER_WEEK"), registry=REGISTRY
     )
     per_month = resolve_compositional_unit(
-        parse_compositional_unit("HOURS_PER_MONTH"), registry=REGISTRY
+        unit=parse_compositional_unit("HOURS_PER_MONTH"), registry=REGISTRY
     )
     assert (
         per_week.dimensionality
@@ -1102,7 +1108,7 @@ def test_cast_target_resolves_like_a_column_declaration():
         left=resolve_compositional_cast_unit(
             unit=TTSIMUnit.MONTHS, where="test", registry=REGISTRY
         ),
-        right=resolve_compositional_unit(TTSIMUnit.MONTHS, registry=REGISTRY),
+        right=resolve_compositional_unit(unit=TTSIMUnit.MONTHS, registry=REGISTRY),
         registry=REGISTRY,
     )
 
@@ -1117,7 +1123,7 @@ def test_hours_denominator_resolves_level_neutral():
     # A wage floor is a price, owned by nobody: with a working-hours denominator
     # and no spelled level it is level-neutral, so `floor * hours` cancels
     # cleanly against the physical quantity (GEP 10) — the same as areas.
-    expected = parse_unit("CURRENCY / working_hour", registry=REGISTRY)
+    expected = parse_unit(unit_str="CURRENCY / working_hour", registry=REGISTRY)
     assert units_are_equivalent(
         left=resolve_compositional_column_unit(
             unit=TTSIMUnit.CURRENCY.PER_HOURS,
@@ -1158,7 +1164,7 @@ def test_area_denominator_resolves_level_neutral():
     # A rent cap is a price, owned by nobody: with an area denominator and no
     # spelled level it is level-neutral, so `cap * area` cancels cleanly against
     # the physical quantity (GEP 10). Both the column and parameter resolver apply.
-    expected = parse_unit("CURRENCY / meter ** 2 / month", registry=REGISTRY)
+    expected = parse_unit(unit_str="CURRENCY / meter ** 2 / month", registry=REGISTRY)
     assert units_are_equivalent(
         left=resolve_compositional_column_unit(
             unit=TTSIMUnit.CURRENCY.PER_SQUARE_METER.PER_MONTH,
@@ -1194,7 +1200,7 @@ def test_bare_area_base_is_level_neutral():
             where="test",
             registry=REGISTRY,
         ),
-        right=parse_unit("meter ** 2", registry=REGISTRY),
+        right=parse_unit(unit_str="meter ** 2", registry=REGISTRY),
         registry=REGISTRY,
     )
 
@@ -1210,6 +1216,6 @@ def test_area_base_with_group_level_carries_the_group_level():
             where="test",
             registry=REGISTRY,
         ),
-        right=parse_unit("meter ** 2 / grouping_level_hh", registry=REGISTRY),
+        right=parse_unit(unit_str="meter ** 2 / grouping_level_hh", registry=REGISTRY),
         registry=REGISTRY,
     )

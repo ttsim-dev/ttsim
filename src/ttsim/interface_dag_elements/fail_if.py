@@ -32,7 +32,7 @@ from ttsim.interface_dag_elements.unit_checks import (
     fail_if_environment_units_are_inconsistent,
     fail_if_environment_units_are_missing,
     fail_if_input_units_are_inconsistent,
-    fail_if_not_all_leaves_are_unit_annotated_columns,
+    flatten_unit_annotated_input_tree,
 )
 from ttsim.tt.column_objects_param_function import (
     DEFAULT_END_DATE,
@@ -1032,12 +1032,15 @@ def not_all_input_leaves_are_unit_annotated_columns(
 ) -> None:
     """Reject a unit-annotated input tree with any bare (untagged) leaf.
 
+    Reports the bare leaves up front, next to the other input-data checks. Each
+    consumer of the tree revalidates as it flattens
+    (:func:`flatten_unit_annotated_input_tree`), so the guarantee does not rest on
+    this node running first.
+
     Raises:
         UnitConsistencyError: If any leaf is not a ``UnitAnnotatedColumn``.
     """
-    fail_if_not_all_leaves_are_unit_annotated_columns(
-        flat=dt.flatten_to_tree_paths(input_data__tree_with_unit_annotations)
-    )
+    flatten_unit_annotated_input_tree(tree=input_data__tree_with_unit_annotations)
 
 
 @fail_function(
@@ -1058,8 +1061,8 @@ def input_currency_is_not_concrete(
     """
     agnostic = sorted(
         dt.qname_from_tree_path(path)
-        for path, col in dt.flatten_to_tree_paths(
-            input_data__tree_with_unit_annotations
+        for path, col in flatten_unit_annotated_input_tree(
+            tree=input_data__tree_with_unit_annotations
         ).items()
         if token_is_agnostic_currency(col.unit)
     )

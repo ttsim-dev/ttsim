@@ -74,7 +74,7 @@ def _canonicalize_input_dtype(
     if isinstance(arr, pd.Series):
         return _canonicalize_series(arr=arr, xnp=xnp, column_label=column_label)
     if pd.api.types.is_unsigned_integer_dtype(arr):
-        _fail_if_uint_overflows_int64(arr, column_label=column_label)
+        _fail_if_uint_overflows_int64(arr=arr, column_label=column_label)
         return xnp.asarray(arr, dtype=xnp.int64)
     return xnp.asarray(arr)
 
@@ -100,7 +100,7 @@ def _canonicalize_series(
         if arr.isna().any():
             return arr.to_numpy(dtype=object)
         if pd.api.types.is_unsigned_integer_dtype(dtype):
-            _fail_if_uint_overflows_int64(arr, column_label=column_label)
+            _fail_if_uint_overflows_int64(arr=arr, column_label=column_label)
         return xnp.asarray(arr.astype("int64"))
     return xnp.asarray(arr)
 

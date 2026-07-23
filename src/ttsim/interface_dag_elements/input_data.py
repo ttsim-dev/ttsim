@@ -20,6 +20,9 @@ from ttsim.interface_dag_elements.interface_node_objects import (
 from ttsim.interface_dag_elements.processed_data import (
     _canonicalize_input_dtype,
 )
+from ttsim.interface_dag_elements.unit_checks import (
+    flatten_unit_annotated_input_tree,
+)
 from ttsim.tt.currencies import UnitSystem
 from ttsim.tt.units import (
     CompositeUnit,
@@ -207,7 +210,7 @@ def flat_from_tree_with_unit_annotations(
 ) -> FlatData:
     """The input data as a flat dictionary of arrays."""
     registry = unit_system.registry
-    flat = dt.flatten_to_tree_paths(tree_with_unit_annotations)
+    flat = flatten_unit_annotated_input_tree(tree=tree_with_unit_annotations)
     return {
         path: strip_input_quantity_at_boundary(
             quantity=registry.Quantity(
@@ -236,7 +239,7 @@ def units_from_tree_with_unit_annotations(
     declared unit on all three axes — currency presence, grouping level, and the
     residual measurement.
     """
-    flat = dt.flatten_to_tree_paths(tree_with_unit_annotations)
+    flat = flatten_unit_annotated_input_tree(tree=tree_with_unit_annotations)
     return {
         dt.qname_from_tree_path(path): resolve_compositional_unit(
             unit=col.unit, registry=unit_system.registry, with_level=True
@@ -258,7 +261,7 @@ def unit_tokens_from_tree_with_unit_annotations(
     input check compares its grouping level against the declared unit's token
     (GEP 10).
     """
-    flat = dt.flatten_to_tree_paths(tree_with_unit_annotations)
+    flat = flatten_unit_annotated_input_tree(tree=tree_with_unit_annotations)
     return {dt.qname_from_tree_path(path): col.unit for path, col in flat.items()}
 
 

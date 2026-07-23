@@ -515,13 +515,6 @@ def test_beartype_catches_structural_misuse_at_rounded_boundary(xnp) -> None:
         rounded(bogus)
 
 
-# ----------------------------------------------------------------------------
-# Currency-denominated rounding specs (GEP 10): the magnitudes are statutory
-# numbers written in a concrete currency and never converted — the declared
-# currency must be the statutory one at the policy date.
-# ----------------------------------------------------------------------------
-
-
 def test_policy_environment_rejects_non_statutory_rounding_spec_currency():
     @policy_function(
         rounding_spec=RoundingSpec(

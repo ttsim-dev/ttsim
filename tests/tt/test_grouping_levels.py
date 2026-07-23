@@ -45,11 +45,6 @@ SYSTEM = UnitSystem(
 REGISTRY = SYSTEM.registry
 
 
-# ----------------------------------------------------------------------------
-# grouping levels as base dimensions + the dimensionless head count
-# ----------------------------------------------------------------------------
-
-
 @pytest.fixture(autouse=True)
 def _register_middle_earth_levels():
     """Register a representative level set for the level-aware tests.
@@ -63,10 +58,10 @@ def _register_middle_earth_levels():
 def test_register_grouping_levels_does_not_register_person():
     # There is no `person` grouping level (GEP 10): it is never registered as a
     # dimension, so dividing by it is rejected as an unknown level.
-    register_grouping_levels([], registry=REGISTRY)
+    register_grouping_levels(names=[], registry=REGISTRY)
     with pytest.raises(UnitDefinitionError, match="Unknown grouping level"):
         divide_by_grouping_level(
-            unit=parse_unit("CURRENCY", registry=REGISTRY),
+            unit=parse_unit(unit_str="CURRENCY", registry=REGISTRY),
             level="person",
             registry=REGISTRY,
         )
@@ -74,13 +69,17 @@ def test_register_grouping_levels_does_not_register_person():
 
 def test_register_grouping_levels_is_idempotent():
     # Re-registering an already-known level is a tolerated no-op.
-    register_grouping_levels(["hh"], registry=REGISTRY)
-    register_grouping_levels(["hh", "bg"], registry=REGISTRY)
+    register_grouping_levels(names=["hh"], registry=REGISTRY)
+    register_grouping_levels(names=["hh", "bg"], registry=REGISTRY)
     first = divide_by_grouping_level(
-        unit=parse_unit("CURRENCY", registry=REGISTRY), level="hh", registry=REGISTRY
+        unit=parse_unit(unit_str="CURRENCY", registry=REGISTRY),
+        level="hh",
+        registry=REGISTRY,
     )
     second = divide_by_grouping_level(
-        unit=parse_unit("CURRENCY", registry=REGISTRY), level="hh", registry=REGISTRY
+        unit=parse_unit(unit_str="CURRENCY", registry=REGISTRY),
+        level="hh",
+        registry=REGISTRY,
     )
     assert units_are_equivalent(left=first, right=second, registry=REGISTRY)
 
@@ -88,12 +87,12 @@ def test_register_grouping_levels_is_idempotent():
 def test_each_level_is_its_own_base_dimension():
     # No conversion between levels: hh and bg denominators are distinct dimensions.
     at_hh = divide_by_grouping_level(
-        unit=parse_unit("CURRENCY / month", registry=REGISTRY),
+        unit=parse_unit(unit_str="CURRENCY / month", registry=REGISTRY),
         level="hh",
         registry=REGISTRY,
     )
     at_bg = divide_by_grouping_level(
-        unit=parse_unit("CURRENCY / month", registry=REGISTRY),
+        unit=parse_unit(unit_str="CURRENCY / month", registry=REGISTRY),
         level="bg",
         registry=REGISTRY,
     )
@@ -104,24 +103,21 @@ def test_each_level_is_its_own_base_dimension():
 def test_unregistered_grouping_level_is_rejected():
     with pytest.raises(UnitDefinitionError, match="Unknown grouping level"):
         divide_by_grouping_level(
-            unit=parse_unit("CURRENCY", registry=REGISTRY),
+            unit=parse_unit(unit_str="CURRENCY", registry=REGISTRY),
             level="eg_not_registered",
             registry=REGISTRY,
         )
 
 
-# ----------------------------------------------------------------------------
-# A level is a denominator (divide_by_grouping_level)
-# ----------------------------------------------------------------------------
-
-
 def test_currency_flow_resolves_with_hh_denominator_at_level_hh():
-    base = resolve_compositional_unit(TTSIMUnit.CURRENCY.PER_MONTH, registry=REGISTRY)
+    base = resolve_compositional_unit(
+        unit=TTSIMUnit.CURRENCY.PER_MONTH, registry=REGISTRY
+    )
     at_hh = divide_by_grouping_level(unit=base, level="hh", registry=REGISTRY)
     assert units_are_equivalent(
         left=at_hh,
         right=divide_by_grouping_level(
-            unit=parse_unit("CURRENCY / month", registry=REGISTRY),
+            unit=parse_unit(unit_str="CURRENCY / month", registry=REGISTRY),
             level="hh",
             registry=REGISTRY,
         ),
@@ -140,9 +136,9 @@ def test_currency_flow_resolves_with_hh_denominator_at_level_hh():
 def test_bare_tokens_resolve_without_a_level(token):
     # A bare unit carries no grouping denominator: the resolved unit is the plain
     # physical unit, unchanged by any level.
-    resolved = resolve_compositional_unit(token, registry=REGISTRY)
+    resolved = resolve_compositional_unit(unit=token, registry=REGISTRY)
     hh_division = divide_by_grouping_level(
-        unit=parse_unit("CURRENCY", registry=REGISTRY),
+        unit=parse_unit(unit_str="CURRENCY", registry=REGISTRY),
         level="hh",
         registry=REGISTRY,
     )
@@ -151,15 +147,10 @@ def test_bare_tokens_resolve_without_a_level(token):
     assert resolved.dimensionality != hh_division.dimensionality
 
 
-# ----------------------------------------------------------------------------
-# The dimensionless head count: the bridge cancels
-# ----------------------------------------------------------------------------
-
-
 def test_count_bridges_hh_to_bare_via_division():
     # (CURRENCY/month/[hh]) / (1/[hh]) == CURRENCY/month (bare per-person amount).
     rent_at_hh = divide_by_grouping_level(
-        unit=parse_unit("CURRENCY / month", registry=REGISTRY),
+        unit=parse_unit(unit_str="CURRENCY / month", registry=REGISTRY),
         level="hh",
         registry=REGISTRY,
     )
@@ -169,7 +160,7 @@ def test_count_bridges_hh_to_bare_via_division():
     bridged = (
         REGISTRY.Quantity(1.0, rent_at_hh) / REGISTRY.Quantity(1.0, count_to_hh)
     ).units
-    expected = parse_unit("CURRENCY / month", registry=REGISTRY)
+    expected = parse_unit(unit_str="CURRENCY / month", registry=REGISTRY)
     assert units_are_equivalent(left=bridged, right=expected, registry=REGISTRY)
 
 
@@ -179,12 +170,12 @@ def test_count_bridges_bare_to_sn_via_multiplication():
     count_to_sn = grouping_level_count_unit(
         target_level="sn", registry=REGISTRY
     )  # 1/[sn]
-    per_person = parse_unit("CURRENCY / year", registry=REGISTRY)
+    per_person = parse_unit(unit_str="CURRENCY / year", registry=REGISTRY)
     product = (
         REGISTRY.Quantity(1.0, count_to_sn) * REGISTRY.Quantity(1.0, per_person)
     ).units
     expected = divide_by_grouping_level(
-        unit=parse_unit("CURRENCY / year", registry=REGISTRY),
+        unit=parse_unit(unit_str="CURRENCY / year", registry=REGISTRY),
         level="sn",
         registry=REGISTRY,
     )
@@ -195,21 +186,16 @@ def test_cross_level_addition_is_not_equivalent():
     # A unit at [hh] and one at [bg] are different dimensions: adding them across
     # levels is a mismatch the equivalence check catches.
     at_hh = divide_by_grouping_level(
-        unit=parse_unit("CURRENCY / month", registry=REGISTRY),
+        unit=parse_unit(unit_str="CURRENCY / month", registry=REGISTRY),
         level="hh",
         registry=REGISTRY,
     )
     at_bg = divide_by_grouping_level(
-        unit=parse_unit("CURRENCY / month", registry=REGISTRY),
+        unit=parse_unit(unit_str="CURRENCY / month", registry=REGISTRY),
         level="bg",
         registry=REGISTRY,
     )
     assert not units_are_equivalent(left=at_hh, right=at_bg, registry=REGISTRY)
-
-
-# ----------------------------------------------------------------------------
-# Individual quantities are bare, group levels are spelled, on parameters
-# ----------------------------------------------------------------------------
 
 
 def test_absent_level_is_bare():
@@ -221,7 +207,7 @@ def test_absent_level_is_bare():
     )
     assert units_are_equivalent(
         left=resolved,
-        right=parse_unit("CURRENCY / year", registry=REGISTRY),
+        right=parse_unit(unit_str="CURRENCY / year", registry=REGISTRY),
         registry=REGISTRY,
     )
 
@@ -234,7 +220,7 @@ def test_per_person_suffix_normalizes_to_bare():
     )
     assert units_are_equivalent(
         left=resolved,
-        right=parse_unit("CURRENCY / year", registry=REGISTRY),
+        right=parse_unit(unit_str="CURRENCY / year", registry=REGISTRY),
         registry=REGISTRY,
     )
 
@@ -245,7 +231,9 @@ def test_spelled_level_on_stock_param():
         unit=TTSIMUnit.CURRENCY.PER_HH, where="test", registry=REGISTRY
     )
     expected = divide_by_grouping_level(
-        unit=parse_unit("CURRENCY", registry=REGISTRY), level="hh", registry=REGISTRY
+        unit=parse_unit(unit_str="CURRENCY", registry=REGISTRY),
+        level="hh",
+        registry=REGISTRY,
     )
     assert units_are_equivalent(left=resolved, right=expected, registry=REGISTRY)
 
@@ -270,14 +258,9 @@ def test_per_person_suffix_on_scalar_param_with_name_suffix_is_bare():
     )
     assert units_are_equivalent(
         left=resolved,
-        right=parse_unit("CURRENCY / year", registry=REGISTRY),
+        right=parse_unit(unit_str="CURRENCY / year", registry=REGISTRY),
         registry=REGISTRY,
     )
-
-
-# ----------------------------------------------------------------------------
-# The level is declared, not read off the suffix, on columns
-# ----------------------------------------------------------------------------
 
 
 def test_column_omitting_the_level_is_bare():
@@ -292,7 +275,7 @@ def test_column_omitting_the_level_is_bare():
     )
     assert units_are_equivalent(
         left=resolved,
-        right=parse_unit("CURRENCY / month", registry=REGISTRY),
+        right=parse_unit(unit_str="CURRENCY / month", registry=REGISTRY),
         registry=REGISTRY,
     )
 
@@ -307,7 +290,7 @@ def test_intensive_column_omitting_the_level_stays_bare_at_a_group_suffix():
     )
     assert units_are_equivalent(
         left=resolved,
-        right=parse_unit("delta_calendar_month", registry=REGISTRY),
+        right=parse_unit(unit_str="delta_calendar_month", registry=REGISTRY),
         registry=REGISTRY,
     )
 
@@ -323,7 +306,7 @@ def test_intensive_column_with_a_spelled_group_level_resolves():
         registry=REGISTRY,
     )
     expected = divide_by_grouping_level(
-        unit=parse_unit("delta_calendar_month", registry=REGISTRY),
+        unit=parse_unit(unit_str="delta_calendar_month", registry=REGISTRY),
         level="hh",
         registry=REGISTRY,
     )
@@ -368,7 +351,7 @@ def test_per_person_suffix_is_allowed_on_a_group_suffixed_name():
     )
     assert units_are_equivalent(
         left=resolved,
-        right=parse_unit("CURRENCY / month", registry=REGISTRY),
+        right=parse_unit(unit_str="CURRENCY / month", registry=REGISTRY),
         registry=REGISTRY,
     )
 
@@ -417,26 +400,21 @@ def test_calendar_point_carries_a_level():
         registry=REGISTRY,
     )
     expected = divide_by_grouping_level(
-        unit=parse_unit("calendar_year", registry=REGISTRY),
+        unit=parse_unit(unit_str="calendar_year", registry=REGISTRY),
         level="hh",
         registry=REGISTRY,
     )
     assert units_are_equivalent(left=resolved, right=expected, registry=REGISTRY)
     assert not units_are_equivalent(
         left=resolved,
-        right=parse_unit("calendar_year", registry=REGISTRY),
+        right=parse_unit(unit_str="calendar_year", registry=REGISTRY),
         registry=REGISTRY,
     )
 
 
-# ----------------------------------------------------------------------------
-# Level-aware aggregation (resolved_unit_for_aggregation)
-# ----------------------------------------------------------------------------
-
-
 def test_resolved_aggregation_sum_moves_bare_source_to_hh():
     # SUM of a bare per-person income to hh acquires the [hh] denominator.
-    source = parse_unit("CURRENCY / month", registry=REGISTRY)
+    source = parse_unit(unit_str="CURRENCY / month", registry=REGISTRY)
     result = resolved_unit_for_aggregation(
         source_unit=source,
         agg_type=AggType.SUM,
@@ -445,7 +423,7 @@ def test_resolved_aggregation_sum_moves_bare_source_to_hh():
         registry=REGISTRY,
     )
     expected = divide_by_grouping_level(
-        unit=parse_unit("CURRENCY / month", registry=REGISTRY),
+        unit=parse_unit(unit_str="CURRENCY / month", registry=REGISTRY),
         level="hh",
         registry=REGISTRY,
     )
@@ -481,7 +459,7 @@ def test_resolved_aggregation_count_to_individual_target_is_bare_dimensionless()
 def test_resolved_aggregation_min_over_bare_source_acquires_target_level():
     # An extreme is a property of the target group whatever the source's base
     # (GEP 10): an ``_hh`` min of a bare month-duration age carries ``[hh]``.
-    source = parse_unit("delta_calendar_month", registry=REGISTRY)
+    source = parse_unit(unit_str="delta_calendar_month", registry=REGISTRY)
     result = resolved_unit_for_aggregation(
         source_unit=source,
         agg_type=AggType.MIN,
@@ -512,7 +490,7 @@ def test_resolved_aggregation_any_all_are_boolean_at_target_level(agg_type):
 
 
 def test_resolved_aggregation_sum_over_bare_source_acquires_target_level():
-    source = parse_unit("working_hour / week", registry=REGISTRY)
+    source = parse_unit(unit_str="working_hour / week", registry=REGISTRY)
     result = resolved_unit_for_aggregation(
         source_unit=source,
         agg_type=AggType.SUM,
@@ -529,7 +507,7 @@ def test_resolved_aggregation_mean_resolves_to_bare():
     # leveling it to the target would break ``mean · count = sum``. The source
     # level is dropped, leaving a bare per-person amount.
     source = divide_by_grouping_level(
-        unit=parse_unit(CURRENCY_TOKEN, registry=REGISTRY),
+        unit=parse_unit(unit_str=CURRENCY_TOKEN, registry=REGISTRY),
         level="hh",
         registry=REGISTRY,
     )
@@ -540,14 +518,14 @@ def test_resolved_aggregation_mean_resolves_to_bare():
         source_level="hh",
         registry=REGISTRY,
     )
-    expected = parse_unit(CURRENCY_TOKEN, registry=REGISTRY)
+    expected = parse_unit(unit_str=CURRENCY_TOKEN, registry=REGISTRY)
     assert units_are_equivalent(left=result, right=expected, registry=REGISTRY)
 
 
 def test_resolved_aggregation_mean_over_bare_source_stays_bare():
     # The individual reading of an intensive base is bare, so an age's mean stays
     # comparable to bare thresholds.
-    source = parse_unit("delta_calendar_month", registry=REGISTRY)
+    source = parse_unit(unit_str="delta_calendar_month", registry=REGISTRY)
     result = resolved_unit_for_aggregation(
         source_unit=source,
         agg_type=AggType.MEAN,
@@ -580,7 +558,7 @@ def test_resolved_aggregation_sum_to_individual_target_drops_source_level():
     # An agg_by_p_id SUM (individual target) over a leveled source lands on a
     # person as a bare amount.
     source = divide_by_grouping_level(
-        unit=parse_unit("CURRENCY", registry=REGISTRY),
+        unit=parse_unit(unit_str="CURRENCY", registry=REGISTRY),
         level="hh",
         registry=REGISTRY,
     )
@@ -592,7 +570,9 @@ def test_resolved_aggregation_sum_to_individual_target_drops_source_level():
         registry=REGISTRY,
     )
     assert units_are_equivalent(
-        left=result, right=parse_unit("CURRENCY", registry=REGISTRY), registry=REGISTRY
+        left=result,
+        right=parse_unit(unit_str="CURRENCY", registry=REGISTRY),
+        registry=REGISTRY,
     )
 
 
@@ -600,7 +580,7 @@ def test_resolved_aggregation_min_over_leveled_calendar_point_swaps_level():
     # Re-leveling a calendar point must not trip pint's offset-arithmetic rules:
     # levels attach and strip via *unit* arithmetic (GEP 10).
     source = divide_by_grouping_level(
-        unit=parse_unit("calendar_year", registry=REGISTRY),
+        unit=parse_unit(unit_str="calendar_year", registry=REGISTRY),
         level="hh",
         registry=REGISTRY,
     )
@@ -612,7 +592,7 @@ def test_resolved_aggregation_min_over_leveled_calendar_point_swaps_level():
         registry=REGISTRY,
     )
     expected = divide_by_grouping_level(
-        unit=parse_unit("calendar_year", registry=REGISTRY),
+        unit=parse_unit(unit_str="calendar_year", registry=REGISTRY),
         level="sn",
         registry=REGISTRY,
     )
@@ -652,14 +632,14 @@ def test_declared_head_count_per_group_bridges_like_a_count():
         unit=TTSIMUnit.DIMENSIONLESS.PER_HH, where="test", registry=REGISTRY
     )
     per_hh = divide_by_grouping_level(
-        unit=parse_unit("CURRENCY / month", registry=REGISTRY),
+        unit=parse_unit(unit_str="CURRENCY / month", registry=REGISTRY),
         level="hh",
         registry=REGISTRY,
     )
     bridged = (
         REGISTRY.Quantity(1.0, per_hh) / REGISTRY.Quantity(1.0, headcount_at_hh)
     ).units
-    expected = parse_unit("CURRENCY / month", registry=REGISTRY)
+    expected = parse_unit(unit_str="CURRENCY / month", registry=REGISTRY)
     assert units_are_equivalent(left=bridged, right=expected, registry=REGISTRY)
 
 

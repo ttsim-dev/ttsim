@@ -974,12 +974,10 @@ def fail_if_not_all_leaves_are_unit_annotated_columns(
     """Reject a unit-annotated input tree with any bare (untagged) leaf.
 
     Every leaf of the unit-annotated input tree must be a
-    :class:`UnitAnnotatedColumn`. The producers that strip the tags
-    (``input_data__flat`` / ``input_data__units``) assume this, so the
-    ``not_all_input_leaves_are_unit_annotated_columns`` fail node — which the
-    ``fail_if`` namespace orders ahead of them (see ``entry_point.lexsort_key``)
-    — calls this first, turning a bare leaf into a clean error rather than an
-    ``AttributeError`` when a producer reaches for ``.unit``.
+    :class:`UnitAnnotatedColumn`. Reach the tree through
+    :func:`flatten_unit_annotated_input_tree` rather than calling this directly:
+    every consumer dereferences ``.unit`` or ``.values``, so the check belongs to
+    the flattening step that hands those leaves out.
 
     Raises:
         UnitConsistencyError: If any leaf is not a ``UnitAnnotatedColumn``.
@@ -997,6 +995,27 @@ def fail_if_not_all_leaves_are_unit_annotated_columns(
             "with `UnitAnnotatedColumn(values=arr, unit=TTSIMUnit.DIMENSIONLESS)`, or "
             "pass untagged data via input_data__tree."
         )
+
+
+def flatten_unit_annotated_input_tree(
+    # Widened to one level the way `NestedData` is in `ttsim.typing`: beartype
+    # cannot resolve a recursive alias whose inner name is the alias itself. A
+    # bare leaf is the very thing this function reports, so `Any` is the leaf type.
+    tree: Mapping[str, Any],
+) -> dict[tuple[str, ...], UnitAnnotatedColumn]:
+    """Flatten the unit-annotated input tree, rejecting any bare leaf.
+
+    The single way to reach the tree's leaves. Validating here rather than in a
+    separate fail node means no consumer can dereference a bare leaf's ``.unit``
+    or ``.values`` and raise ``AttributeError`` instead of the documented
+    :class:`UnitConsistencyError`, whatever order the interface DAG runs them in.
+
+    Raises:
+        UnitConsistencyError: If any leaf is not a ``UnitAnnotatedColumn``.
+    """
+    flat = dt.flatten_to_tree_paths(tree)
+    fail_if_not_all_leaves_are_unit_annotated_columns(flat=flat)
+    return cast("dict[tuple[str, ...], UnitAnnotatedColumn]", flat)
 
 
 def _composite_token_level(token: CompositeUnit) -> str | None:

@@ -109,12 +109,6 @@ def test_changeover_is_a_pure_redenomination(backend):
     assert penny_era.value == pytest.approx(castar_era.value * 4)
 
 
-# ----------------------------------------------------------------------------
-# The statutory guard: every parameter's concrete currency must be the
-# statutory currency at the policy date.
-# ----------------------------------------------------------------------------
-
-
 def _load(
     leaf_name: str,
     spec: Any,
@@ -194,10 +188,10 @@ def test_entry_level_override_writes_a_changeover():
 def test_unit_forward_fills_across_a_gap():
     """A dated entry without ``unit:`` inherits the most recent earlier unit.
 
-    The reproducer from the GEP-10 design discussion: the 1990 entry omits
-    ``unit:`` and there is no top-level fallback, yet it resolves — to the
-    silver penny declared at 1900, forward-filled. The guard proves it: the
-    entry passes in a silver-penny era and fails against castar.
+    The 1990 entry omits ``unit:`` and there is no top-level fallback, yet it
+    resolves — to the silver penny declared at 1900, forward-filled. The
+    statutory guard proves which currency it inherited: the entry passes in a
+    silver-penny era and fails against castar.
     """
     spec = {
         **_HEADER,
@@ -504,13 +498,6 @@ def test_unknown_annotation_is_rejected_at_load():
         )
 
 
-# --------------------------------------------------------------------------
-# A policy system's interconvertible currencies plus its statutory mapping
-# (GEP 10). Middle Earth's system is `middle_earth.UNIT_SYSTEM`; the rule tests
-# construct throwaway systems.
-# --------------------------------------------------------------------------
-
-
 def _fresh_system(**overrides: Any) -> UnitSystem:
     """A Middle-Earth-shaped system, with fields overridable per test."""
     kwargs: dict[str, Any] = {
@@ -670,6 +657,20 @@ def test_undashed_statutory_currency_key_is_rejected(start_date):
     `date.fromisoformat` would also parse the basic and week-date forms."""
     with pytest.raises(UnitDefinitionError, match="dashed ISO date"):
         _fresh_system(statutory_currencies={start_date: "CASTAR"})
+
+
+def test_grouping_level_colliding_with_a_period_step_is_rejected():
+    """A grouping level may not claim a builder step a denominator already owns —
+    a `month` level would turn `PER_MONTH` into a level for the whole process."""
+    with pytest.raises(UnitDefinitionError, match="already a unit denominator"):
+        _fresh_system(grouping_levels=["month"])
+
+
+def test_person_is_rejected_as_a_grouping_level():
+    """There is no individual grouping level (GEP 10), so `person` is refused
+    rather than registered as a dimension."""
+    with pytest.raises(UnitDefinitionError, match="not a grouping level"):
+        _fresh_system(grouping_levels=["person"])
 
 
 def test_failed_grouping_level_registration_publishes_no_currency():

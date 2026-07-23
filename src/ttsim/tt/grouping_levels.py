@@ -14,6 +14,7 @@ from collections.abc import Iterable
 
 import pint
 
+from ttsim.exceptions import UnitDefinitionError
 from ttsim.tt.units import (
     _ALLOWED_UNIT_TOKENS,
     _INDIVIDUAL_LEVEL_NORMALIZED_AWAY,
@@ -35,6 +36,8 @@ def register_unit_builder_levels(names: Iterable[str]) -> None:
     ``person`` grouping level (GEP 10): it normalizes to the bare unit, adding no
     level. New code drops the suffix.
     """
+    names = list(names)
+    fail_if_grouping_level_names_are_invalid(names=names)
     for name in (_INDIVIDUAL_LEVEL_NORMALIZED_AWAY, *names):
         if name in _unit_builder_levels:
             continue
@@ -44,6 +47,41 @@ def register_unit_builder_levels(names: Iterable[str]) -> None:
             f"PER_{name.upper()}",
             property(lambda self, level=name: self.PER_LEVEL(level)),
         )
+
+
+def fail_if_grouping_level_names_are_invalid(names: Iterable[str]) -> None:
+    """Reject a grouping-level name the builder cannot own.
+
+    A level claims the builder step ``PER_<NAME>`` on :class:`CompositeUnit`,
+    which is a process-global class shared by every system. Two names are
+    therefore refused:
+
+    - ``person``, because there is no individual grouping level (GEP 10) — an
+      individual quantity is bare — even though the deprecated ``.PER_PERSON``
+      step exists;
+    - any name whose step is already one of the closed area/period steps, since
+      a ``month`` level would turn ``PER_MONTH`` from a flow period into a
+      grouping level for every declaration in the process.
+
+    Levels are discovered from the policy environment's ``*_id`` columns, so a
+    ``month_id`` or ``person_id`` column reaches this check.
+
+    Raises:
+        UnitDefinitionError: If any name is refused.
+    """
+    for name in names:
+        if name.lower() == _INDIVIDUAL_LEVEL_NORMALIZED_AWAY:
+            raise UnitDefinitionError(
+                f"{name!r} is not a grouping level: an individual quantity is bare, "
+                f"carrying no level (GEP 10). Drop it from the grouping levels."
+            )
+        step = f"PER_{name.upper()}"
+        if name not in _unit_builder_levels and hasattr(CompositeUnit, step):
+            raise UnitDefinitionError(
+                f"Grouping level {name!r} would claim the builder step {step}, which "
+                f"is already a unit denominator. Rename the group so its level does "
+                f"not collide with an area or period (GEP 10)."
+            )
 
 
 def register_grouping_levels(names: Iterable[str], registry: pint.UnitRegistry) -> None:
@@ -87,6 +125,8 @@ def define_grouping_level_dimensions(
     vocabulary until every name is known to be definable runs this first.
     Defining an already-known level is a tolerated no-op.
     """
+    names = list(names)
+    fail_if_grouping_level_names_are_invalid(names=names)
     for name in names:
         unit_name = _grouping_level_unit_name(name)
         if unit_name not in registry:

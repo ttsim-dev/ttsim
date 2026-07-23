@@ -414,17 +414,17 @@ def test_resolution_combines_token_and_name_suffix():
     # bare rate and likewise level-neutral.
     assert units_are_equivalent(
         left=_scalar_unit(resolved=resolved, qname="wealth"),
-        right=parse_unit("CURRENCY", registry=REGISTRY),
+        right=parse_unit(unit_str="CURRENCY", registry=REGISTRY),
         registry=REGISTRY,
     )
     assert units_are_equivalent(
         left=_scalar_unit(resolved=resolved, qname="tax_rate_y"),
-        right=parse_unit("1 / year", registry=REGISTRY),
+        right=parse_unit(unit_str="1 / year", registry=REGISTRY),
         registry=REGISTRY,
     )
     assert units_are_equivalent(
         left=_scalar_unit(resolved=resolved, qname="amount_y"),
-        right=parse_unit("CURRENCY / year", registry=REGISTRY),
+        right=parse_unit(unit_str="CURRENCY / year", registry=REGISTRY),
         registry=REGISTRY,
     )
 
@@ -457,12 +457,12 @@ def test_resolution_includes_framework_date_nodes():
     )
     assert units_are_equivalent(
         left=_scalar_unit(resolved=resolved, qname="policy_year"),
-        right=parse_unit("calendar_year", registry=REGISTRY),
+        right=parse_unit(unit_str="calendar_year", registry=REGISTRY),
         registry=REGISTRY,
     )
     assert not units_are_equivalent(
         left=_scalar_unit(resolved=resolved, qname="policy_year"),
-        right=parse_unit("year", registry=REGISTRY),
+        right=parse_unit(unit_str="year", registry=REGISTRY),
         registry=REGISTRY,
     )
     assert "policy_year" in FRAMEWORK_DATE_NODE_UNITS
@@ -483,12 +483,12 @@ def test_dict_param_with_per_leaf_units_resolves_to_unit_tree():
     unit_tree = _unit_tree(resolved=resolved, qname="schedule")
     assert units_are_equivalent(
         left=unit_tree["child_amount_y"],
-        right=parse_unit("CURRENCY / year", registry=REGISTRY),
+        right=parse_unit(unit_str="CURRENCY / year", registry=REGISTRY),
         registry=REGISTRY,
     )
     assert units_are_equivalent(
         left=unit_tree["max_age"],
-        right=parse_unit("year", registry=REGISTRY),
+        right=parse_unit(unit_str="year", registry=REGISTRY),
         registry=REGISTRY,
     )
 
@@ -526,7 +526,7 @@ def test_dict_param_integer_keyed_flow_leaf_spells_its_period():
     )
     assert units_are_equivalent(
         left=_unit_tree(resolved=resolved, qname="amount_by_rank")[1],
-        right=parse_unit("CURRENCY / month", registry=REGISTRY),
+        right=parse_unit(unit_str="CURRENCY / month", registry=REGISTRY),
         registry=REGISTRY,
     )
 
@@ -565,12 +565,12 @@ def test_dict_param_mixed_periods_via_spelled_units_are_allowed():
     unit_tree = _unit_tree(resolved=resolved, qname="schedule")
     assert units_are_equivalent(
         left=unit_tree["base_amount_m"],
-        right=parse_unit("CURRENCY / month", registry=REGISTRY),
+        right=parse_unit(unit_str="CURRENCY / month", registry=REGISTRY),
         registry=REGISTRY,
     )
     assert units_are_equivalent(
         left=unit_tree["annual_bonus_y"],
-        right=parse_unit("CURRENCY / year", registry=REGISTRY),
+        right=parse_unit(unit_str="CURRENCY / year", registry=REGISTRY),
         registry=REGISTRY,
     )
 
@@ -603,7 +603,7 @@ def test_scalar_flow_param_resolves_via_name_suffix():
     )
     assert units_are_equivalent(
         left=_scalar_unit(resolved=resolved, qname="lump_sum_deduction_y"),
-        right=parse_unit("CURRENCY / year", registry=REGISTRY),
+        right=parse_unit(unit_str="CURRENCY / year", registry=REGISTRY),
         registry=REGISTRY,
     )
 
@@ -4393,7 +4393,9 @@ def test_param_function_unit_resolves_via_leaf_name_suffix():
     # The `_fam` suffix puts this flow at the family level (GEP 10).
     assert units_are_equivalent(
         left=_scalar_unit(resolved=resolved, qname="max_amount_m_fam"),
-        right=parse_unit("CURRENCY / month / grouping_level_fam", registry=REGISTRY),
+        right=parse_unit(
+            unit_str="CURRENCY / month / grouping_level_fam", registry=REGISTRY
+        ),
         registry=REGISTRY,
     )
 
@@ -4447,7 +4449,7 @@ def test_concrete_currency_token_resolves_like_agnostic_counterpart():
     )
     assert units_are_equivalent(
         left=_scalar_unit(resolved=resolved, qname="threshold"),
-        right=parse_unit("CURRENCY", registry=REGISTRY),
+        right=parse_unit(unit_str="CURRENCY", registry=REGISTRY),
         registry=REGISTRY,
     )
 
@@ -4487,7 +4489,7 @@ def test_param_mapping_object_resolves_output_axis():
     )
     assert units_are_equivalent(
         left=_scalar_unit(resolved=resolved, qname="schedule"),
-        right=parse_unit("CURRENCY / year", registry=REGISTRY),
+        right=parse_unit(unit_str="CURRENCY / year", registry=REGISTRY),
         registry=REGISTRY,
     )
 
@@ -4505,7 +4507,7 @@ def test_param_mapping_object_complete_input_axis_with_flow_output():
     )
     assert units_are_equivalent(
         left=_scalar_unit(resolved=resolved, qname="schedule"),
-        right=parse_unit("CURRENCY / year", registry=REGISTRY),
+        right=parse_unit(unit_str="CURRENCY / year", registry=REGISTRY),
         registry=REGISTRY,
     )
 
@@ -4577,7 +4579,7 @@ def test_opted_out_aggregation_declares_its_own_level():
     )
     assert units_are_equivalent(
         left=_scalar_unit(resolved=resolved, qname="average_wealth_kin"),
-        right=parse_unit("CURRENCY / grouping_level_kin", registry=REGISTRY),
+        right=parse_unit(unit_str="CURRENCY / grouping_level_kin", registry=REGISTRY),
         registry=REGISTRY,
     )
     # No declared-vs-derived rejection: the MEAN derives the bare individual unit.
@@ -4665,7 +4667,7 @@ def test_per_capita_division_bridges_via_head_count():
     )
     assert units_are_equivalent(
         left=_scalar_unit(resolved=resolved, qname="rent_per_head_m"),
-        right=parse_unit("CURRENCY / month", registry=REGISTRY),
+        right=parse_unit(unit_str="CURRENCY / month", registry=REGISTRY),
         registry=REGISTRY,
     )
     # The [fam] cancels against the count's 1/[fam] — no level mismatch.
@@ -4930,7 +4932,7 @@ def test_max_over_bare_source_carries_the_target_group_level():
     assert units_are_equivalent(
         left=max_unit,
         right=divide_by_grouping_level(
-            unit=parse_unit("CURRENCY / month", registry=REGISTRY),
+            unit=parse_unit(unit_str="CURRENCY / month", registry=REGISTRY),
             level="fam",
             registry=REGISTRY,
         ),
@@ -4938,7 +4940,7 @@ def test_max_over_bare_source_carries_the_target_group_level():
     )
     assert not units_are_equivalent(
         left=max_unit,
-        right=parse_unit("CURRENCY / month", registry=REGISTRY),
+        right=parse_unit(unit_str="CURRENCY / month", registry=REGISTRY),
         registry=REGISTRY,
     )
     # The `_PER_FAM` declaration is consistent with what it derives.
