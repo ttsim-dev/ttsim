@@ -34,6 +34,7 @@ from ttsim.tt.units import (
     TTSIMUnit,
     _registered_currencies,
     parse_compositional_unit,
+    token_source_currency,
 )
 from ttsim.warnings import PotentialCurrencyMismatchWarning
 
@@ -669,6 +670,26 @@ def test_grouping_level_colliding_with_a_period_step_is_rejected():
     a `month` level would turn `PER_MONTH` into a level for the whole process."""
     with pytest.raises(UnitDefinitionError, match="already a unit denominator"):
         _fresh_system(grouping_levels=["month"])
+
+
+def test_currency_claiming_the_agnostic_base_is_rejected():
+    """A currency whose base is the agnostic `CURRENCY` token is refused: it would
+    make every agnostic declaration name a concrete currency."""
+    with pytest.raises(UnitDefinitionError, match="agnostic currency base"):
+        _fresh_system(other_currencies={"currency": "CASTAR / 4"})
+
+
+def test_agnostic_token_pins_down_no_concrete_currency():
+    """`TTSIMUnit.CURRENCY` never resolves to one of the system's currencies."""
+    _fresh_system()
+    assert token_source_currency(TTSIMUnit.CURRENCY) is None
+
+
+def test_non_lowercase_grouping_level_is_rejected():
+    """A grouping level is registered verbatim but resolved lower-cased, so a
+    non-lower-case name is refused rather than registered unresolvable."""
+    with pytest.raises(UnitDefinitionError, match="must be lower-case"):
+        _fresh_system(grouping_levels=["HH"])
 
 
 def test_currency_name_spelling_the_denominator_delimiter_is_rejected():

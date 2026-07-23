@@ -252,6 +252,13 @@ class UnitSystem:
         token would not round-trip.
         """
         base = name.upper()
+        if base == CURRENCY_TOKEN:
+            raise UnitDefinitionError(
+                f"Cannot register currency {name!r}: {CURRENCY_TOKEN!r} is the "
+                f"agnostic currency base every declaration spells, so a concrete "
+                f"currency claiming it would make every agnostic declaration name "
+                f"it (GEP 10)."
+            )
         if _PER in base:
             raise UnitDefinitionError(
                 f"Cannot register currency {name!r}: {_PER!r} separates a unit from "

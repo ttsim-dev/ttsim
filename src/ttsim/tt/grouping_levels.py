@@ -61,7 +61,10 @@ def fail_if_grouping_level_names_are_invalid(names: Iterable[str]) -> None:
       step exists;
     - any name whose step is already one of the closed area/period steps, since
       a ``month`` level would turn ``PER_MONTH`` from a flow period into a
-      grouping level for every declaration in the process.
+      grouping level for every declaration in the process;
+    - any name that is not lower-case, because a level is registered verbatim but
+      resolved lower-cased (:func:`ttsim.tt.units.resolve_compositional_unit`), so
+      ``"HH"`` would register a level that ``.PER_HH`` cannot resolve.
 
     Levels are discovered from the policy environment's ``*_id`` columns, so a
     ``month_id`` or ``person_id`` column reaches this check.
@@ -70,6 +73,13 @@ def fail_if_grouping_level_names_are_invalid(names: Iterable[str]) -> None:
         UnitDefinitionError: If any name is refused.
     """
     for name in names:
+        if name != name.lower():
+            raise UnitDefinitionError(
+                f"Grouping level {name!r} must be lower-case: a level is registered "
+                f"under the name given but resolved lower-cased, so {name!r} would "
+                f"register a level that `.PER_{name.upper()}` cannot resolve. Spell it "
+                f"{name.lower()!r} (GEP 10)."
+            )
         if name.lower() == _INDIVIDUAL_LEVEL_NORMALIZED_AWAY:
             raise UnitDefinitionError(
                 f"{name!r} is not a grouping level: an individual quantity is bare, "
