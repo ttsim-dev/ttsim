@@ -828,8 +828,12 @@ def fail_if_environment_units_are_inconsistent(
 
     Raises:
         UnitConsistencyError: If any body infers a concrete unit that disagrees
-            with its declaration, or an aggregation's declared unit disagrees
-            with what it derives. All offending nodes are reported together.
+            with its declaration, an aggregation's declared unit disagrees
+            with what it derives, or a schedule builder breaks the
+            ``InputOutputUnit`` contract (declaration vs. return annotation
+            vs. ``verify_units``). All offending nodes are reported together.
+        UnitDefinitionError: If an ``InputOutputUnit`` axis or a
+            parameter-dataclass field annotation is invalid.
     """
     registry = unit_system.registry
     # A malformed parameter-dataclass field annotation is a definition error, so
@@ -1349,15 +1353,16 @@ def _uniform_quantity_tree(
     return registry.Quantity(1.0, resolved_unit)
 
 
-#: The unqualified return-annotation names the axes contract accepts: the two
-#: schedule types whose typed output the per-axis conversion can restate.
+#: The unqualified return-annotation names governed by the ``InputOutputUnit``
+#: contract: a param function returning one of these declares both axes.
 _SCHEDULE_RETURN_TYPE_NAMES = frozenset(
     {"PiecewisePolynomialParamValue", "ConsecutiveIntLookupTableParamValue"}
 )
 
 #: The schedule value classes a unit-annotated parameter-dataclass field may carry;
 #: matched by identity/subclass (annotations resolve to real types via
-#: ``get_type_hints``), so the field's output unit reaches its ``look_up`` consumers.
+#: ``get_type_hints``), so the field's declared axes reach its ``look_up``
+#: consumers.
 _SCHEDULE_VALUE_TYPES = (
     ConsecutiveIntLookupTableParamValue,
     PiecewisePolynomialParamValue,
@@ -2767,11 +2772,9 @@ def _piecewise_polynomial_for_unit_check(x: Any, parameters: Any, xnp: Any) -> A
     """Unit-check stand-in for ``piecewise_polynomial``.
 
     Screen ``x`` against the schedule's ``input_unit`` and produce its
-    ``output_unit``. A schedule built from an input/output-unit
-    ``require_converter`` arrives as a :class:`_UnitCheckSchedule` too and
-    screens the same way; only a unit-less converter-built schedule stays
-    opaque — the caller casts the result. Anything else cannot be evaluated
-    here.
+    ``output_unit``. Every schedule arrives as a :class:`_UnitCheckSchedule`
+    carrying the axes its producer declared — a parameter's YAML axes or a
+    builder's ``InputOutputUnit``. Anything else cannot be evaluated here.
     """
     if isinstance(parameters, _UnitCheckSchedule):
         return parameters._produce((x,))  # noqa: SLF001
