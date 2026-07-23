@@ -327,8 +327,9 @@ def resolve_environment_units(
                 # A schedule-returning param function declares its schedule's two
                 # axes with `unit=InputOutputUnit(...)`; the environment-level
                 # resolved unit is the OUTPUT axis (what `look_up` /
-                # `piecewise_polynomial` consumers receive), resolved the parameter
-                # way — no name-suffix rules (GEP 10). A malformed declaration (a
+                # `piecewise_polynomial` consumers receive), resolved agnostically
+                # like a field annotation — concrete currencies rejected, no
+                # name-suffix rules (GEP 10). A malformed declaration (a
                 # quantity unit or `UNSET_UNIT` on a schedule return) is left
                 # unresolved here and reported by the schedule contract check.
                 resolved[qname] = _resolve_schedule_declaration_axis(
@@ -2774,7 +2775,9 @@ def _piecewise_polynomial_for_unit_check(x: Any, parameters: Any, xnp: Any) -> A
     Screen ``x`` against the schedule's ``input_unit`` and produce its
     ``output_unit``. Every schedule arrives as a :class:`_UnitCheckSchedule`
     carrying the axes its producer declared — a parameter's YAML axes or a
-    builder's ``InputOutputUnit``. Anything else cannot be evaluated here.
+    builder's ``InputOutputUnit``. An opaque structured pluck (an unannotated
+    field of a structured value) propagates unchanged for the caller to cast;
+    anything else cannot be evaluated here.
     """
     if isinstance(parameters, _UnitCheckSchedule):
         return parameters._produce((x,))  # noqa: SLF001
