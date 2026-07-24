@@ -16,7 +16,6 @@ def germany() -> UnitSystem:
         base_currency="EUR",
         other_currencies={"DM": "EUR / 1.95583"},
         statutory_currencies={"0001-01-01": "DM", "2002-01-01": "EUR"},
-        grouping_levels=["hh", "bg"],
     )
 
 
@@ -26,7 +25,6 @@ def middle_earth() -> UnitSystem:
         base_currency="CASTAR",
         other_currencies={"SILVER_PENNY": "CASTAR / 4"},
         statutory_currencies={"0001-01-01": "SILVER_PENNY", "2020-01-01": "CASTAR"},
-        grouping_levels=["sp", "fam", "kin"],
     )
 
 

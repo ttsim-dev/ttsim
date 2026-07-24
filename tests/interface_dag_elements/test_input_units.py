@@ -42,9 +42,9 @@ from ttsim.tt.units import (
 SYSTEM = UnitSystem(
     base_currency="EUR",
     statutory_currencies={"0001-01-01": "EUR"},
-    grouping_levels=["hh"],
 )
 REGISTRY = SYSTEM.registry
+register_grouping_levels(names=["hh"], registry=REGISTRY)
 
 
 def _resolved(unit: CompositeUnit) -> pint.Unit:
@@ -160,10 +160,21 @@ def test_flat_from_tree_with_unit_annotations_fails_on_period_mismatch():
         )
 
 
+def test_input_currency_agnostic_tag_is_rejected():
+    # Input data is written in a concrete currency, so a currency column's tag
+    # must name one — the agnostic ``CURRENCY`` is rejected with the column named.
+    with pytest.raises(UnitConsistencyError, match="wage_m"):
+        input_currency_is_not_concrete(
+            input_data__tree_with_unit_annotations={
+                "wage_m": UnitAnnotatedColumn(
+                    values=numpy.array([1.0]), unit=TTSIMUnit.CURRENCY.PER_MONTH
+                ),
+            }
+        )
+
+
 def test_input_currency_non_currency_columns_pass():
-    # Non-currency columns are never flagged (the agnostic-rejection path only fires
-    # for currency-dimensioned tags). Rejection-when-a-currency-is-registered is
-    # covered end-to-end in the mettsim suite (a base currency is registered there).
+    # The agnostic-rejection path fires only for currency-dimensioned tags.
     input_currency_is_not_concrete(
         input_data__tree_with_unit_annotations={
             "alter": UnitAnnotatedColumn(
@@ -179,7 +190,6 @@ def test_input_currency_non_currency_columns_pass():
 def test_input_level_must_match_declared():
     # A `_hh` column declares the hh level; a bare tag contradicts it. Compared
     # against the declared resolved unit, not the name suffix directly.
-    register_grouping_levels(names=["hh"], registry=REGISTRY)
     with pytest.raises(UnitConsistencyError, match="level"):
         fail_if_input_units_are_inconsistent(
             input_units={
@@ -197,7 +207,6 @@ def test_input_level_must_match_declared():
 
 
 def test_input_level_matching_declared_passes():
-    register_grouping_levels(names=["hh"], registry=REGISTRY)
     miete = _column(
         TTSIMUnit.CURRENCY.PER_MONTH.PER_HH, time_unit_id="m", grouping_level="hh"
     )
@@ -209,22 +218,9 @@ def test_input_level_matching_declared_passes():
     )
 
 
-def test_bare_tag_matches_a_normalized_per_person_declaration():
-    # A `_PER_PERSON` declaration normalizes to bare, so a bare tag matches it: a
-    # per-person amount and a level-neutral amount are the same bare unit (GEP 10).
-    register_grouping_levels(names=["hh"], registry=REGISTRY)
-    betrag = _column(TTSIMUnit.CURRENCY.PER_MONTH.PER_PERSON, time_unit_id="m")
-    fail_if_input_units_are_inconsistent(
-        input_units={"betrag_m": _resolved(TTSIMUnit.CURRENCY.PER_MONTH)},
-        resolved_units={"betrag_m": betrag},
-        unit_system=SYSTEM,
-    )
-
-
 def test_group_level_tag_does_not_match_a_bare_declaration():
     # A group-level tag is distinct from a bare declaration (GEP 10): the level is
     # declared, not read off the suffix, so the mismatch is caught via the tokens.
-    register_grouping_levels(names=["hh"], registry=REGISTRY)
     with pytest.raises(UnitConsistencyError, match="level"):
         fail_if_input_units_are_inconsistent(
             input_units={"betrag_m": _resolved(TTSIMUnit.CURRENCY.PER_MONTH.PER_HH)},
@@ -237,7 +233,6 @@ def test_group_level_tag_does_not_match_a_bare_declaration():
 
 def test_input_share_at_group_suffix_stays_level_less():
     # A group suffix must not force a level onto a level-less quantity.
-    register_grouping_levels(names=["hh"], registry=REGISTRY)
     fail_if_input_units_are_inconsistent(
         input_units={"rate_hh": _resolved(TTSIMUnit.DIMENSIONLESS)},
         resolved_units={"rate_hh": _resolved(TTSIMUnit.DIMENSIONLESS)},
@@ -267,25 +262,21 @@ def test_input_units_dimension_mismatch_raises():
         )
 
 
-def test_input_units_compatible_but_differently_scaled_area_raises():
-    # A HECTARES column tagged in m² shares the area dimension but is a
-    # 10,000-fold level error — rejected, not silently mis-stripped (S4, GEP 10).
-    resolved = {"land": _resolved(TTSIMUnit.HECTARE)}
+@pytest.mark.parametrize(
+    ("tag", "declared"),
+    [
+        # A HECTARES column tagged in m² shares the area dimension but is a
+        # 10,000-fold level error — rejected, not silently mis-stripped.
+        (TTSIMUnit.SQUARE_METER, TTSIMUnit.HECTARE),
+        # A YEARS age tagged in months is a 12-fold level error.
+        (TTSIMUnit.MONTHS, TTSIMUnit.YEARS),
+    ],
+)
+def test_input_units_compatible_but_differently_scaled_raises(tag, declared):
     with pytest.raises(UnitConsistencyError, match="not equivalent"):
         fail_if_input_units_are_inconsistent(
-            input_units={"land": _resolved(TTSIMUnit.SQUARE_METER)},
-            resolved_units=resolved,
-            unit_system=SYSTEM,
-        )
-
-
-def test_input_units_compatible_but_differently_scaled_time_raises():
-    # A YEARS age tagged in months is a 12-fold level error (S4, GEP 10).
-    resolved = {"alter": _resolved(TTSIMUnit.YEARS)}
-    with pytest.raises(UnitConsistencyError, match="not equivalent"):
-        fail_if_input_units_are_inconsistent(
-            input_units={"alter": _resolved(TTSIMUnit.MONTHS)},
-            resolved_units=resolved,
+            input_units={"some_column": _resolved(tag)},
+            resolved_units={"some_column": _resolved(declared)},
             unit_system=SYSTEM,
         )
 
@@ -303,27 +294,22 @@ def test_input_units_period_mismatch_is_left_to_the_suffix_guard():
     )
 
 
-def test_input_units_currency_tag_on_non_currency_column_raises():
-    # A currency tag on a column declared dimensionless is rejected: the boundary
-    # would otherwise rescale the data by the currency factor on a non-base run
-    # (GEP 10).
-    resolved = {"flag": _resolved(TTSIMUnit.DIMENSIONLESS)}
+@pytest.mark.parametrize(
+    ("tag", "declared"),
+    [
+        # A currency tag on a column declared dimensionless would rescale the
+        # data by the currency factor on a non-base run (GEP 10).
+        (TTSIMUnit.CURRENCY, TTSIMUnit.DIMENSIONLESS),
+        # The converse: a dimensionless tag on a declared-currency column would
+        # skip the currency conversion the column needs.
+        (TTSIMUnit.DIMENSIONLESS, TTSIMUnit.CURRENCY),
+    ],
+)
+def test_input_units_currency_tag_mismatch_raises(tag, declared):
     with pytest.raises(UnitConsistencyError, match="one carries a currency"):
         fail_if_input_units_are_inconsistent(
-            input_units={"flag": _resolved(TTSIMUnit.CURRENCY)},
-            resolved_units=resolved,
-            unit_system=SYSTEM,
-        )
-
-
-def test_input_units_non_currency_tag_on_currency_column_raises():
-    # The converse: a dimensionless tag on a declared-currency column would skip
-    # the currency conversion the column needs (GEP 10).
-    resolved = {"wage": _resolved(TTSIMUnit.CURRENCY)}
-    with pytest.raises(UnitConsistencyError, match="one carries a currency"):
-        fail_if_input_units_are_inconsistent(
-            input_units={"wage": _resolved(TTSIMUnit.DIMENSIONLESS)},
-            resolved_units=resolved,
+            input_units={"some_column": _resolved(tag)},
+            resolved_units={"some_column": _resolved(declared)},
             unit_system=SYSTEM,
         )
 

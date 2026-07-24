@@ -515,7 +515,7 @@ def test_beartype_catches_structural_misuse_at_rounded_boundary(xnp) -> None:
         rounded(bogus)
 
 
-def test_policy_environment_rejects_non_statutory_rounding_spec_currency():
+def test_active_objects_reject_non_statutory_rounding_spec_currency():
     @policy_function(
         rounding_spec=RoundingSpec(
             base=4, direction="down", unit=TTSIMUnit.SILVER_PENNY.PER_MONTH
@@ -535,7 +535,7 @@ def test_policy_environment_rejects_non_statutory_rounding_spec_currency():
         )
 
 
-def test_policy_environment_accepts_statutory_rounding_spec_currency():
+def test_active_objects_accept_statutory_rounding_spec_currency():
     spec = RoundingSpec(base=4, direction="down", unit=TTSIMUnit.SILVER_PENNY.PER_MONTH)
 
     @policy_function(

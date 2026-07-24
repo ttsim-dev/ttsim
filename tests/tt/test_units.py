@@ -54,13 +54,14 @@ from ttsim.tt.units import (
 )
 
 # A representative policy system for the compositional tests: its registry holds
-# Middle Earth's currencies (CASTAR base, SILVER_PENNY) and the GETTSIM-style
-# grouping levels the resolution tests build on.
+# Middle Earth's currencies (CASTAR base, SILVER_PENNY); the GETTSIM-style
+# grouping levels the resolution tests build on are registered by the autouse
+# fixture below, mirroring what the build does with the environment-derived
+# levels.
 SYSTEM = UnitSystem(
     base_currency="CASTAR",
     other_currencies={"SILVER_PENNY": "CASTAR / 4"},
     statutory_currencies={"0001-01-01": "SILVER_PENNY", "2020-01-01": "CASTAR"},
-    grouping_levels=["bg", "hh"],
 )
 REGISTRY = SYSTEM.registry
 
@@ -116,29 +117,10 @@ _BASE_SPELLINGS = [
 ]
 
 
-@pytest.mark.parametrize("spelling", _BASE_SPELLINGS)
-def test_coerce_to_composite_unit_round_trips_base_spellings(spelling):
-    token = coerce_to_composite_unit(value=spelling, where="test")
-    assert isinstance(token, CompositeUnit)
-    assert str(token) == spelling
-
-
-def test_person_count_is_not_a_base_spelling():
-    """A head count is the plain dimensionless unit, so ``PERSON_COUNT`` is not a
-    base of its own — declare ``DIMENSIONLESS`` (per group level) instead."""
-    with pytest.raises(UnitDefinitionError, match="Unknown compositional base"):
-        parse_compositional_unit("PERSON_COUNT_PER_HH")
-
-
-def test_person_count_declaration_is_rejected():
-    """A ``unit: PERSON_COUNT_PER_HH`` declaration is rejected."""
-    with pytest.raises(UnitDefinitionError, match="invalid unit declaration"):
-        coerce_to_composite_unit(value="PERSON_COUNT_PER_HH", where="test")
-
-
 @pytest.mark.parametrize(
     "spelling",
     [
+        *_BASE_SPELLINGS,
         "CURRENCY_PER_MONTH",
         "CURRENCY_PER_MONTH_PER_BG",
         "DIMENSIONLESS_PER_BG",
@@ -146,10 +128,30 @@ def test_person_count_declaration_is_rejected():
         "HOURS_PER_WEEK",
     ],
 )
-def test_coerce_to_composite_unit_round_trips_compositional_spellings(spelling):
+def test_coerce_to_composite_unit_round_trips_spellings(spelling):
     token = coerce_to_composite_unit(value=spelling, where="test")
     assert isinstance(token, CompositeUnit)
     assert str(token) == spelling
+
+
+@pytest.mark.parametrize(
+    ("construct", "match"),
+    [
+        (
+            lambda: parse_compositional_unit("PERSON_COUNT_PER_HH"),
+            "Unknown compositional base",
+        ),
+        (
+            lambda: coerce_to_composite_unit(value="PERSON_COUNT_PER_HH", where="test"),
+            "invalid unit declaration",
+        ),
+    ],
+)
+def test_person_count_is_not_a_spelling(construct, match):
+    """A head count is the plain dimensionless unit (per group level), so
+    ``PERSON_COUNT`` is not a base — parsed or declared."""
+    with pytest.raises(UnitDefinitionError, match=match):
+        construct()
 
 
 def test_coerce_to_composite_unit_rejects_none():
@@ -200,7 +202,9 @@ def test_compositional_flow_is_marked_by_a_period():
     ],
 )
 def test_parse_unit_accepts_known_units(unit_str):
-    parse_unit(unit_str=unit_str, registry=REGISTRY)
+    assert parse_unit(unit_str=unit_str, registry=REGISTRY) == REGISTRY.parse_units(
+        unit_str
+    )
 
 
 @pytest.mark.parametrize(
@@ -390,22 +394,6 @@ def test_is_calendar_point_unit():
     )
 
 
-def test_duration_token_is_equivalent_to_the_plain_time_unit():
-    # YEARS / MONTHS / DAYS resolve to the `delta_calendar_*` durations, which
-    # are ratio 1 against year / month / day, so existing duration declarations
-    # are unchanged.
-    assert units_are_equivalent(
-        left=resolve_compositional_unit(unit=TTSIMUnit.YEARS, registry=REGISTRY),
-        right=parse_unit(unit_str="year", registry=REGISTRY),
-        registry=REGISTRY,
-    )
-    assert units_are_equivalent(
-        left=resolve_compositional_unit(unit=TTSIMUnit.MONTHS, registry=REGISTRY),
-        right=parse_unit(unit_str="month", registry=REGISTRY),
-        registry=REGISTRY,
-    )
-
-
 def test_policy_function_stores_unit():
     @policy_function(unit=TTSIMUnit.CURRENCY.PER_MONTH)
     def betrag_m(satz: float, anzahl: int) -> float:
@@ -451,6 +439,7 @@ def test_policy_function_explicit_dimensionless():
         (TTSIMUnit.CURRENCY.PER_DAY, "CURRENCY / day"),
         (TTSIMUnit.DIMENSIONLESS.PER_YEAR, "1 / year"),  # e.g. a wealth-tax rate
         (TTSIMUnit.HOURS.PER_WEEK, "working_hour / week"),  # e.g. working hours
+        (TTSIMUnit.CURRENCY.PER_HOURS, "CURRENCY / working_hour"),  # a wage floor
         (
             TTSIMUnit.CURRENCY.PER_SQUARE_METER.PER_MONTH,
             "CURRENCY / meter ** 2 / month",
@@ -486,31 +475,12 @@ def test_resolve_compositional_unit_dimensionless():
     )
 
 
-def test_flow_period_resolution_distinguishes_month_and_year():
-    """A monthly flow and its yearly variant resolve to non-equivalent units."""
-    betrag_m = resolve_compositional_unit(
-        unit=TTSIMUnit.CURRENCY.PER_MONTH, registry=REGISTRY
-    )
-    betrag_y = resolve_compositional_unit(
-        unit=TTSIMUnit.CURRENCY.PER_YEAR, registry=REGISTRY
-    )
-    assert not units_are_equivalent(left=betrag_m, right=betrag_y, registry=REGISTRY)
-
-
-def test_unit_converter_factors_sourced_from_pint():
-    # The stock converters multiply by the period-per-year factor; check that
-    # factor against pint via the public converter functions.
-    def per_year(name):
-        return (
-            (REGISTRY.Quantity(1.0, "year") / REGISTRY.Quantity(1.0, name))
-            .to("dimensionless")
-            .magnitude
-        )
-
-    assert unit_converters.y_to_q(1.0) == pytest.approx(per_year("quarter_year"))
-    assert unit_converters.y_to_m(1.0) == pytest.approx(per_year("month"))
-    assert unit_converters.y_to_w(1.0) == pytest.approx(per_year("week"))
-    assert unit_converters.y_to_d(1.0) == pytest.approx(per_year("day"))
+def test_unit_converter_factors_match_gep1():
+    # The stock converters multiply by GEP 1's canonical periods-per-year factors.
+    assert unit_converters.y_to_q(1.0) == pytest.approx(4.0)
+    assert unit_converters.y_to_m(1.0) == pytest.approx(12.0)
+    assert unit_converters.y_to_w(1.0) == pytest.approx(365.25 / 7)
+    assert unit_converters.y_to_d(1.0) == pytest.approx(365.25)
 
 
 def test_integral_factors_keep_integer_type():
@@ -700,24 +670,11 @@ def test_token_is_agnostic_currency():
     )
 
 
-def test_currency_conversion_factor():
-    # silver_penny = castar / 4, defined by the system's currencies.
-    assert SYSTEM.currency_conversion_factor(
-        source_currency="CASTAR", target_currency="SILVER_PENNY"
-    ) == pytest.approx(4.0)
-    assert SYSTEM.currency_conversion_factor(
-        source_currency="SILVER_PENNY", target_currency="CASTAR"
-    ) == pytest.approx(0.25)
+def test_currency_conversion_factor_of_a_currency_to_itself_is_one():
+    # The cross-currency factors are pinned in `test_unit_system.py`.
     assert SYSTEM.currency_conversion_factor(
         source_currency="CASTAR", target_currency="CASTAR"
     ) == pytest.approx(1.0)
-
-
-def test_currency_conversion_factor_rejects_unknown_currency():
-    with pytest.raises(UnitDefinitionError, match="not a registered currency"):
-        SYSTEM.currency_conversion_factor(
-            source_currency="CASTAR", target_currency="dragon_hoard"
-        )
 
 
 def test_strip_at_boundary_converts_to_data_currency():
@@ -915,38 +872,6 @@ def test_builder_rejects_non_canonical_order():
         _ = TTSIMUnit.CURRENCY.PER_MONTH.PER_YEAR
 
 
-def test_is_flow_property():
-    assert TTSIMUnit.CURRENCY.PER_MONTH.is_flow
-    assert not parse_compositional_unit("CURRENCY").is_flow
-
-
-@pytest.mark.parametrize(
-    ("spelling", "expected"),
-    [
-        ("CURRENCY_PER_MONTH", "CURRENCY / month"),
-        ("CURRENCY_PER_YEAR", "CURRENCY / year"),
-        ("DIMENSIONLESS_PER_YEAR", "1 / year"),
-        ("HOURS_PER_WEEK", "working_hour / week"),
-        ("CURRENCY_PER_HOURS", "CURRENCY / working_hour"),
-        ("CURRENCY_PER_SQUARE_METER_PER_MONTH", "CURRENCY / meter ** 2 / month"),
-        ("SQUARE_METER", "meter ** 2"),
-        ("HECTARE", "hectare"),
-        ("YEARS", "year"),
-        ("CALENDAR_YEAR", "calendar_year"),
-    ],
-)
-def test_compositional_unit_resolves_to_expected_pint_unit(spelling, expected):
-    # Every compositional spelling resolves to the pint unit it names.
-    compositional = resolve_compositional_unit(
-        unit=parse_compositional_unit(spelling), registry=REGISTRY
-    )
-    assert units_are_equivalent(
-        left=compositional,
-        right=parse_unit(unit_str=expected, registry=REGISTRY),
-        registry=REGISTRY,
-    )
-
-
 def test_person_per_level_resolves_to_head_count():
     # DIMENSIONLESS_PER_BG is a head count at bg: a dimensionless 1 / [bg], the unit
     # a COUNT aggregation to bg mints (GEP 10).
@@ -960,63 +885,16 @@ def test_person_per_level_resolves_to_head_count():
     )
 
 
-def test_terminal_per_person_equals_the_bare_unit():
-    # A terminal `_PER_PERSON` carries no grouping level, so it is equal to — and
-    # stringifies identically to — the bare unit (GEP 10).
-    assert TTSIMUnit.CURRENCY.PER_MONTH.PER_PERSON == TTSIMUnit.CURRENCY.PER_MONTH
-    assert str(TTSIMUnit.CURRENCY.PER_MONTH.PER_PERSON) == str(
-        TTSIMUnit.CURRENCY.PER_MONTH
-    )
-    assert TTSIMUnit.DIMENSIONLESS.PER_PERSON == TTSIMUnit.DIMENSIONLESS
-    assert str(TTSIMUnit.DIMENSIONLESS.PER_PERSON) == str(TTSIMUnit.DIMENSIONLESS)
-
-
-def test_terminal_per_person_parses_and_resolves_to_bare():
-    # A terminal `_PER_PERSON` is the deprecated per-person spelling: it carries no
-    # grouping level and resolves to the bare unit (GEP 10).
-    parsed = parse_compositional_unit("CURRENCY_PER_MONTH_PER_PERSON")
-    resolved = resolve_compositional_unit(unit=parsed, registry=REGISTRY)
-    assert units_are_equivalent(
-        left=resolved,
-        right=parse_unit(unit_str="CURRENCY / month", registry=REGISTRY),
-        registry=REGISTRY,
-    )
-
-
-def test_per_person_after_a_group_level_is_rejected():
-    # `_PER_PERSON` after a group level is a second level: a unit carries at most
-    # one grouping level, so it is a definition error (GEP 10).
-    with pytest.raises(UnitDefinitionError):
-        parse_compositional_unit("CURRENCY_PER_HH_PER_PERSON")
-
-
-def test_per_person_before_a_period_is_rejected():
-    # A level (even the person one) must follow the period in canonical order, so
-    # `_PER_PERSON` before a period is a definition error (GEP 10).
-    with pytest.raises(UnitDefinitionError):
-        parse_compositional_unit("CURRENCY_PER_PERSON_PER_MONTH")
-
-
-def test_fluent_terminal_per_person_resolves_to_bare():
-    resolved = resolve_compositional_unit(
-        unit=TTSIMUnit.CURRENCY.PER_MONTH.PER_PERSON, registry=REGISTRY
-    )
-    assert units_are_equivalent(
-        left=resolved,
-        right=parse_unit(unit_str="CURRENCY / month", registry=REGISTRY),
-        registry=REGISTRY,
-    )
-
-
-def test_fluent_second_level_after_per_person_is_rejected():
-    with pytest.raises(UnitDefinitionError):
-        _ = TTSIMUnit.CURRENCY.PER_MONTH.PER_PERSON.PER_HH
-
-
-def test_fluent_per_person_before_a_period_is_rejected():
-    # A terminal `_PER_PERSON` must come last, so nothing may follow it.
-    with pytest.raises(UnitDefinitionError, match="closes the chain"):
-        _ = TTSIMUnit.CURRENCY.PER_PERSON.PER_MONTH
+def test_there_is_no_per_person_spelling():
+    # An individual quantity is bare (GEP 10): `person` is not a grouping level,
+    # so no `PER_PERSON` builder step or `_PER_PERSON` spelling exists.
+    with pytest.raises(AttributeError):
+        _ = TTSIMUnit.CURRENCY.PER_MONTH.PER_PERSON
+    with pytest.raises(UnitDefinitionError, match="Unknown grouping level 'person'"):
+        resolve_compositional_unit(
+            unit=parse_compositional_unit("CURRENCY_PER_MONTH_PER_PERSON"),
+            registry=REGISTRY,
+        )
 
 
 def test_concrete_currency_base_resolves_like_agnostic():

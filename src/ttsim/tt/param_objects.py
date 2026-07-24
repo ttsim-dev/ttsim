@@ -12,8 +12,7 @@ from ttsim.tt.units import (
     UNSET_UNIT,
     CompositeUnit,
     coerce_to_composite_unit,
-    token_is_agnostic_currency,
-    token_source_currency,
+    token_declares_a_currency,
 )
 from ttsim.typing import DictParamValue, NestedLookupDict
 
@@ -83,6 +82,16 @@ def _coerce_unit_declaration(
     return coerce_to_composite_unit(value=declared, where=where)
 
 
+def _coerce_axis_unit_declarations(obj: ParamObject) -> None:
+    """Coerce a frozen object's ``input_unit`` / ``output_unit`` axes in place."""
+    for axis in ("input_unit", "output_unit"):
+        object.__setattr__(
+            obj,
+            axis,
+            _coerce_unit_declaration(declared=getattr(obj, axis), obj=obj),
+        )
+
+
 @dataclass(frozen=True)
 class ScalarParam(ParamObject):
     """
@@ -143,9 +152,7 @@ class ParamMappingObject(ParamObject):
                     f"{type(self).__name__}: per-axis declarations are single "
                     f"tokens, not mappings (GEP 10); got {axis}={raw!r}."
                 )
-            object.__setattr__(
-                self, axis, _coerce_unit_declaration(declared=raw, obj=self)
-            )
+        _coerce_axis_unit_declarations(self)
 
 
 @dataclass(frozen=True)
@@ -176,10 +183,7 @@ class ConsecutiveIntLookupTableParam(ParamMappingObject):
     def __post_init__(self) -> None:
         super().__post_init__()
         input_unit = cast("CompositeUnit", self.input_unit)
-        if input_unit is not UNSET_UNIT and (
-            token_is_agnostic_currency(input_unit)
-            or token_source_currency(input_unit) is not None
-        ):
+        if input_unit is not UNSET_UNIT and token_declares_a_currency(input_unit):
             raise UnitDefinitionError(
                 f"A lookup table is keyed by consecutive integers, so its "
                 f"`input_unit:` cannot be a currency (got {input_unit}); the "
@@ -298,12 +302,7 @@ class RawParam(ParamObject):
                 f"axis), not both (GEP 10); got unit={self.unit!r}, "
                 f"input_unit={self.input_unit!r}, output_unit={self.output_unit!r}."
             )
-        for axis in ("input_unit", "output_unit"):
-            object.__setattr__(
-                self,
-                axis,
-                _coerce_unit_declaration(declared=getattr(self, axis), obj=self),
-            )
+        _coerce_axis_unit_declarations(self)
 
 
 @dataclass(frozen=True)

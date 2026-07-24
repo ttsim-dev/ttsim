@@ -967,6 +967,18 @@ class AggByPIDFunction(ColumnFunction):
         )
 
 
+def qname_is_person_pointer(qname: str) -> bool:
+    """Whether a qualified name is a ``p_id_*`` person pointer.
+
+    A pointer references another individual's ``p_id`` (GEP 2) — it selects
+    *where* an aggregated value lands, so it is never a value source. Any
+    element of the tree path starting with ``p_id_`` marks the name; the
+    :func:`agg_by_p_id_function` constructor and the unit checks share this
+    test so they exclude the same pointer arguments.
+    """
+    return any(e.startswith("p_id_") for e in dt.tree_path_from_qname(qname))
+
+
 @beartype(conf=AGGREGATION_CONF)
 def agg_by_p_id_function(
     *,
@@ -1000,11 +1012,7 @@ def agg_by_p_id_function(
         )
         orig_location = f"{func.__module__}.{func.__name__}"  # ty: ignore[unresolved-attribute]
         args = set(inspect.signature(func).parameters)
-        other_p_ids = {
-            p
-            for p in args
-            if any(e.startswith("p_id_") for e in dt.tree_path_from_qname(p))
-        }
+        other_p_ids = {p for p in args if qname_is_person_pointer(p)}
         other_args = args - {*other_p_ids, "p_id", "num_segments", "backend"}
         _fail_if_p_id_is_not_present(args=args, orig_location=orig_location)
         _fail_if_other_p_id_is_invalid(

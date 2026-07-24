@@ -6,6 +6,11 @@ only currency-denominated input columns and scalar input values convert on the
 way in, while currency-denominated results convert on the way out. mettsim
 registers CASTAR (base), SILVER_PENNY, and the statutory mapping (silver pennies
 through 2019, castar from 2020) on the import below.
+
+The conversion of actual *data* amounts is covered elsewhere: at the
+``processed_data`` seam in ``tests/interface_dag_elements/test_processed_data.py``
+and through ``main()`` in ``tests/test_end_to_end.py``. This module covers the
+parameter side (loading, guards, and the unit-system registration seams).
 """
 
 from __future__ import annotations
@@ -15,7 +20,6 @@ import warnings
 from typing import Any
 
 import numpy as np
-import pint
 import pytest
 from mettsim import middle_earth
 
@@ -93,7 +97,12 @@ def test_computation_currency_is_the_statutory_currency_at_the_policy_date(
 
 
 def test_parameters_keep_their_statutory_values(backend):
-    """No scaling at build: each era's threshold is exactly the statute's number."""
+    """No scaling at build: each era's threshold is exactly the statute's number.
+
+    The two values are also a pure redenomination of each other (50,000 silver
+    pennies = 12,500 castar at silver_penny = castar / 4): the real value is
+    continuous across the changeover.
+    """
     castar_era = _policy_environment(backend)["payroll_tax"][
         "wealth_threshold_for_reduced_tax_rate"
     ]
@@ -102,18 +111,6 @@ def test_parameters_keep_their_statutory_values(backend):
     ]["wealth_threshold_for_reduced_tax_rate"]
     assert castar_era.value == pytest.approx(12500)
     assert penny_era.value == pytest.approx(50000)
-
-
-def test_changeover_is_a_pure_redenomination(backend):
-    """The 2020 reform re-expresses the threshold; its real value is continuous."""
-    penny_era = _policy_environment(backend, policy_date=datetime.date(2019, 12, 31))[
-        "payroll_tax"
-    ]["wealth_threshold_for_reduced_tax_rate"]
-    castar_era = _policy_environment(backend)["payroll_tax"][
-        "wealth_threshold_for_reduced_tax_rate"
-    ]
-    # 50_000 silver pennies = 12_500 castar (silver_penny = castar / 4).
-    assert penny_era.value == pytest.approx(castar_era.value * 4)
 
 
 def _load(
@@ -458,7 +455,8 @@ def test_require_converter_with_axes_is_left_raw_for_its_converter():
         computation_currency="SILVER_PENNY",
     )
     assert param.value["ceiling"] == 100
-    assert param.input_unit is not UNSET_UNIT
+    assert str(param.input_unit) == "SILVER_PENNY"
+    assert str(param.output_unit) == "SILVER_PENNY_PER_YEAR"
 
 
 def test_lookup_table_rejects_currency_input_axis():
@@ -493,8 +491,8 @@ def test_require_converter_unit_and_axes_are_mutually_exclusive():
 
 
 def test_unknown_annotation_is_rejected_at_load():
-    # An annotation the vocabulary does not know fails loudly at load time
-    # (issue #121) — nothing is ever silently mis-declared.
+    # An annotation the vocabulary does not know fails loudly at load time —
+    # nothing is ever silently mis-declared.
     spec = _scalar_spec(unit="Euros")
     with pytest.raises(UnitDefinitionError, match="invalid unit declaration"):
         _load(
@@ -638,9 +636,10 @@ def test_currency_named_after_a_non_currency_base_is_rejected():
         _fresh_system(other_currencies={"HECTARE": "CASTAR / 4"})
 
 
-def test_failed_construction_registers_no_currency():
-    """A `UnitSystem` whose construction raises leaves the process-global currency
-    vocabulary and the `TTSIMUnit` builder exactly as it found them."""
+def test_failed_construction_publishes_nothing():
+    """A `UnitSystem` whose construction raises — here on a malformed
+    statutory-currency date — leaves the process-global currency vocabulary and
+    the `TTSIMUnit` builder exactly as it found them."""
     before = set(_registered_currencies), set(vars(TTSIMUnit))
     with pytest.raises(UnitDefinitionError):
         _fresh_system(
@@ -666,13 +665,6 @@ def test_undashed_statutory_currency_key_is_rejected(start_date):
         _fresh_system(statutory_currencies={start_date: "CASTAR"})
 
 
-def test_grouping_level_colliding_with_a_period_step_is_rejected():
-    """A grouping level may not claim a builder step a denominator already owns —
-    a `month` level would turn `PER_MONTH` into a level for the whole process."""
-    with pytest.raises(UnitDefinitionError, match="already a unit denominator"):
-        _fresh_system(grouping_levels=["month"])
-
-
 def test_currency_claiming_the_agnostic_base_is_rejected():
     """A currency whose base is the agnostic `CURRENCY` token is refused: it would
     make every agnostic declaration name a concrete currency."""
@@ -684,13 +676,6 @@ def test_agnostic_token_pins_down_no_concrete_currency():
     """`TTSIMUnit.CURRENCY` never resolves to one of the system's currencies."""
     _fresh_system()
     assert token_source_currency(TTSIMUnit.CURRENCY) is None
-
-
-def test_non_lowercase_grouping_level_is_rejected():
-    """A grouping level is registered verbatim but resolved lower-cased, so a
-    non-lower-case name is refused rather than registered unresolvable."""
-    with pytest.raises(UnitDefinitionError, match="must be lower-case"):
-        _fresh_system(grouping_levels=["HH"])
 
 
 def test_currency_name_spelling_the_denominator_delimiter_is_rejected():
@@ -706,27 +691,6 @@ def test_registered_currency_token_round_trips_through_the_parser():
     for name in sorted(system.currencies):
         token = getattr(TTSIMUnit, name.upper())
         assert parse_compositional_unit(str(token)) == token
-
-
-def test_person_is_rejected_as_a_grouping_level():
-    """There is no individual grouping level (GEP 10), so `person` is refused
-    rather than registered as a dimension."""
-    with pytest.raises(UnitDefinitionError, match="not a grouping level"):
-        _fresh_system(grouping_levels=["person"])
-
-
-def test_failed_grouping_level_registration_publishes_no_currency():
-    """A malformed grouping level aborts construction without widening the global
-    currency vocabulary."""
-    before = set(_registered_currencies), set(vars(TTSIMUnit))
-    with pytest.raises(pint.errors.DefinitionSyntaxError):
-        _fresh_system(
-            base_currency="MITHRIL",
-            other_currencies={},
-            statutory_currencies={"0001-01-01": "MITHRIL"},
-            grouping_levels=["["],
-        )
-    assert (set(_registered_currencies), set(vars(TTSIMUnit))) == before
 
 
 def test_annotated_results_label_a_declarationless_dimensionless_target_as_such():

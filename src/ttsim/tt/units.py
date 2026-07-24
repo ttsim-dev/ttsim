@@ -41,7 +41,7 @@ from __future__ import annotations
 import math
 import re
 from collections.abc import Iterator, Mapping
-from dataclasses import dataclass, field, replace
+from dataclasses import dataclass, replace
 from typing import TYPE_CHECKING, Any, TypeAlias, TypeVar
 
 import pint
@@ -71,14 +71,6 @@ _QNAME_TIME_SUFFIX_PATTERN = re.compile(
 CURRENCY_TOKEN = "CURRENCY"  # noqa: S105 (a unit token, not a secret)
 
 _GROUPING_LEVEL_PREFIX = "grouping_level_"
-
-#: The deprecated individual-level suffix. There is no `person` grouping level
-#: (GEP 10): a quantity with no group-level suffix is bare, and *bare* means both
-#: "per person / individual" and "level-neutral" — the two are one representation.
-#: A ``_PER_PERSON`` suffix (flat string or fluent ``.PER_PERSON``) is accepted and
-#: normalized to the bare unit, so existing declarations keep resolving; it adds no
-#: level. New code drops the suffix.
-_INDIVIDUAL_LEVEL_NORMALIZED_AWAY = "person"
 
 _PER = "_PER_"
 
@@ -128,10 +120,6 @@ class CompositeUnit:
     area: str | None = None
     period: str | None = None
     level: str | None = None
-    _terminal_person: bool = field(default=False, compare=False)
-    """A validation-only marker that a terminal deprecated ``_PER_PERSON`` closed
-    the chain: the unit stays fully bare (equal to and stringified like the bare
-    unit), but nothing may follow it. Excluded from equality and hashing (GEP 10)."""
 
     if TYPE_CHECKING:
         # Per-level builder steps are added at runtime, so tell `ty` any builder
@@ -151,17 +139,7 @@ class CompositeUnit:
         """Whether this unit is a flow — i.e. has a period denominator."""
         return self.period is not None
 
-    def _fail_if_terminal_person(self, denominator: str) -> None:
-        if self._terminal_person:
-            raise UnitDefinitionError(
-                f"Cannot add '{denominator}' to '{self}': a terminal '{_PER}"
-                f"{_INDIVIDUAL_LEVEL_NORMALIZED_AWAY.upper()}' closes the chain — "
-                f"it must come last, and a unit carries at most one grouping level "
-                f"(GEP 10)."
-            )
-
     def _with_area(self, area: str) -> CompositeUnit:
-        self._fail_if_terminal_person(area)
         if self.area is not None or self.period is not None or self.level is not None:
             raise UnitDefinitionError(
                 f"Cannot add the physical denominator '{area}' to '{self}': the "
@@ -171,7 +149,6 @@ class CompositeUnit:
         return replace(self, area=area)
 
     def _with_period(self, period: str) -> CompositeUnit:
-        self._fail_if_terminal_person(period)
         if self.period is not None or self.level is not None:
             raise UnitDefinitionError(
                 f"Cannot add period '{period}' to '{self}': a period must precede "
@@ -180,16 +157,11 @@ class CompositeUnit:
         return replace(self, period=period)
 
     def _with_level(self, level: str) -> CompositeUnit:
-        self._fail_if_terminal_person(level)
         if self.level is not None:
             raise UnitDefinitionError(
                 f"Cannot add level '{level}' to '{self}': a unit carries at most "
                 f"one grouping level (GEP 10)."
             )
-        # The deprecated `person` level adds no grouping level (GEP 10): the unit
-        # stays bare, marked only so nothing may follow it.
-        if level.lower() == _INDIVIDUAL_LEVEL_NORMALIZED_AWAY:
-            return replace(self, _terminal_person=True)
         return replace(self, level=level.upper())
 
     @property
@@ -253,12 +225,7 @@ def _is_currency_base(base: str) -> bool:
     """Whether a base token denotes a currency (agnostic or concrete)."""
     if base == CURRENCY_TOKEN:
         return True
-    return any(base == name.upper() for name in _registered_currency_names())
-
-
-def _registered_currency_names() -> set[str]:
-    """The concrete currencies registered so far (their pint unit names)."""
-    return set(_registered_currencies)
+    return any(base == name.upper() for name in _registered_currencies)
 
 
 def parse_compositional_unit(spelling: str) -> CompositeUnit:
@@ -728,9 +695,14 @@ def token_source_currency(token: CompositeUnit | None) -> str | None:
     if not isinstance(token, CompositeUnit):
         return None
     return next(
-        (name for name in _registered_currency_names() if name.upper() == token.base),
+        (name for name in _registered_currencies if name.upper() == token.base),
         None,
     )
+
+
+def token_declares_a_currency(token: CompositeUnit | None) -> bool:
+    """Whether a declaration carries a currency base (agnostic or concrete)."""
+    return token_is_agnostic_currency(token) or token_source_currency(token) is not None
 
 
 def replace_concrete_with_agnostic_currency(token: CompositeUnit) -> CompositeUnit:
@@ -760,7 +732,7 @@ def coerce_to_composite_unit(
     ``DIMENSIONLESS_PER_BG``, ``SILVER_PENNY_PER_YEAR``, or a bare base
     ``DIMENSIONLESS``) parsed into a :class:`CompositeUnit`; an already-coerced
     :class:`CompositeUnit` passes through. Everything else — pint syntax like
-    ``"CURRENCY / year"`` or the former ``"null"`` spelling — is rejected.
+    ``"CURRENCY / year"``, ``None``, a YAML ``null`` — is rejected.
 
     Args:
         value: The raw declaration — a string from YAML or an already-coerced
@@ -834,6 +806,13 @@ def build_registry() -> pint.UnitRegistry:
     return ureg
 
 
+#: The affine calendar-point units :func:`build_registry` defines — the only
+#: offset units any TTSIM registry contains.
+_CALENDAR_POINT_UNIT_NAMES = frozenset(
+    {"calendar_year", "calendar_month", "calendar_day"}
+)
+
+
 #: The dimension names :func:`build_registry` mints for currency and takes from
 #: pint for time. Every registry spells them the same way, and a pint
 #: dimensionality compares by content, so the boundary helpers pick a unit's
@@ -900,8 +879,8 @@ def registered_grouping_levels(registry: pint.UnitRegistry) -> set[str]:
 
     The bare names (``"hh"``, ``"bg"``, …). There is no ``person`` level (GEP 10):
     an individual quantity is bare, carrying no grouping level. The set is
-    discovered per build from the policy environment's ``*_id`` columns; ttsim
-    ships no fixed list.
+    derived from the policy environment's ``*_id`` columns and registered per
+    build; ttsim ships no fixed list.
     """
     return {
         name.removeprefix(_GROUPING_LEVEL_PREFIX)
@@ -918,9 +897,9 @@ def _fail_if_grouping_level_is_unknown(name: str, registry: pint.UnitRegistry) -
             or "(none registered)"
         )
         raise UnitDefinitionError(
-            f"Unknown grouping level {name!r}; expected one of {known}. Grouping "
-            f"levels are discovered per build from the `*_id` columns and "
-            f"registered via register_grouping_levels (GEP 10)."
+            f"Unknown grouping level {name!r}; expected one of {known}. A "
+            f"grouping level exists for each `*_id` column of the policy "
+            f"environment (GEP 10)."
         )
 
 
@@ -1067,6 +1046,8 @@ def units_are_equivalent(
       ``year`` / ``delta_calendar_year`` duration nor to a ``calendar_month``
       point on another axis.
     """
+    if left == right:
+        return True
     left_quantity = registry.Quantity(1.0, left)
     right_quantity = registry.Quantity(1.0, right)
     if left_quantity.dimensionality != right_quantity.dimensionality:
@@ -1095,7 +1076,15 @@ def is_calendar_point_unit(unit: pint.Unit, registry: pint.UnitRegistry) -> bool
     magnitude-equivalence check, which would wrongly reject the valid
     ``point + duration``. Detection is by the very property that defines an offset
     unit: it cannot be divided by itself.
+
+    The only offset units :func:`build_registry` ever defines are the three
+    :data:`_CALENDAR_POINT_UNIT_NAMES`, so a unit spelling none of them is
+    resolved without the (comparatively expensive) pint probe — this predicate
+    sits on the unit check's ``+``/``-`` path, where almost every operand is a
+    plain magnitude unit.
     """
+    if _CALENDAR_POINT_UNIT_NAMES.isdisjoint(to_units_container(unit)):
+        return False
     quantity = registry.Quantity(1.0, unit)
     try:
         quantity / quantity

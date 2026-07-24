@@ -2,8 +2,10 @@
 
 A :class:`UnitSystem` is the value a policy package builds once, at import, and
 hands to ``main(unit_system=...)``: its currencies, the dated statutory-currency
-mapping, the grouping levels its declarations spell — and the pint registry all
-of those are defined in.
+mapping — and the pint registry both are defined in. Grouping levels are not
+part of the system: they are derived per build from the policy environment's
+``*_id`` columns and registered in the system's registry then
+(:func:`ttsim.interface_dag_elements.unit_checks.resolve_environment_units`).
 
 The registry is per system, so two policy systems coexist in one process, each
 with its own base currency. "Exactly one currency is the base" (GEP 10) holds
@@ -19,7 +21,7 @@ from __future__ import annotations
 
 import dataclasses
 import datetime
-from collections.abc import Iterator, Mapping, Sequence
+from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
 from types import MappingProxyType
 from typing import Any
@@ -28,10 +30,6 @@ import pint
 from pint.util import to_units_container
 
 from ttsim.exceptions import UnitDefinitionError
-from ttsim.tt.grouping_levels import (
-    define_grouping_level_dimensions,
-    register_grouping_levels,
-)
 from ttsim.tt.units import (
     _ALLOWED_UNIT_TOKENS,
     _COMPOSITIONAL_BASE_TO_PINT,
@@ -61,7 +59,6 @@ class UnitSystem:
             base_currency="EUR",
             other_currencies={"DM": "EUR / 1.95583"},
             statutory_currencies={"0001-01-01": "DM", "2002-01-01": "EUR"},
-            grouping_levels=["hh", "bg", "fg"],
         )
 
     All of a system's currencies are interconvertible
@@ -95,15 +92,10 @@ class UnitSystem:
     an already-defined currency of this system (``{"DM": "EUR / 1.95583"}``).
     Definitions are applied in order, so one may reference an earlier one."""
 
-    grouping_levels: Sequence[str] = ()
-    """The group levels this system's declarations spell (``["hh", "bg"]``). The
-    individual ``person`` leaf is always present. A build discovers further
-    levels from the policy environment's ``*_id`` columns and registers them
-    then."""
-
     registry: pint.UnitRegistry = dataclasses.field(init=False, repr=False)
     """The system's own pint registry: the shared vocabulary plus this system's
-    currency definitions and grouping-level dimensions."""
+    currency definitions. Grouping-level dimensions are added per build, derived
+    from the policy environment's ``*_id`` columns."""
 
     currencies: frozenset[str] = dataclasses.field(init=False)
     """Every currency name this system defines — the base and the others."""
@@ -135,7 +127,6 @@ class UnitSystem:
         object.__setattr__(
             self, "other_currencies", MappingProxyType(dict(self.other_currencies))
         )
-        object.__setattr__(self, "grouping_levels", tuple(self.grouping_levels))
         registry = build_registry()
         object.__setattr__(self, "registry", registry)
         object.__setattr__(
@@ -149,11 +140,7 @@ class UnitSystem:
             "statutory_currency_by_start_date",
             self._parsed_statutory_currencies(),
         )
-        # Registry-local, and the last step that can reject anything; running it
-        # here keeps every global mutation below unfailable.
-        define_grouping_level_dimensions(names=self.grouping_levels, registry=registry)
         self._publish_currencies()
-        register_grouping_levels(names=self.grouping_levels, registry=registry)
 
     def currency_conversion_factor(
         self, *, source_currency: str, target_currency: str
@@ -396,13 +383,15 @@ class UnitSystem:
 def isolated_currency_registration() -> Iterator[None]:
     """Restore the shared unit vocabulary on exit (a test isolation tool).
 
-    A :class:`UnitSystem` keeps its currency definitions and level dimensions to
-    itself, but it also widens the process-global vocabulary — the currency
-    *names* a declaration may spell, the pint tokens a unit may combine, the
-    concrete currency bases injected on :class:`TTSIMUnit`, and the ``PER_<level>``
-    steps injected on :class:`CompositeUnit` — so that a `CompositeUnit` can be
-    classified without a system in scope. This block restores all of them, so a
-    system built inside it leaves the vocabulary as it found it.
+    A :class:`UnitSystem` keeps its currency definitions to itself, but it also
+    widens the process-global vocabulary — the currency *names* a declaration may
+    spell, the pint tokens a unit may combine, and the concrete currency bases
+    injected on :class:`TTSIMUnit` — so that a `CompositeUnit` can be classified
+    without a system in scope. Grouping-level registration
+    (:func:`ttsim.tt.grouping_levels.register_grouping_levels` and the
+    ``PER_<level>`` steps injected on :class:`CompositeUnit`) widens it the same
+    way. This block restores all of them, so a system built — or levels
+    registered — inside it leaves the vocabulary as it found it.
     """
     saved_currencies = set(_registered_currencies)
     saved_tokens = set(_ALLOWED_UNIT_TOKENS)

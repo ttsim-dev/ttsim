@@ -263,9 +263,6 @@ def with_partialled_params_and_scalars(
         for k, v in with_processed_params_and_scalars.items()
         if isinstance(v, ColumnFunction)
     }
-    # Names live in `FRAMEWORK_PARTIAL_ARGUMENTS` (shared with the unit checks);
-    # iterating that constant below keeps the two in sync — a new argument added
-    # there without a value here fails loudly.
     framework_argument_values = {
         "len_p_id": len_p_id,
         # Aggregation functions take a jax `num_segments` argument; the number of
@@ -275,16 +272,22 @@ def with_partialled_params_and_scalars(
         "xnp": xnp,
         "dnp": dnp,
     }
+    # `FRAMEWORK_PARTIAL_ARGUMENTS` (shared with the unit checks) names exactly
+    # these arguments; fail loudly if the two drift apart in either direction.
+    if framework_argument_values.keys() != FRAMEWORK_PARTIAL_ARGUMENTS:
+        msg = (
+            "The framework arguments partialled into column functions must match "
+            f"FRAMEWORK_PARTIAL_ARGUMENTS; got {sorted(framework_argument_values)} "
+            f"vs {sorted(FRAMEWORK_PARTIAL_ARGUMENTS)}."
+        )
+        raise RuntimeError(msg)
     all_partial_params = {
         **{
             k: v
             for k, v in with_processed_params_and_scalars.items()
             if not isinstance(v, ColumnObject)
         },
-        **{
-            name: framework_argument_values[name]
-            for name in FRAMEWORK_PARTIAL_ARGUMENTS
-        },
+        **framework_argument_values,
     }
 
     processed_functions = {}

@@ -17,8 +17,7 @@ from ttsim.tt.units import (
     UNSET_UNIT,
     CompositeUnit,
     strip_input_quantity_at_boundary,
-    token_is_agnostic_currency,
-    token_source_currency,
+    token_declares_a_currency,
 )
 from ttsim.typing import (
     Array,
@@ -151,7 +150,7 @@ def qnames_with_currency_declarations(
         token = getattr(specialized_environment.get(qname), "unit", UNSET_UNIT)
         if not isinstance(token, CompositeUnit):
             continue
-        if token_is_agnostic_currency(token) or token_source_currency(token):
+        if token_declares_a_currency(token):
             out.add(qname)
     return out
 

@@ -59,6 +59,7 @@ from ttsim.tt.column_objects_param_function import (
     ParamFunction,
     PolicyFunction,
     PolicyInput,
+    qname_is_person_pointer,
 )
 from ttsim.tt.currencies import UnitSystem
 from ttsim.tt.grouping_levels import register_grouping_levels
@@ -72,7 +73,7 @@ from ttsim.tt.param_objects import (
     ScalarParam,
 )
 from ttsim.tt.type_resolution import (
-    ResolvedKind,
+    BOOL_KINDS,
     TypeResolutionError,
     resolve_kind_of_annotation,
     resolve_kind_of_column_function,
@@ -100,6 +101,7 @@ from ttsim.tt.units import (
     resolve_compositional_field_unit,
     resolve_compositional_param_unit,
     resolved_unit_for_aggregation,
+    token_declares_a_currency,
     token_is_agnostic_currency,
     token_source_currency,
     unit_has_currency_component,
@@ -215,8 +217,6 @@ _NON_UNIT_ARGUMENT_VALUES: Mapping[str, Any] = {
     "len_p_id": 1,
 }
 
-_BOOL_KINDS = frozenset({ResolvedKind.BOOL_SCALAR, ResolvedKind.BOOL_COLUMN})
-
 #: The logical operators the unit check screens for boolean (dimensionless) operands.
 _LOGICAL_OPS = frozenset({"&", "|", "^", "~"})
 
@@ -283,6 +283,11 @@ def resolve_environment_units(
 
     A node that declares no unit (still :data:`UNSET_UNIT`) is absent from the
     result; the mandatory-units check reports it.
+
+    ``grouping_levels`` is the level set derived from the policy environment's
+    ``*_id`` columns (the ``labels__grouping_levels`` node) — the only source of
+    grouping levels. Each level is registered as a base dimension in the unit
+    system's registry here, at build time, so the resolution below can spell it.
     """
     registry = unit_system.registry
     register_grouping_levels(names=grouping_levels, registry=registry)
@@ -380,18 +385,6 @@ def _resolve_leveled_column_unit(
     )
 
 
-def _argument_is_person_pointer(qname: str) -> bool:
-    """Whether an aggregation argument is a ``p_id_*`` person pointer.
-
-    An ``agg_by_p_id`` aggregation becomes an :class:`AggByGroupFunction` once tree
-    logic is removed, carrying its foreign-key pointer (``p_id_recipient``, …) as a
-    plain argument. The pointer is not a value source — it selects *where* the sum
-    lands — so it must be excluded when finding the single source column, exactly
-    as the ``@agg_by_p_id_function`` constructor does.
-    """
-    return any(e.startswith("p_id_") for e in dt.tree_path_from_qname(qname))
-
-
 def _resolve_opted_out_agg_unit(
     obj: AggByGroupFunction,
     match: re.Match[str] | None,
@@ -460,7 +453,7 @@ def _resolve_agg_by_group_unit(
         p
         for p in inspect.signature(obj.function).parameters
         if not p.endswith("_id")
-        and not _argument_is_person_pointer(p)
+        and not qname_is_person_pointer(p)
         and p not in FRAMEWORK_PARTIAL_ARGUMENTS
     }
     if len(sources) != 1:
@@ -1020,8 +1013,7 @@ def _composite_token_level(token: CompositeUnit) -> str | None:
     """The grouping level a compositional token spells, or ``None`` if bare.
 
     Read straight off the token (``CURRENCY_PER_MONTH_PER_HH`` reports ``"hh"``,
-    a bare token reports ``None``). A terminal ``_PER_PERSON`` unit is bare
-    (``level is None``), so it reports ``None`` too (GEP 10).
+    a bare token reports ``None``).
     """
     return token.level.lower() if token.level is not None else None
 
@@ -1134,7 +1126,7 @@ def node_is_boolean(qname: str, obj: Any) -> bool:  # noqa: ANN401
             return False
     except TypeResolutionError:
         return False
-    return kind in _BOOL_KINDS
+    return kind in BOOL_KINDS
 
 
 def _is_checkable_node(qname: str, obj: Any) -> bool:  # noqa: ANN401
@@ -1675,7 +1667,7 @@ def _schedule_field_kind(
             f"only for a multi-dimensional lookup table (GEP 10)."
         )
     if issubclass(base, ConsecutiveIntLookupTableParamValue) and any(
-        _token_declares_a_currency(cast("CompositeUnit", axis)) for axis in input_axes
+        token_declares_a_currency(cast("CompositeUnit", axis)) for axis in input_axes
     ):
         raise UnitDefinitionError(
             f"{where}: is a lookup table keyed by consecutive integers, so no "
@@ -1775,11 +1767,6 @@ def _param_function_stand_in(
     )
 
 
-def _token_declares_a_currency(token: CompositeUnit) -> bool:
-    """Whether a compositional unit carries a currency base (agnostic or concrete)."""
-    return token_is_agnostic_currency(token) or token_source_currency(token) is not None
-
-
 def _schedule_param_function_contract_errors(
     env: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
 ) -> list[str]:
@@ -1810,9 +1797,8 @@ def _schedule_param_function_contract_errors(
         if not isinstance(obj, ParamFunction):
             continue
         declares_io = isinstance(obj.unit, InputOutputUnit)
-        returns_schedule = (
-            _return_annotation_name(obj.function) in _SCHEDULE_RETURN_TYPE_NAMES
-        )
+        return_type_name = _return_annotation_name(obj.function)
+        returns_schedule = return_type_name in _SCHEDULE_RETURN_TYPE_NAMES
         if declares_io and not returns_schedule:
             errors.append(
                 f"{qname}: declares `unit=InputOutputUnit(...)`, which states a "
@@ -1833,10 +1819,7 @@ def _schedule_param_function_contract_errors(
         if not declares_io:
             continue
         io_unit = obj.unit
-        builds_lookup_table = (
-            _return_annotation_name(obj.function)
-            == "ConsecutiveIntLookupTableParamValue"
-        )
+        builds_lookup_table = return_type_name == "ConsecutiveIntLookupTableParamValue"
         input_axes = (
             io_unit.input_unit
             if isinstance(io_unit.input_unit, tuple)
@@ -1850,7 +1833,7 @@ def _schedule_param_function_contract_errors(
                 f"(GEP 10)."
             )
         if builds_lookup_table and any(
-            _token_declares_a_currency(cast("CompositeUnit", axis))
+            token_declares_a_currency(cast("CompositeUnit", axis))
             for axis in input_axes
         ):
             errors.append(
@@ -2052,10 +2035,9 @@ class _PathExplorer:
     ``True`` and the suffix dropped, so successive runs walk the whole path
     tree. The number of runs equals the number of *reachable* paths — not
     ``2**(branches)`` — because only branches actually executed become decisions
-    (an unreached branch never asks). This subsumes the former boolean
-    enumeration (a boolean input is just another decision) and additionally
-    reaches numeric-driven branches (``if income > limit``), which a single
-    representative value would silently fix to one arm.
+    (an unreached branch never asks). A boolean input is just another decision,
+    and numeric-driven branches (``if income > limit``) are reached too — a
+    single representative value would silently fix them to one arm.
     """
 
     def __init__(self) -> None:
@@ -2306,7 +2288,9 @@ class _UnitCheckQuantity:
         monthly amount) — promote it to a parameter or tag it with
         ``cast_ttsim_unit``. Only ``0`` (the ``x + 0.0`` guard, the floor at zero) is
         allowed inline, and literals next to a dimensionless quantity stay
-        lenient.
+        lenient. Unlike ``+``/``-``, an ordering comparison runs no forward pint
+        operation, so calendar points get no delegate-to-pint dispensation here
+        (equivalence decides them by identity: only same-axis points order).
         """
         other_q = _unwrap(other)
         if isinstance(other_q, _UnitCheckStructuredValue):
@@ -2329,47 +2313,34 @@ class _UnitCheckQuantity:
                 literal=other_q,
             )
 
-    def _fail_if_ordering_operand_is_invalid(self, other: Any, op: str) -> None:  # noqa: ANN401
-        """Screen an operand of an ordering comparison (``<``/``<=``/``>``/``>=``).
-
-        Two unit-carrying operands must be equivalent (calendar points by
-        identity, so only same-axis points order), and a non-zero bare literal
-        next to a non-dimensionless quantity is rejected (``wealth >
-        1_000_000`` reads the bound as currency) — see
-        :meth:`_fail_if_other_unit_is_not_equivalent`. Unlike ``+``/``-``, an
-        ordering runs no forward pint operation, so calendar points get no
-        delegate-to-pint dispensation here.
-        """
-        self._fail_if_other_unit_is_not_equivalent(other=other, op=op)
-
     def __bool__(self) -> bool:
         return self._explorer.decide(self._label)
 
     # Ordering comparisons are unit-blind at run time, so a non-equivalent
     # unit-carrying operand is a bug; the explorer still forces which branch runs.
     def __lt__(self, other: Any) -> _UnitCheckQuantity:  # noqa: ANN401
-        self._fail_if_ordering_operand_is_invalid(other=other, op="<")
+        self._fail_if_other_unit_is_not_equivalent(other=other, op="<")
         return self._controlled_bool_at(
             level=self._comparison_level(other),
             label=self._composed_label(other=other, op="<"),
         )
 
     def __le__(self, other: Any) -> _UnitCheckQuantity:  # noqa: ANN401
-        self._fail_if_ordering_operand_is_invalid(other=other, op="<=")
+        self._fail_if_other_unit_is_not_equivalent(other=other, op="<=")
         return self._controlled_bool_at(
             level=self._comparison_level(other),
             label=self._composed_label(other=other, op="<="),
         )
 
     def __gt__(self, other: Any) -> _UnitCheckQuantity:  # noqa: ANN401
-        self._fail_if_ordering_operand_is_invalid(other=other, op=">")
+        self._fail_if_other_unit_is_not_equivalent(other=other, op=">")
         return self._controlled_bool_at(
             level=self._comparison_level(other),
             label=self._composed_label(other=other, op=">"),
         )
 
     def __ge__(self, other: Any) -> _UnitCheckQuantity:  # noqa: ANN401
-        self._fail_if_ordering_operand_is_invalid(other=other, op=">=")
+        self._fail_if_other_unit_is_not_equivalent(other=other, op=">=")
         return self._controlled_bool_at(
             level=self._comparison_level(other),
             label=self._composed_label(other=other, op=">="),
@@ -3128,7 +3099,7 @@ def _clamping_op(left: Any, right: Any, op: str) -> Any:  # noqa: ANN401
     if not isinstance(quantity, _UnitCheckQuantity):
         return getattr(numpy, op)(left, right)
     other = right if quantity is left else left
-    quantity._fail_if_ordering_operand_is_invalid(other=other, op=op)  # noqa: SLF001
+    quantity._fail_if_other_unit_is_not_equivalent(other=other, op=op)  # noqa: SLF001
     return quantity._wrap(quantity.q)  # noqa: SLF001
 
 
@@ -3152,7 +3123,7 @@ def _clip_op(value: Any, a_min: Any, a_max: Any) -> Any:  # noqa: ANN401
         return numpy.clip(value, a_min, a_max)
     for bound in (a_min, a_max):
         if bound is not None:
-            value._fail_if_ordering_operand_is_invalid(other=bound, op="clip")  # noqa: SLF001
+            value._fail_if_other_unit_is_not_equivalent(other=bound, op="clip")  # noqa: SLF001
     return value._wrap(value.q)  # noqa: SLF001
 
 

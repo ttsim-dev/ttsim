@@ -117,39 +117,47 @@ def _make_vectorizable(
 
     module = _module_from_backend(backend)
     tree = _make_vectorizable_ast(func, module=module, xnp=xnp)
+    return _recompile_from_ast(
+        func=func,
+        tree=tree,
+        scope_bindings={module: import_module(module)},
+        filename="<ast>",
+    )
 
-    # recreate scope of function, add array library
+
+def _recompile_from_ast(
+    func: Callable[..., Any],
+    tree: ast.Module,
+    scope_bindings: Mapping[str, Any],
+    filename: str,
+) -> Callable[..., Any]:
+    """Execute a rewritten AST in ``func``'s scope and restore ``func``'s identity.
+
+    Rebuilds the defining scope (module globals plus dereferenced closure cells),
+    overlays ``scope_bindings``, executes ``tree``, and wraps the resulting
+    function with ``func``'s metadata (annotations excluded — the rewrite changes
+    the calling convention). The AST carries the original argument names, and the
+    rewrites never touch the argument list, so any names renamed dynamically after
+    definition are matched positionally against ``func``'s live signature.
+    """
     scope = dict(func.__globals__)  # ty: ignore[unresolved-attribute]
     if func.__closure__:  # ty: ignore[unresolved-attribute]
         closure_vars = func.__code__.co_freevars  # ty: ignore[unresolved-attribute]
         closure_cells = [c.cell_contents for c in func.__closure__]  # ty: ignore[unresolved-attribute]
         scope.update(dict(zip(closure_vars, closure_cells, strict=False)))
-
-    scope[module] = import_module(module)
-
-    # execute new ast
-    compiled = compile(tree, "<ast>", "exec")
-    exec(compiled, scope)  # noqa: S102
-
-    # assign created function
-    new_func = scope[func.__name__]  # ty: ignore[unresolved-attribute]
-    _vectorized = functools.wraps(func, assigned=_WRAPPER_ASSIGNMENTS_NO_ANNOTATIONS)(
-        new_func
+    scope.update(scope_bindings)
+    exec(compile(tree, filename, "exec"), scope)  # noqa: S102
+    recompiled = functools.wraps(func, assigned=_WRAPPER_ASSIGNMENTS_NO_ANNOTATIONS)(
+        scope[func.__name__]  # ty: ignore[unresolved-attribute]
     )
-
-    # For functions whose argument names are renamed dynamically, we need to match the
-    # argument names, since the vectorization works on the AST level, which is not
-    # affected by the original renaming. This assumes that the argument ordering is
-    # the same in the function and its AST.
-    _original_args = _args_from_func_ast(_func_to_ast(func))
-    _args_name_mapper = dict(
+    args_name_mapper = dict(
         zip(
-            _original_args,
+            _args_from_func_ast(tree),
             list(inspect.signature(func).parameters),
             strict=False,
         )
     )
-    return rename_arguments(_vectorized, mapper=_args_name_mapper)
+    return rename_arguments(recompiled, mapper=args_name_mapper)
 
 
 def make_vectorizable_source(
@@ -237,29 +245,12 @@ def recompile_with_logical_ops_as_calls(
 
         _LogicalOpRewriter().visit(tree)
         ast.fix_missing_locations(tree)
-    scope = dict(func.__globals__)  # ty: ignore[unresolved-attribute]
-    if func.__closure__:  # ty: ignore[unresolved-attribute]
-        closure_vars = func.__code__.co_freevars  # ty: ignore[unresolved-attribute]
-        closure_cells = [c.cell_contents for c in func.__closure__]  # ty: ignore[unresolved-attribute]
-        scope.update(dict(zip(closure_vars, closure_cells, strict=False)))
-    scope[module] = module_obj
-    if extra_globals:
-        scope.update(extra_globals)
-    exec(compile(tree, "<unit-check-logical-ops>", "exec"), scope)  # noqa: S102
-    rewritten = functools.wraps(func, assigned=_WRAPPER_ASSIGNMENTS_NO_ANNOTATIONS)(
-        scope[func.__name__]  # ty: ignore[unresolved-attribute]
+    return _recompile_from_ast(
+        func=func,
+        tree=tree,
+        scope_bindings={module: module_obj, **(extra_globals or {})},
+        filename="<unit-check-logical-ops>",
     )
-    # The AST carries the original argument names; match any renamed dynamically
-    # after definition, exactly as `_make_vectorizable` does. The rewrite only
-    # touches `BoolOp` nodes, so `tree`'s argument list is the original one.
-    args_name_mapper = dict(
-        zip(
-            _args_from_func_ast(tree),
-            list(inspect.signature(func).parameters),
-            strict=False,
-        )
-    )
-    return rename_arguments(rewritten, mapper=args_name_mapper)
 
 
 def _make_vectorizable_ast(

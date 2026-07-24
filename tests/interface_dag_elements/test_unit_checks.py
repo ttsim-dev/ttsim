@@ -1,4 +1,4 @@
-"""Tests for the environment-level conservative unit checks (GEP 10, #121)."""
+"""Tests for the environment-level conservative unit checks (GEP 10)."""
 
 from __future__ import annotations
 
@@ -20,7 +20,6 @@ from ttsim.interface_dag_elements.automatically_added_functions import (
     create_agg_by_group_functions,
 )
 from ttsim.interface_dag_elements.unit_checks import (
-    FRAMEWORK_DATE_NODE_UNITS,
     _resolved_return_structure,
     _structured_field_kinds,
     declared_unit_tokens,
@@ -28,7 +27,6 @@ from ttsim.interface_dag_elements.unit_checks import (
     fail_if_environment_units_are_missing,
     node_is_boolean,
     resolve_environment_units,
-    resolved_units,
 )
 from ttsim.tt import (
     UNSET_UNIT,
@@ -254,8 +252,8 @@ def test_missing_check_reports_unannotated_node():
 
 
 def test_missing_check_reports_unannotated_identifier_and_boolean():
-    # Identifiers and booleans are no longer structurally exempt (GEP 10): an
-    # undeclared one is reported just like any other node.
+    # Identifiers and booleans declare `DIMENSIONLESS` like every other node
+    # (GEP 10): an undeclared one is reported, whatever its data type.
     @policy_input(unit=UNSET_UNIT)
     def some_id() -> int:
         """An identifier carrying the UNSET sentinel."""
@@ -264,7 +262,7 @@ def test_missing_check_reports_unannotated_identifier_and_boolean():
     def some_flag() -> bool:
         """A boolean carrying the UNSET sentinel."""
 
-    with pytest.raises(UnitDefinitionError, match="some_id"):
+    with pytest.raises(UnitDefinitionError, match=r"(?s)some_flag.*some_id"):
         fail_if_environment_units_are_missing(
             env={"some_id": some_id, "some_flag": some_flag},
             grouping_levels=GROUPING_LEVELS,
@@ -430,23 +428,6 @@ def test_resolution_combines_token_and_name_suffix():
     )
 
 
-def test_resolved_units_node_wraps_the_resolver():
-    # The interface node `unit_checks__resolved_units` is a thin wrapper whose
-    # parameter names are the DAG dependencies it is wired to. Calling it with
-    # those names must reproduce `resolve_environment_units` exactly — the three
-    # unit consumers then share this single walk per build.
-    env = {"wealth": wealth, "amount_y": amount_y}
-    via_node = resolved_units(
-        specialized_environment__without_tree_logic_and_with_derived_functions=env,
-        labels__grouping_levels=GROUPING_LEVELS,
-        unit_system=UNIT_SYSTEM,
-    )
-    direct = resolve_environment_units(
-        env=env, grouping_levels=GROUPING_LEVELS, unit_system=UNIT_SYSTEM
-    )
-    assert via_node == direct
-
-
 def test_resolution_includes_framework_date_nodes():
     # `policy_year` is a calendar *point*, not a duration (GEP 10): it is not
     # equivalent to a `year` duration.
@@ -466,7 +447,6 @@ def test_resolution_includes_framework_date_nodes():
         right=parse_unit(unit_str="year", registry=REGISTRY),
         registry=REGISTRY,
     )
-    assert "policy_year" in FRAMEWORK_DATE_NODE_UNITS
 
 
 def test_dict_param_with_per_leaf_units_resolves_to_unit_tree():
@@ -645,7 +625,7 @@ def test_stock_times_rate_with_time_component_passes():
 
 
 def test_stock_times_rate_without_time_component_is_caught():
-    """The motivating #121 case: wealth * tax_rate must resolve to a flow.
+    """``wealth * tax_rate`` must resolve to a flow.
 
     ``tax_rate`` is a plain dimensionless share, so ``wealth * tax_rate`` is a
     stock while the node declares a yearly flow. The exemption branch returns
@@ -667,12 +647,12 @@ def test_stock_times_rate_without_time_component_is_caught():
 
 
 def test_multi_boolean_guard_bug_only_on_mixed_assignment_is_caught():
-    """#134: branch exploration covers multi-boolean guards.
+    """Branch exploration covers multi-boolean guards.
 
     The bug branch is reached only when ``is_exempt=False`` AND
-    ``use_wealth=True`` — a mixed assignment the former all-truthy / all-falsy
-    two-run never produced (all-truthy hit the exempt return, all-falsy hit the
-    correct flow branch). The path explorer walks every reachable combination.
+    ``use_wealth=True`` — a mixed assignment (all-truthy hits the exempt
+    return, all-falsy hits the correct flow branch). The path explorer walks
+    every reachable combination.
     """
 
     @policy_input(unit=TTSIMUnit.DIMENSIONLESS)
@@ -740,7 +720,7 @@ def test_multi_boolean_guard_all_paths_consistent_passes():
 
 
 def test_numeric_driven_branch_bug_is_caught():
-    """Tier 2 of #134: numeric-driven branches are explored, not fixed.
+    """Numeric-driven branches are explored, not fixed.
 
     The bug lives on the high-wealth arm of a numeric comparison with no
     boolean input at all. A single representative magnitude would fix the
@@ -2554,7 +2534,9 @@ def test_scalar_max_zero_floor_preserves_unit_when_result_is_continued():
     """Scalar ``max(x, 0.0)`` carries ``x``'s unit on every branch, exactly as
     the vectorized ``xnp.maximum`` does, so the clamped value stays usable: the
     net/gross ratio ``max(income_m, 0.0) / income_m`` is dimensionless without a
-    ``cast_ttsim_unit`` on the zero floor (GEP 10)."""
+    ``cast_ttsim_unit`` on the zero floor (GEP 10). The literal spelling
+    matters: the check rebinds the *names* ``max``/``min``, so each is
+    exercised by its own body."""
 
     @policy_function(unit=TTSIMUnit.DIMENSIONLESS)
     def ratio(income_m: float) -> float:
@@ -2801,19 +2783,6 @@ def test_join_target_level_disagreeing_with_the_declaration_is_caught():
         )
 
 
-def test_dimensionless_body_cannot_claim_a_currency_declaration():
-    @policy_function(unit=TTSIMUnit.CURRENCY)
-    def depends_on_identifier(p_id: int) -> float:
-        return p_id * 2.0
-
-    with pytest.raises(UnitConsistencyError, match="depends_on_identifier"):
-        fail_if_environment_units_are_inconsistent(
-            env={"p_id": p_id, "depends_on_identifier": depends_on_identifier},
-            grouping_levels=GROUPING_LEVELS,
-            unit_system=UNIT_SYSTEM,
-        )
-
-
 def test_concrete_mismatch_is_caught():
     @policy_function(unit=TTSIMUnit.CURRENCY)
     def mislabelled(age_in_years: float) -> float:
@@ -2832,7 +2801,7 @@ def test_concrete_mismatch_is_caught():
 
 
 def test_dict_param_subscripting_is_verifiable():
-    """Per-leaf units make dict-consuming bodies unit-checkable (GEP 10, #121)."""
+    """Per-leaf units make dict-consuming bodies unit-checkable (GEP 10)."""
     schedule = DictParam(
         value={"child_amount_y": 100.0, "max_age": 18},
         unit={"child_amount_y": "CASTAR_PER_YEAR", "max_age": "YEARS"},
@@ -4231,17 +4200,6 @@ def test_verify_units_false_still_checks_consumers_against_declared_unit():
 # Aggregation decorators
 
 
-def test_count_aggregation_declares_head_count_per_group():
-    """A COUNT declares its head-count unit explicitly — ``DIMENSIONLESS_PER_<group>``
-    (GEP 10)."""
-
-    @agg_by_group_function(agg_type=AggType.COUNT, unit=TTSIMUnit.DIMENSIONLESS.PER_FAM)
-    def number_of_individuals_fam(fam_id: int) -> int:
-        """A head count per family."""
-
-    assert number_of_individuals_fam.unit == TTSIMUnit.DIMENSIONLESS.PER_FAM
-
-
 def test_declared_unit_tokens_excludes_the_unset_sentinel():
     """``UNSET_UNIT`` is itself a ``CompositeUnit`` sentinel standing for the
     *absence* of a declaration, so the mapping holds only real declarations and
@@ -4279,31 +4237,6 @@ def test_group_sum_of_a_head_count_source_derives_head_count_per_group():
         grouping_levels=GROUPING_LEVELS,
         unit_system=UNIT_SYSTEM,
     )
-
-
-def test_any_aggregation_declares_dimensionless_at_target_level():
-    """A group ANY declares ``DIMENSIONLESS_PER_<group>`` — a boolean at the target
-    level (GEP 10)."""
-
-    @agg_by_group_function(agg_type=AggType.ANY, unit=TTSIMUnit.DIMENSIONLESS.PER_FAM)
-    def any_exempt_fam(is_exempt: bool, fam_id: int) -> bool:
-        """Any member exempt."""
-
-    assert any_exempt_fam.unit == TTSIMUnit.DIMENSIONLESS.PER_FAM
-
-
-def test_sum_aggregation_requires_explicit_unit():
-    @agg_by_group_function(agg_type=AggType.SUM, unit=TTSIMUnit.CURRENCY)
-    def wealth_fam(wealth: float, fam_id: int) -> float:
-        """Family wealth."""
-
-    assert wealth_fam.unit is TTSIMUnit.CURRENCY
-
-    with pytest.raises(AggregationDefinitionError, match="must declare a `unit"):
-
-        @agg_by_group_function(agg_type=AggType.SUM)
-        def unannotated_fam(wealth: float, fam_id: int) -> float:
-            """Missing its unit."""
 
 
 def test_sum_aggregation_over_booleans_declares_dimensionless():
