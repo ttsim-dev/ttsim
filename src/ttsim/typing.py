@@ -246,7 +246,7 @@ if TYPE_CHECKING:
         @overload
         def __getitem__(
             self, key: str
-        ) -> str | None | dict[Literal["de", "en"], str | None]: ...
+        ) -> str | dict[Literal["de", "en"], str | None] | None: ...
 
         @overload
         def __getitem__(
@@ -257,46 +257,46 @@ if TYPE_CHECKING:
             self, key: str | datetime.date
         ) -> (
             str
-            | None
             | dict[Literal["de", "en"], str | None]
             | dict[Literal["note", "reference"] | str | int, Any]
+            | None
         ): ...
 
         @overload
         def get(
             self, key: str, default: None = None
-        ) -> str | None | dict[Literal["de", "en"], str | None]: ...
+        ) -> str | dict[Literal["de", "en"], str | None] | None: ...
 
         @overload
         def get(
             self, key: str, default: str | bool | float | CompositeUnit
         ) -> (
             str
-            | None
             | dict[Literal["de", "en"], str | None]
             | bool
             | int
             | float
             | CompositeUnit
+            | None
         ): ...
 
         def get(
             self,
             key: str,
             default: str
-            | None
             | bool
             | float
             | CompositeUnit
-            | dict[Literal["de", "en"], str | None] = None,
+            | dict[Literal["de", "en"], str | None]
+            | None = None,
         ) -> (
             str
-            | None
             | dict[Literal["de", "en"], str | None]
             | bool
             | int
             | float
             | CompositeUnit
+            | None
         ): ...
 
         def __contains__(self, key: str | datetime.date) -> bool: ...
