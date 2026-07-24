@@ -26,7 +26,7 @@ from mettsim import middle_earth
 from ttsim import MainTarget, OrigPolicyObjects, main
 from ttsim.exceptions import UnitDefinitionError
 from ttsim.interface_dag_elements.policy_environment import (
-    _get_one_param,
+    _active_param_objects,
 )
 from ttsim.interface_dag_elements.results import tree_with_unit_annotations
 from ttsim.interface_dag_elements.warn_if import (
@@ -119,15 +119,31 @@ def _load(
     policy_date: datetime.date,
     computation_currency: str,
 ) -> Any:
-    param = _get_one_param(
-        leaf_name=leaf_name,
-        spec=spec,
+    """The single parameter `spec` builds at `policy_date`."""
+    params = _load_many(
+        specs={leaf_name: spec},
+        policy_date=policy_date,
+        computation_currency=computation_currency,
+    )
+    param = params["module"][leaf_name]
+    assert param is not None
+    return param
+
+
+def _load_many(
+    specs: dict[str, Any],
+    policy_date: datetime.date,
+    computation_currency: str,
+) -> Any:
+    """All parameters `specs` builds at `policy_date`, in one namespace."""
+    return _active_param_objects(
+        orig={
+            ("module", "params", leaf_name): spec for leaf_name, spec in specs.items()
+        },
         policy_date=policy_date,
         xnp=np,
         computation_currency=computation_currency,
     )
-    assert param is not None
-    return param
 
 
 def _scalar_spec(**header):
@@ -161,6 +177,18 @@ def test_non_statutory_currency_declaration_is_rejected():
             policy_date=POLICY_DATE,
             computation_currency="CASTAR",
         )
+
+
+def test_every_non_statutory_parameter_is_named_in_one_error():
+    """All parameters in a wrong currency are reported together, not one per run."""
+    with pytest.raises(UnitDefinitionError) as excinfo:
+        _load_many(
+            specs={"threshold": _scalar_spec(), "allowance": _scalar_spec()},
+            policy_date=POLICY_DATE,
+            computation_currency="CASTAR",
+        )
+    message = str(excinfo.value)
+    assert all(name in message for name in ("module__threshold", "module__allowance"))
 
 
 def test_entry_level_override_writes_a_changeover():

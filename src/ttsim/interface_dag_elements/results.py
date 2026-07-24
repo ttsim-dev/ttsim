@@ -8,16 +8,13 @@ import numpy
 import pandas as pd
 import pint
 
+from ttsim.interface_dag_elements.currency import CurrencyConversion
 from ttsim.interface_dag_elements.data_converters import (
     nested_data_to_df_with_mapped_columns,
     nested_data_to_df_with_nested_columns,
     nested_data_to_df_with_qname_columns,
 )
 from ttsim.interface_dag_elements.interface_node_objects import interface_function
-from ttsim.interface_dag_elements.processed_data import (
-    currency_conversion_factor_and_columns,
-    value_in_target_currency,
-)
 from ttsim.tt.currencies import UnitSystem
 from ttsim.tt.units import (
     UnitAnnotatedColumn,
@@ -56,7 +53,7 @@ def tree(
     columns requested as targets are returned exactly as provided, hence already in the
     data currency.
     """
-    factor, currency_qnames = currency_conversion_factor_and_columns(
+    conversion = CurrencyConversion.between(
         qnames=raw_results__columns_with_original_p_ids,
         specialized_environment=(
             specialized_environment__without_tree_logic_and_with_derived_functions
@@ -79,12 +76,7 @@ def tree(
             **raw_results__params,
             **raw_results__from_input_data,
             **{
-                k: value_in_target_currency(
-                    value=reorder_arrays(v),
-                    qname=k,
-                    currency_qnames=currency_qnames,
-                    factor=factor,
-                )
+                k: conversion.apply(value=reorder_arrays(v), qname=k)
                 for k, v in raw_results__columns_with_original_p_ids.items()
             },
         }

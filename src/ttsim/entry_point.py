@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import datetime
 import inspect
-import re
 from collections.abc import Callable, Iterable
 from contextlib import suppress
 from pathlib import Path
@@ -88,8 +87,13 @@ def main(
     raw_results: RawResults | None = None,
     results: Results | None = None,
 ) -> Any:  # noqa: ANN401
-    """
-    Main function that processes the inputs and returns the outputs.
+    """Main function that processes the inputs and returns the outputs.
+
+    Args:
+        processed_data: Data replacing the `processed_data` node wholesale. It
+            bypasses `input_data_in_computation_currency`, so its values are
+            assumed to be bare magnitudes already denominated in the computation
+            currency (GEP 10).
     """
     input_qnames = _harmonize_inputs(locals())
     if main_target is not None:
@@ -103,10 +107,7 @@ def main(
         main_targets = _harmonize_main_targets(main_targets)
 
     # If providing data, we require tt_targets.
-    if (
-        any(re.match("(input|processed)_data", s) for s in input_qnames)
-        and tt_targets is None
-    ):
+    if not _SUPPLIABLE_DATA_QNAMES.isdisjoint(input_qnames) and tt_targets is None:
         raise ValueError(_MSG_FOR_MISSING_TT_TARGETS)
 
     flat_interface_objects = load_flat_interface_functions_and_inputs()
@@ -197,6 +198,17 @@ def _harmonize_inputs(inputs: dict[str, Any]) -> dict[str, Any]:
         with suppress(KeyError, TypeError):
             qname_inputs[qname] = acc(dict_inputs)
     return {k: v for k, v in qname_inputs.items() if v is not None}
+
+
+#: The `main()` keywords that supply data. Supplying any of them requires
+#: `tt_targets`, because it is ambiguous what to compute once a column that
+#: could be derived from primitives is overridden.
+_SUPPLIABLE_DATA_QNAMES: frozenset[str] = frozenset(
+    {
+        MainTarget.processed_data,
+        *dt.flatten_to_qnames(MainTarget.input_data.to_dict()).values(),
+    }
+)
 
 
 _MSG_FOR_MISSING_TT_TARGETS = """When providing data, `tt_targets` must be provided.

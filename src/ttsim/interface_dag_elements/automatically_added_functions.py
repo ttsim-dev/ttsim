@@ -29,7 +29,6 @@ from ttsim.tt.column_objects_param_function import (
 )
 from ttsim.tt.param_objects import ScalarParam
 from ttsim.tt.type_resolution import (
-    _COLUMN_KIND_TO_TYPE_STRING,
     BOOL_KINDS,
     ResolvedKind,
     TypeResolutionError,
@@ -503,12 +502,11 @@ def create_agg_by_group_functions(
                 # Nothing to derive the stub's unit from; the mandatory-units
                 # check reports the input.
                 continue
-            source_kind = _resolve_agg_source_kind(
+            source_kind = _resolve_source_column_kind(
                 source_name=base_name_with_time_unit,
-                target_name=abgfn,
                 column_functions=column_functions,
                 qname_policy_environment=source_environment,
-                for_input_stub=supplied_by_data,
+                input_stub_name=abgfn if supplied_by_data else None,
             )
             unit = unit_for_aggregation(
                 source_unit=source_unit,
@@ -525,7 +523,7 @@ def create_agg_by_group_functions(
                 input_stubs[abgfn] = _input_column_stub(
                     qname=abgfn,
                     unit=unit,
-                    data_type=_COLUMN_KIND_TO_TYPE_STRING[output_kind],
+                    data_type=output_kind,
                 )
                 continue
             group_id_name = f"{group_id}_id"
@@ -558,41 +556,6 @@ def create_agg_by_group_functions(
         functions=MappingProxyType(functions),
         input_stubs=MappingProxyType(input_stubs),
     )
-
-
-def _resolve_agg_source_kind(
-    source_name: str,
-    target_name: str,
-    column_functions: dict[str, ColumnFunction],
-    qname_policy_environment: PolicyEnvironment,
-    for_input_stub: bool,
-) -> ResolvedKind:
-    """The aggregation source's column kind.
-
-    For a `PolicyInput` stub the source declares a unit but its kind does not
-    resolve, so the stub would otherwise be dropped and the input would silently
-    escape currency conversion and unit validation. Say so against the input's
-    name rather than reporting the generic auto-aggregation failure.
-
-    Raises:
-        TypeResolutionError: If the source column's kind does not resolve.
-    """
-    try:
-        return _resolve_source_column_kind(
-            source_name=source_name,
-            column_functions=column_functions,
-            qname_policy_environment=qname_policy_environment,
-        )
-    except TypeResolutionError as error:
-        if not for_input_stub:
-            raise
-        msg = (
-            f"Cannot derive the unit of input {target_name!r} from its aggregation "
-            f"source {source_name!r}: the source declares a unit but its column kind "
-            f"does not resolve, and a SUM over a boolean carries a different unit than "
-            f"one over a number. Declare {source_name!r} with a resolvable data type."
-        )
-        raise TypeResolutionError(msg) from error
 
 
 def _resolve_source_unit(
@@ -631,6 +594,8 @@ def _resolve_source_column_kind(
     source_name: str,
     column_functions: dict[str, ColumnFunction],
     qname_policy_environment: PolicyEnvironment,
+    *,
+    input_stub_name: str | None = None,
 ) -> ResolvedKind:
     """Resolve the column kind of an auto-aggregation source column.
 
@@ -653,6 +618,11 @@ def _resolve_source_column_kind(
         source_name: The qualified name of the source column.
         column_functions: Qualified-name to column function mapping.
         qname_policy_environment: The flat policy environment.
+        input_stub_name: The derived name whose `PolicyInput` stub the kind is
+            resolved for, or `None` when resolving for an aggregation function.
+            A stub whose kind does not resolve would be dropped and its input
+            would silently escape currency conversion and unit validation, so
+            the failure is reported against the input's name.
 
     Returns:
         The source column's `ResolvedKind` (always a column kind).
@@ -662,44 +632,67 @@ def _resolve_source_column_kind(
             at `source_name`, or declared `PolicyInput` at a sibling time
             unit carries a kind.
     """
-    source_function = column_functions.get(source_name)
-    if source_function is not None:
-        kind = resolve_kind_of_column_function(
-            source_function,
-            node_name=source_name,
+    if input_stub_name is None:
+        msg = (
+            f"Cannot resolve the dtype of auto-aggregation source column "
+            f"{source_name!r}: it is neither a column function in the DAG, a "
+            f"`PolicyInput` with a declared `data_type`, nor a sibling of any "
+            f"declared `PolicyInput` at another time unit. A concrete source "
+            f"dtype is required to synthesize a typed aggregation wrapper."
         )
-        return vectorized_column_kind(kind, node_name=source_name)
-
-    policy_input = qname_policy_environment.get(source_name)
-    if isinstance(policy_input, PolicyInput):
-        kind = resolve_kind_of_annotation(
-            policy_input.data_type,
-            node_name=source_name,
+    else:
+        msg = (
+            f"Cannot derive the unit of input {input_stub_name!r} from its "
+            f"aggregation source {source_name!r}: the source declares a unit but "
+            f"its column kind does not resolve, and a SUM over a boolean carries "
+            f"a different unit than one over a number. Declare {source_name!r} "
+            f"with a resolvable data type."
         )
-        return vectorized_column_kind(kind, node_name=source_name)
+    try:
+        source_function = column_functions.get(source_name)
+        if source_function is not None:
+            kind = resolve_kind_of_column_function(
+                source_function,
+                node_name=source_name,
+            )
+            return vectorized_column_kind(kind, node_name=source_name)
 
-    sibling = _find_sibling_policy_input_at_other_time_unit(
-        source_name=source_name,
-        qname_policy_environment=qname_policy_environment,
-    )
-    if sibling is not None:
-        kind = resolve_kind_of_annotation(
-            sibling.data_type,
-            node_name=source_name,
+        policy_input = qname_policy_environment.get(source_name)
+        if isinstance(policy_input, PolicyInput):
+            kind = resolve_kind_of_annotation(
+                policy_input.data_type,
+                node_name=source_name,
+            )
+            return vectorized_column_kind(kind, node_name=source_name)
+
+        sibling = _find_sibling_policy_input_at_other_time_unit(
+            source_name=source_name,
+            qname_policy_environment=qname_policy_environment,
         )
-        return vectorized_column_kind(kind, node_name=source_name)
+        if sibling is not None:
+            kind = resolve_kind_of_annotation(
+                sibling.data_type,
+                node_name=source_name,
+            )
+            return vectorized_column_kind(kind, node_name=source_name)
+    except TypeResolutionError as error:
+        if input_stub_name is None:
+            raise
+        raise TypeResolutionError(msg) from error
 
-    msg = (
-        f"Cannot resolve the dtype of auto-aggregation source column "
-        f"{source_name!r}: it is neither a column function in the DAG, a "
-        f"`PolicyInput` with a declared `data_type`, nor a sibling of any "
-        f"declared `PolicyInput` at another time unit. A concrete source "
-        f"dtype is required to synthesize a typed aggregation wrapper."
-    )
     raise TypeResolutionError(msg)
 
 
-def _input_column_stub(qname: str, unit: CompositeUnit, data_type: str) -> PolicyInput:
+def _input_column_stub(
+    qname: str,
+    unit: CompositeUnit,
+    data_type: str | ResolvedKind,
+) -> PolicyInput:
+    """A `PolicyInput` standing in for input data supplied at a derived name.
+
+    `data_type` is either a column-type alias name or an already-resolved
+    `ResolvedKind`; `resolve_kind_of_annotation` accepts both.
+    """
     return PolicyInput(
         leaf_name=dt.tree_path_from_qname(qname)[-1],
         data_type=data_type,

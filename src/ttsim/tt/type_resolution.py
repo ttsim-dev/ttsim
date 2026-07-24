@@ -188,10 +188,14 @@ def resolve_kind_of_annotation(
 
     Annotations on ttsim functions are strings under
     `from __future__ import annotations`; live type objects appear too
-    (e.g. `int`). Both forms are handled.
+    (e.g. `int`). Both forms are handled. A synthesized node may carry an
+    already-resolved `ResolvedKind` in place of an annotation; it is passed
+    through, so a build-time resolution never has to be spelled back out as a
+    type string only to be parsed again.
 
     Args:
-        annotation: The annotation, a string or a type object.
+        annotation: The annotation — a string, a type object, or a
+            `ResolvedKind`.
         node_name: The qualified name of the node, used in error messages.
 
     Returns:
@@ -202,6 +206,8 @@ def resolve_kind_of_annotation(
         TypeResolutionError: If `annotation` is empty / missing — a node
             that must be resolved has to carry an annotation.
     """
+    if isinstance(annotation, ResolvedKind):
+        return annotation
     if annotation is None or annotation == "" or annotation is _EMPTY:
         msg = (
             f"Node {node_name!r} carries no return annotation, so its output "
