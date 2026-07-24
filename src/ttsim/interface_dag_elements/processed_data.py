@@ -137,8 +137,8 @@ def qnames_with_currency_declarations(
 ) -> set[str]:
     """The subset of ``qnames`` whose declared unit carries a currency component.
 
-    Identifies the columns to convert between the data currency and the
-    computation currency (GEP 10). Every column carries its unit in the
+    Identifies the input values to convert between the data currency and the
+    computation currency (GEP 10). Every value carries its unit in the
     specialized environment — its own declaration, the minted unit of a
     derived function, or a `PolicyInput` stub for data supplied at a derived
     name — so this is a plain lookup. A *parameter's* concrete statutory
@@ -163,10 +163,11 @@ def currency_conversion_factor_and_columns(
     target_currency: str,
     unit_system: UnitSystem,
 ) -> tuple[float, set[str]]:
-    """The conversion factor and the columns it applies to.
+    """The conversion factor and the input or result values it applies to.
 
     The shared setup of the two conversions (GEP 10): ``processed_data``
-    converts input columns from the data currency to the computation currency,
+    converts input columns and scalar values from the data currency to the
+    computation currency,
     ``results`` converts computed columns back. Equal currencies short-circuit
     to a factor of ``1.0`` with no environment walk.
     """

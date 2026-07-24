@@ -921,3 +921,33 @@ def test_unit_annotated_input_and_output_round_trip(
         numpy.asarray(amount.values),
         numpy.asarray(bare["payroll_tax"]["amount_y"]),
     )
+
+
+def test_currency_conversion_of_scalar_input_matches_column_input(
+    backend: Literal["numpy", "jax"],
+):
+    """A currency-denominated scalar input is converted like a column input."""
+    scalar_tree = _bare_payroll_tree()
+    scalar_tree["wealth"] = 13_000.0
+    column_tree = _bare_payroll_tree()
+    column_tree["wealth"] = numpy.array([13_000.0, 13_000.0])
+
+    def run(tree: dict[str, Any]) -> dict[str, Any]:
+        return main(
+            main_target=MainTarget.results.tree,
+            policy_date_str="2019-01-01",
+            input_data=InputData.tree(tree),
+            orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+            tt_targets=TTTargets.tree({"payroll_tax": {"amount_y": None}}),
+            rounding=False,
+            data_currency="CASTAR",
+            backend=backend,
+            unit_system=middle_earth.UNIT_SYSTEM,
+        )
+
+    scalar_result = run(scalar_tree)
+    column_result = run(column_tree)
+    numpy.testing.assert_allclose(
+        numpy.asarray(scalar_result["payroll_tax"]["amount_y"]),
+        numpy.asarray(column_result["payroll_tax"]["amount_y"]),
+    )

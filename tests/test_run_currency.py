@@ -2,9 +2,10 @@
 
 Parameters are never converted: computation runs in the policy date's statutory
 currency, every parameter must be declared in it (the statutory guard), and
-only columns convert — user data on the way in, currency-denominated results on
-the way out. mettsim registers CASTAR (base), SILVER_PENNY, and the statutory
-mapping (silver pennies through 2019, castar from 2020) on the import below.
+only currency-denominated input columns and scalar input values convert on the
+way in, while currency-denominated results convert on the way out. mettsim
+registers CASTAR (base), SILVER_PENNY, and the statutory mapping (silver pennies
+through 2019, castar from 2020) on the import below.
 """
 
 from __future__ import annotations
