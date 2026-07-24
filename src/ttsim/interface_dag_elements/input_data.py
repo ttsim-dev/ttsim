@@ -106,7 +106,7 @@ def flat_from_df_and_mapper(
     backend: Literal["numpy", "jax"],
     xnp: ModuleType,
 ) -> FlatData:
-    """The input data as a flat dictionary of arrays, stripped of any unit tags."""
+    """The input data as a flat dictionary of arrays."""
     return df_with_mapped_columns_to_flat_data(
         df=df_and_mapper__df,
         mapper=df_and_mapper__mapper,
@@ -124,7 +124,7 @@ def flat_from_df_with_nested_columns(
     backend: Literal["numpy", "jax"],
     xnp: ModuleType,
 ) -> FlatData:
-    """The input data as a flat dictionary of arrays, stripped of any unit tags."""
+    """The input data as a flat dictionary of arrays."""
     return df_with_nested_columns_to_flat_data(
         df=df_with_nested_columns,
         backend=backend,
@@ -141,7 +141,7 @@ def flat_from_df_with_qname_columns(
     backend: Literal["numpy", "jax"],
     xnp: ModuleType,
 ) -> FlatData:
-    """The input data as a flat dictionary of arrays, stripped of any unit tags."""
+    """The input data as a flat dictionary of arrays."""
     return df_with_qname_columns_to_flat_data(
         df=df_with_qname_columns,
         backend=backend,
@@ -157,7 +157,7 @@ def flat_from_tree(
     tree: NestedData,
     xnp: ModuleType,  # noqa: ARG001
 ) -> FlatData:
-    """The input data as a flat dictionary of arrays, stripped of any unit tags."""
+    """The input data as a flat dictionary of arrays."""
     # `pd.Series` leaves go through `_canonicalize_input_dtype` so
     # nullable / pyarrow dtypes are normalised to numpy.
     return {
@@ -180,7 +180,7 @@ def flat_from_qname(
     qname: QNameData,
     xnp: ModuleType,  # noqa: ARG001
 ) -> FlatData:
-    """The input data as a flat dictionary of arrays, stripped of any unit tags."""
+    """The input data as a flat dictionary of arrays."""
     # `pd.Series` leaves go through `_canonicalize_input_dtype` directly so
     # nullable / pyarrow dtypes are normalised; plain Python lists /
     # sequences first become numpy arrays so the canonicaliser sees the
@@ -206,7 +206,7 @@ def flat_from_tree_with_unit_annotations(
     data_currency: str,
     unit_system: UnitSystem,
 ) -> FlatData:
-    """The input data as a flat dictionary of arrays, stripped of any unit tags."""
+    """The input data as a flat dictionary of arrays."""
     registry = unit_system.registry
     flat = flatten_unit_annotated_input_tree(tree=tree_with_unit_annotations)
     return {

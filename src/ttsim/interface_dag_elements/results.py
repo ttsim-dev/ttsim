@@ -51,10 +51,10 @@ def tree(
 ) -> NestedResults:
     """The combined results as a tree with original row order restored.
 
-    Currency-denominated computed columns are converted from the computation
-    currency to the data currency here (GEP 10). Requested parameters keep
-    their statutory values; input columns requested as targets are returned
-    exactly as provided, hence already in the data currency.
+    Currency-denominated computed columns are converted from the computation currency to
+    the data currency here. Requested parameters keep their statutory values; input
+    columns requested as targets are returned exactly as provided, hence already in the
+    data currency.
     """
     factor, currency_qnames = currency_conversion_factor_and_columns(
         qnames=raw_results__columns_with_original_p_ids,

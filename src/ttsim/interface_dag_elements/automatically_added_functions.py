@@ -261,12 +261,7 @@ def create_time_conversion_functions(
             time_units=cast("OrderedQNames", inputs["time_units"]),
         )
         converted_elements = {**converted_elements, **variations}
-        # Data at the time variant that serves as the conversion source gets no
-        # function of its own — the conversions all lead away from it — so it
-        # would carry no unit. Mint its stub off the element being converted.
-        # Only variants at the element's own grouping level are time conversions
-        # of it; a name at another level is an aggregate, whose unit the
-        # aggregation rules give.
+
         for time_unit_id in time_units:
             qname = f"{bngs[0]}_{time_unit_id}{grouping_suffix}"
             if (
@@ -298,9 +293,6 @@ def _time_converted_input_stub(
     currency conversion and the input-tag checks read units off the environment.
     The stub carries the declared element's unit re-based to the supplied name's
     period, exactly as a conversion *away* from that element would (GEP 10).
-
-    Returns ``None`` when the element declares no unit; the mandatory-units check
-    then reports the input.
     """
     declared = getattr(element, "unit", UNSET_UNIT)
     if declared is UNSET_UNIT:
@@ -427,10 +419,7 @@ def create_agg_by_group_functions(
             up `PolicyInput` declarations of pure input-column sources so
             their dtype can be resolved.
         time_converted_input_stubs: Stubs for time variants the input data
-            supplies. An aggregation *of* such a name resolves its source
-            against them; a created function never does — a stub is data
-            rather than a node, and its `FloatColumn` would mask the dtype the
-            source's own declaration states.
+            supplies.
         input_columns: The qualified names of the input data columns.
         tt_targets: The requested targets.
         grouping_levels: The grouping levels.
@@ -462,12 +451,6 @@ def create_agg_by_group_functions(
         for t in potential_agg_by_group_function_names
         if t not in all_functions_and_data
     }
-    # Data supplied at a group-aggregate name overrides any function created
-    # there, so none is created — but the name still needs the unit declaration
-    # the aggregation implies, and it gets a `PolicyInput` stub instead (GEP 10).
-    # A name that is a time variant of a declaration at its own grouping level
-    # already has its stub from that declaration, which is the more direct
-    # derivation than aggregating the individual-level column.
     agg_by_group_input_names = {
         c
         for c in input_columns
@@ -489,9 +472,7 @@ def create_agg_by_group_functions(
         )
         match = cast("re.Match[str]", gp.match(abgfn))
         base_name_with_time_unit = match.group("base_name_with_time_unit")
-        # A stub needs a source that declares a unit, nothing more: no function
-        # is created, so the source need not be a node the aggregation could
-        # read (a plain `PolicyInput` source qualifies).
+
         if base_name_with_time_unit in potential_agg_by_group_sources or (
             supplied_by_data and not gp.match(base_name_with_time_unit)
         ):
@@ -539,6 +520,8 @@ def create_agg_by_group_functions(
                 agg_type=AggType.SUM, input_kind=source_kind, node_name=abgfn
             )
             if supplied_by_data:
+                # Add policy input stubs for already aggregated input data to ensure
+                # fully specified DAG unit annotations (GEP 10).
                 input_stubs[abgfn] = _input_column_stub(
                     qname=abgfn,
                     unit=unit,
@@ -584,7 +567,7 @@ def _resolve_agg_source_kind(
     qname_policy_environment: PolicyEnvironment,
     for_input_stub: bool,
 ) -> ResolvedKind:
-    """The aggregation source's column kind, reported against the right name.
+    """The aggregation source's column kind.
 
     For a `PolicyInput` stub the source declares a unit but its kind does not
     resolve, so the stub would otherwise be dropped and the input would silently
@@ -607,8 +590,7 @@ def _resolve_agg_source_kind(
             f"Cannot derive the unit of input {target_name!r} from its aggregation "
             f"source {source_name!r}: the source declares a unit but its column kind "
             f"does not resolve, and a SUM over a boolean carries a different unit than "
-            f"one over a number. Declare {source_name!r} with a resolvable data type "
-            f"(GEP 10)."
+            f"one over a number. Declare {source_name!r} with a resolvable data type."
         )
         raise TypeResolutionError(msg) from error
 
@@ -623,8 +605,7 @@ def _resolve_source_unit(
     The source is a column function, a `PolicyInput` declared at `source_name`, or a
     user-supplied input at a different time unit than its declared `PolicyInput` sibling
     (e.g. caller passes `bonus_y` against a `bonus_m` declaration; the sibling's unit is
-    re-based to the source's period). Returns ``UNSET_UNIT`` if the source is
-    unannotated.
+    re-based to the source's period).
     """
     source = column_functions.get(source_name) or qname_policy_environment.get(
         source_name

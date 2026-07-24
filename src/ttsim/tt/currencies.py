@@ -2,15 +2,7 @@
 
 A :class:`UnitSystem` is the value a policy package builds once, at import, and
 hands to ``main(unit_system=...)``: its currencies, the dated statutory-currency
-mapping — and the pint registry both are defined in. Grouping levels are not
-part of the system: they are derived per build from the policy environment's
-``*_id`` columns and registered in the system's registry then
-(:func:`ttsim.interface_dag_elements.unit_checks.resolve_environment_units`).
-
-The registry is per system, so two policy systems coexist in one process, each
-with its own base currency. "Exactly one currency is the base" (GEP 10) holds
-within a system, by construction: the base is a constructor argument, not
-something a second import could contradict.
+mapping — and the pint registry both are defined in.
 
 The unit *vocabulary* a declaration is spelled in — the ``CURRENCY`` token, the
 ``TTSIMUnit`` builder, the :class:`CompositeUnit` grammar — is shared and lives in
@@ -62,8 +54,7 @@ class UnitSystem:
         )
 
     All of a system's currencies are interconvertible
-    (:meth:`currency_conversion_factor`); a currency of *another* system is not,
-    and is rejected rather than silently taken to be worth the same.
+    (:meth:`currency_conversion_factor`).
 
     Raises:
         UnitDefinitionError: If a currency name clashes with a unit the shared
@@ -80,11 +71,6 @@ class UnitSystem:
     factor 1 against the abstract ``[currency]`` reference; every other currency
     is defined relative to it or to another already-defined one."""
 
-    statutory_currencies: Mapping[str, str]
-    """The currency statutes denominate their numbers in, keyed by the dashed ISO
-    start date it applies from (until the next entry's). Mandatory: a run for a
-    policy date with no statutory currency fails."""
-
     other_currencies: Mapping[str, str] = dataclasses.field(
         default_factory=lambda: MappingProxyType({})
     )
@@ -92,10 +78,13 @@ class UnitSystem:
     an already-defined currency of this system (``{"DM": "EUR / 1.95583"}``).
     Definitions are applied in order, so one may reference an earlier one."""
 
+    statutory_currencies: Mapping[str, str]
+    """The currency statutes denominate their numbers in, keyed by the dashed ISO
+    start date it applies from (until the next entry's)."""
+
     registry: pint.UnitRegistry = dataclasses.field(init=False, repr=False)
     """The system's own pint registry: the shared vocabulary plus this system's
-    currency definitions. Grouping-level dimensions are added per build, derived
-    from the policy environment's ``*_id`` columns."""
+    currency definitions."""
 
     currencies: frozenset[str] = dataclasses.field(init=False)
     """Every currency name this system defines — the base and the others."""
@@ -191,10 +180,6 @@ class UnitSystem:
         reference; every other currency is defined relative to an
         already-defined one, so all of them chain back to the base and are
         interconvertible.
-
-        Definitions land in the system's own registry, which is discarded with a
-        system whose construction fails; :meth:`_publish_currencies` does the
-        process-global half once every check has passed.
         """
         self._define_one_currency(name=self.base_currency, definition=CURRENCY_TOKEN)
         defined = {self.base_currency}

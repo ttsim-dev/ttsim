@@ -266,17 +266,6 @@ class RawParam(ParamObject):
     """
     A parameter directly read from a YAML file that is an arbitrarily nested
     dictionary.
-
-    A ``require_converter`` is handed to a ``param_function`` that knows its
-    structure. It declares its units in one of three shapes: a single ``unit:``
-    token if the whole structure is homogeneously one unit, a per-leaf ``unit:``
-    mapping if the structure mixes units (one token per numeric leaf), or
-    ``input_unit:`` / ``output_unit:`` axes if its converter produces a schedule
-    (a piecewise polynomial or lookup table). A ``unit:`` token gives the unit of
-    the raw numbers; the axes give the schedule's input and output units, which
-    its call sites are screened against. The consuming ``param_function``'s
-    annotations check the values' uses. Parameter values are never
-    currency-converted (GEP 10).
     """
 
     value: dict[str | int, Any] = PLACEHOLDER_FIELD
