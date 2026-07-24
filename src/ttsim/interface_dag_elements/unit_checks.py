@@ -111,7 +111,6 @@ from ttsim.typing import (
 )
 from ttsim.unit_converters import TIME_UNIT_IDS_TO_LABELS
 
-
 FRAMEWORK_DATE_NODE_UNITS: Mapping[str, str] = {
     "policy_year": "calendar_year",
     "policy_month": "dimensionless",

@@ -41,7 +41,6 @@ from ttsim.exceptions import (
 )
 from ttsim.tt.aggregation import AggType
 
-
 if TYPE_CHECKING:
     UserNestedUnitAnnotatedData: TypeAlias = Mapping[
         str, "UnitAnnotatedColumn | UserNestedUnitAnnotatedData"
