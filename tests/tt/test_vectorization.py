@@ -26,6 +26,7 @@ from ttsim.tt import (
     TTSIMUnit,
     policy_function,
 )
+from ttsim.tt._source_rewriting import is_lambda_function
 from ttsim.tt.column_objects_param_function import (
     AggByGroupFunction,
     AggByPIDFunction,
@@ -33,7 +34,6 @@ from ttsim.tt.column_objects_param_function import (
 from ttsim.tt.type_resolution import scalar_type_to_array_type
 from ttsim.tt.vectorization import (
     TranslateToVectorizableError,
-    _is_lambda_function,
     _make_vectorizable,
     make_vectorizable_source,
     vectorize_function,
@@ -655,7 +655,7 @@ def test_orc_hunting_bounty_amount(backend, xnp):
 
 
 def test_is_lambda_function_true():
-    assert _is_lambda_function(lambda x: x)
+    assert is_lambda_function(lambda x: x)
 
 
 def test_is_lambda_function_wrapped():
@@ -666,22 +666,22 @@ def test_is_lambda_function_wrapped():
 
         return wrapper
 
-    assert _is_lambda_function(decorator(lambda x: x))
+    assert is_lambda_function(decorator(lambda x: x))
 
 
 def test_is_lambda_function_false():
     def f(x):
         return x
 
-    assert not _is_lambda_function(f)
+    assert not is_lambda_function(f)
 
 
 def test_is_lambda_function_non_function_input():
-    assert not _is_lambda_function(42)
-    assert not _is_lambda_function("not a function")
-    assert not _is_lambda_function([1, 2, 3])
-    assert not _is_lambda_function({1: "a", 2: "b"})
-    assert not _is_lambda_function(None)
+    assert not is_lambda_function(42)
+    assert not is_lambda_function("not a function")
+    assert not is_lambda_function([1, 2, 3])
+    assert not is_lambda_function({1: "a", 2: "b"})
+    assert not is_lambda_function(None)
 
 
 def test_lambda_functions_disallowed_make_vectorizable(xnp):

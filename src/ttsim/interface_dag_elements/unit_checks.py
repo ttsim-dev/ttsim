@@ -29,7 +29,15 @@ import inspect
 import re
 import sys
 from collections.abc import Callable, Mapping
-from typing import Any, NoReturn, cast, get_args, get_origin, get_type_hints
+from typing import (
+    Any,
+    NamedTuple,
+    NoReturn,
+    cast,
+    get_args,
+    get_origin,
+    get_type_hints,
+)
 
 import dags.tree as dt
 import numpy
@@ -46,6 +54,7 @@ from ttsim.interface_dag_elements.shared import (
     FRAMEWORK_PARTIAL_ARGUMENTS,
     get_re_pattern_for_all_time_units_and_groupings,
 )
+from ttsim.tt._source_rewriting import recompile_with_logical_ops_as_calls
 from ttsim.tt.aggregation import AggType
 from ttsim.tt.column_objects_param_function import (
     AggByGroupFunction,
@@ -103,7 +112,6 @@ from ttsim.tt.units import (
     unit_residual_excluding_currency_and_flow_period,
     units_are_equivalent,
 )
-from ttsim.tt.vectorization import recompile_with_logical_ops_as_calls
 from ttsim.typing import (
     OrderedQNames,
     SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
@@ -434,9 +442,17 @@ def _has_grouping_level_numerator(unit: pint.Unit) -> bool:
     return any(exponent > 0 for _, exponent in _grouping_levels_with_exponent(unit))
 
 
-def _boolean_level(
-    unit: pint.Unit, registry: pint.UnitRegistry
-) -> tuple[bool, str | None]:
+class BooleanLevel(NamedTuple):
+    """A unit's classification as a (possibly leveled) boolean."""
+
+    is_boolean: bool
+    """Whether the unit is a truth value at all."""
+    level: str | None
+    """The grouping level the truth value is measured per, `None` for a
+    level-less boolean. Meaningless when `is_boolean` is False."""
+
+
+def _as_boolean_level(unit: pint.Unit, registry: pint.UnitRegistry) -> BooleanLevel:
     """Classify a unit as a (possibly leveled) boolean and read its level.
 
     A boolean is a truth value: dimensionless apart from at most a single grouping
@@ -445,19 +461,18 @@ def _boolean_level(
     (currency, area, a duration) or a grouping-level *numerator* (``[hh]``) is
     *not* a boolean. A head count is ``1 / [hh]``, so it is indistinguishable
     from a leveled boolean here — both are the plain number over their group
-    (GEP 10). Returns ``(is_boolean, level)``; the level is ``None`` for a
-    level-less boolean.
+    (GEP 10).
 
     ``1 / [fam]`` → ``(True, "fam")``; a plain ``1`` → ``(True, None)``;
     ``EUR_PER_MONTH`` or ``[hh]`` → ``(False, None)``.
     """
     if _has_grouping_level_numerator(unit):
-        return (False, None)
+        return BooleanLevel(is_boolean=False, level=None)
     if not registry.Quantity(
         1.0, _unit_without_grouping_levels(unit=unit, registry=registry)
     ).dimensionless:
-        return (False, None)
-    return (True, _unit_level_denominator(unit))
+        return BooleanLevel(is_boolean=False, level=None)
+    return BooleanLevel(is_boolean=True, level=_unit_level_denominator(unit))
 
 
 def _boolean_quantity(level: str | None, registry: pint.UnitRegistry) -> pint.Quantity:
@@ -2060,14 +2075,14 @@ class _UnitCheckQuantity:
         mismatch downcasts to the bare individual level. A bare literal carries no
         unit and stays a lenient, bare boolean.
         """
-        self_is_boolean, self_level = _boolean_level(
+        self_is_boolean, self_level = _as_boolean_level(
             unit=cast("pint.Unit", self.q.units), registry=self._registry
         )
         other_q = _unwrap(other)
         if isinstance(other_q, _UnitCheckStructuredValue):
             other_q._raise_used_as_quantity(op)  # noqa: SLF001
         if isinstance(other_q, pint.Quantity):
-            other_is_boolean, other_level = _boolean_level(
+            other_is_boolean, other_level = _as_boolean_level(
                 unit=cast("pint.Unit", other_q.units), registry=self._registry
             )
         else:
@@ -2237,7 +2252,7 @@ class _UnitCheckQuantity:
         return self._logical_result(other=other, op="^")
 
     def __invert__(self) -> _UnitCheckQuantity:
-        is_boolean, level = _boolean_level(
+        is_boolean, level = _as_boolean_level(
             unit=cast("pint.Unit", self.q.units), registry=self._registry
         )
         if not is_boolean:

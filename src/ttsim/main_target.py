@@ -214,6 +214,7 @@ class MainTarget(MainTargetABC):
         default=SpecializedEnvrionmentForPlottingAndTemplates,
     )
     orig_policy_objects: type[OrigPolicyObjects] = field(default=OrigPolicyObjects)
+    input_data_in_computation_currency: str = "input_data_in_computation_currency"
     processed_data: str = "processed_data"
     raw_results: type[RawResults] = field(default=RawResults)
     labels: type[Labels] = field(default=Labels)

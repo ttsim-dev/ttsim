@@ -33,6 +33,7 @@ INTERFACE_COLORMAP: dict[tuple[str, ...] | str, str] = {
     ("tt_function_set_annotations",): "teal",
     ("input_data",): "mediumblue",
     ("input_data", "sort_indices"): "lightblue",
+    ("input_data_in_computation_currency",): "royalblue",
     ("processed_data",): "midnightblue",
     ("labels",): "lemonchiffon",
     ("raw_results",): "lightgreen",

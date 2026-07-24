@@ -1263,8 +1263,9 @@ def strip_input_quantity_at_boundary(
       no currency component, is stripped unchanged.
 
     The bare magnitude is returned. The uniform crossing from the data currency
-    into the computation currency happens later, in ``processed_data``, for
-    tagged and untagged columns alike (GEP 10).
+    into the computation currency happens right after, in
+    ``input_data_in_computation_currency``, for tagged and untagged columns
+    alike (GEP 10).
 
     The period check is the only mismatch the boundary can catch on its own: the
     column's *declared* unit (its dimension, the numerator) is not threaded here,

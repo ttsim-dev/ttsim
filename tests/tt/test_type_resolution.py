@@ -180,6 +180,14 @@ def test_resolve_kind_of_annotation_unknown_is_other() -> None:
     )
 
 
+def test_resolve_kind_of_annotation_passes_through_resolved_kind() -> None:
+    """An already-resolved `ResolvedKind` is returned unchanged."""
+    assert (
+        resolve_kind_of_annotation(ResolvedKind.BOOL_COLUMN, node_name="x")
+        == ResolvedKind.BOOL_COLUMN
+    )
+
+
 def test_resolve_kind_of_annotation_missing_raises() -> None:
     """A node with no return annotation cannot be resolved and raises."""
     with pytest.raises(TypeResolutionError, match="no return annotation"):

@@ -209,7 +209,6 @@ def _active_param_objects(
             spec=orig_params_spec,
             policy_date=policy_date,
             xnp=xnp,
-            computation_currency=computation_currency,
         )
         if param is not None:
             flat_tree_with_params[(*path_to_keep, leaf_name)] = param
@@ -221,10 +220,14 @@ def _active_param_objects(
                 spec=orig_params_spec,
                 policy_date=date_jan1,
                 xnp=xnp,
-                computation_currency=computation_currency,
             )
             if param is not None:
                 flat_tree_with_params[(*path_to_keep, leaf_name_jan1)] = param
+    _fail_if_param_currencies_are_not_statutory(
+        params=flat_tree_with_params,
+        policy_date=policy_date,
+        computation_currency=computation_currency,
+    )
     return dt.unflatten_from_tree_paths(flat_tree_with_params)
 
 
@@ -249,28 +252,46 @@ def _collect_currencies_in_param_units(raw_token: Any) -> set[str]:  # noqa: ANN
     return {source} if source is not None else set()
 
 
-def _fail_if_param_currency_is_not_statutory(
-    leaf_name: str,
-    cleaned_spec: dict[str, Any],
+def _fail_if_param_currencies_are_not_statutory(
+    params: Mapping[tuple[str, ...], ParamObject],
     policy_date: datetime.date,
     computation_currency: str,
 ) -> None:
-    """Reject a parameter declared in a non-statutory currency."""
-    declared = {
-        currency
-        for key in UNIT_DECLARATION_KEYS
-        for currency in _collect_currencies_in_param_units(cleaned_spec.get(key))
-    }
-    non_statutory = sorted(declared - {computation_currency})
-    if non_statutory:
-        raise UnitDefinitionError(
-            f"Parameter {leaf_name!r} declares its numbers in "
-            f"{', '.join(repr(c) for c in non_statutory)}, but the statutory "
-            f"currency at {policy_date.isoformat()} is "
-            f"{computation_currency!r}. Parameters are never converted "
-            f"(GEP 10): add a dated entry restating the value in the statutory "
-            f"currency."
+    """Reject every parameter declared in a non-statutory currency, in one error.
+
+    One traversal over all parameters active at the policy date, so an author who
+    misses a currency changeover sees each offending parameter at once instead of
+    one per run.
+    """
+    offenders = {
+        dt.qname_from_tree_path(path): non_statutory
+        for path, param in params.items()
+        if (
+            non_statutory := sorted(
+                {
+                    currency
+                    for key in UNIT_DECLARATION_KEYS
+                    for currency in _collect_currencies_in_param_units(
+                        getattr(param, key, UNSET_UNIT)
+                    )
+                }
+                - {computation_currency}
+            )
         )
+    }
+    if not offenders:
+        return
+    listed = "\n".join(
+        f"    {qname}: {', '.join(repr(c) for c in currencies)}"
+        for qname, currencies in sorted(offenders.items())
+    )
+    raise UnitDefinitionError(
+        f"The following parameters declare their numbers in a currency other "
+        f"than the statutory currency at {policy_date.isoformat()}, which is "
+        f"{computation_currency!r}:\n\n{listed}\n\n"
+        f"Parameters are never converted (GEP 10): add a dated entry restating "
+        f"the value in the statutory currency."
+    )
 
 
 def _get_one_param(
@@ -278,7 +299,6 @@ def _get_one_param(
     spec: OrigParamSpec,
     policy_date: datetime.date,
     xnp: ModuleType,
-    computation_currency: str,
 ) -> ParamObject | None:
     """Parse the original specification found in the yaml tree to a ParamObject."""
     cleaned_spec = _clean_one_param_spec(
@@ -287,13 +307,6 @@ def _get_one_param(
 
     if cleaned_spec is None:
         return None
-
-    _fail_if_param_currency_is_not_statutory(
-        leaf_name=leaf_name,
-        cleaned_spec=cleaned_spec,
-        policy_date=policy_date,
-        computation_currency=computation_currency,
-    )
 
     param_type = spec["type"]
 

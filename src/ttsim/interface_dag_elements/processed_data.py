@@ -1,28 +1,18 @@
 from __future__ import annotations
 
-from collections.abc import Iterable
 from types import ModuleType
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING
 
 import dags.tree as dt
 import numpy as np
 import pandas as pd
-import pint
 from jaxtyping import Shaped
 
 from ttsim.interface_dag_elements.interface_node_objects import interface_function
 from ttsim.tt.column_objects_param_function import reorder_ids
-from ttsim.tt.currencies import UnitSystem
-from ttsim.tt.units import (
-    UNSET_UNIT,
-    CompositeUnit,
-    strip_input_quantity_at_boundary,
-    token_declares_a_currency,
-)
 from ttsim.typing import (
     Array,
     IntColumn,
-    SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
 )
 
 if TYPE_CHECKING:
@@ -30,12 +20,10 @@ if TYPE_CHECKING:
 
 
 def _canonicalize_input_dtype(
-    arr: Shaped[Array | np.ndarray, " n_obs"] | pd.Series | pint.Quantity,
+    arr: Shaped[Array | np.ndarray, " n_obs"] | pd.Series,
     xnp: ModuleType,
     *,
     column_label: str | None = None,
-    data_currency: str | None = None,
-    registry: pint.UnitRegistry | None = None,
 ) -> Shaped[Array | np.ndarray, " n_obs"]:
     """Canonicalize a column to a backend-native dtype the TT DAG can operate on.
 
@@ -59,13 +47,6 @@ def _canonicalize_input_dtype(
         column_label: Qualified-name or other identifier for the column;
             used in error messages when a uint overflow is detected.
     """
-    if isinstance(arr, pint.Quantity):
-        arr = strip_input_quantity_at_boundary(
-            quantity=arr,
-            data_currency=cast("str", data_currency),
-            registry=cast("pint.UnitRegistry", registry),
-            column_label=column_label,
-        )
     if isinstance(arr, pd.Series):
         return _canonicalize_series(arr=arr, xnp=xnp, column_label=column_label)
     if pd.api.types.is_unsigned_integer_dtype(arr):
@@ -126,119 +107,46 @@ def _fail_if_uint_overflows_int64(
     raise ValueError(msg)
 
 
-def qnames_with_currency_declarations(
-    qnames: Iterable[str],
-    specialized_environment: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
-) -> set[str]:
-    """The subset of ``qnames`` whose declared unit carries a currency component."""
-    out: set[str] = set()
-    for qname in qnames:
-        token = getattr(specialized_environment.get(qname), "unit", UNSET_UNIT)
-        if not isinstance(token, CompositeUnit):
-            continue
-        if token_declares_a_currency(token):
-            out.add(qname)
-    return out
-
-
-def currency_conversion_factor_and_columns(
-    qnames: Iterable[str],
-    specialized_environment: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
-    source_currency: str,
-    target_currency: str,
-    unit_system: UnitSystem,
-) -> tuple[float, set[str]]:
-    """The conversion factor and the input or result values it applies to."""
-    if source_currency == target_currency:
-        return 1.0, set()
-    factor = unit_system.currency_conversion_factor(
-        source_currency=source_currency, target_currency=target_currency
-    )
-    currency_qnames = qnames_with_currency_declarations(
-        qnames=qnames,
-        specialized_environment=specialized_environment,
-    )
-    return factor, currency_qnames
-
-
-def value_in_target_currency(
-    value: Any,  # noqa: ANN401 (a column array or an input scalar)
-    qname: str,
-    currency_qnames: set[str],
-    factor: float,
-) -> Any:  # noqa: ANN401
-    """Convert one input or result value into the target currency."""
-    if qname not in currency_qnames:
-        return value
-    dtype = getattr(value, "dtype", None)
-    if dtype is not None and dtype.kind == "O":
-        return value
-    return value * factor
-
-
 @interface_function(in_top_level_namespace=True)
 def processed_data(
-    input_data__flat: FlatData,
+    input_data_in_computation_currency: FlatData,
     input_data__sort_indices: IntColumn,
     xnp: ModuleType,
-    specialized_environment__without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,  # noqa: E501
-    data_currency: str,
-    computation_currency: str,
-    unit_system: UnitSystem,
 ) -> QNameData:
     """The internal processed data for use in the taxes and transfers function.
 
     We replace identifiers by consecutive integers starting at zero and sort the data
-    according to the original `p_id`. Currency-denominated inputs are converted
-    from the data currency to the computation currency (GEP 10).
+    according to the original `p_id`. Values arrive already denominated in the
+    computation currency (GEP 10).
 
     The transformations will be undone when going from raw results to results.
-    """
-    factor, currency_qnames = currency_conversion_factor_and_columns(
-        qnames=[
-            dt.qname_from_tree_path(path)
-            for path in input_data__flat
-            if path != ("p_id",)
-        ],
-        specialized_environment=(
-            specialized_environment__without_tree_logic_and_with_derived_functions
-        ),
-        source_currency=data_currency,
-        target_currency=computation_currency,
-        unit_system=unit_system,
-    )
 
+    Supplying this node via ``main(processed_data=...)`` bypasses
+    :func:`ttsim.interface_dag_elements.currency.input_data_in_computation_currency`,
+    so the data handed over are assumed to be in the computation currency already.
+    """
     orig_p_ids = _canonicalize_input_dtype(
-        arr=input_data__flat[("p_id",)],
+        arr=input_data_in_computation_currency[("p_id",)],
         xnp=xnp,
         column_label="p_id",
-        data_currency=data_currency,
-        registry=unit_system.registry,
     )
     sorted_orig_p_ids = orig_p_ids[input_data__sort_indices]
     internal_p_ids = xnp.arange(len(orig_p_ids))
 
     processed_input_data = {"p_id": internal_p_ids}
-    for path, data in input_data__flat.items():
+    for path, data in input_data_in_computation_currency.items():
         qname = dt.qname_from_tree_path(path)
         if path == ("p_id",):
             continue
         if not hasattr(data, "__len__"):
             # Scalars don't need to be sorted.
-            processed_input_data[qname] = value_in_target_currency(
-                value=data,
-                qname=qname,
-                currency_qnames=currency_qnames,
-                factor=factor,
-            )
+            processed_input_data[qname] = data
             continue
 
         sorted_data = _canonicalize_input_dtype(
             arr=data[input_data__sort_indices],
             xnp=xnp,
             column_label=qname,
-            data_currency=data_currency,
-            registry=unit_system.registry,
         )
 
         if path[-1].endswith("_id"):
@@ -258,11 +166,6 @@ def processed_data(
             )
             processed_input_data[qname] = variable_with_new_ids
         else:
-            processed_input_data[qname] = value_in_target_currency(
-                value=sorted_data,
-                qname=qname,
-                currency_qnames=currency_qnames,
-                factor=factor,
-            )
+            processed_input_data[qname] = sorted_data
 
     return processed_input_data
