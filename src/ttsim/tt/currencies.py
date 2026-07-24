@@ -25,7 +25,6 @@ from ttsim.exceptions import UnitDefinitionError
 from ttsim.tt.units import (
     _ALLOWED_UNIT_TOKENS,
     _COMPOSITIONAL_BASE_TO_PINT,
-    _PER,
     CURRENCY_TOKEN,
     CompositeUnit,
     TTSIMUnit,
@@ -58,8 +57,7 @@ class UnitSystem:
 
     Raises:
         UnitDefinitionError: If a currency name clashes with a unit the shared
-            vocabulary already defines or differs only in case from another
-            registered currency, if a definition does not resolve to the
+            vocabulary already defines, if a definition does not resolve to the
             ``[currency]`` dimension or does not reference exactly one of this
             system's currencies, or if the statutory-currency mapping is empty,
             is keyed by anything other than an ISO date, or names a currency the
@@ -190,7 +188,7 @@ class UnitSystem:
             self._define_one_currency(name=name, definition=definition)
             defined.add(name)
         for name in self.currencies:
-            self._fail_if_builder_base_is_taken(name=name)
+            self._fail_if_name_collides_with_unit_base(name=name)
 
     def _publish_currencies(self) -> None:
         """Widen the process-global vocabulary by this system's currencies.
@@ -209,51 +207,22 @@ class UnitSystem:
             # this only makes it reachable.
             setattr(TTSIMUnit, name.upper(), CompositeUnit(base=name.upper()))
 
-    def _fail_if_builder_base_is_taken(self, name: str) -> None:
-        """Reject a currency whose `TTSIMUnit` base another unit already owns.
+    def _fail_if_name_collides_with_unit_base(self, name: str) -> None:
+        """Reject a currency whose ``TTSIMUnit`` base the shared vocabulary owns.
 
         A currency reaches the builder namespace under its upper-cased name, and
         :func:`ttsim.tt.units.parse_compositional_unit` matches a base against that
-        same upper-cased form. Two names that differ only in case would therefore
-        share one base — one silently shadowing the other on the builder, and the
-        shared base naming neither of them unambiguously. The clash counts whether
-        the other name belongs to this system or to one already registered.
-
-        A name spelling the ``_PER_`` denominator delimiter is refused for the same
-        reason: its base would parse back as a base plus a denominator, so the
-        token would not round-trip.
+        same upper-cased form. Colliding with the agnostic :data:`CURRENCY_TOKEN`
+        or with a non-currency base would silently shadow that base for every
+        policy package in the process.
         """
         base = name.upper()
-        if base == CURRENCY_TOKEN:
+        if base == CURRENCY_TOKEN or base in _COMPOSITIONAL_BASE_TO_PINT:
             raise UnitDefinitionError(
-                f"Cannot register currency {name!r}: {CURRENCY_TOKEN!r} is the "
-                f"agnostic currency base every declaration spells, so a concrete "
-                f"currency claiming it would make every agnostic declaration name "
-                f"it (GEP 10)."
-            )
-        if _PER in base:
-            raise UnitDefinitionError(
-                f"Cannot register currency {name!r}: {_PER!r} separates a unit from "
-                f"its denominator, so the base {base!r} would parse back as "
-                f"{base.split(_PER)[0]!r} denominated by "
-                f"{base.split(_PER, 1)[1]!r}. Pick a name without it (GEP 10)."
-            )
-        shadowed = sorted(
-            other
-            for other in _registered_currencies | self.currencies
-            if other != name and other.upper() == base
-        )
-        if shadowed:
-            raise UnitDefinitionError(
-                f"Cannot register currency {name!r}: currency "
-                f"{', '.join(repr(other) for other in shadowed)} already claims the "
-                f"unit base {base!r}. Currency names must differ by more than case "
-                f"(GEP 10)."
-            )
-        if base in _COMPOSITIONAL_BASE_TO_PINT:
-            raise UnitDefinitionError(
-                f"Cannot register currency {name!r}: {base!r} is a non-currency unit "
-                f"base. Pick a name outside the shared unit vocabulary (GEP 10)."
+                f"Cannot register currency {name!r}: the unit base {base!r} is a "
+                f"non-currency base the shared unit vocabulary already owns, so "
+                f"registering it would silently shadow that base for every policy "
+                f"package in the process. Pick another name (GEP 10)."
             )
 
     def _define_one_currency(self, name: str, definition: str) -> None:

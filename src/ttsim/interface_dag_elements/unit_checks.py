@@ -91,9 +91,8 @@ from ttsim.tt.units import (
     is_calendar_point_unit,
     parse_unit,
     replace_concrete_with_agnostic_currency,
-    resolve_compositional_cast_unit,
+    resolve_compositional_body_unit,
     resolve_compositional_column_unit,
-    resolve_compositional_field_unit,
     resolve_compositional_param_unit,
     resolve_compositional_unit,
     resolved_unit_for_aggregation,
@@ -289,10 +288,11 @@ def resolve_environment_units(
                 # `piecewise_polynomial` consumers receive), resolved agnostically
                 # like a field annotation — concrete currencies rejected, no
                 # name-suffix rules.
-                resolved[qname] = resolve_compositional_field_unit(
+                resolved[qname] = resolve_compositional_body_unit(
                     unit=token.output_unit,
                     registry=registry,
                     where=f"Schedule param function {qname!r}",
+                    what="the declaration",
                 )
         else:  # ColumnObject | scalar ParamFunction
             token = getattr(obj, "unit", UNSET_UNIT)
@@ -329,22 +329,6 @@ def _resolve_leveled_column_unit(
     )
 
 
-def _resolve_opted_out_agg_unit(
-    obj: AggByGroupFunction,
-    match: re.Match[str] | None,
-    registry: pint.UnitRegistry,
-) -> pint.Unit | None:
-    """Resolve an opted-out aggregation from its declared unit, like a column."""
-    token = getattr(obj, "unit", UNSET_UNIT)
-    if token is UNSET_UNIT:
-        return None
-    return _resolve_leveled_column_unit(
-        token=cast("CompositeUnit", token),
-        match=match,
-        registry=registry,
-    )
-
-
 def _resolve_agg_by_group_unit(
     qname: str,
     obj: AggByGroupFunction,
@@ -373,7 +357,18 @@ def _resolve_agg_by_group_unit(
     """
     match = pattern.fullmatch(dt.tree_path_from_qname(qname)[-1])
     if not obj.verify_units:
-        return _resolve_opted_out_agg_unit(obj=obj, match=match, registry=registry)
+        # An opted-out aggregation resolves from its own declared unit, exactly
+        # like a plain column.
+        token = getattr(obj, "unit", UNSET_UNIT)
+        return (
+            None
+            if token is UNSET_UNIT
+            else _resolve_leveled_column_unit(
+                token=cast("CompositeUnit", token),
+                match=match,
+                registry=registry,
+            )
+        )
     target_level = _suffix_grouping_level(match)
     agg_type = obj.agg_type
     # COUNT and ANY/ALL are independent of the source's unit, so resolve them
@@ -1451,8 +1446,11 @@ def _structured_field_kinds(
                 f"value; a scalar field states a single unit (GEP 10)."
             )
         elif composite_tokens:
-            resolved = resolve_compositional_field_unit(
-                unit=composite_tokens[0], registry=unit_system.registry, where=where
+            resolved = resolve_compositional_body_unit(
+                unit=composite_tokens[0],
+                registry=unit_system.registry,
+                where=where,
+                what="the declaration",
             )
             if base in (int, float, bool):
                 kinds[field.name] = resolved
@@ -1533,8 +1531,11 @@ def _schedule_field_kind(
         input_unit=_resolve_input_axes(
             input_unit=io_token.input_unit, registry=unit_system.registry, where=where
         ),
-        output_unit=resolve_compositional_field_unit(
-            unit=io_token.output_unit, registry=unit_system.registry, where=where
+        output_unit=resolve_compositional_body_unit(
+            unit=io_token.output_unit,
+            registry=unit_system.registry,
+            where=where,
+            what="the declaration",
         ),
     )
 
@@ -1738,13 +1739,16 @@ def _resolve_input_axes(
     """
     if isinstance(input_unit, tuple):
         return tuple(
-            resolve_compositional_field_unit(
-                unit=cast("CompositeUnit", axis), registry=registry, where=where
+            resolve_compositional_body_unit(
+                unit=cast("CompositeUnit", axis),
+                registry=registry,
+                where=where,
+                what="the declaration",
             )
             for axis in input_unit
         )
-    return resolve_compositional_field_unit(
-        unit=input_unit, registry=registry, where=where
+    return resolve_compositional_body_unit(
+        unit=input_unit, registry=registry, where=where, what="the declaration"
     )
 
 
@@ -2832,8 +2836,11 @@ def _cast_ttsim_unit_for_unit_check(
     re-raises rather than misreporting as an un-evaluable body.
     """
     token = coerce_to_composite_unit(value=unit, where="A `cast_ttsim_unit` call")
-    resolved = resolve_compositional_cast_unit(
-        unit=token, registry=unit_system.registry, where="A `cast_ttsim_unit` call"
+    resolved = resolve_compositional_body_unit(
+        unit=token,
+        registry=unit_system.registry,
+        where="A `cast_ttsim_unit` call",
+        what="a cast inside a body",
     )
     quantity = unit_system.registry.Quantity(1.0, resolved)
     if isinstance(value, _UnitCheckQuantity):

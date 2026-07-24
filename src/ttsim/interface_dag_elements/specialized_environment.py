@@ -25,7 +25,7 @@ from ttsim.interface_dag_elements.interface_node_objects import (
     interface_input,
 )
 from ttsim.interface_dag_elements.shared import (
-    FRAMEWORK_PARTIAL_ARGUMENTS,
+    framework_partial_arguments,
     merge_trees,
 )
 from ttsim.tt.column_objects_param_function import (
@@ -255,24 +255,9 @@ def with_partialled_params_and_scalars(
         for k, v in with_processed_params_and_scalars.items()
         if isinstance(v, ColumnFunction)
     }
-    framework_argument_values = {
-        "len_p_id": len_p_id,
-        # Aggregation functions take a jax `num_segments` argument; the number of
-        # distinct groups is at most `len_p_id`, so feed it that safe upper bound.
-        "num_segments": len_p_id,
-        "backend": backend,
-        "xnp": xnp,
-        "dnp": dnp,
-    }
-    # `FRAMEWORK_PARTIAL_ARGUMENTS` (shared with the unit checks) names exactly
-    # these arguments; fail loudly if the two drift apart in either direction.
-    if framework_argument_values.keys() != FRAMEWORK_PARTIAL_ARGUMENTS:
-        msg = (
-            "The framework arguments partialled into column functions must match "
-            f"FRAMEWORK_PARTIAL_ARGUMENTS; got {sorted(framework_argument_values)} "
-            f"vs {sorted(FRAMEWORK_PARTIAL_ARGUMENTS)}."
-        )
-        raise RuntimeError(msg)
+    framework_argument_values = framework_partial_arguments(
+        len_p_id=len_p_id, backend=backend, xnp=xnp, dnp=dnp
+    )
     all_partial_params = {
         **{
             k: v

@@ -41,21 +41,6 @@ from ttsim.exceptions import (
 )
 from ttsim.tt.aggregation import AggType
 
-if TYPE_CHECKING:
-    UserNestedUnitAnnotatedData: TypeAlias = Mapping[
-        str, "UnitAnnotatedColumn | UserNestedUnitAnnotatedData"
-    ]
-    """Tree mapping TTSIM paths to unit-annotated columns.
-
-    The leaf type is what separates it from `ttsim.typing.UserNestedData`, whose
-    leaves are bare columns.
-    """
-else:
-    # Widened to one level for beartype, like `NestedData` in `ttsim.typing`: the
-    # recursive alias's stringified inner name is not resolvable at runtime.
-    UserNestedUnitAnnotatedData = Mapping[str, UnitAnnotatedColumn | Mapping]
-
-
 _PERIODS: tuple[tuple[str, str, str], ...] = (
     ("y", "YEAR", "year"),
     ("q", "QUARTER", "quarter_year"),
@@ -397,10 +382,27 @@ def resolve_compositional_param_unit(
     return resolve_compositional_unit(unit=unit, registry=registry, with_level=True)
 
 
-def _resolve_agnostic_body_unit(
+def resolve_compositional_body_unit(
     unit: CompositeUnit, *, registry: pint.UnitRegistry, where: str, what: str
 ) -> pint.Unit:
-    """Resolve a code-side compositional unit with no name to validate against.
+    """Resolve a unit declared inside a function body or on a dataclass field.
+
+    Such a declaration hangs off code, not off a named DAG node: a
+    :func:`cast_ttsim_unit` call in a body, or a field of a schedule's
+    :class:`InputOutputUnit`. With no node name there is no GEP-1 name suffix to
+    cross-check the spelled period against, so the period is taken as declared.
+    A concrete currency is rejected — only parameters and rounding specs pin a
+    currency down; code-side declarations spell the agnostic ``CURRENCY``.
+
+    Args:
+        unit: The declared compositional unit.
+        registry: The pint registry to resolve against.
+        where: The location prefix of an error message (e.g. the qname).
+        what: How to name the declaration in an error message (e.g.
+            ``"a cast inside a body"``).
+
+    Returns:
+        The resolved pint unit, including any grouping level.
 
     Raises:
         UnitDefinitionError: If the base pins a concrete currency.
@@ -412,24 +414,6 @@ def _resolve_agnostic_body_unit(
             f"pin down concrete currencies (GEP 10)."
         )
     return resolve_compositional_unit(unit=unit, registry=registry, with_level=True)
-
-
-def resolve_compositional_cast_unit(
-    unit: CompositeUnit, *, registry: pint.UnitRegistry, where: str
-) -> pint.Unit:
-    """Resolve the target unit of a :func:`cast_ttsim_unit` call inside a body."""
-    return _resolve_agnostic_body_unit(
-        unit=unit, registry=registry, where=where, what="a cast inside a body"
-    )
-
-
-def resolve_compositional_field_unit(
-    unit: CompositeUnit, *, registry: pint.UnitRegistry, where: str
-) -> pint.Unit:
-    """Resolve an agnostic axis declaration's compositional unit."""
-    return _resolve_agnostic_body_unit(
-        unit=unit, registry=registry, where=where, what="the declaration"
-    )
 
 
 class _UnitNamespaceMeta(type):
@@ -507,6 +491,21 @@ class UnitAnnotatedColumn:
 
     values: Any
     unit: CompositeUnit
+
+
+if TYPE_CHECKING:
+    UserNestedUnitAnnotatedData: TypeAlias = Mapping[
+        str, "UnitAnnotatedColumn | UserNestedUnitAnnotatedData"
+    ]
+    """Tree mapping TTSIM paths to unit-annotated columns.
+
+    The leaf type is what separates it from `ttsim.typing.UserNestedData`, whose
+    leaves are bare columns.
+    """
+else:
+    # Widened to one level for beartype, like `NestedData` in `ttsim.typing`: the
+    # recursive alias's stringified inner name is not resolvable at runtime.
+    UserNestedUnitAnnotatedData = Mapping[str, UnitAnnotatedColumn | Mapping]
 
 
 def cast_ttsim_unit(
@@ -793,25 +792,6 @@ def divide_by_grouping_level(
         UnitDefinitionError: If the level has not been registered.
     """
     return unit / _grouping_level_unit(name=level, registry=registry)
-
-
-def grouping_level_count_unit(
-    target_level: str, registry: pint.UnitRegistry
-) -> pint.Unit:
-    """The unit of a head count over ``target_level``.
-
-    A head count is a dimensionless count over the group it counts within:
-    counting persons in a household is ``1 / [hh]`` — persons per household
-    (a count is dimensionless, GEP 10). ``COUNT`` aggregations mint this, and it
-    is the conversion factor that bridges levels
-    (``CURRENCY/[hh] ÷ (1/[hh]) = CURRENCY``, a bare per-person amount).
-
-    Raises:
-        UnitDefinitionError: If ``target_level`` is not registered.
-    """
-    return divide_by_grouping_level(
-        unit=registry.dimensionless, level=target_level, registry=registry
-    )
 
 
 def parse_unit(unit_str: str, registry: pint.UnitRegistry) -> pint.Unit:
