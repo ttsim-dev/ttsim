@@ -212,8 +212,6 @@ def create_time_conversion_functions(
     for bngs, inputs in bngs_to_time_conversion_inputs.items():
         for col_name in input_columns:
             # If base_name is in provided data, base time conversions on that.
-            # A grouping-only variant (`income_hh`) carries no period to
-            # convert from, so it cannot serve as the source.
             pattern_specific = get_re_pattern_for_specific_time_units_and_groupings(
                 base_name=bngs[0],
                 all_time_units=time_units,
@@ -447,13 +445,11 @@ def _resolve_source_unit(
 ) -> CompositeUnit:
     """Resolve the unit of an auto-aggregation source column.
 
-    Mirrors `_resolve_source_column_kind`: the source is a column function, a
-    `PolicyInput` declared at `source_name`, or a user-supplied input at a
-    different time unit than its declared `PolicyInput` sibling (e.g. caller
-    passes `bonus_y` against a `bonus_m` declaration; the sibling's unit is
+    The source is a column function, a `PolicyInput` declared at `source_name`, or a
+    user-supplied input at a different time unit than its declared `PolicyInput` sibling
+    (e.g. caller passes `bonus_y` against a `bonus_m` declaration; the sibling's unit is
     re-based to the source's period). Returns ``UNSET_UNIT`` if the source is
-    unannotated; the environment-level mandatory-units check reports the
-    source itself in that case.
+    unannotated.
     """
     source = column_functions.get(source_name) or qname_policy_environment.get(
         source_name
@@ -561,12 +557,7 @@ def create_input_column_stubs(
     anyway — so the name would otherwise carry no unit. The input-side
     currency conversion and the input-tag checks read units off the
     environment, so each such column gets a stub carrying the unit the
-    derivation rules imply. A column whose source carries no unit gets no
-    stub (the mandatory-units check reports the source itself).
-
-    Time-variant stubs are minted first so a group aggregate of a
-    time-converted name (``bonus_y_hh`` for a declared ``bonus_m``) can chain
-    off them.
+    derivation rules imply.
     """
     pattern_all = get_re_pattern_for_all_time_units_and_groupings(
         time_units=tuple(TIME_UNIT_IDS_TO_LABELS),

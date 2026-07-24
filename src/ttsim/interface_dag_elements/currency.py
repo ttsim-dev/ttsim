@@ -11,10 +11,7 @@ def data_currency(unit_system: UnitSystem) -> str:
     """The currency the user's data arrives in and results are returned in.
 
     Defaults to the policy system's base currency. Override via
-    ``main(data_currency=...)`` with another of the system's currencies. Only
-    input and output data are affected: currency-denominated input columns and
-    scalar input values are converted from this currency into the computation
-    currency, and currency-denominated results are converted back.
+    ``main(data_currency=...)`` with another of the system's currencies.
     """
     return unit_system.base_currency
 
