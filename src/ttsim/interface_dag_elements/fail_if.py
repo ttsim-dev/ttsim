@@ -1056,7 +1056,6 @@ def input_currency_is_not_concrete(
     include_if_any_element_present=["input_data__tree_with_unit_annotations"]
 )
 def input_units_are_inconsistent(
-    input_data__units: dict[str, pint.Unit],
     input_data__unit_tokens: dict[str, CompositeUnit],
     unit_checks__resolved_units: dict[str, pint.Unit | dict[str | int, Any]],
     unit_checks__declared_unit_tokens: dict[str, CompositeUnit],
@@ -1069,10 +1068,9 @@ def input_units_are_inconsistent(
             unit.
     """
     fail_if_input_units_are_inconsistent(
-        input_units=input_data__units,
+        input_unit_tokens=input_data__unit_tokens,
         resolved_units=unit_checks__resolved_units,
         unit_system=unit_system,
-        input_unit_tokens=input_data__unit_tokens,
         declared_unit_tokens=unit_checks__declared_unit_tokens,
     )
 

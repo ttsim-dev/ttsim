@@ -171,7 +171,6 @@ class InputData(MainTargetABC):
     sort_indices: str = "input_data__sort_indices"
     tree: str = "input_data__tree"
     tree_with_unit_annotations: str = "input_data__tree_with_unit_annotations"
-    units: str = "input_data__units"
     unit_tokens: str = "input_data__unit_tokens"
 
 

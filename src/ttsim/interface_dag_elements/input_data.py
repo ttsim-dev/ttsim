@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING, Literal
 import dags.tree as dt
 import numpy
 import pandas as pd
-import pint
 
 from ttsim.interface_dag_elements.data_converters import (
     df_with_mapped_columns_to_flat_data,
@@ -28,7 +27,6 @@ from ttsim.tt.units import (
     CompositeUnit,
     UserNestedUnitAnnotatedData,
     input_strip_unit,
-    resolve_compositional_unit,
     strip_input_quantity_at_boundary,
 )
 
@@ -80,9 +78,8 @@ def qname() -> QNameData:
 def tree_with_unit_annotations() -> UserNestedUnitAnnotatedData:
     """The input data as a nested dict of :class:`UnitAnnotatedColumn` leaves.
 
-    Like :func:`tree`, but each leaf tags its column with a concrete unit, opting
-    into boundary unit validation against the DAG (currency converted, tag checked
-    against the declared unit). Use bare :func:`tree` for untagged data.
+    Like :func:`tree`, but each leaf tags its column with a concrete unit, opting into
+    boundary unit validation against the DAG. Use bare :func:`tree` for untagged data.
 
     Example::
 
@@ -109,7 +106,7 @@ def flat_from_df_and_mapper(
     backend: Literal["numpy", "jax"],
     xnp: ModuleType,
 ) -> FlatData:
-    """The input data as a flat dictionary of arrays."""
+    """The input data as a flat dictionary of arrays, stripped of any unit tags."""
     return df_with_mapped_columns_to_flat_data(
         df=df_and_mapper__df,
         mapper=df_and_mapper__mapper,
@@ -127,7 +124,7 @@ def flat_from_df_with_nested_columns(
     backend: Literal["numpy", "jax"],
     xnp: ModuleType,
 ) -> FlatData:
-    """The input data as a flat dictionary of arrays."""
+    """The input data as a flat dictionary of arrays, stripped of any unit tags."""
     return df_with_nested_columns_to_flat_data(
         df=df_with_nested_columns,
         backend=backend,
@@ -144,7 +141,7 @@ def flat_from_df_with_qname_columns(
     backend: Literal["numpy", "jax"],
     xnp: ModuleType,
 ) -> FlatData:
-    """The input data as a flat dictionary of arrays."""
+    """The input data as a flat dictionary of arrays, stripped of any unit tags."""
     return df_with_qname_columns_to_flat_data(
         df=df_with_qname_columns,
         backend=backend,
@@ -160,7 +157,7 @@ def flat_from_tree(
     tree: NestedData,
     xnp: ModuleType,  # noqa: ARG001
 ) -> FlatData:
-    """The input data as a flat dictionary of arrays."""
+    """The input data as a flat dictionary of arrays, stripped of any unit tags."""
     # `pd.Series` leaves go through `_canonicalize_input_dtype` so
     # nullable / pyarrow dtypes are normalised to numpy.
     return {
@@ -183,7 +180,7 @@ def flat_from_qname(
     qname: QNameData,
     xnp: ModuleType,  # noqa: ARG001
 ) -> FlatData:
-    """The input data as a flat dictionary of arrays."""
+    """The input data as a flat dictionary of arrays, stripped of any unit tags."""
     # `pd.Series` leaves go through `_canonicalize_input_dtype` directly so
     # nullable / pyarrow dtypes are normalised; plain Python lists /
     # sequences first become numpy arrays so the canonicaliser sees the
@@ -209,7 +206,7 @@ def flat_from_tree_with_unit_annotations(
     data_currency: str,
     unit_system: UnitSystem,
 ) -> FlatData:
-    """The input data as a flat dictionary of arrays."""
+    """The input data as a flat dictionary of arrays, stripped of any unit tags."""
     registry = unit_system.registry
     flat = flatten_unit_annotated_input_tree(tree=tree_with_unit_annotations)
     return {
@@ -227,40 +224,18 @@ def flat_from_tree_with_unit_annotations(
 
 @input_dependent_interface_function(
     include_if_all_inputs_present=["input_data__tree_with_unit_annotations"],
-    leaf_name="units",
-)
-def units_from_tree_with_unit_annotations(
-    tree_with_unit_annotations: UserNestedUnitAnnotatedData,
-    unit_system: UnitSystem,
-) -> dict[str, pint.Unit]:
-    """Each input column's resolved (agnostic) tag, with its grouping level, by qname.
-
-    Resolved off every :class:`UnitAnnotatedColumn`'s tag so
-    ``fail_if__input_units_are_inconsistent`` can compare it against the column's
-    declared unit on all three axes — currency presence, grouping level, and the
-    residual measurement.
-    """
-    flat = flatten_unit_annotated_input_tree(tree=tree_with_unit_annotations)
-    return {
-        dt.qname_from_tree_path(path): resolve_compositional_unit(
-            unit=col.unit, registry=unit_system.registry, with_level=True
-        )
-        for path, col in flat.items()
-    }
-
-
-@input_dependent_interface_function(
-    include_if_all_inputs_present=["input_data__tree_with_unit_annotations"],
     leaf_name="unit_tokens",
 )
 def unit_tokens_from_tree_with_unit_annotations(
     tree_with_unit_annotations: UserNestedUnitAnnotatedData,
 ) -> dict[str, CompositeUnit]:
-    """Each input column's *declared tag* as a compositional token, by qname.
+    """Each input column's tag as a compositional token, by qname.
 
-    The pre-resolution :class:`CompositeUnit` the user tagged the column with. The
-    input check compares its grouping level against the declared unit's token
-    (GEP 10).
+    The :class:`CompositeUnit` the user tagged the column with, which spells a
+    grouping level directly where a resolved unit only carries its denominator
+    (GEP 10). ``fail_if__input_units_are_inconsistent`` compares it against the
+    column's declared unit and resolves it against the registry itself where it
+    needs a pint unit.
     """
     flat = flatten_unit_annotated_input_tree(tree=tree_with_unit_annotations)
     return {dt.qname_from_tree_path(path): col.unit for path, col in flat.items()}

@@ -240,11 +240,12 @@ def _auto_agg_wrapper_from_int_source() -> typing.Callable[..., object]:
     derived = create_agg_by_group_functions(
         column_functions=column_functions,
         qname_policy_environment={},
+        time_converted_input_stubs={},
         input_columns=set(),
         tt_targets=("x_hh",),
         grouping_levels=("hh",),
     )
-    wrapper = derived["x_hh"]
+    wrapper = derived.functions["x_hh"]
     assert isinstance(wrapper, ColumnFunction)
     return wrapper.function
 

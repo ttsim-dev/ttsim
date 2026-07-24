@@ -100,6 +100,7 @@ from ttsim.tt.units import (
     resolve_compositional_column_unit,
     resolve_compositional_field_unit,
     resolve_compositional_param_unit,
+    resolve_compositional_unit,
     resolved_unit_for_aggregation,
     token_declares_a_currency,
     token_is_agnostic_currency,
@@ -1019,10 +1020,9 @@ def _composite_token_level(token: CompositeUnit) -> str | None:
 
 
 def fail_if_input_units_are_inconsistent(
-    input_units: Mapping[str, pint.Unit],
+    input_unit_tokens: Mapping[str, CompositeUnit],
     resolved_units: Mapping[str, Any],
     unit_system: UnitSystem,
-    input_unit_tokens: Mapping[str, CompositeUnit] | None = None,
     declared_unit_tokens: Mapping[str, CompositeUnit] | None = None,
 ) -> None:
     """Fail if an input column's tag disagrees with the unit declared for it.
@@ -1046,9 +1046,11 @@ def fail_if_input_units_are_inconsistent(
       column tagged ``m²`` (a 10,000-fold error) or a ``YEARS`` age tagged
       ``month`` is rejected here rather than silently mis-stripped.
 
-    ``input_units`` maps each tagged input column to its resolved pint tag;
-    ``resolved_units`` maps every node to the unit declared for it in the policy
-    environment.
+    ``input_unit_tokens`` maps each tagged input column to the compositional token
+    it was tagged with — the one representation of an input tag, resolved to a pint
+    unit here for the currency and measurement axes and read directly for the level
+    axis. ``resolved_units`` maps every node to the unit declared for it in the
+    policy environment.
 
     Raises:
         UnitConsistencyError: If any tagged column disagrees with the unit
@@ -1056,7 +1058,10 @@ def fail_if_input_units_are_inconsistent(
     """
     registry = unit_system.registry
     errors: list[str] = []
-    for qname, tag in input_units.items():
+    for qname, tag_token in input_unit_tokens.items():
+        tag = resolve_compositional_unit(
+            unit=tag_token, registry=registry, with_level=True
+        )
         expected = resolved_units.get(qname)
         if not isinstance(expected, pint.Unit):
             # No scalar declared unit (absent, or a dict parameter); nothing to check.
@@ -1072,19 +1077,18 @@ def fail_if_input_units_are_inconsistent(
                 f"one (GEP 10)."
             )
             continue
-        # A count and a share are both the plain number, and a per-person amount
-        # and a level-neutral rate are both bare — they are the same unit
-        # (GEP 10), so the resolved unit's denominator faithfully
-        # gives the grouping level. Prefer the declared tokens where present (they
-        # spell the level directly), falling back to the resolved denominator.
-        tag_token = (input_unit_tokens or {}).get(qname)
+        # The tag's token spells its level directly. On the declared side, use the
+        # token where the environment has one and fall back to the resolved unit's
+        # denominator otherwise: a count and a share are both the plain number, and
+        # a per-person amount and a level-neutral rate are both bare (GEP 10), so
+        # the denominator faithfully gives the grouping level either way.
+        tag_level = _composite_token_level(tag_token)
         declared_token = (declared_unit_tokens or {}).get(qname)
-        if tag_token is not None and declared_token is not None:
-            tag_level = _composite_token_level(tag_token)
-            expected_level = _composite_token_level(declared_token)
-        else:
-            tag_level = _unit_level_denominator(tag)
-            expected_level = _unit_level_denominator(expected)
+        expected_level = (
+            _composite_token_level(declared_token)
+            if declared_token is not None
+            else _unit_level_denominator(expected)
+        )
         if tag_level != expected_level:
             errors.append(
                 f"  {qname}: tag is at the {tag_level or 'bare'!r} level but "

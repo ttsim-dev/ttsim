@@ -4482,13 +4482,14 @@ def test_auto_generated_boolean_group_aggregate_passes_the_build():
     aggs = create_agg_by_group_functions(
         column_functions={"is_adult": is_adult},
         qname_policy_environment={},
+        time_converted_input_stubs={},
         input_columns=set(),
         tt_targets={"is_adult_fam"},
         grouping_levels=("fam",),
     )
     # No UnitConsistencyError: the minted token and the derived unit agree.
     fail_if_environment_units_are_inconsistent(
-        env={"is_adult": is_adult, "is_adult_fam": aggs["is_adult_fam"]},
+        env={"is_adult": is_adult, "is_adult_fam": aggs.functions["is_adult_fam"]},
         grouping_levels=GROUPING_LEVELS,
         unit_system=UNIT_SYSTEM,
     )
