@@ -6,15 +6,12 @@ releases are available on [Anaconda.org](https://anaconda.org/conda-forge/ttsim)
 
 ## Unreleased
 
+- {gh}`138` Implement GEP 10: Mandatory unit annotations for functions and parameters.
+  Automatic checks of unit arithmetic and DAG unit consistency. ({ghuser}`MImmesberger`)
 - {gh}`130` Split `raw_results.columns` into `raw_results.columns_with_internal_p_ids`
   (computable from `processed_data` alone) and `raw_results.columns_with_original_p_ids`
   (the reverse-translation of endogenous `p_id_*` columns from {gh}`108`).
   ({ghuser}`MImmesberger`)
-- {gh}`121` Switch the GEP-10 unit checks on: two always-on `fail_if` nodes verify every
-  assembled policy environment — mandatory `unit=` declarations on all active nodes and
-  a conservative unit check of every function body against its producers' resolved
-  units. Annotate mettsim end to end as the worked example, and check it over all policy
-  dates in CI. ({ghuser}`MImmesberger`)
 - Fill in the `count_by_p_id`, `mean_by_p_id`, `max_by_p_id`, `min_by_p_id`,
   `any_by_p_id`, and `all_by_p_id` aggregations on both the NumPy and JAX backends.
   Negative source `p_id` entries are masked out so they cannot influence the result;

@@ -220,9 +220,7 @@ class InputDependentInterfaceFunction(InterfaceFunction[FunArgTypes, ReturnType]
         """Whether every specified include condition holds.
 
         Conditions combine with *and*; an unspecified condition is satisfied.
-        This lets a variant require one input's presence and another's absence
-        (e.g. ``labels__input_columns`` reads ``input_data__flat`` only when
-        ``processed_data`` is not supplied directly).
+        This lets a variant require one input's presence and another's absence.
         """
         names = set(input_names)
         all_cond = all(i in names for i in self.include_if_all_inputs_present)

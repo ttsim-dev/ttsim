@@ -808,12 +808,7 @@ def _fail_if_unit_is_unset(
     decorator_name: str,
     orig_location: str,
 ) -> None:
-    """Fail if an aggregation does not declare a unit.
-
-    Aggregations declare their ``unit`` explicitly like every other declaration
-    (GEP 10); the framework then verifies it against the aggregated source and
-    the aggregation type.
-    """
+    """Fail if an aggregation does not declare a unit."""
     if unit is UNSET_UNIT:
         msg = (
             f"{decorator_name} at {orig_location} must declare a `unit=` (GEP 10). "
@@ -968,14 +963,7 @@ class AggByPIDFunction(ColumnFunction):
 
 
 def qname_is_person_pointer(qname: str) -> bool:
-    """Whether a qualified name is a ``p_id_*`` person pointer.
-
-    A pointer references another individual's ``p_id`` (GEP 2) — it selects
-    *where* an aggregated value lands, so it is never a value source. Any
-    element of the tree path starting with ``p_id_`` marks the name; the
-    :func:`agg_by_p_id_function` constructor and the unit checks share this
-    test so they exclude the same pointer arguments.
-    """
+    """Whether a qualified name is a ``p_id_*`` person pointer."""
     return any(e.startswith("p_id_") for e in dt.tree_path_from_qname(qname))
 
 
@@ -1253,17 +1241,7 @@ def param_function(
     flat homogenous dictionary, or a set of parameters of a piecewise polynomial
     function) to custom representations. They must not use any data columns (i.e.,
     arrays of the same length as `p_id`). Use `policy_function` / `PolicyFunction` for
-    functions that operate on data columns (GEP 10):
-
-    - a ParamFunction returning a **scalar quantity** declares that quantity's
-      ``unit=`` (a :class:`~ttsim.tt.units.CompositeUnit`);
-    - one building a **schedule** (a ``PiecewisePolynomialParamValue`` or a
-      ``ConsecutiveIntLookupTableParamValue``) declares its domain and range with
-      ``unit=InputOutputUnit(input_unit=…, output_unit=…)`` and states
-      ``verify_units=False`` (a schedule builder's body cannot be unit-checked);
-    - one building any other **structured value** (a dataclass of related
-      parameters) declares ``unit=UNSET_UNIT``; each plucked value's unit comes
-      from the return type's field annotations.
+    functions that operate on data columns.
 
     As a consequence, the arguments of the decorated function must be found in the
     params tree. They are typically defined as outermost keys in the yaml files with

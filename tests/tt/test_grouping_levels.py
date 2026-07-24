@@ -27,7 +27,6 @@ from ttsim.tt.units import (
     CURRENCY_TOKEN,
     _unit_builder_levels,
     divide_by_grouping_level,
-    grouping_level_count_unit,
     parse_unit,
     resolve_compositional_column_unit,
     resolve_compositional_param_unit,
@@ -179,8 +178,8 @@ def test_count_bridges_hh_to_bare_via_division():
         level="hh",
         registry=REGISTRY,
     )
-    count_to_hh = grouping_level_count_unit(
-        target_level="hh", registry=REGISTRY
+    count_to_hh = resolved_unit_for_aggregation(
+        agg_type=AggType.COUNT, target_level="hh", registry=REGISTRY
     )  # 1/[hh]
     bridged = (
         REGISTRY.Quantity(1.0, rent_at_hh) / REGISTRY.Quantity(1.0, count_to_hh)
@@ -192,8 +191,8 @@ def test_count_bridges_hh_to_bare_via_division():
 def test_count_bridges_bare_to_sn_via_multiplication():
     # (1/[sn]) * (CURRENCY/year) == CURRENCY/year/[sn]: a bare per-person allowance
     # times a head count is a per-group amount.
-    count_to_sn = grouping_level_count_unit(
-        target_level="sn", registry=REGISTRY
+    count_to_sn = resolved_unit_for_aggregation(
+        agg_type=AggType.COUNT, target_level="sn", registry=REGISTRY
     )  # 1/[sn]
     per_person = parse_unit(unit_str="CURRENCY / year", registry=REGISTRY)
     product = (
@@ -399,7 +398,9 @@ def test_resolved_aggregation_count_mints_dimensionless_over_target():
     )
     assert units_are_equivalent(
         left=result,
-        right=grouping_level_count_unit(target_level="hh", registry=REGISTRY),
+        right=divide_by_grouping_level(
+            unit=REGISTRY.dimensionless, level="hh", registry=REGISTRY
+        ),
         registry=REGISTRY,
     )
 
@@ -555,7 +556,9 @@ def test_declared_head_count_at_group_level_matches_a_count():
     )
     assert units_are_equivalent(
         left=at_hh,
-        right=grouping_level_count_unit(target_level="hh", registry=REGISTRY),
+        right=resolved_unit_for_aggregation(
+            agg_type=AggType.COUNT, target_level="hh", registry=REGISTRY
+        ),
         registry=REGISTRY,
     )
 

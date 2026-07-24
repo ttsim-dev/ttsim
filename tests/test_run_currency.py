@@ -623,16 +623,10 @@ def test_annotated_results_leave_an_unresolved_dict_parameter_leaf_bare():
     assert annotated["rates"]["high"] == 50.0
 
 
-def test_currencies_differing_only_in_case_are_rejected():
-    """Two currency names projecting to the same `TTSIMUnit` base are rejected — one
-    would silently shadow the other on the builder namespace."""
-    with pytest.raises(UnitDefinitionError, match="already claims the unit base"):
-        _fresh_system(other_currencies={"castar": "CASTAR / 4"})
-
-
 def test_currency_named_after_a_non_currency_base_is_rejected():
-    """A currency whose name projects onto a non-currency unit base is rejected."""
-    with pytest.raises(UnitDefinitionError, match="non-currency unit base"):
+    """A currency whose name projects onto a non-currency unit base is rejected: it
+    would shadow that base for every policy package in the process."""
+    with pytest.raises(UnitDefinitionError, match="shared unit vocabulary already"):
         _fresh_system(other_currencies={"HECTARE": "CASTAR / 4"})
 
 
@@ -668,7 +662,7 @@ def test_undashed_statutory_currency_key_is_rejected(start_date):
 def test_currency_claiming_the_agnostic_base_is_rejected():
     """A currency whose base is the agnostic `CURRENCY` token is refused: it would
     make every agnostic declaration name a concrete currency."""
-    with pytest.raises(UnitDefinitionError, match="agnostic currency base"):
+    with pytest.raises(UnitDefinitionError, match="shared unit vocabulary already"):
         _fresh_system(other_currencies={"currency": "CASTAR / 4"})
 
 
@@ -676,13 +670,6 @@ def test_agnostic_token_pins_down_no_concrete_currency():
     """`TTSIMUnit.CURRENCY` never resolves to one of the system's currencies."""
     _fresh_system()
     assert token_source_currency(TTSIMUnit.CURRENCY) is None
-
-
-def test_currency_name_spelling_the_denominator_delimiter_is_rejected():
-    """A currency name containing `_PER_` is refused: its base would parse back as a
-    base plus a denominator, so the token would not round-trip."""
-    with pytest.raises(UnitDefinitionError, match="would parse back as"):
-        _fresh_system(other_currencies={"GOLD_PER_OUNCE": "CASTAR / 4"})
 
 
 def test_registered_currency_token_round_trips_through_the_parser():

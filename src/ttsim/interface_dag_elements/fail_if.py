@@ -980,7 +980,7 @@ def tt_units_are_missing(
     specialized_environment__without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
     labels__grouping_levels: OrderedQNames,
 ) -> None:
-    """Fail if any active node lacks a mandatory `unit=` declaration.
+    """Fail if any active node lacks a mandatory unit declaration.
 
     Raises:
         UnitDefinitionError: If any node (or dict-parameter leaf) lacks a
@@ -1007,10 +1007,7 @@ def tt_units_are_inconsistent(
     """Fail if a function body infers a unit that contradicts its declaration.
 
     Each body is unit-checked on representative values built from its producers'
-    resolved units, across every reachable branch path, without any user data. A
-    mismatch is flagged when the inferred unit is concrete (non-dimensionless) and
-    disagrees with the declaration; a dimensionless inference (e.g. an early
-    `return 0.0`) falls back to the declaration.
+    resolved units, across every reachable branch path, without any user data.
 
     Raises:
         UnitConsistencyError: If any body infers a concrete unit that
@@ -1028,34 +1025,14 @@ def tt_units_are_inconsistent(
 @fail_function(
     include_if_any_element_present=["input_data__tree_with_unit_annotations"]
 )
-def not_all_input_leaves_are_unit_annotated_columns(
-    input_data__tree_with_unit_annotations: UserNestedUnitAnnotatedData,
-) -> None:
-    """Reject a unit-annotated input tree with any bare (untagged) leaf.
-
-    Reports the bare leaves up front, next to the other input-data checks. Each
-    consumer of the tree revalidates as it flattens
-    (:func:`flatten_unit_annotated_input_tree`), so the guarantee does not rest on
-    this node running first.
-
-    Raises:
-        UnitConsistencyError: If any leaf is not a ``UnitAnnotatedColumn``.
-    """
-    flatten_unit_annotated_input_tree(tree=input_data__tree_with_unit_annotations)
-
-
-@fail_function(
-    include_if_any_element_present=["input_data__tree_with_unit_annotations"]
-)
 def input_currency_is_not_concrete(
     input_data__tree_with_unit_annotations: UserNestedUnitAnnotatedData,
 ) -> None:
     """Fail if a currency-bearing input column names the agnostic ``CURRENCY``.
 
-    Input data, like a parameter, is written in a concrete currency: a currency
-    column must name one (``TTSIMUnit.EUR``, ``TTSIMUnit.DM``), never the agnostic
-    ``TTSIMUnit.CURRENCY`` — which would leave the run unable to tell what the numbers
-    are denominated in. (Columns and functions are the opposite: agnostic only.)
+    Input data, like a parameter, is written in a concrete currency: a currency column
+    must name one, never the agnostic ``TTSIMUnit.CURRENCY`` — which would leave the run
+    unable to tell what the numbers are denominated in.
 
     Raises:
         UnitConsistencyError: If any input column's tag is an agnostic currency.
@@ -1070,9 +1047,8 @@ def input_currency_is_not_concrete(
     if agnostic:
         raise UnitConsistencyError(
             "Input data is denominated in a concrete currency, so a currency "
-            "column must name one (e.g. TTSIMUnit.EUR, TTSIMUnit.DM), not the agnostic "
-            f"TTSIMUnit.CURRENCY (GEP 10). These name the agnostic currency: "
-            f"{', '.join(agnostic)}."
+            "column must name one, not the agnostic TTSIMUnit.CURRENCY (GEP 10). These "
+            f"name the agnostic currency: {', '.join(agnostic)}."
         )
 
 
@@ -1080,27 +1056,21 @@ def input_currency_is_not_concrete(
     include_if_any_element_present=["input_data__tree_with_unit_annotations"]
 )
 def input_units_are_inconsistent(
-    input_data__units: dict[str, pint.Unit],
     input_data__unit_tokens: dict[str, CompositeUnit],
     unit_checks__resolved_units: dict[str, pint.Unit | dict[str | int, Any]],
     unit_checks__declared_unit_tokens: dict[str, CompositeUnit],
     unit_system: UnitSystem,
 ) -> None:
-    """Fail if a tagged input column's unit contradicts its declared unit.
-
-    One check of every input tag against the DAG, across currency presence,
-    grouping level, and the residual measurement (see
-    :func:`ttsim.interface_dag_elements.unit_checks.fail_if_input_units_are_inconsistent`).
+    """Fail if a tagged input column's unit contradicts its declared unit in the DAG.
 
     Raises:
         UnitConsistencyError: If any tagged column disagrees with its declared
             unit.
     """
     fail_if_input_units_are_inconsistent(
-        input_units=input_data__units,
+        input_unit_tokens=input_data__unit_tokens,
         resolved_units=unit_checks__resolved_units,
         unit_system=unit_system,
-        input_unit_tokens=input_data__unit_tokens,
         declared_unit_tokens=unit_checks__declared_unit_tokens,
     )
 

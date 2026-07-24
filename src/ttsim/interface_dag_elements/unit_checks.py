@@ -6,24 +6,19 @@ assembled policy environment on two counts:
 - **Every active node declares a unit.** Author declarations (``unit=`` /
   ``unit:``) cover inputs, functions, parameters, and param functions; derived
   nodes (aggregations, time-conversion variants, group ids) and the framework
-  date nodes get theirs assigned here. Identifiers and booleans are
-  ``DIMENSIONLESS``.
+  date nodes get theirs assigned here.
 - **Each function body agrees with its declaration.** Every ``@policy_function``
   / ``@param_function`` body is unit-checked on representative quantities built
   from its producers' resolved units. A body the check cannot evaluate must opt
-  out with ``verify_units=False``, so every un-verified body is visible. A single
-  deliberate irregularity — policy-mandated cross-level arithmetic, a dimensioned
-  constant — re-tags itself with ``cast_ttsim_unit`` instead, keeping the rest of
-  the body checked.
+  out with ``verify_units=False``.
 
 Checking a body is an abstract interpretation over units: the real body runs, but
 on stand-in values carrying a unit and no meaningful magnitude. Each
 ``Quantity(1.0, unit)`` is wrapped in a :class:`_UnitCheckQuantity`, whose
 arithmetic propagates units while a :class:`_PathExplorer` drives its branch
-decisions — so a body is checked down every reachable path. ``+``, ``-`` and the
-ordering comparisons additionally require equivalent operands, because at run
-time there is no pint to convert between them. pint runs only at build time; no
-live array is ever wrapped.
+decisions — so a body is checked down every reachable path.
+
+The unit check always runs in NumPy, regardless of the backend of the actual run.
 """
 
 from __future__ import annotations
@@ -96,10 +91,10 @@ from ttsim.tt.units import (
     is_calendar_point_unit,
     parse_unit,
     replace_concrete_with_agnostic_currency,
-    resolve_compositional_cast_unit,
+    resolve_compositional_body_unit,
     resolve_compositional_column_unit,
-    resolve_compositional_field_unit,
     resolve_compositional_param_unit,
+    resolve_compositional_unit,
     resolved_unit_for_aggregation,
     token_declares_a_currency,
     token_is_agnostic_currency,
@@ -115,8 +110,6 @@ from ttsim.typing import (
 )
 from ttsim.unit_converters import TIME_UNIT_IDS_TO_LABELS
 
-#: The units injected for the framework's date nodes (see
-#: ``policy_environment.policy_environment``).
 FRAMEWORK_DATE_NODE_UNITS: Mapping[str, str] = {
     "policy_year": "calendar_year",
     "policy_month": "dimensionless",
@@ -131,16 +124,6 @@ class _UnitCheckXnp:
     """The unit check's ``xnp``: NumPy with the unit-bearing ops routed through
     ``_UnitCheckQuantity``'s checks, so a vectorized (``not_required``) body is checked
     at full parity with a scalar one.
-
-    ``_UnitCheckQuantity`` sets ``__array_ufunc__ = None`` to force ``+``/``-``/… onto
-    its checking dunders, which also stops NumPy ufuncs (``numpy.maximum`` …) from
-    running. So the array ops a body calls are intercepted here and routed to the
-    *same* checking primitives the operators use:
-
-    - ``maximum``/``minimum`` screen like an ordering comparison (the scalar
-      ``max``/``min`` the vectorizer rewrote);
-    - ``where`` screens like ``+`` (its two branches become one column);
-    - reductions and unary shape ops preserve the unit.
 
     An op not modelled here falls through to raw NumPy, raises, and is reported as
     needing ``verify_units=False`` — never silently passed through.
@@ -206,9 +189,7 @@ class _UnitCheckXnp:
         return getattr(numpy, name)
 
 
-#: Representative values for the framework arguments in a unit check. The
-#: check always executes in NumPy + pint (NEP 18), regardless of the
-#: backend of the actual run.
+#: Representative values for the framework arguments in a unit check.
 _NON_UNIT_ARGUMENT_VALUES: Mapping[str, Any] = {
     "xnp": _UnitCheckXnp(),
     "dnp": numpy,
@@ -232,13 +213,7 @@ def resolved_units(
     labels__grouping_levels: OrderedQNames,
     unit_system: UnitSystem,
 ) -> dict[str, pint.Unit | dict[str | int, Any]]:
-    """The resolved pint unit of every annotated node in the environment.
-
-    A single interface-DAG node so the environment walk runs once per build: the
-    unit checks (TT bodies, input tags) and the unit-annotated output tree all
-    consume this rather than each recomputing it. Thin wrapper over
-    :func:`resolve_environment_units`.
-    """
+    """The resolved pint unit of every annotated node in the environment."""
     return resolve_environment_units(
         env=specialized_environment__without_tree_logic_and_with_derived_functions,
         grouping_levels=labels__grouping_levels,
@@ -250,20 +225,12 @@ def resolved_units(
 def declared_unit_tokens(
     specialized_environment__without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,  # noqa: E501
 ) -> dict[str, CompositeUnit]:
-    """Each node's *declared* compositional unit token, by qname.
-
-    The pre-resolution :class:`CompositeUnit`, which spells a grouping level
-    directly where a resolved unit only carries its denominator (GEP 10). Nodes
-    with a per-leaf mapping unit or no unit are omitted.
-    """
+    """Each node's *declared* compositional unit token, by qname."""
     env = specialized_environment__without_tree_logic_and_with_derived_functions
     return {
         qname: token
         for qname, obj in env.items()
         if isinstance((token := getattr(obj, "unit", UNSET_UNIT)), CompositeUnit)
-        # `UNSET_UNIT` is itself a `CompositeUnit` sentinel standing for the
-        # *absence* of a declaration (e.g. a framework date parameter), so it must
-        # not appear among the declared tokens.
         and token is not UNSET_UNIT
     }
 
@@ -273,22 +240,7 @@ def resolve_environment_units(
     grouping_levels: OrderedQNames,
     unit_system: UnitSystem,
 ) -> dict[str, pint.Unit | dict[str | int, Any]]:
-    """Resolve the complete unit of every annotated node in the environment.
-
-    - **Columns and param functions** resolve their fully-spelled compositional
-      ``unit`` against the time-unit and aggregation suffixes of their leaf name.
-    - **Parameters** spell their period and level in the unit string; dict
-      parameters with per-leaf units resolve to nested dicts of pint units.
-    - **Framework date nodes** resolve via :data:`FRAMEWORK_DATE_NODE_UNITS`.
-
-    A node that declares no unit (still :data:`UNSET_UNIT`) is absent from the
-    result; the mandatory-units check reports it.
-
-    ``grouping_levels`` is the level set derived from the policy environment's
-    ``*_id`` columns (the ``labels__grouping_levels`` node) — the only source of
-    grouping levels. Each level is registered as a base dimension in the unit
-    system's registry here, at build time, so the resolution below can spell it.
-    """
+    """Resolve the complete unit of every annotated node in the environment."""
     registry = unit_system.registry
     register_grouping_levels(names=grouping_levels, registry=registry)
     pattern = get_re_pattern_for_all_time_units_and_groupings(
@@ -335,13 +287,12 @@ def resolve_environment_units(
                 # resolved unit is the OUTPUT axis (what `look_up` /
                 # `piecewise_polynomial` consumers receive), resolved agnostically
                 # like a field annotation — concrete currencies rejected, no
-                # name-suffix rules (GEP 10). A malformed declaration (a
-                # quantity unit or `UNSET_UNIT` on a schedule return) is left
-                # unresolved here and reported by the schedule contract check.
-                resolved[qname] = resolve_compositional_field_unit(
+                # name-suffix rules.
+                resolved[qname] = resolve_compositional_body_unit(
                     unit=token.output_unit,
                     registry=registry,
                     where=f"Schedule param function {qname!r}",
+                    what="the declaration",
                 )
         else:  # ColumnObject | scalar ParamFunction
             token = getattr(obj, "unit", UNSET_UNIT)
@@ -366,14 +317,7 @@ def _resolve_leveled_column_unit(
     match: re.Match[str] | None,
     registry: pint.UnitRegistry,
 ) -> pint.Unit:
-    """Resolve a column/function's full unit, including its grouping level.
-
-    Resolves via :func:`resolve_compositional_column_unit`, which validates the
-    spelled period/level against the name suffix. An omitted group level is
-    **bare** — both a per-person amount (``CURRENCY_PER_MONTH``) and a
-    level-neutral indicator (``DIMENSIONLESS``). A group-level indicator spells
-    its group (``DIMENSIONLESS_PER_FAM`` → ``1 / [fam]``, GEP 10).
-    """
+    """Resolve a column/function's full unit, including its grouping level."""
     time_unit_id = match.group("time_unit") if match else None
     grouping_level = _suffix_grouping_level(match)
     return resolve_compositional_column_unit(
@@ -381,27 +325,6 @@ def _resolve_leveled_column_unit(
         time_unit_id=time_unit_id,
         grouping_level=grouping_level,
         where="A column/function",
-        registry=registry,
-    )
-
-
-def _resolve_opted_out_agg_unit(
-    obj: AggByGroupFunction,
-    match: re.Match[str] | None,
-    registry: pint.UnitRegistry,
-) -> pint.Unit | None:
-    """Resolve an opted-out aggregation from its declared unit, like a column.
-
-    The declaration stands as the contract for consumers where the derivation
-    cannot express it (a ``MEAN`` the author states ``PER_KIN``); ``None`` when it
-    declares no unit (the mandatory-units check reports it).
-    """
-    token = getattr(obj, "unit", UNSET_UNIT)
-    if token is UNSET_UNIT:
-        return None
-    return _resolve_leveled_column_unit(
-        token=cast("CompositeUnit", token),
-        match=match,
         registry=registry,
     )
 
@@ -430,17 +353,22 @@ def _resolve_agg_by_group_unit(
     The value source is the function's summed/averaged argument, read off the
     signature rather than by stripping the name suffix — a hand-written
     aggregation (``number_of_adults_fam`` sums ``adult``, not ``number_of_adults``)
-    resolves correctly. An opted-out aggregation (``verify_units=False``) is
-    resolved from its *declared* unit like a column: the declaration is the
-    consumer contract even where the derivation cannot express it (a ``MEAN`` the
-    author states ``PER_KIN``).
-
-    Returns ``None`` if a value source carries no resolvable unit — the
-    mandatory-units check reports the source.
+    resolves correctly.
     """
     match = pattern.fullmatch(dt.tree_path_from_qname(qname)[-1])
     if not obj.verify_units:
-        return _resolve_opted_out_agg_unit(obj=obj, match=match, registry=registry)
+        # An opted-out aggregation resolves from its own declared unit, exactly
+        # like a plain column.
+        token = getattr(obj, "unit", UNSET_UNIT)
+        return (
+            None
+            if token is UNSET_UNIT
+            else _resolve_leveled_column_unit(
+                token=cast("CompositeUnit", token),
+                match=match,
+                registry=registry,
+            )
+        )
     target_level = _suffix_grouping_level(match)
     agg_type = obj.agg_type
     # COUNT and ANY/ALL are independent of the source's unit, so resolve them
@@ -495,24 +423,14 @@ def _resolve_agg_by_group_unit(
 
 
 def _suffix_grouping_level(match: re.Match[str] | None) -> str | None:
-    """The grouping level named by a name's aggregation suffix.
-
-    The combined time+grouping regex captures the aggregation suffix in its
-    ``grouping`` group (``betrag_m_hh`` → ``"hh"``); an unsuffixed name has no
-    such group and carries no grouping level — it is bare (``None``, GEP 10).
-    """
+    """The grouping level named by a name's aggregation suffix."""
     if match is None:
         return None
     return match.group("grouping") or None
 
 
 def _has_grouping_level_numerator(unit: pint.Unit) -> bool:
-    """Whether a unit carries a grouping level as a *numerator*.
-
-    A level lands in the numerator when a quantity is divided by a per-group one
-    (``CURRENCY / (CURRENCY / [hh])`` → ``[hh]``), never from a head count — that
-    is ``1 / [hh]``, a denominator (GEP 10).
-    """
+    """Whether a unit carries a grouping level as a *numerator*."""
     return any(exponent > 0 for _, exponent in _grouping_levels_with_exponent(unit))
 
 
@@ -558,10 +476,7 @@ def _combined_boolean_level(left: str | None, right: str | None) -> str | None:
     """Combine two boolean levels for a logical operator.
 
     Equal levels are kept; any mismatch downcasts to the individual level, which
-    is **bare** (``None``, GEP 10). The unit system does not encode nesting
-    relations between grouping levels. A cross-level logical combination is
-    evaluated per person (each person sees its groups' indicators), so the result
-    is an individual, bare boolean.
+    is **bare** (``None``, GEP 10).
 
     Two fam-level indicators give ``"fam"``; the mixed
     ``wealth_fam >= threshold_fam or wealth_kin >= threshold_kin`` combines a fam-
@@ -576,8 +491,7 @@ def fail_if_environment_units_are_missing(
 ) -> None:
     """Mandatory-units check over a fully assembled environment.
 
-    Every active node must declare a unit, where ``unit=TTSIMUnit.DIMENSIONLESS`` /
-    ``unit: DIMENSIONLESS`` *is* a declaration (a dimensionless quantity):
+    Every active node must declare a unit:
 
     - a dict or require_converter parameter with per-leaf units must cover every
       leaf of the value active at the policy date;
@@ -605,8 +519,7 @@ def fail_if_environment_units_are_missing(
         ):
             # A structured value (`UNSET_UNIT`) states its units in the return
             # type's field annotations; a schedule builder (`InputOutputUnit`)
-            # states them in the declaration itself. Either way the param
-            # function has declared its unit — it is not an omission (GEP 10).
+            # states them in the declaration itself.
             continue
         if isinstance(obj, ParamMappingObject | RawParam) and (
             isinstance(obj, ParamMappingObject)
@@ -656,26 +569,7 @@ def _agg_declaration_inconsistency(
     resolved_units: Mapping[str, pint.Unit | dict[str | int, Any]],
     registry: pint.UnitRegistry,
 ) -> str | None:
-    """Error message if an aggregation's declared unit ≠ what it derives.
-
-    The resolved unit (:func:`_resolve_agg_by_group_unit`) is the *derived* one —
-    minted / swapped / preserved from the source and agg_type. A hand-written
-    aggregation's declared unit must be **precise and complete**: it must equal the
-    derived unit in full — physical kind, flow period, *and* grouping level — with
-    no implicit matching of time units or levels. The author spells the group
-    level (``CURRENCY_PER_YEAR_PER_HH``, ``DIMENSIONLESS_PER_BG``, ``MONTHS_PER_FG``);
-    an omitted level is bare (individual). So both of these are rejected:
-
-    - a ``SUM`` over a boolean declared ``DIMENSIONLESS`` rather than
-      ``DIMENSIONLESS_PER_BG``;
-    - a ``_hh`` sum declared bare ``CURRENCY_PER_YEAR`` (omitting the level) or
-      ``CURRENCY_PER_YEAR_PER_BG`` (wrong level).
-
-    Returns ``None`` when there is nothing to check: a *purely derived*
-    aggregation (a ``COUNT`` / ``ANY`` with no hand-written declaration) carries
-    the derived unit directly, the derivation could not resolve the source, or no
-    unit is declared (the mandatory-units check reports the last two).
-    """
+    """Error message if an aggregation's declared unit ≠ what it derives."""
     if not obj.verify_units:
         # An opted-out aggregation keeps its declared unit as the contract for
         # consumers, but its declaration is not checked against the derivation —
@@ -697,10 +591,8 @@ def _agg_declaration_inconsistency(
     return (
         f"{qname}: declares `{declared_token}` but its {obj.agg_type.name} "
         f"aggregation derives '{derived_unit}'. An aggregation's declared unit must "
-        f"match what it produces exactly — physical kind, flow period, and grouping "
-        f"level; spell the group level (omit it for a bare individual result), e.g. "
-        f"`DIMENSIONLESS_PER_<level>` for a count, the source's currency and period "
-        f"for a sum of money (GEP 10)."
+        "match what it produces exactly — physical kind, flow period, and grouping "
+        "level."
     )
 
 
@@ -749,25 +641,24 @@ def _rounding_spec_declaration_inconsistency(
         return (
             f"{qname}: the rounding spec declares `{spec.unit}` but the function's "
             f"unit `{declared}` has no currency base, so there is nothing to "
-            f"convert; drop the spec's `unit=` (GEP 10)."
+            f"convert; drop the spec's `unit=`."
         )
     if token_is_agnostic_currency(spec.unit):
         return (
             f"{qname}: the rounding spec's magnitudes are written in a concrete "
             f"currency; declare it (e.g. `TTSIMUnit.DM.PER_YEAR`), not the agnostic "
-            f"`{spec.unit}` (GEP 10)."
+            f"`{spec.unit}`."
         )
     if token_source_currency(spec.unit) is None:
         return (
             f"{qname}: the rounding spec's unit `{spec.unit}` does not pin down a "
-            f"registered currency (GEP 10)."
+            f"registered currency."
         )
     if replace_concrete_with_agnostic_currency(spec.unit) != declared:
         return (
             f"{qname}: the rounding spec's unit `{spec.unit}` must equal the "
             f"function's declared `{declared}` with the agnostic base swapped for "
-            f"the concrete currency — same flow period, same grouping level "
-            f"(GEP 10)."
+            f"the concrete currency — same flow period, same grouping level."
         )
     return None
 
@@ -796,45 +687,36 @@ def fail_if_environment_units_are_inconsistent(
     Each kind of node is checked against its declaration:
 
     - a ``@policy_function`` / ``@param_function`` **body** is unit-checked on
-      representative values built from its producers' resolved units (the DAG
-      edges) — see the module docstring for the conservative rules and the
-      branch-exploration strategy;
-    - an **aggregation** has no scalar body but *derives* a unit from its source
-      and agg_type; its declared token is checked against that derivation, the same
+      representative values built from its producers' resolved units (the DAG edges) —
+      see the module docstring for the conservative rules and the branch-exploration
+      strategy;
+    - an **aggregation** has no scalar body but *derives* a unit from its source and
+      agg_type; its declared token is checked against that derivation, the same
       declared-vs-produced contract a body is held to;
     - a **rounding spec** is checked against its function's unit
-      (:func:`_rounding_spec_declaration_inconsistency`), and every **param
-      function** against the schedule contract keyed off its ``unit=`` and return
-      annotation (:func:`_schedule_param_function_contract_errors`).
+      (:func:`_rounding_spec_declaration_inconsistency`), and every **param function**
+      against the schedule contract keyed off its ``unit=`` and return annotation
+      (:func:`_schedule_param_function_contract_errors`).
 
     Time-conversion variants and group-creation functions are unit-assigned by
     construction and need no check.
 
-    A structured value a ``@param_function`` builds carries its units solely from
-    its type's field annotations (:func:`_structured_field_kinds`); the source
-    parameter's per-leaf ``unit:`` mapping drives that raw value's currency
-    conversion and documents its input, but is not cross-checked against the
-    built object — a converter may legitimately transform units (GEP 10).
-
-    In the interface DAG the resolved units are supplied by the
-    :func:`resolved_units` node, so the environment walk runs once per build
-    regardless of how many checks consume it. ``resolved_units`` defaults to
-    ``None`` purely for direct callers (tests), where it is computed on demand.
+    A structured value a ``@param_function`` builds carries its units solely from its
+    type's field annotations (:func:`_structured_field_kinds`); the source parameter's
+    per-leaf ``unit:`` mapping drives that raw value's currency conversion and documents
+    its input, but is not cross-checked against the built object — a converter may
+    legitimately transform units.
 
     Raises:
         UnitConsistencyError: If any body infers a concrete unit that disagrees
-            with its declaration, an aggregation's declared unit disagrees
-            with what it derives, or a schedule builder breaks the
-            ``InputOutputUnit`` contract (declaration vs. return annotation
-            vs. ``verify_units``). All offending nodes are reported together.
+            with its declaration, an aggregation's declared unit disagrees with what it
+            derives, or a schedule builder breaks the ``InputOutputUnit`` contract
+            (declaration vs. return annotation vs. ``verify_units``). All offending
+            nodes are reported together.
         UnitDefinitionError: If an ``InputOutputUnit`` axis or a
             parameter-dataclass field annotation is invalid.
     """
     registry = unit_system.registry
-    # A malformed parameter-dataclass field annotation is a definition error, so
-    # it is resolved for every structured producer up front — independent of
-    # whether a body ever plucks the field — and propagates eagerly, like any
-    # other UnitDefinitionError raised during resolution.
     _fail_if_structured_field_annotations_are_invalid(env=env, unit_system=unit_system)
     if resolved_units is None:
         resolved_units = resolve_environment_units(
@@ -967,11 +849,10 @@ def fail_if_not_all_leaves_are_unit_annotated_columns(
 ) -> None:
     """Reject a unit-annotated input tree with any bare (untagged) leaf.
 
-    Every leaf of the unit-annotated input tree must be a
-    :class:`UnitAnnotatedColumn`. Reach the tree through
-    :func:`flatten_unit_annotated_input_tree` rather than calling this directly:
-    every consumer dereferences ``.unit`` or ``.values``, so the check belongs to
-    the flattening step that hands those leaves out.
+    Every leaf of the unit-annotated input tree must be a :class:`UnitAnnotatedColumn`.
+    Reach the tree through :func:`flatten_unit_annotated_input_tree` rather than calling
+    this directly: every consumer dereferences ``.unit`` or ``.values``, so the check
+    belongs to the flattening step that hands those leaves out.
 
     Raises:
         UnitConsistencyError: If any leaf is not a ``UnitAnnotatedColumn``.
@@ -996,11 +877,6 @@ def flatten_unit_annotated_input_tree(
 ) -> dict[tuple[str, ...], UnitAnnotatedColumn]:
     """Flatten the unit-annotated input tree, rejecting any bare leaf.
 
-    The single way to reach the tree's leaves. Validating here rather than in a
-    separate fail node means no consumer can dereference a bare leaf's ``.unit``
-    or ``.values`` and raise ``AttributeError`` instead of the documented
-    :class:`UnitConsistencyError`, whatever order the interface DAG runs them in.
-
     Raises:
         UnitConsistencyError: If any leaf is not a ``UnitAnnotatedColumn``.
     """
@@ -1010,19 +886,14 @@ def flatten_unit_annotated_input_tree(
 
 
 def _composite_token_level(token: CompositeUnit) -> str | None:
-    """The grouping level a compositional token spells, or ``None`` if bare.
-
-    Read straight off the token (``CURRENCY_PER_MONTH_PER_HH`` reports ``"hh"``,
-    a bare token reports ``None``).
-    """
+    """The grouping level a compositional token spells, or ``None`` if bare."""
     return token.level.lower() if token.level is not None else None
 
 
 def fail_if_input_units_are_inconsistent(
-    input_units: Mapping[str, pint.Unit],
+    input_unit_tokens: Mapping[str, CompositeUnit],
     resolved_units: Mapping[str, Any],
     unit_system: UnitSystem,
-    input_unit_tokens: Mapping[str, CompositeUnit] | None = None,
     declared_unit_tokens: Mapping[str, CompositeUnit] | None = None,
 ) -> None:
     """Fail if an input column's tag disagrees with the unit declared for it.
@@ -1046,17 +917,16 @@ def fail_if_input_units_are_inconsistent(
       column tagged ``m²`` (a 10,000-fold error) or a ``YEARS`` age tagged
       ``month`` is rejected here rather than silently mis-stripped.
 
-    ``input_units`` maps each tagged input column to its resolved pint tag;
-    ``resolved_units`` maps every node to the unit declared for it in the policy
-    environment.
-
     Raises:
         UnitConsistencyError: If any tagged column disagrees with the unit
             declared for it. All offending columns are reported together.
     """
     registry = unit_system.registry
     errors: list[str] = []
-    for qname, tag in input_units.items():
+    for qname, tag_token in input_unit_tokens.items():
+        tag = resolve_compositional_unit(
+            unit=tag_token, registry=registry, with_level=True
+        )
         expected = resolved_units.get(qname)
         if not isinstance(expected, pint.Unit):
             # No scalar declared unit (absent, or a dict parameter); nothing to check.
@@ -1066,30 +936,20 @@ def fail_if_input_units_are_inconsistent(
         ) != unit_has_currency_component(units=expected, registry=registry):
             errors.append(
                 f"  {qname}: tagged '{tag}' but declared '{expected}' — one carries "
-                f"a currency and the other does not, so the boundary would silently "
-                f"rescale (or skip rescaling) the column. A currency column must be "
-                f"tagged with a concrete currency and a non-currency column without "
-                f"one (GEP 10)."
+                "a currency and the other does not."
             )
             continue
-        # A count and a share are both the plain number, and a per-person amount
-        # and a level-neutral rate are both bare — they are the same unit
-        # (GEP 10), so the resolved unit's denominator faithfully
-        # gives the grouping level. Prefer the declared tokens where present (they
-        # spell the level directly), falling back to the resolved denominator.
-        tag_token = (input_unit_tokens or {}).get(qname)
+        tag_level = _composite_token_level(tag_token)
         declared_token = (declared_unit_tokens or {}).get(qname)
-        if tag_token is not None and declared_token is not None:
-            tag_level = _composite_token_level(tag_token)
-            expected_level = _composite_token_level(declared_token)
-        else:
-            tag_level = _unit_level_denominator(tag)
-            expected_level = _unit_level_denominator(expected)
+        expected_level = (
+            _composite_token_level(declared_token)
+            if declared_token is not None
+            else _unit_level_denominator(expected)
+        )
         if tag_level != expected_level:
             errors.append(
                 f"  {qname}: tag is at the {tag_level or 'bare'!r} level but "
-                f"the column is at the {expected_level or 'bare'!r} level — the "
-                f"level is declared, not read off the name suffix (GEP 10)."
+                f"the column is at the {expected_level or 'bare'!r} level."
             )
             continue
         tag_residual = unit_residual_excluding_currency_and_flow_period(
@@ -1103,9 +963,7 @@ def fail_if_input_units_are_inconsistent(
         ):
             errors.append(
                 f"  {qname}: tagged '{tag}', which is not equivalent to the declared "
-                f"unit '{expected}' (the boundary converts currency and screens the "
-                f"flow period against the name suffix, but the remaining magnitude "
-                f"must match exactly)."
+                f"unit '{expected}'."
             )
     if errors:
         raise UnitConsistencyError(
@@ -1115,8 +973,7 @@ def fail_if_input_units_are_inconsistent(
 
 
 def node_is_boolean(qname: str, obj: Any) -> bool:  # noqa: ANN401
-    """Whether a node's output is boolean (used to build the unit check's stand-in
-    values and drive its branch exploration; orthogonal to the declared unit)."""
+    """Whether a node's output is boolean."""
     try:
         if isinstance(obj, PolicyInput):
             kind = resolve_kind_of_annotation(annotation=obj.data_type, node_name=qname)
@@ -1155,15 +1012,7 @@ def _fail_if_param_token_is_agnostic_currency(
     token: CompositeUnit | None,
     where: str,
 ) -> None:
-    """Reject an agnostic currency unit on a parameter.
-
-    A parameter's numbers are written in *some* concrete currency — the
-    declaration must name it (``SILVER_PENNY``, ``DM_PER_YEAR``, …), so the
-    statutory-currency guard can hold it against the policy date's statutory
-    currency. The agnostic ``CURRENCY`` base stays legal — and required — on
-    columns and functions: they run in the statutory currency of the policy
-    date, whichever that is, so their declarations never pin one down.
-    """
+    """Reject an agnostic currency unit on a parameter."""
     if token_is_agnostic_currency(token):
         suffixes = str(token).removeprefix("CURRENCY")
         raise UnitDefinitionError(
@@ -1597,8 +1446,11 @@ def _structured_field_kinds(
                 f"value; a scalar field states a single unit (GEP 10)."
             )
         elif composite_tokens:
-            resolved = resolve_compositional_field_unit(
-                unit=composite_tokens[0], registry=unit_system.registry, where=where
+            resolved = resolve_compositional_body_unit(
+                unit=composite_tokens[0],
+                registry=unit_system.registry,
+                where=where,
+                what="the declaration",
             )
             if base in (int, float, bool):
                 kinds[field.name] = resolved
@@ -1679,8 +1531,11 @@ def _schedule_field_kind(
         input_unit=_resolve_input_axes(
             input_unit=io_token.input_unit, registry=unit_system.registry, where=where
         ),
-        output_unit=resolve_compositional_field_unit(
-            unit=io_token.output_unit, registry=unit_system.registry, where=where
+        output_unit=resolve_compositional_body_unit(
+            unit=io_token.output_unit,
+            registry=unit_system.registry,
+            where=where,
+            what="the declaration",
         ),
     )
 
@@ -1884,13 +1739,16 @@ def _resolve_input_axes(
     """
     if isinstance(input_unit, tuple):
         return tuple(
-            resolve_compositional_field_unit(
-                unit=cast("CompositeUnit", axis), registry=registry, where=where
+            resolve_compositional_body_unit(
+                unit=cast("CompositeUnit", axis),
+                registry=registry,
+                where=where,
+                what="the declaration",
             )
             for axis in input_unit
         )
-    return resolve_compositional_field_unit(
-        unit=input_unit, registry=registry, where=where
+    return resolve_compositional_body_unit(
+        unit=input_unit, registry=registry, where=where, what="the declaration"
     )
 
 
@@ -2978,8 +2836,11 @@ def _cast_ttsim_unit_for_unit_check(
     re-raises rather than misreporting as an un-evaluable body.
     """
     token = coerce_to_composite_unit(value=unit, where="A `cast_ttsim_unit` call")
-    resolved = resolve_compositional_cast_unit(
-        unit=token, registry=unit_system.registry, where="A `cast_ttsim_unit` call"
+    resolved = resolve_compositional_body_unit(
+        unit=token,
+        registry=unit_system.registry,
+        where="A `cast_ttsim_unit` call",
+        what="a cast inside a body",
     )
     quantity = unit_system.registry.Quantity(1.0, resolved)
     if isinstance(value, _UnitCheckQuantity):

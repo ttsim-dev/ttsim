@@ -37,15 +37,15 @@ from ttsim.tt.units import (
     coerce_to_composite_unit,
     composite_from_resolved_unit,
     fail_if_units_are_missing,
-    grouping_level_count_unit,
     is_calendar_point_unit,
     output_unit_in_data_currency,
     parse_compositional_unit,
     parse_unit,
-    resolve_compositional_cast_unit,
+    resolve_compositional_body_unit,
     resolve_compositional_column_unit,
     resolve_compositional_param_unit,
     resolve_compositional_unit,
+    resolved_unit_for_aggregation,
     strip_input_quantity_at_boundary,
     token_is_agnostic_currency,
     token_source_currency,
@@ -595,7 +595,7 @@ def test_time_conversion_variants_rebased_period():
         grouping_levels=("sn", "kin"),
     )
     # Generated betrag_y re-bases the flow's period to its own _y suffix.
-    betrag_y_unit = variants["betrag_y"].unit  # ty: ignore[unresolved-attribute]
+    betrag_y_unit = variants.functions["betrag_y"].unit  # ty: ignore[unresolved-attribute]
     assert betrag_y_unit == TTSIMUnit.CURRENCY.PER_YEAR
     assert units_are_equivalent(
         left=resolve_compositional_unit(unit=betrag_y_unit, registry=REGISTRY),
@@ -614,12 +614,13 @@ def test_auto_aggregation_carries_the_target_level():
             )(_return_one_float),
         },
         qname_policy_environment={},
+        time_converted_input_stubs={},
         input_columns=set(),
         tt_targets={"betrag_m_kin"},
         grouping_levels=("kin",),
     )
     assert (
-        aggs["betrag_m_kin"].unit  # ty: ignore[unresolved-attribute]
+        aggs.functions["betrag_m_kin"].unit  # ty: ignore[unresolved-attribute]
         == TTSIMUnit.CURRENCY.PER_MONTH.PER_KIN
     )
 
@@ -636,12 +637,13 @@ def test_auto_aggregation_over_a_boolean_source_mints_a_head_count():
             )(_return_true),
         },
         qname_policy_environment={},
+        time_converted_input_stubs={},
         input_columns=set(),
         tt_targets={"is_adult_fam"},
         grouping_levels=("fam",),
     )
     assert (
-        aggs["is_adult_fam"].unit  # ty: ignore[unresolved-attribute]
+        aggs.functions["is_adult_fam"].unit  # ty: ignore[unresolved-attribute]
         == TTSIMUnit.DIMENSIONLESS.PER_FAM
     )
 
@@ -880,7 +882,9 @@ def test_person_per_level_resolves_to_head_count():
     )
     assert units_are_equivalent(
         left=compositional,
-        right=grouping_level_count_unit(target_level="bg", registry=REGISTRY),
+        right=resolved_unit_for_aggregation(
+            agg_type=AggType.COUNT, target_level="bg", registry=REGISTRY
+        ),
         registry=REGISTRY,
     )
 
@@ -970,8 +974,11 @@ def test_cast_target_resolves_like_a_column_declaration():
     # The cast states a unit in the declaration vocabulary: an omitted level is
     # level-neutral, exactly as for a column declaration.
     assert units_are_equivalent(
-        left=resolve_compositional_cast_unit(
-            unit=TTSIMUnit.CURRENCY.PER_MONTH, where="test", registry=REGISTRY
+        left=resolve_compositional_body_unit(
+            unit=TTSIMUnit.CURRENCY.PER_MONTH,
+            where="test",
+            registry=REGISTRY,
+            what="a cast inside a body",
         ),
         right=resolve_compositional_column_unit(
             unit=TTSIMUnit.CURRENCY.PER_MONTH,
@@ -983,8 +990,11 @@ def test_cast_target_resolves_like_a_column_declaration():
         registry=REGISTRY,
     )
     assert units_are_equivalent(
-        left=resolve_compositional_cast_unit(
-            unit=TTSIMUnit.MONTHS, where="test", registry=REGISTRY
+        left=resolve_compositional_body_unit(
+            unit=TTSIMUnit.MONTHS,
+            where="test",
+            registry=REGISTRY,
+            what="a cast inside a body",
         ),
         right=resolve_compositional_unit(unit=TTSIMUnit.MONTHS, registry=REGISTRY),
         registry=REGISTRY,
@@ -994,7 +1004,12 @@ def test_cast_target_resolves_like_a_column_declaration():
 def test_cast_target_must_be_currency_agnostic():
     token = coerce_to_composite_unit(value="CASTAR_PER_MONTH", where="test")
     with pytest.raises(UnitDefinitionError, match="agnostic CURRENCY"):
-        resolve_compositional_cast_unit(unit=token, where="test", registry=REGISTRY)
+        resolve_compositional_body_unit(
+            unit=token,
+            where="test",
+            registry=REGISTRY,
+            what="a cast inside a body",
+        )
 
 
 def test_hours_denominator_resolves_level_neutral():

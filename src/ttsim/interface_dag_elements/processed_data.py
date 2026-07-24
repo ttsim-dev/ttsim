@@ -60,10 +60,6 @@ def _canonicalize_input_dtype(
             used in error messages when a uint overflow is detected.
     """
     if isinstance(arr, pint.Quantity):
-        # A pint-tagged column only ever reaches here via `processed_data`, which
-        # always has a concrete data currency and registry; the currency-less
-        # converter callers (`data_converters`, plain `pd.Series` leaves) never
-        # pass a `Quantity`.
         arr = strip_input_quantity_at_boundary(
             quantity=arr,
             data_currency=cast("str", data_currency),
@@ -134,17 +130,7 @@ def qnames_with_currency_declarations(
     qnames: Iterable[str],
     specialized_environment: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
 ) -> set[str]:
-    """The subset of ``qnames`` whose declared unit carries a currency component.
-
-    Identifies the input values to convert between the data currency and the
-    computation currency (GEP 10). Every value carries its unit in the
-    specialized environment — its own declaration, the minted unit of a
-    derived function, or a `PolicyInput` stub for data supplied at a derived
-    name — so this is a plain lookup. A *parameter's* concrete statutory
-    currency counts, too: a data column overriding a parameter is still user
-    data, arriving in the data currency. A qname with no unit is not
-    converted (the mandatory-units check reports missing declarations).
-    """
+    """The subset of ``qnames`` whose declared unit carries a currency component."""
     out: set[str] = set()
     for qname in qnames:
         token = getattr(specialized_environment.get(qname), "unit", UNSET_UNIT)
@@ -162,14 +148,7 @@ def currency_conversion_factor_and_columns(
     target_currency: str,
     unit_system: UnitSystem,
 ) -> tuple[float, set[str]]:
-    """The conversion factor and the input or result values it applies to.
-
-    The shared setup of the two conversions (GEP 10): ``processed_data``
-    converts input columns and scalar values from the data currency to the
-    computation currency,
-    ``results`` converts computed columns back. Equal currencies short-circuit
-    to a factor of ``1.0`` with no environment walk.
-    """
+    """The conversion factor and the input or result values it applies to."""
     if source_currency == target_currency:
         return 1.0, set()
     factor = unit_system.currency_conversion_factor(
@@ -188,12 +167,7 @@ def value_in_target_currency(
     currency_qnames: set[str],
     factor: float,
 ) -> Any:  # noqa: ANN401
-    """Convert one input or result value into the target currency (GEP 10).
-
-    Multiplies a currency-denominated value by the conversion factor; leaves
-    everything else — including an object-dtype column (int/bool data with
-    missing values, reported by its own fail-if node) — untouched.
-    """
+    """Convert one input or result value into the target currency."""
     if qname not in currency_qnames:
         return value
     dtype = getattr(value, "dtype", None)

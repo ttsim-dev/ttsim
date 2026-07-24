@@ -152,8 +152,7 @@ def _active_column_objects_and_param_functions(
     Args:
         root: The directory to traverse.
         policy_date: The date for which policy objects should be loaded.
-        computation_currency: The statutory currency at the policy date;
-            rounding-spec magnitudes must be declared in it.
+        computation_currency: The statutory currency at the policy date.
 
     Returns:
         A tree of active ColumnObjectParamFunctions.
@@ -178,13 +177,7 @@ def _fail_if_rounding_spec_currency_is_not_statutory(
     policy_date: datetime.date,
     computation_currency: str,
 ) -> None:
-    """Reject a rounding spec declared in a non-statutory currency (GEP 10).
-
-    Rounding magnitudes are statutory numbers and are never converted, so a
-    spec surviving past a currency changeover would round in the wrong
-    currency. The author must split the function at the changeover and declare
-    the restated spec.
-    """
+    """Reject a rounding spec declared in a non-statutory currency."""
     spec = getattr(obj, "rounding_spec", None)
     if spec is None or spec.unit is None:
         return
@@ -262,15 +255,7 @@ def _fail_if_param_currency_is_not_statutory(
     policy_date: datetime.date,
     computation_currency: str,
 ) -> None:
-    """Reject a parameter declared in a non-statutory currency (GEP 10).
-
-    Parameters keep their statutory values and are never converted, so every
-    concrete currency a declaration pins down must be the statutory currency at
-    the policy date. This is also the check that forces an explicit, legally
-    rounded restatement at a currency changeover (Euro-Einführungsgesetz style)
-    instead of a mechanical conversion: a pre-changeover value surviving past
-    the changeover fails here.
-    """
+    """Reject a parameter declared in a non-statutory currency."""
     declared = {
         currency
         for key in UNIT_DECLARATION_KEYS
@@ -336,7 +321,7 @@ def _get_one_param(
 
 def _unit_fields_from_spec(spec: OrigParamSpec) -> dict[str, Any]:
     """Map a spec's ``unit:`` / ``input_unit:`` / ``output_unit:`` to ParamObject
-    kwargs (GEP 10).
+    kwargs.
 
     Mapping parameters declare one token per axis; a require_converter declares
     either ``unit:`` (a single token or a per-leaf mapping, one token per leaf)
@@ -380,9 +365,6 @@ def _forward_fill_unit_fields(
     ``unit:`` mapping must therefore restate every leaf, else the omitted leaves
     would silently keep the previous unit
     (:func:`_fail_if_partial_unit_mapping_restatement`).
-
-    ``active_dates`` are the parameter's date keys up to and including the active
-    entry, in ascending order.
     """
     resolved = _unit_fields_from_spec(spec)
     for date in active_dates:
@@ -491,8 +473,6 @@ def _clean_one_param_spec(
     current_spec: dict[str | int, Any] = copy.deepcopy(spec[policy_dates[idx - 1]])
     out["note"] = current_spec.pop("note", None)
     out["reference"] = current_spec.pop("reference", None)
-    # The units are already forward-filled onto `out`; strip them here so they
-    # cannot leak into the assembled value below.
     _strip_unit_overrides(current=current_spec)
 
     if not param_has_substantive_content(current_spec):
@@ -516,19 +496,6 @@ def _clean_one_param_spec(
         ]
         out["value"] = _get_param_value(relevant_specs)
     return out
-
-
-def _strip_unit_overrides(current: dict[str | int, Any]) -> None:
-    """Strip a dated entry's unit override keys from its value dict (GEP 10).
-
-    The unit is resolved by forward-fill in :func:`_forward_fill_unit_fields`;
-    here it must not leak into the assembled value. Combining a unit restatement
-    with a value merge (``updates_previous``) is rejected there
-    (:func:`_fail_if_updates_previous_restates_unit`), so a stripped entry never
-    both merges and changes the unit.
-    """
-    for unit_key in UNIT_DECLARATION_KEYS:
-        current.pop(unit_key, None)
 
 
 def _get_param_value(
@@ -576,3 +543,9 @@ def _get_param_value_piecewise(
         base=base_intervals,
         update=current.get("intervals", []),
     )
+
+
+def _strip_unit_overrides(current: dict[str | int, Any]) -> None:
+    """Strip a dated entry's unit override keys from its value dict."""
+    for unit_key in UNIT_DECLARATION_KEYS:
+        current.pop(unit_key, None)

@@ -115,9 +115,6 @@ def top_level_namespace(
 )
 def input_columns_from_input_data(input_data__flat: FlatData) -> UnorderedQNames:
     """The (qualified) column names in the input data."""
-    # Read off `input_data__flat` rather than `processed_data` so the
-    # specialized environment stays upstream of `processed_data`, which needs
-    # the environment's units for the input-side currency conversion (GEP 10).
     return {dt.qname_from_tree_path(path) for path in input_data__flat}
 
 

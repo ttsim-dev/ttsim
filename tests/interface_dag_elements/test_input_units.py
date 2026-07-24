@@ -19,7 +19,7 @@ from ttsim.interface_dag_elements.fail_if import (
 )
 from ttsim.interface_dag_elements.input_data import (
     flat_from_tree_with_unit_annotations,
-    units_from_tree_with_unit_annotations,
+    unit_tokens_from_tree_with_unit_annotations,
 )
 from ttsim.interface_dag_elements.unit_checks import (
     fail_if_input_units_are_inconsistent,
@@ -79,7 +79,7 @@ def test_output_unit_in_data_currency_leaves_non_currency_units_untouched():
         )
 
 
-def test_units_from_tree_with_unit_annotations_extracts_each_tag():
+def test_unit_tokens_from_tree_with_unit_annotations_extracts_each_tag():
     tree = {
         "wage_m": UnitAnnotatedColumn(
             values=numpy.array([1.0, 2.0]), unit=TTSIMUnit.CURRENCY.PER_MONTH
@@ -93,13 +93,13 @@ def test_units_from_tree_with_unit_annotations_extracts_each_tag():
             values=numpy.array([0, 1]), unit=TTSIMUnit.DIMENSIONLESS
         ),
     }
-    units = units_from_tree_with_unit_annotations(
-        tree_with_unit_annotations=tree, unit_system=SYSTEM
+    tokens = unit_tokens_from_tree_with_unit_annotations(
+        tree_with_unit_annotations=tree
     )
-    assert {k: str(v) for k, v in units.items()} == {
-        "wage_m": "CURRENCY / month",
-        "nested__alter": "delta_calendar_year",
-        "p_id": "dimensionless",
+    assert tokens == {
+        "wage_m": TTSIMUnit.CURRENCY.PER_MONTH,
+        "nested__alter": TTSIMUnit.YEARS,
+        "p_id": TTSIMUnit.DIMENSIONLESS,
     }
 
 
@@ -192,9 +192,7 @@ def test_input_level_must_match_declared():
     # against the declared resolved unit, not the name suffix directly.
     with pytest.raises(UnitConsistencyError, match="level"):
         fail_if_input_units_are_inconsistent(
-            input_units={
-                "miete_m_hh": _column(TTSIMUnit.CURRENCY.PER_MONTH, time_unit_id="m")
-            },
+            input_unit_tokens={"miete_m_hh": TTSIMUnit.CURRENCY.PER_MONTH},
             resolved_units={
                 "miete_m_hh": _column(
                     TTSIMUnit.CURRENCY.PER_MONTH.PER_HH,
@@ -212,7 +210,10 @@ def test_input_level_matching_declared_passes():
     )
     wage = _column(TTSIMUnit.CURRENCY.PER_MONTH, time_unit_id="m")
     fail_if_input_units_are_inconsistent(
-        input_units={"miete_m_hh": miete, "wage_m": wage},
+        input_unit_tokens={
+            "miete_m_hh": TTSIMUnit.CURRENCY.PER_MONTH.PER_HH,
+            "wage_m": TTSIMUnit.CURRENCY.PER_MONTH,
+        },
         resolved_units={"miete_m_hh": miete, "wage_m": wage},
         unit_system=SYSTEM,
     )
@@ -223,10 +224,9 @@ def test_group_level_tag_does_not_match_a_bare_declaration():
     # declared, not read off the suffix, so the mismatch is caught via the tokens.
     with pytest.raises(UnitConsistencyError, match="level"):
         fail_if_input_units_are_inconsistent(
-            input_units={"betrag_m": _resolved(TTSIMUnit.CURRENCY.PER_MONTH.PER_HH)},
+            input_unit_tokens={"betrag_m": TTSIMUnit.CURRENCY.PER_MONTH.PER_HH},
             resolved_units={"betrag_m": _resolved(TTSIMUnit.CURRENCY.PER_MONTH)},
             unit_system=SYSTEM,
-            input_unit_tokens={"betrag_m": TTSIMUnit.CURRENCY.PER_MONTH.PER_HH},
             declared_unit_tokens={"betrag_m": TTSIMUnit.CURRENCY.PER_MONTH},
         )
 
@@ -234,7 +234,7 @@ def test_group_level_tag_does_not_match_a_bare_declaration():
 def test_input_share_at_group_suffix_stays_level_less():
     # A group suffix must not force a level onto a level-less quantity.
     fail_if_input_units_are_inconsistent(
-        input_units={"rate_hh": _resolved(TTSIMUnit.DIMENSIONLESS)},
+        input_unit_tokens={"rate_hh": TTSIMUnit.DIMENSIONLESS},
         resolved_units={"rate_hh": _resolved(TTSIMUnit.DIMENSIONLESS)},
         unit_system=SYSTEM,
     )
@@ -246,7 +246,7 @@ def test_input_units_consistent_passes():
         "alter": _resolved(TTSIMUnit.YEARS),
     }
     fail_if_input_units_are_inconsistent(
-        input_units={"wage_m": _resolved(TTSIMUnit.CURRENCY.PER_MONTH)},
+        input_unit_tokens={"wage_m": TTSIMUnit.CURRENCY.PER_MONTH},
         resolved_units=resolved,
         unit_system=SYSTEM,
     )
@@ -256,7 +256,7 @@ def test_input_units_dimension_mismatch_raises():
     resolved = {"alter": _resolved(TTSIMUnit.YEARS)}
     with pytest.raises(UnitConsistencyError, match="inconsistent with the DAG"):
         fail_if_input_units_are_inconsistent(
-            input_units={"alter": _resolved(TTSIMUnit.CURRENCY)},
+            input_unit_tokens={"alter": TTSIMUnit.CURRENCY},
             resolved_units=resolved,
             unit_system=SYSTEM,
         )
@@ -275,7 +275,7 @@ def test_input_units_dimension_mismatch_raises():
 def test_input_units_compatible_but_differently_scaled_raises(tag, declared):
     with pytest.raises(UnitConsistencyError, match="not equivalent"):
         fail_if_input_units_are_inconsistent(
-            input_units={"some_column": _resolved(tag)},
+            input_unit_tokens={"some_column": tag},
             resolved_units={"some_column": _resolved(declared)},
             unit_system=SYSTEM,
         )
@@ -288,7 +288,7 @@ def test_input_units_period_mismatch_is_left_to_the_suffix_guard():
     # the period guard owns the mismatch (S4, GEP 10).
     resolved = {"wage_m": _resolved(TTSIMUnit.CURRENCY.PER_MONTH)}
     fail_if_input_units_are_inconsistent(
-        input_units={"wage_m": _resolved(TTSIMUnit.CURRENCY.PER_YEAR)},
+        input_unit_tokens={"wage_m": TTSIMUnit.CURRENCY.PER_YEAR},
         resolved_units=resolved,
         unit_system=SYSTEM,
     )
@@ -308,7 +308,7 @@ def test_input_units_period_mismatch_is_left_to_the_suffix_guard():
 def test_input_units_currency_tag_mismatch_raises(tag, declared):
     with pytest.raises(UnitConsistencyError, match="one carries a currency"):
         fail_if_input_units_are_inconsistent(
-            input_units={"some_column": _resolved(tag)},
+            input_unit_tokens={"some_column": tag},
             resolved_units={"some_column": _resolved(declared)},
             unit_system=SYSTEM,
         )
@@ -319,9 +319,9 @@ def test_input_units_skips_columns_without_a_scalar_declared_unit():
     # unknown column are both skipped rather than raising.
     resolved = {"some_dict_param": {"a": _resolved(TTSIMUnit.CURRENCY)}}
     fail_if_input_units_are_inconsistent(
-        input_units={
-            "some_dict_param": _resolved(TTSIMUnit.CURRENCY),
-            "not_in_env": _resolved(TTSIMUnit.YEARS),
+        input_unit_tokens={
+            "some_dict_param": TTSIMUnit.CURRENCY,
+            "not_in_env": TTSIMUnit.YEARS,
         },
         resolved_units=resolved,
         unit_system=SYSTEM,

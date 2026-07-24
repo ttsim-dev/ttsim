@@ -53,11 +53,13 @@ dependencies = [
 [[project.authors]]
 name = "Hans-Martin von Gaudecker"
 email = "hmgaudecker@uni-bonn.de"
+
 [[project.authors]]
 name = "Marvin Immesberger"
 [[project.maintainers]]
 name = "Hans-Martin von Gaudecker"
 email = "hmgaudecker@uni-bonn.de"
+
 [[project.maintainers]]
 name = "Marvin Immesberger"
 [project.urls]

@@ -60,9 +60,6 @@ class FailIf(MainTargetABC):
     )
     input_currency_is_not_concrete: str = "fail_if__input_currency_is_not_concrete"
     input_units_are_inconsistent: str = "fail_if__input_units_are_inconsistent"
-    not_all_input_leaves_are_unit_annotated_columns: str = (
-        "fail_if__not_all_input_leaves_are_unit_annotated_columns"
-    )
     input_df_has_bool_or_numeric_column_names: str = (
         "fail_if__input_df_has_bool_or_numeric_column_names"
     )
@@ -174,7 +171,6 @@ class InputData(MainTargetABC):
     sort_indices: str = "input_data__sort_indices"
     tree: str = "input_data__tree"
     tree_with_unit_annotations: str = "input_data__tree_with_unit_annotations"
-    units: str = "input_data__units"
     unit_tokens: str = "input_data__unit_tokens"
 
 

@@ -5,7 +5,8 @@ import re
 from collections.abc import Mapping
 from copy import copy
 from functools import lru_cache
-from typing import Any, TypeAlias, overload
+from types import ModuleType
+from typing import Any, Literal, TypeAlias, overload
 
 import optree
 
@@ -30,19 +31,33 @@ _DASHED_ISO_DATE_REGEX = re.compile(r"\d{4}-\d{2}-\d{2}")
 
 _PARAM_METADATA_KEYS = frozenset({"note", "reference"})
 
-#: The keys a dated parameter entry may restate its unit under (GEP 10). The
-#: single source of truth for the policy-environment build (which forward-fills
-#: them and strips them off the assembled value) and for
-#: `param_has_substantive_content` (which does not count them as content).
+#: The keys a dated parameter entry may restate its unit under (GEP 10)
 UNIT_DECLARATION_KEYS = ("unit", "input_unit", "output_unit")
 
+
+def framework_partial_arguments(
+    *,
+    len_p_id: int | None,
+    backend: Literal["numpy", "jax"] | None,
+    xnp: ModuleType | None,
+    dnp: ModuleType | None,
+) -> dict[str, Any]:
+    """The arguments the framework partials into every column/param function."""
+    return {
+        "len_p_id": len_p_id,
+        # Aggregations take a jax `num_segments`; distinct groups are at most
+        # `len_p_id`, so feed that safe upper bound.
+        "num_segments": len_p_id,
+        "backend": backend,
+        "xnp": xnp,
+        "dnp": dnp,
+    }
+
+
 #: Names of the arguments the framework partials into every column/param function
-#: (the backend handles, the population size, the segment count). The single
-#: source of truth shared by `specialized_environment` (which supplies their
-#: values) and the unit checks (which exclude them from the unit-carrying
-#: inputs).
+#: (the backend handles, the population size, the segment count)
 FRAMEWORK_PARTIAL_ARGUMENTS = frozenset(
-    {"xnp", "dnp", "backend", "num_segments", "len_p_id"}
+    framework_partial_arguments(len_p_id=None, backend=None, xnp=None, dnp=None)
 )
 
 
@@ -54,12 +69,6 @@ def param_has_substantive_content(
     Parameters do not have substantive content if they are empty or contain only
     note and reference metadata. This happens when a parameter is revoked/abolished
     and we have just passed a reference and a note to document this.
-
-    A unit restatement is not content either: an entry carrying only ``unit:``
-    re-denominates whatever the previous entry established, so a revoked
-    parameter stays revoked through a currency changeover. Every caller shares
-    this one definition, so a parameter's active periods cannot disagree with
-    whether the policy environment builds it.
     """
     if isinstance(entry, list):
         return bool(entry)
@@ -103,10 +112,6 @@ def get_re_pattern_for_all_time_units_and_groupings(
     - <base_name>_<time_unit>
     - <base_name>_<grouping>
     - <base_name>_<time_unit>_<grouping>
-
-    The compiled pattern is cached on the (time_units, grouping_levels) tuple, so
-    the several call sites that request it per build share one compilation. The
-    arguments are coerced to tuples first because some callers pass lists.
 
     Args:
         time_units: The supported time units.

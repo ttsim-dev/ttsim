@@ -18,7 +18,6 @@ from dags import (
 
 from ttsim.interface_dag_elements.automatically_added_functions import (
     create_agg_by_group_functions,
-    create_input_column_stubs,
     create_time_conversion_functions,
 )
 from ttsim.interface_dag_elements.interface_node_objects import (
@@ -26,7 +25,7 @@ from ttsim.interface_dag_elements.interface_node_objects import (
     interface_input,
 )
 from ttsim.interface_dag_elements.shared import (
-    FRAMEWORK_PARTIAL_ARGUMENTS,
+    framework_partial_arguments,
     merge_trees,
 )
 from ttsim.tt.column_objects_param_function import (
@@ -109,12 +108,13 @@ def _add_derived_functions(
     """Return the environment extended by derived functions and input stubs.
 
     Derived functions are time-converted functions and aggregation functions
-    (aggregate by p_id or by group). Input columns supplied at derived names
-    get `PolicyInput` stubs so every column carries a unit declaration
-    (GEP 10).
+    (aggregate by p_id or by group). Each creator also mints a `PolicyInput` stub
+    for a derived name the input data supplies — no function is created there
+    because the data would override it, yet the name still needs the unit
+    declaration the derivation implies (GEP 10).
     """
     # Create functions for different time units
-    time_conversion_functions = create_time_conversion_functions(
+    time_conversions = create_time_conversion_functions(
         qname_policy_environment=qname_env_without_tree_logic,
         input_columns=input_columns,
         grouping_levels=grouping_levels,
@@ -123,32 +123,24 @@ def _add_derived_functions(
         k: v
         for k, v in {
             **qname_env_without_tree_logic,
-            **time_conversion_functions,
+            **time_conversions.functions,
         }.items()
         if isinstance(v, ColumnFunction)
     }
 
     # Create aggregation functions by group.
-    aggregate_by_group_functions = create_agg_by_group_functions(
+    aggregations_by_group = create_agg_by_group_functions(
         column_functions=column_functions,
         qname_policy_environment=qname_env_without_tree_logic,
+        time_converted_input_stubs=time_conversions.input_stubs,
         input_columns=input_columns,
         tt_targets=tt_targets,
         grouping_levels=grouping_levels,
     )
-    env_with_derived_functions = {
-        **qname_env_without_tree_logic,
-        **time_conversion_functions,
-        **aggregate_by_group_functions,
-    }
-    # Stubs so every input column has a unit-carrying declaration (GEP 10).
     return {
-        **env_with_derived_functions,
-        **create_input_column_stubs(
-            env_with_derived_functions=env_with_derived_functions,
-            input_columns=input_columns,
-            grouping_levels=grouping_levels,
-        ),
+        **qname_env_without_tree_logic,
+        **time_conversions.all_objects,
+        **aggregations_by_group.all_objects,
     }
 
 
@@ -263,24 +255,9 @@ def with_partialled_params_and_scalars(
         for k, v in with_processed_params_and_scalars.items()
         if isinstance(v, ColumnFunction)
     }
-    framework_argument_values = {
-        "len_p_id": len_p_id,
-        # Aggregation functions take a jax `num_segments` argument; the number of
-        # distinct groups is at most `len_p_id`, so feed it that safe upper bound.
-        "num_segments": len_p_id,
-        "backend": backend,
-        "xnp": xnp,
-        "dnp": dnp,
-    }
-    # `FRAMEWORK_PARTIAL_ARGUMENTS` (shared with the unit checks) names exactly
-    # these arguments; fail loudly if the two drift apart in either direction.
-    if framework_argument_values.keys() != FRAMEWORK_PARTIAL_ARGUMENTS:
-        msg = (
-            "The framework arguments partialled into column functions must match "
-            f"FRAMEWORK_PARTIAL_ARGUMENTS; got {sorted(framework_argument_values)} "
-            f"vs {sorted(FRAMEWORK_PARTIAL_ARGUMENTS)}."
-        )
-        raise RuntimeError(msg)
+    framework_argument_values = framework_partial_arguments(
+        len_p_id=len_p_id, backend=backend, xnp=xnp, dnp=dnp
+    )
     all_partial_params = {
         **{
             k: v
