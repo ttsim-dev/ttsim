@@ -929,8 +929,6 @@ def test_dimensionless_per_level_resolves_to_head_count():
     )
 
 
-
-
 def test_concrete_currency_base_resolves_like_agnostic():
     # For dimensionality a concrete currency means exactly what CURRENCY means.
     concrete = resolve_ttsim_unit(
