@@ -3,7 +3,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "definitions": {
     "unitToken": {
-      "$comment": "A fully-spelled compositional unit (GEP 10): a base optionally divided by an area, a period, and a grouping level, joined by `_PER_` (e.g. DIMENSIONLESS, CURRENCY_PER_MONTH_PER_BG, SILVER_PENNY_PER_FAM, DIMENSIONLESS_PER_HH). Bases and grouping levels are open (per-package currencies, per-build levels), so this is a coarse pattern; `parse_compositional_unit` validates the grammar at load time.",
+      "$comment": "A fully-spelled compositional unit (GEP 10): a base optionally divided by an area, a period, and a grouping level, joined by `_PER_` (e.g. DIMENSIONLESS, CURRENCY_PER_MONTH_PER_BG, SILVER_PENNY_PER_FAM, DIMENSIONLESS_PER_HH). Bases and grouping levels are open (per-package currencies, per-build levels), so this is a coarse pattern; `parse_ttsim_unit` validates the grammar at load time.",
       "type": "string",
       "pattern": "^[A-Z][A-Z0-9_]*$"
     },

@@ -229,7 +229,7 @@ def flat_from_tree_with_unit_annotations(
 def unit_tokens_from_tree_with_unit_annotations(
     tree_with_unit_annotations: UserNestedUnitAnnotatedData,
 ) -> dict[str, CompositeUnit]:
-    """Each input column's tag as a compositional token, by qname.
+    """Each input column's tag as a TTSIM unit, by qname.
 
     The :class:`CompositeUnit` the user tagged the column with, which spells a
     grouping level directly where a resolved unit only carries its denominator

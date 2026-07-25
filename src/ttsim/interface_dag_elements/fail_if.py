@@ -52,7 +52,7 @@ from ttsim.tt.units import (
     UNSET_UNIT,
     CompositeUnit,
     UserNestedUnitAnnotatedData,
-    token_is_agnostic_currency,
+    ttsim_unit_has_agnostic_currency,
 )
 from ttsim.typing import (
     FlatColumnObjectsParamFunctions,
@@ -1001,7 +1001,7 @@ def tt_units_are_missing(
 def tt_units_are_inconsistent(
     specialized_environment__without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
     labels__grouping_levels: OrderedQNames,
-    unit_checks__resolved_units: dict[str, pint.Unit | dict[str | int, Any]],
+    unit_checks__resolved_pint_units: dict[str, pint.Unit | dict[str | int, Any]],
     unit_system: UnitSystem,
 ) -> None:
     """Fail if a function body infers a unit that contradicts its declaration.
@@ -1018,7 +1018,7 @@ def tt_units_are_inconsistent(
         env=specialized_environment__without_tree_logic_and_with_derived_functions,
         grouping_levels=labels__grouping_levels,
         unit_system=unit_system,
-        resolved_units=unit_checks__resolved_units,
+        resolved_pint_units=unit_checks__resolved_pint_units,
     )
 
 
@@ -1042,7 +1042,7 @@ def input_currency_is_not_concrete(
         for path, col in flatten_unit_annotated_input_tree(
             tree=input_data__tree_with_unit_annotations
         ).items()
-        if token_is_agnostic_currency(col.unit)
+        if ttsim_unit_has_agnostic_currency(col.unit)
     )
     if agnostic:
         raise UnitConsistencyError(
@@ -1057,8 +1057,8 @@ def input_currency_is_not_concrete(
 )
 def input_units_are_inconsistent(
     input_data__unit_tokens: dict[str, CompositeUnit],
-    unit_checks__resolved_units: dict[str, pint.Unit | dict[str | int, Any]],
-    unit_checks__declared_unit_tokens: dict[str, CompositeUnit],
+    unit_checks__resolved_pint_units: dict[str, pint.Unit | dict[str | int, Any]],
+    unit_checks__declared_ttsim_units: dict[str, CompositeUnit],
     unit_system: UnitSystem,
 ) -> None:
     """Fail if a tagged input column's unit contradicts its declared unit in the DAG.
@@ -1069,9 +1069,9 @@ def input_units_are_inconsistent(
     """
     fail_if_input_units_are_inconsistent(
         input_unit_tokens=input_data__unit_tokens,
-        resolved_units=unit_checks__resolved_units,
+        resolved_pint_units=unit_checks__resolved_pint_units,
         unit_system=unit_system,
-        declared_unit_tokens=unit_checks__declared_unit_tokens,
+        declared_ttsim_units=unit_checks__declared_ttsim_units,
     )
 
 

@@ -31,7 +31,7 @@ from ttsim.tt import (
     policy_function,
     policy_input,
 )
-from ttsim.tt.units import coerce_to_composite_unit
+from ttsim.tt.units import ttsim_unit_from_yaml_value
 
 if TYPE_CHECKING:
     from ttsim.typing import IntColumn, RawParamValue
@@ -459,7 +459,7 @@ def test_params_target_is_allowed(minimal_input_data):
             end_date=datetime.date(2025, 12, 31),
             # Parameters pin down the concrete currency (GEP 10); a complete
             # currency stock takes no period.
-            unit=coerce_to_composite_unit(value="CASTAR", where="test setup"),
+            unit=ttsim_unit_from_yaml_value(value="CASTAR", where="test setup"),
             name={"de": "Ein Parameter", "en": "Some parameter"},
             description={"de": "Ein Parameter", "en": "Some parameter"},
             note=None,

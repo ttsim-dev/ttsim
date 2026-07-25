@@ -14,7 +14,7 @@ from ttsim.tt.units import (
     UNSET_UNIT,
     CompositeUnit,
     strip_input_quantity_at_boundary,
-    token_declares_a_currency,
+    ttsim_unit_has_currency,
 )
 from ttsim.typing import SpecEnvWithoutTreeLogicAndWithDerivedFunctions
 
@@ -181,5 +181,5 @@ def _qnames_with_currency_declarations(
             token := getattr(specialized_environment.get(qname), "unit", UNSET_UNIT),
             CompositeUnit,
         )
-        and token_declares_a_currency(token)
+        and ttsim_unit_has_currency(token)
     )

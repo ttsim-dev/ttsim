@@ -22,7 +22,7 @@ from ttsim.interface_dag_elements.automatically_added_functions import (
 from ttsim.interface_dag_elements.unit_checks import (
     _resolved_return_structure,
     _structured_field_kinds,
-    declared_unit_tokens,
+    declared_ttsim_units,
     fail_if_environment_units_are_inconsistent,
     fail_if_environment_units_are_missing,
     node_is_boolean,
@@ -54,9 +54,9 @@ from ttsim.tt.param_objects import (
     ScalarParam,
 )
 from ttsim.tt.units import (
-    coerce_to_composite_unit,
     divide_by_grouping_level,
     parse_unit,
+    ttsim_unit_from_yaml_value,
     units_are_equivalent,
 )
 from ttsim.typing import (
@@ -81,11 +81,13 @@ _END = datetime.date(2030, 12, 31)
 
 # Parameters must pin down the concrete currency their numbers are written in
 # (GEP 10); these are mettsim's concrete (castar) compositional spellings.
-CASTAR_PER_YEAR = coerce_to_composite_unit(value="CASTAR_PER_YEAR", where="test setup")
-CASTAR_PER_MONTH = coerce_to_composite_unit(
+CASTAR_PER_YEAR = ttsim_unit_from_yaml_value(
+    value="CASTAR_PER_YEAR", where="test setup"
+)
+CASTAR_PER_MONTH = ttsim_unit_from_yaml_value(
     value="CASTAR_PER_MONTH", where="test setup"
 )
-CASTAR = coerce_to_composite_unit(value="CASTAR", where="test setup")
+CASTAR = ttsim_unit_from_yaml_value(value="CASTAR", where="test setup")
 
 
 # Fixture objects
@@ -4200,7 +4202,7 @@ def test_verify_units_false_still_checks_consumers_against_declared_unit():
 # Aggregation decorators
 
 
-def test_declared_unit_tokens_excludes_the_unset_sentinel():
+def test_declared_ttsim_units_excludes_the_unset_sentinel():
     """``UNSET_UNIT`` is itself a ``CompositeUnit`` sentinel standing for the
     *absence* of a declaration, so the mapping holds only real declarations and
     leaves such a node out entirely (GEP 10)."""
@@ -4209,7 +4211,7 @@ def test_declared_unit_tokens_excludes_the_unset_sentinel():
     def flag(unannotated_income_y: float) -> bool:
         return unannotated_income_y > 0.0
 
-    tokens = declared_unit_tokens(
+    tokens = declared_ttsim_units(
         specialized_environment__without_tree_logic_and_with_derived_functions={
             "unannotated_income_y": unannotated_income_y,
             "flag": flag,
