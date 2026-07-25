@@ -43,7 +43,7 @@ def fail_if_grouping_level_names_are_invalid(names: Iterable[str]) -> None:
     """Reject a grouping-level name the builder cannot own.
 
     A level claims the builder step ``PER_<NAME>`` on :class:`CompositeUnit`,
-    which is a process-global class shared by every system. Three kinds of
+    which is a process-global class shared by every system. Two kinds of
     names are therefore refused:
 
     - any name whose step is already one of the closed area/period steps, since
@@ -54,7 +54,7 @@ def fail_if_grouping_level_names_are_invalid(names: Iterable[str]) -> None:
       ``"HH"`` would register a level that ``.PER_HH`` cannot resolve.
 
     Levels are derived from the policy environment's ``*_id`` columns — one per
-    group column — so a ``person_id`` or ``month_id`` column reaches this check.
+    group column — so a ``month_id`` column reaches this check.
 
     Raises:
         UnitDefinitionError: If any name is refused.
