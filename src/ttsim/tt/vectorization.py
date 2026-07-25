@@ -207,12 +207,12 @@ class Transformer(ast.NodeTransformer):
 
     def visit_UnaryOp(self, node: ast.UnaryOp) -> ast.UnaryOp | ast.Call:
         if isinstance(node.op, ast.Not):
-            return not_to_call(node, module=self.module)
+            return not_to_call(node=node, module=self.module)
         return node
 
     def visit_BoolOp(self, node: ast.BoolOp) -> ast.Call:
         self.generic_visit(node)
-        return boolop_to_call(node, module=self.module)
+        return boolop_to_call(node=node, module=self.module)
 
     def visit_If(
         self,
