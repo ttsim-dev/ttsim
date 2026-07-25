@@ -27,6 +27,7 @@ from pint.util import to_units_container
 from ttsim.exceptions import UnitDefinitionError
 from ttsim.tt.units import (
     _ALLOWED_UNIT_TOKENS,
+    _PER,
     _TTSIM_UNIT_BASE_TO_PINT,
     CURRENCY_TOKEN,
     CompositeUnit,
@@ -59,8 +60,11 @@ class UnitSystem:
     (:meth:`currency_conversion_factor`).
 
     Raises:
-        UnitDefinitionError: If a currency name clashes with a unit the shared
-            vocabulary already defines, if a definition does not resolve to the
+        UnitDefinitionError: If a currency name is unusable as a ``TTSIMUnit``
+            base — it claims the agnostic ``CURRENCY`` base, names a
+            non-currency base of the shared vocabulary, differs from another
+            registered currency only in case, or spells the ``_PER_``
+            denominator delimiter — if a definition does not resolve to the
             ``[currency]`` dimension or does not reference exactly one of this
             system's currencies, or if the statutory-currency mapping is empty,
             is keyed by anything other than an ISO date, or names a currency the
@@ -190,8 +194,10 @@ class UnitSystem:
             )
             self._define_one_currency(name=name, definition=definition)
             defined.add(name)
-        for name in self.currencies:
-            self._fail_if_name_collides_with_unit_base(name=name)
+        claimed = set(_registered_currencies)
+        for name in (self.base_currency, *self.other_currencies):
+            self._fail_if_name_is_unusable_as_a_unit_base(name=name, claimed=claimed)
+            claimed.add(name)
 
     def _publish_currencies(self) -> None:
         """Widen the process-global vocabulary by this system's currencies.
@@ -210,22 +216,63 @@ class UnitSystem:
             # this only makes it reachable.
             setattr(TTSIMUnit, name.upper(), CompositeUnit(base=name.upper()))
 
-    def _fail_if_name_collides_with_unit_base(self, name: str) -> None:
-        """Reject a currency whose ``TTSIMUnit`` base the shared vocabulary owns.
+    def _fail_if_name_is_unusable_as_a_unit_base(
+        self, name: str, claimed: set[str]
+    ) -> None:
+        """Reject a currency name the ``TTSIMUnit`` base namespace cannot carry.
 
         A currency reaches the builder namespace under its upper-cased name, and
-        :func:`ttsim.tt.units.parse_ttsim_unit` matches a base against that
-        same upper-cased form. Colliding with the agnostic :data:`CURRENCY_TOKEN`
-        or with a non-currency base would silently shadow that base for every
-        policy package in the process.
+        :func:`ttsim.tt.units.parse_ttsim_unit` matches a base against that same
+        upper-cased form. Four names are refused:
+
+        - the agnostic :data:`CURRENCY_TOKEN`, which every currency-agnostic
+          declaration spells;
+        - a non-currency base of the shared vocabulary (``HOURS``, ``HECTARE``,
+          ``DIMENSIONLESS``, …), which the currency would shadow for every
+          policy package in the process;
+        - a name differing only in case from a currency in ``claimed`` — the
+          process-global registry widened by this system's earlier currencies:
+          both project onto one base, so one shadows the other on the builder
+          and :func:`ttsim.tt.units.ttsim_unit_currency` resolves the base back
+          to either of them, letting a conversion pick the wrong exchange rate;
+        - a name spelling the :data:`ttsim.tt.units._PER` denominator delimiter,
+          whose base would parse back as a base plus a denominator, so the token
+          would not round-trip through its canonical string or YAML form.
         """
         base = name.upper()
-        if base == CURRENCY_TOKEN or base in _TTSIM_UNIT_BASE_TO_PINT:
+        if base == CURRENCY_TOKEN:
             raise UnitDefinitionError(
-                f"Cannot register currency {name!r}: the unit base {base!r} is a "
-                f"non-currency base the shared unit vocabulary already owns, so "
-                f"registering it would silently shadow that base for every policy "
-                f"package in the process. Pick another name (GEP 10)."
+                f"Cannot register currency {name!r}: {CURRENCY_TOKEN!r} is the "
+                f"agnostic currency base every currency-agnostic declaration "
+                f"spells, so a concrete currency claiming it would make every such "
+                f"declaration name that currency. Pick another name (GEP 10)."
+            )
+        if base in _TTSIM_UNIT_BASE_TO_PINT:
+            raise UnitDefinitionError(
+                f"Cannot register currency {name!r}: {base!r} is a non-currency "
+                f"unit base the shared unit vocabulary already owns, so registering "
+                f"it would silently shadow that base for every policy package in "
+                f"the process. Pick another name (GEP 10)."
+            )
+        if _PER in base:
+            head, denominator = base.split(_PER, 1)
+            raise UnitDefinitionError(
+                f"Cannot register currency {name!r}: {_PER!r} separates a unit from "
+                f"its denominators, so the base {base!r} would parse back as "
+                f"{head!r} denominated by {denominator!r} instead of round-tripping "
+                f"as one base. Pick a name without it (GEP 10)."
+            )
+        shadowed = sorted(
+            other for other in claimed if other != name and other.upper() == base
+        )
+        if shadowed:
+            raise UnitDefinitionError(
+                f"Cannot register currency {name!r}: currency "
+                f"{', '.join(repr(other) for other in shadowed)} already claims the "
+                f"unit base {base!r}, so one would silently shadow the other on the "
+                f"`TTSIMUnit` builder and a conversion could pick either one's "
+                f"exchange rate. Currency names must differ by more than case "
+                f"(GEP 10)."
             )
 
     def _define_one_currency(self, name: str, definition: str) -> None:

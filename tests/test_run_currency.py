@@ -32,9 +32,10 @@ from ttsim.interface_dag_elements.results import tree_with_unit_annotations
 from ttsim.interface_dag_elements.warn_if import (
     statutory_currency_and_base_currency_differ,
 )
-from ttsim.tt.currencies import UnitSystem
+from ttsim.tt.currencies import UnitSystem, isolated_currency_registration
 from ttsim.tt.param_objects import RawParam
 from ttsim.tt.units import (
+    _ALLOWED_UNIT_TOKENS,
     UNSET_UNIT,
     TTSIMUnit,
     _registered_currencies,
@@ -657,8 +658,63 @@ def test_annotated_results_leave_an_unresolved_dict_parameter_leaf_bare():
 def test_currency_named_after_a_non_currency_base_is_rejected():
     """A currency whose name projects onto a non-currency unit base is rejected: it
     would shadow that base for every policy package in the process."""
-    with pytest.raises(UnitDefinitionError, match="shared unit vocabulary already"):
-        _fresh_system(other_currencies={"HECTARE": "CASTAR / 4"})
+    with (
+        isolated_currency_registration(),
+        pytest.raises(UnitDefinitionError, match="non-currency unit base"),
+    ):
+        _fresh_system(
+            other_currencies={"SILVER_PENNY": "CASTAR / 4", "HECTARE": "CASTAR / 8"}
+        )
+
+
+def test_currencies_differing_only_in_case_are_rejected():
+    """Two currency names projecting to the same `TTSIMUnit` base are rejected — one
+    would silently shadow the other on the builder namespace, and a conversion could
+    pick either one's exchange rate."""
+    with (
+        isolated_currency_registration(),
+        pytest.raises(UnitDefinitionError, match="'CASTAR' already claims the unit"),
+    ):
+        _fresh_system(
+            other_currencies={"SILVER_PENNY": "CASTAR / 4", "castar": "CASTAR / 8"}
+        )
+
+
+def test_currency_name_spelling_the_denominator_delimiter_is_rejected():
+    """A currency name containing `_PER_` is refused: its base would parse back as a
+    base plus a denominator, so the token would not round-trip."""
+    with (
+        isolated_currency_registration(),
+        pytest.raises(UnitDefinitionError, match="would parse back as 'GOLD'"),
+    ):
+        _fresh_system(
+            other_currencies={
+                "SILVER_PENNY": "CASTAR / 4",
+                "GOLD_PER_OUNCE": "CASTAR / 8",
+            }
+        )
+
+
+def test_rejected_currency_name_leaves_the_shared_vocabulary_untouched():
+    """A `UnitSystem` rejected for a colliding currency name publishes nothing: the
+    registered currencies, the allowed unit tokens and the `TTSIMUnit` builder are all
+    exactly as they were."""
+    before = (
+        set(_registered_currencies),
+        set(_ALLOWED_UNIT_TOKENS),
+        set(vars(TTSIMUnit)),
+    )
+    with pytest.raises(UnitDefinitionError):
+        _fresh_system(
+            base_currency="MITHRIL",
+            other_currencies={"MITHRIL_BIT": "MITHRIL / 4", "HECTARE": "MITHRIL / 8"},
+            statutory_currencies={"0001-01-01": "MITHRIL"},
+        )
+    assert (
+        set(_registered_currencies),
+        set(_ALLOWED_UNIT_TOKENS),
+        set(vars(TTSIMUnit)),
+    ) == before
 
 
 def test_failed_construction_publishes_nothing():
@@ -693,8 +749,13 @@ def test_undashed_statutory_currency_key_is_rejected(start_date):
 def test_currency_claiming_the_agnostic_base_is_rejected():
     """A currency whose base is the agnostic `CURRENCY` token is refused: it would
     make every agnostic declaration name a concrete currency."""
-    with pytest.raises(UnitDefinitionError, match="shared unit vocabulary already"):
-        _fresh_system(other_currencies={"currency": "CASTAR / 4"})
+    with (
+        isolated_currency_registration(),
+        pytest.raises(UnitDefinitionError, match="agnostic currency base"),
+    ):
+        _fresh_system(
+            other_currencies={"SILVER_PENNY": "CASTAR / 4", "currency": "CASTAR / 8"}
+        )
 
 
 def test_agnostic_token_pins_down_no_concrete_currency():
