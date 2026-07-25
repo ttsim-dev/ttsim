@@ -34,6 +34,7 @@ from ttsim.tt import (
 from ttsim.tt.grouping_levels import register_grouping_levels
 from ttsim.tt.units import (
     CURRENCY_TOKEN,
+    _suffix_period_of,
     fail_if_units_are_missing,
     is_calendar_point_unit,
     output_unit_in_data_currency,
@@ -792,6 +793,67 @@ def test_strip_at_boundary_passes_non_currency_tag_through():
         quantity=tagged, data_currency="CASTAR", registry=REGISTRY
     )
     assert bare == pytest.approx([5.0])
+
+
+@pytest.mark.parametrize(
+    ("column_label", "expected_pint_name"),
+    [
+        # Ungrouped, suffixed.
+        ("rent_m", "month"),
+        ("rent_y", "year"),
+        ("rent_w", "week"),
+        ("rent_q", "quarter_year"),
+        ("rent_d", "day"),
+        # Grouped, suffixed: GEP-1 puts the time unit before the grouping level.
+        ("rent_m_hh", "month"),
+        ("rent_m_bg", "month"),
+        ("rent_y_hh", "year"),
+        ("rent_q_bg", "quarter_year"),
+        ("rent_d_hh", "day"),
+        ("wohngeld__betrag_m_bg", "month"),
+        # Unsuffixed, ungrouped and grouped.
+        ("wealth", None),
+        ("wealth_hh", None),
+        ("wealth_bg", None),
+        # A trailing component that only looks like a time unit: `qm` is two
+        # characters, and `sn` is not a registered grouping level, so neither
+        # name carries a time suffix.
+        ("flaeche_qm_hh", None),
+        ("rent_m_sn", None),
+    ],
+)
+def test_suffix_period_reads_the_time_unit_before_any_grouping_level(
+    column_label, expected_pint_name
+):
+    """A GEP-1 time suffix is found whether or not a grouping suffix follows it."""
+    expected = (
+        None if expected_pint_name is None else REGISTRY.parse_units(expected_pint_name)
+    )
+    assert _suffix_period_of(column_label=column_label, registry=REGISTRY) == expected
+
+
+def test_strip_at_boundary_accepts_matching_period_on_grouped_column():
+    """A `/month` tag matches the `_m` suffix of a household-level column."""
+    tagged = REGISTRY.Quantity(np.array([4.0]), "SILVER_PENNY / month")
+    bare = strip_input_quantity_at_boundary(
+        quantity=tagged,
+        data_currency="CASTAR",
+        column_label="income_m_hh",
+        registry=REGISTRY,
+    )
+    assert bare == pytest.approx([1.0])
+
+
+def test_strip_at_boundary_fails_on_wrong_period_for_grouped_column():
+    """A `/year` tag on a `_m_hh` column is a 12-fold error and is rejected."""
+    tagged = REGISTRY.Quantity(np.array([4.0]), "SILVER_PENNY / year")
+    with pytest.raises(UnitConsistencyError, match="month"):
+        strip_input_quantity_at_boundary(
+            quantity=tagged,
+            data_currency="CASTAR",
+            column_label="income_m_hh",
+            registry=REGISTRY,
+        )
 
 
 def test_builder_round_trips_with_flat_spelling():

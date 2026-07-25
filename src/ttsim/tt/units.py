@@ -53,6 +53,9 @@ from ttsim.exceptions import (
     UnitConsistencyError,
     UnitDefinitionError,
 )
+from ttsim.interface_dag_elements.shared import (
+    get_re_pattern_for_all_time_units_and_groupings,
+)
 from ttsim.tt.aggregation import AggType
 
 _PERIODS: tuple[tuple[str, str, str], ...] = (
@@ -1230,12 +1233,23 @@ def _suffix_period_of(
 ) -> pint.Unit | None:
     """Return the flow period named by a column's GEP-1 time suffix.
 
-    ``…_m`` → ``month``; a name with no time suffix → ``None``.
+    ``…_m`` → ``month``, whether or not a grouping suffix follows it: GEP-1 puts
+    the time unit before the grouping level, so ``betrag_m_hh`` is a monthly
+    amount at household level. A name with no time suffix → ``None``.
+
+    Which trailing components count as a grouping level is
+    environment-dependent, so the candidates are the levels ``registry``
+    defines a dimension for. A trailing component that is not one of them
+    belongs to the base name, and the component before it is then not a time
+    suffix.
     """
     if column_label is None:
         return None
-    match = _QNAME_TIME_SUFFIX_PATTERN.search(column_label)
-    if match is None:
+    match = get_re_pattern_for_all_time_units_and_groupings(
+        time_units=tuple(TIME_UNIT_ID_TO_PINT_NAME),
+        grouping_levels=tuple(sorted(registered_grouping_levels(registry))),
+    ).fullmatch(column_label)
+    if match is None or not match.group("time_unit"):
         return None
     return registry.parse_units(TIME_UNIT_ID_TO_PINT_NAME[match.group("time_unit")])
 

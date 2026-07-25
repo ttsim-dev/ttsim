@@ -238,13 +238,21 @@ def create_time_conversion_functions(
     input_stubs: dict[str, PolicyInput] = {}
     for bngs, inputs in bngs_to_time_conversion_inputs.items():
         for col_name in input_columns:
-            # If base_name is in provided data, base time conversions on that.
+            # If a time variant of this base name and grouping level is provided
+            # in the data, base the time conversions on that. The input column
+            # must sit at the same grouping level as the declaration: a
+            # household total is not the source of a per-person quantity, nor
+            # the other way round.
             pattern_specific = get_re_pattern_for_specific_time_units_and_groupings(
                 base_name=bngs[0],
                 all_time_units=time_units,
                 grouping_levels=grouping_levels,
             ).fullmatch(col_name)
-            if pattern_specific and pattern_specific.group("time_unit"):
+            if (
+                pattern_specific
+                and pattern_specific.group("time_unit")
+                and get_base_name_and_grouping_suffix(pattern_specific)[1] == bngs[1]
+            ):
                 inputs["qname_source"] = col_name
                 inputs["time_unit"] = pattern_specific.group("time_unit")
                 break
