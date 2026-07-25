@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 
 from mettsim import middle_earth
 
+from tests.test_unit_system import TEST_UNIT_SYSTEM
 from ttsim import InputData, MainTarget, OrigPolicyObjects, TTTargets, main
 from ttsim.tt import TTSIMUnit
 from ttsim.tt.column_objects_param_function import policy_function, policy_input
@@ -209,7 +210,7 @@ def test_returns_root_nodes_when_injecting_unrelated_input_data(xnp: ModuleType)
         main_target=MainTarget.templates.input_data_dtypes.tree,
         policy_date_str="2000-01-01",
         orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
-        unit_system=middle_earth.UNIT_SYSTEM,
+        unit_system=TEST_UNIT_SYSTEM,
         tt_targets=TTTargets.tree({"wealth_tax": {"amount_y": None}}),
         input_data=InputData.tree(
             tree={
@@ -238,7 +239,7 @@ def test_template_df_with_nested_columns():
         main_target=MainTarget.templates.input_data_dtypes.df_with_nested_columns,
         policy_date_str="2000-01-01",
         orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
-        unit_system=middle_earth.UNIT_SYSTEM,
+        unit_system=TEST_UNIT_SYSTEM,
         tt_targets=TTTargets.tree({"wealth_tax": {"amount_y": None}}),
     )
     assert actual.columns.tolist() == [

@@ -65,7 +65,7 @@ def rounding() -> bool:
 def without_tree_logic_and_with_derived_functions(
     policy_environment: PolicyEnvironment,
     tt_targets__qname: QNameTTTargets,
-    labels__input_columns: UnorderedQNames,
+    labels__data_qnames: UnorderedQNames,
     labels__top_level_namespace: UnorderedQNames,
     labels__grouping_levels: OrderedQNames,
 ) -> SpecEnvWithoutTreeLogicAndWithDerivedFunctions:
@@ -83,7 +83,7 @@ def without_tree_logic_and_with_derived_functions(
     return _add_derived_functions(
         qname_env_without_tree_logic=qname_env_without_tree_logic,
         tt_targets=tt_targets__qname,
-        input_columns=labels__input_columns,
+        data_qnames=labels__data_qnames,
         grouping_levels=labels__grouping_levels,
     )
 
@@ -108,7 +108,7 @@ def _remove_tree_logic_from_policy_environment(
 def _add_derived_functions(
     qname_env_without_tree_logic: dict[str, ColumnObject | ParamFunction | ParamObject],
     tt_targets: QNameStrings,
-    input_columns: UnorderedQNames,
+    data_qnames: UnorderedQNames,
     grouping_levels: OrderedQNames,
 ) -> SpecEnvWithoutTreeLogicAndWithDerivedFunctions:
     """Return the environment extended by derived functions and input stubs.
@@ -134,7 +134,7 @@ def _add_derived_functions(
     # Create functions for different time units
     time_conversions = create_time_conversion_functions(
         qname_policy_environment=qname_env_without_tree_logic,
-        input_columns=input_columns,
+        data_qnames=data_qnames,
         grouping_levels=grouping_levels,
     )
     column_functions = {
@@ -151,7 +151,7 @@ def _add_derived_functions(
         column_functions=column_functions,
         qname_policy_environment=qname_env_without_tree_logic,
         time_converted_input_stubs=time_conversions.input_stubs,
-        input_columns=input_columns,
+        data_qnames=data_qnames,
         tt_targets=tt_targets,
         grouping_levels=grouping_levels,
     )

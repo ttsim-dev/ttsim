@@ -5,9 +5,9 @@ import datetime
 import numpy
 import pandas as pd
 import pytest
-from mettsim import middle_earth
 from numpy.testing import assert_array_equal
 
+from tests.test_unit_system import TEST_UNIT_SYSTEM
 from ttsim import (
     InputData,
     TTTargets,
@@ -233,7 +233,7 @@ def test_nested_data_to_dataframe(
         tt_targets=TTTargets.tree(tt_targets__tree),
         rounding=False,
         backend=backend,
-        unit_system=middle_earth.UNIT_SYSTEM,
+        unit_system=TEST_UNIT_SYSTEM,
     )
     result_df = nested_data_to_df_with_mapped_columns(
         nested_data_to_convert=results__tree,

@@ -17,8 +17,6 @@ from ttsim.tt.column_objects_param_function import (
     policy_function,
     policy_input,
 )
-from ttsim.tt.currencies import UnitSystem
-from ttsim.tt.grouping_levels import register_unit_builder_levels
 from ttsim.tt.interval_utils import intervals_to_thresholds, merge_piecewise_intervals
 from ttsim.tt.param_objects import (
     ConsecutiveIntLookupTableParam,
@@ -45,10 +43,13 @@ from ttsim.tt.shared import join
 from ttsim.tt.units import (
     UNSET_UNIT,
     CompositeUnit,
-    InputOutputUnit,
+    InputOutputUnits,
     TTSIMUnit,
     UnitAnnotatedColumn,
+    UnitSystem,
     cast_ttsim_unit,
+    is_unset_unit,
+    register_unit_builder_levels,
 )
 
 __all__ = [
@@ -64,7 +65,7 @@ __all__ = [
     "DictParam",
     "FKType",
     "GroupCreationFunction",
-    "InputOutputUnit",
+    "InputOutputUnits",
     "ParamFunction",
     "ParamMappingObject",
     "ParamObject",
@@ -90,6 +91,7 @@ __all__ = [
     "get_year_based_phase_inout_of_age_thresholds_param_value",
     "group_creation_function",
     "intervals_to_thresholds",
+    "is_unset_unit",
     "join",
     "merge_piecewise_intervals",
     "param_function",

@@ -220,7 +220,7 @@ class OrigPolicyObjects(MainArg):
 
 @dataclass(frozen=True)
 class Labels(MainArg):
-    input_columns: UnorderedQNames | None = None
+    data_qnames: UnorderedQNames | None = None
     column_targets: OrderedQNames | None = None
     input_data_targets: OrderedQNames | None = None
     param_targets: OrderedQNames | None = None
@@ -262,10 +262,10 @@ class Labels(MainArg):
         )
 
     @classmethod
-    def input_columns(cls, input_columns: UnorderedQNames) -> Labels:
+    def data_qnames(cls, data_qnames: UnorderedQNames) -> Labels:
         """Input columns for labeling."""
         return _set_single_field(
-            cls=cls, field_name="input_columns", field_value=input_columns
+            cls=cls, field_name="data_qnames", field_value=data_qnames
         )
 
     @classmethod

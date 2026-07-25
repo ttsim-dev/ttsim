@@ -249,7 +249,7 @@ def _auto_agg_wrapper_from_int_source() -> typing.Callable[..., object]:
         column_functions=column_functions,
         qname_policy_environment={},
         time_converted_input_stubs={},
-        input_columns=set(),
+        data_qnames=set(),
         tt_targets=("x_hh",),
         grouping_levels=("hh",),
     )

@@ -14,8 +14,8 @@ from ttsim.interface_dag_elements.shared import (
     get_re_pattern_for_all_time_units_and_groupings,
     group_pattern,
 )
+from ttsim.time_converters import TIME_UNIT_IDS_TO_LABELS
 from ttsim.tt.column_objects_param_function import PolicyInput
-from ttsim.unit_converters import TIME_UNIT_IDS_TO_LABELS
 
 if TYPE_CHECKING:
     import re
@@ -111,21 +111,43 @@ def top_level_namespace(
         "input_data__df_and_mapper__df",
     ],
     include_if_no_input_present=["processed_data"],
-    leaf_name="input_columns",
+    leaf_name="data_qnames",
 )
-def input_columns_from_input_data(input_data__flat: FlatData) -> UnorderedQNames:
-    """The (qualified) column names in the input data."""
+def data_qnames_from_input_data(input_data__flat: FlatData) -> UnorderedQNames:
+    """The qualified names of data columns available to the computation.
+
+    `labels__data_qnames` has alternative producers because input data can enter the
+    interface DAG through different routes:
+
+        input_data__flat ────────────→ labels__data_qnames
+        processed_data ──────────────→ labels__data_qnames
+        neither input is supplied ───→ labels__data_qnames (empty)
+
+    In particular, directly supplied `processed_data` bypasses `input_data__flat`.
+    Its producer therefore obtains the same labels from `processed_data`; without it,
+    that route would still require `input_data__flat`.
+    """
     return {dt.qname_from_tree_path(path) for path in input_data__flat}
 
 
 @input_dependent_interface_function(
     include_if_any_input_present=["processed_data"],
-    leaf_name="input_columns",
+    leaf_name="data_qnames",
 )
-def input_columns_from_processed_data(processed_data: QNameData) -> UnorderedQNames:
-    """The (qualified) column names in the input data."""
-    # Takes precedence when `processed_data` is supplied alongside input data:
-    # the supplied columns are the ones the computation will use.
+def data_qnames_from_processed_data(processed_data: QNameData) -> UnorderedQNames:
+    """The qualified names of data columns available to the computation.
+
+    `labels__data_qnames` has alternative producers because input data can enter the
+    interface DAG through different routes:
+
+        input_data__flat ────────────→ labels__data_qnames
+        processed_data ──────────────→ labels__data_qnames
+        neither input is supplied ───→ labels__data_qnames (empty)
+
+    In particular, directly supplied `processed_data` bypasses `input_data__flat`.
+    Its producer therefore obtains the same labels from `processed_data`; without it,
+    that route would still require `input_data__flat`.
+    """
     return set(processed_data.keys())
 
 
@@ -140,12 +162,24 @@ def input_columns_from_processed_data(processed_data: QNameData) -> UnorderedQNa
         "input_data__df_and_mapper__df",
         "processed_data",
     ],
-    leaf_name="input_columns",
+    leaf_name="data_qnames",
 )
-def input_columns_is_empty_set(
+def data_qnames_is_empty_set(
     xnp: ModuleType,  # fake input # noqa: ARG001
 ) -> UnorderedQNames:
-    """The (qualified) column names in the input data."""
+    """The qualified names of data columns available to the computation.
+
+    `labels__data_qnames` has alternative producers because input data can enter the
+    interface DAG through different routes:
+
+        input_data__flat ────────────→ labels__data_qnames
+        processed_data ──────────────→ labels__data_qnames
+        neither input is supplied ───→ labels__data_qnames (empty)
+
+    In particular, directly supplied `processed_data` bypasses `input_data__flat`.
+    Its producer therefore obtains the same labels from `processed_data`; without it,
+    that route would still require `input_data__flat`.
+    """
     return set()
 
 
@@ -170,7 +204,7 @@ def policy_inputs(policy_environment: PolicyEnvironment) -> UnorderedQNames:
 @interface_function()
 def root_nodes(
     specialized_environment__tt_dag: nx.DiGraph,
-    input_columns: UnorderedQNames,
+    data_qnames: UnorderedQNames,
 ) -> UnorderedQNames:
     """The (qualified) names of those columns in `processed_data` which are required for
     the tax transfer function."""
@@ -182,7 +216,7 @@ def root_nodes(
     ).nodes
 
     # Restrict the passed data to the subset that is actually used.
-    return {k for k in input_columns if k in root_nodes}
+    return {k for k in data_qnames if k in root_nodes}
 
 
 def fail_if_multiple_time_units_for_same_base_name_and_group(
@@ -198,12 +232,12 @@ def fail_if_multiple_time_units_for_same_base_name_and_group(
 @interface_function()
 def input_data_targets(
     tt_targets__qname: QNameTTTargets,
-    input_columns: UnorderedQNames,
+    data_qnames: UnorderedQNames,
 ) -> OrderedQNames:
     """
     The (qualified) names of the targets that are already present in the input data.
     """
-    return [t for t in tt_targets__qname if t in input_columns]
+    return [t for t in tt_targets__qname if t in data_qnames]
 
 
 @interface_function()

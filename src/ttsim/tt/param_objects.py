@@ -11,6 +11,8 @@ from ttsim.exceptions import UnitDefinitionError
 from ttsim.tt.units import (
     UNSET_UNIT,
     CompositeUnit,
+    UnitDeclaration,
+    is_unset_unit,
     ttsim_unit_from_yaml_value,
     ttsim_unit_has_currency,
 )
@@ -44,7 +46,7 @@ class ParamObject:
 
     start_date: datetime.date | None = None
     end_date: datetime.date | None = None
-    unit: CompositeUnit | str | dict[str | int, Any] = UNSET_UNIT
+    unit: UnitDeclaration | str | dict[str | int, Any] = UNSET_UNIT
     name: dict[Literal["de", "en"], str] | None = None
     description: dict[Literal["de", "en"], str] | None = None
 
@@ -62,12 +64,12 @@ class ParamObject:
 def _coerce_unit_declaration(
     declared: Any,  # noqa: ANN401 (raw YAML value)
     obj: ParamObject,
-) -> CompositeUnit | dict[str | int, Any]:
+) -> UnitDeclaration | dict[str | int, Any]:
     """Coerce a raw ``unit:`` declaration to a CompositeUnit, recursing into
     mappings."""
     name_en = (obj.name or {}).get("en")
     where = f"Parameter {name_en}" if name_en else "Parameter"
-    if declared is UNSET_UNIT:
+    if is_unset_unit(declared):
         return UNSET_UNIT
     if isinstance(declared, dict):
         return {
@@ -134,12 +136,12 @@ class ParamMappingObject(ParamObject):
     currency-converted (GEP 10).
     """
 
-    input_unit: CompositeUnit | str = UNSET_UNIT
-    output_unit: CompositeUnit | str = UNSET_UNIT
+    input_unit: UnitDeclaration | str = UNSET_UNIT
+    output_unit: UnitDeclaration | str = UNSET_UNIT
 
     def __post_init__(self) -> None:
         super().__post_init__()
-        if self.unit is not UNSET_UNIT:
+        if not is_unset_unit(self.unit):
             raise UnitDefinitionError(
                 f"{type(self).__name__} is a function between quantities and "
                 f"declares `input_unit:` / `output_unit:` instead of `unit:` "
@@ -183,7 +185,7 @@ class ConsecutiveIntLookupTableParam(ParamMappingObject):
     def __post_init__(self) -> None:
         super().__post_init__()
         input_unit = cast("CompositeUnit", self.input_unit)
-        if input_unit is not UNSET_UNIT and ttsim_unit_has_currency(input_unit):
+        if not is_unset_unit(input_unit) and ttsim_unit_has_currency(input_unit):
             raise UnitDefinitionError(
                 f"A lookup table is keyed by consecutive integers, so its "
                 f"`input_unit:` cannot be a currency (got {input_unit}); the "
@@ -271,8 +273,8 @@ class RawParam(ParamObject):
     value: dict[str | int, Any] = PLACEHOLDER_FIELD
     note: str | None = None
     reference: str | None = None
-    input_unit: CompositeUnit | str = UNSET_UNIT
-    output_unit: CompositeUnit | str = UNSET_UNIT
+    input_unit: UnitDeclaration | str = UNSET_UNIT
+    output_unit: UnitDeclaration | str = UNSET_UNIT
 
     def __post_init__(self) -> None:
         super().__post_init__()
@@ -280,10 +282,10 @@ class RawParam(ParamObject):
             raise ValueError(
                 "'note' and 'reference' cannot be keys in the value dictionary"
             )
-        declares_axes = (
-            self.input_unit is not UNSET_UNIT or self.output_unit is not UNSET_UNIT
+        declares_axes = not is_unset_unit(self.input_unit) or not is_unset_unit(
+            self.output_unit
         )
-        if declares_axes and self.unit is not UNSET_UNIT:
+        if declares_axes and not is_unset_unit(self.unit):
             raise UnitDefinitionError(
                 "A require_converter declares either `unit:` (a single token or "
                 "a per-leaf mapping, one token per leaf) or `input_unit:` / "

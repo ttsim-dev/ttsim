@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from ttsim.unit_converters import (
+from ttsim.time_converters import (
     d_to_m,
     d_to_q,
     d_to_w,

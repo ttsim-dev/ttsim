@@ -12,8 +12,8 @@ import datetime
 from typing import TYPE_CHECKING
 
 import pandas as pd
-from mettsim import middle_earth
 
+from tests.test_unit_system import TEST_UNIT_SYSTEM
 from ttsim import InputData, MainTarget, TTTargets, main
 from ttsim.tt import FKType, ScalarParam, TTSIMUnit, policy_function, policy_input
 
@@ -69,7 +69,7 @@ def test_endogenous_p_id_target_returns_user_space_p_ids(
         tt_targets=TTTargets.tree({"p_id_recipient": None}),
         input_data=InputData.tree(tree={"p_id": xnp.array([20, 10, 30])}),
         backend=backend,
-        unit_system=middle_earth.UNIT_SYSTEM,
+        unit_system=TEST_UNIT_SYSTEM,
     )
 
     expected = pd.DataFrame(
@@ -121,7 +121,7 @@ def test_endogenous_p_id_target_collapses_arbitrary_negative_to_sentinel(
             }
         ),
         backend=backend,
-        unit_system=middle_earth.UNIT_SYSTEM,
+        unit_system=TEST_UNIT_SYSTEM,
     )
 
     expected = pd.DataFrame(
@@ -168,7 +168,7 @@ def test_endogenous_p_id_target_preserves_minus_one_sentinel(
             }
         ),
         backend=backend,
-        unit_system=middle_earth.UNIT_SYSTEM,
+        unit_system=TEST_UNIT_SYSTEM,
     )
 
     expected = pd.DataFrame(
@@ -210,7 +210,7 @@ def test_exogenous_p_id_pointer_as_input_target_is_unchanged(
             }
         ),
         backend=backend,
-        unit_system=middle_earth.UNIT_SYSTEM,
+        unit_system=TEST_UNIT_SYSTEM,
     )
 
     expected = pd.DataFrame(
@@ -266,7 +266,7 @@ def test_endogenous_p_id_target_mixed_with_regular_column(
             }
         ),
         backend=backend,
-        unit_system=middle_earth.UNIT_SYSTEM,
+        unit_system=TEST_UNIT_SYSTEM,
     )
 
     expected = pd.DataFrame(

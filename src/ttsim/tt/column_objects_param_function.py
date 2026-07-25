@@ -63,7 +63,9 @@ from ttsim.tt.type_resolution import (
 from ttsim.tt.units import (
     UNSET_UNIT,
     CompositeUnit,
-    InputOutputUnit,
+    InputOutputUnits,
+    UnitDeclaration,
+    is_unset_unit,
 )
 from ttsim.tt.vectorization import vectorize_function
 from ttsim.typing import DashedISOString, IntColumn, UnorderedQNames
@@ -156,7 +158,7 @@ class PolicyInput(ColumnObject):
     warn_msg_if_included: str | None = None
     fail_msg_if_included: str | None = None
     docstring: str | None = ""
-    unit: CompositeUnit = UNSET_UNIT
+    unit: UnitDeclaration = UNSET_UNIT
 
     def remove_tree_logic(
         self,
@@ -174,7 +176,7 @@ def policy_input(
     foreign_key_type: FKType = FKType.IRRELEVANT,
     warn_msg_if_included: str | None = None,
     fail_msg_if_included: str | None = None,
-    unit: CompositeUnit,
+    unit: UnitDeclaration,
 ) -> Callable[[Callable[..., Any]], PolicyInput]:
     """Decorate a (dummy) function to make it a `PolicyInput`.
 
@@ -265,7 +267,7 @@ class ColumnFunction(ColumnObject, Generic[FunArgTypes, ReturnType]):
     foreign_key_type: FKType = FKType.IRRELEVANT
     warn_msg_if_included: str | None = None
     fail_msg_if_included: str | None = None
-    unit: CompositeUnit = UNSET_UNIT
+    unit: UnitDeclaration = UNSET_UNIT
     verify_units: bool = True
 
     def __post_init__(self) -> None:
@@ -738,7 +740,7 @@ def agg_by_group_function(
     agg_type: AggType,
     warn_msg_if_included: str | None = None,
     fail_msg_if_included: str | None = None,
-    unit: CompositeUnit = UNSET_UNIT,
+    unit: UnitDeclaration = UNSET_UNIT,
     verify_units: bool = True,
 ) -> Callable[[Callable[..., Any]], AggByGroupFunction]:
     start_date, end_date = _convert_and_validate_dates(
@@ -812,12 +814,12 @@ def agg_by_group_function(
 
 
 def _fail_if_unit_is_unset(
-    unit: CompositeUnit,
+    unit: UnitDeclaration,
     decorator_name: str,
     orig_location: str,
 ) -> None:
     """Fail if an aggregation does not declare a unit."""
-    if unit is UNSET_UNIT:
+    if is_unset_unit(unit):
         msg = (
             f"{decorator_name} at {orig_location} must declare a `unit=` (GEP 10). "
             f"Every aggregation states its unit explicitly, whatever the operation."
@@ -984,7 +986,7 @@ def agg_by_p_id_function(
     agg_type: AggType,
     warn_msg_if_included: str | None = None,
     fail_msg_if_included: str | None = None,
-    unit: CompositeUnit = UNSET_UNIT,
+    unit: UnitDeclaration = UNSET_UNIT,
 ) -> Callable[[Callable[..., Any]], AggByPIDFunction]:
     start_date, end_date = _convert_and_validate_dates(
         start_date=start_date, end_date=end_date
@@ -1180,7 +1182,7 @@ class ParamFunction(Generic[FunArgTypes, ReturnType]):
     description: str
     warn_msg_if_included: str | None = None
     fail_msg_if_included: str | None = None
-    unit: CompositeUnit | InputOutputUnit = UNSET_UNIT
+    unit: UnitDeclaration | InputOutputUnits = UNSET_UNIT
     verify_units: bool = True
 
     def __post_init__(self) -> None:
@@ -1240,7 +1242,7 @@ def param_function(
     end_date: str | datetime.date = DEFAULT_END_DATE,
     warn_msg_if_included: str | None = None,
     fail_msg_if_included: str | None = None,
-    unit: CompositeUnit | InputOutputUnit,
+    unit: UnitDeclaration | InputOutputUnits,
     verify_units: bool = True,
 ) -> Callable[[Callable[..., Any]], ParamFunction[..., Any]]:
     """Decorate a function to make it a `ParamFunction`.

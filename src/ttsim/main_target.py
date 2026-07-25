@@ -23,8 +23,8 @@ class WarnIf(MainTargetABC):
     functions_and_data_columns_overlap: str = (
         "warn_if__functions_and_data_columns_overlap"
     )
-    statutory_currency_and_base_currency_differ: str = (
-        "warn_if__statutory_currency_and_base_currency_differ"
+    statutory_currency_and_default_data_currency_differ: str = (
+        "warn_if__statutory_currency_and_default_data_currency_differ"
     )
     evaluation_date_set_in_multiple_places: str = (
         "warn_if__evaluation_date_set_in_multiple_places"
@@ -144,7 +144,7 @@ class Targets(MainTargetABC):
 
 @dataclass(frozen=True)
 class Labels(MainTargetABC):
-    input_columns: str = "labels__input_columns"
+    data_qnames: str = "labels__data_qnames"
     column_targets: str = "labels__column_targets"
     input_data_targets: str = "labels__input_data_targets"
     param_targets: str = "labels__param_targets"
@@ -171,7 +171,7 @@ class InputData(MainTargetABC):
     sort_indices: str = "input_data__sort_indices"
     tree: str = "input_data__tree"
     tree_with_unit_annotations: str = "input_data__tree_with_unit_annotations"
-    unit_tokens: str = "input_data__unit_tokens"
+    ttsim_units: str = "input_data__ttsim_units"
 
 
 @dataclass(frozen=True)

@@ -4,7 +4,7 @@ Both nodes read the fully assembled policy environment: one resolves every
 annotated node's declared TTSIM unit against the environment's registry, the
 other hands out the declared tokens themselves. The machinery behind the
 resolution — and the checks that consume it — lives in
-:mod:`ttsim.unit_checks`.
+:mod:`ttsim.unit_validation`.
 """
 
 from __future__ import annotations
@@ -16,16 +16,16 @@ from typing import (
 import pint
 
 from ttsim.interface_dag_elements.interface_node_objects import interface_function
-from ttsim.tt.currencies import UnitSystem
 from ttsim.tt.units import (
     UNSET_UNIT,
     CompositeUnit,
+    UnitSystem,
 )
 from ttsim.typing import (
     OrderedQNames,
     SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
 )
-from ttsim.unit_checks.resolution import resolve_environment_units
+from ttsim.unit_validation import resolve_environment_units
 
 
 @interface_function()
@@ -51,5 +51,4 @@ def declared_ttsim_units(
         qname: token
         for qname, obj in specialized_environment__without_tree_logic_and_with_derived_functions.items()  # noqa: E501
         if isinstance((token := getattr(obj, "unit", UNSET_UNIT)), CompositeUnit)
-        and token is not UNSET_UNIT
     }

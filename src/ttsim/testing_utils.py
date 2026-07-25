@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import datetime
 import inspect
+from collections.abc import Iterator
+from contextlib import contextmanager
 from functools import lru_cache
 from pathlib import Path
 from types import ModuleType
@@ -23,7 +25,14 @@ from ttsim.interface_dag_elements.specialized_environment_for_plotting_and_templ
     dummy_callable,
 )
 from ttsim.main_args import InputData, OrigPolicyObjects, TTTargets
-from ttsim.tt.currencies import UnitSystem
+from ttsim.tt.units import (
+    _ALLOWED_UNIT_TOKENS,
+    CompositeUnit,
+    TTSIMUnit,
+    UnitSystem,
+    _registered_currencies,
+    _unit_builder_levels,
+)
 from ttsim.typing import (
     FlatColumnObjectsParamFunctions,
     FlatOrigParamSpecs,
@@ -31,7 +40,7 @@ from ttsim.typing import (
     NestedInputStructureDict,
     PolicyEnvironment,
 )
-from ttsim.unit_checks import (
+from ttsim.unit_validation import (
     fail_if_environment_units_are_inconsistent,
     fail_if_environment_units_are_missing,
 )
@@ -39,6 +48,29 @@ from ttsim.unit_checks import (
 # Set display options to show all columns without truncation
 pd.set_option("display.max_columns", None)
 pd.set_option("display.width", None)
+
+
+@contextmanager
+def isolated_unit_vocabulary() -> Iterator[None]:
+    """Restore unit registrations performed inside the context on exit."""
+    saved_currencies = set(_registered_currencies)
+    saved_tokens = set(_ALLOWED_UNIT_TOKENS)
+    saved_bases = set(vars(TTSIMUnit))
+    saved_levels = set(_unit_builder_levels)
+    saved_steps = set(vars(CompositeUnit))
+    try:
+        yield
+    finally:
+        _registered_currencies.clear()
+        _registered_currencies.update(saved_currencies)
+        _ALLOWED_UNIT_TOKENS.clear()
+        _ALLOWED_UNIT_TOKENS.update(saved_tokens)
+        _unit_builder_levels.clear()
+        _unit_builder_levels.update(saved_levels)
+        for base in set(vars(TTSIMUnit)) - saved_bases:
+            delattr(TTSIMUnit, base)
+        for step in set(vars(CompositeUnit)) - saved_steps:
+            delattr(CompositeUnit, step)
 
 
 @lru_cache(maxsize=100)
@@ -302,7 +334,7 @@ def check_env_completeness(
         )
 
 
-def check_env_units(
+def check_policy_environment_units(
     policy_date: datetime.date,
     orig_policy_objects: dict[
         str, FlatColumnObjectsParamFunctions | FlatOrigParamSpecs

@@ -11,9 +11,9 @@ parameter becomes a :class:`_UnitCheckStructuredValue` and a schedule a
 are swapped for unit-only stand-ins, and ``xnp`` for :class:`_UnitCheckXnp`.
 
 The representative values are built from the pint units
-:mod:`ttsim.unit_checks.resolution` resolved and the field/axis contracts
-:mod:`ttsim.unit_checks.contracts` read off the annotations.
-:mod:`ttsim.unit_checks.declarations` drives one body at a time through
+:mod:`ttsim.unit_validation` resolved and the field/axis contracts
+:mod:`ttsim.unit_validation` read off the annotations.
+:mod:`ttsim.unit_validation` drives one body at a time through
 :func:`_verify_one_body` and collects the messages the builders at the bottom of
 this module produce.
 
@@ -43,7 +43,6 @@ from ttsim.interface_dag_elements.shared import (
 from ttsim.tt.column_objects_param_function import (
     ParamFunction,
 )
-from ttsim.tt.currencies import UnitSystem
 from ttsim.tt.param_objects import (
     DictParam,
     ParamMappingObject,
@@ -51,13 +50,14 @@ from ttsim.tt.param_objects import (
 )
 from ttsim.tt.units import (
     TIME_UNIT_ID_TO_PINT_NAME,
-    UNSET_UNIT,
     CompositeUnit,
-    InputOutputUnit,
+    InputOutputUnits,
+    UnitSystem,
     _grouping_levels_with_exponent,
     _unit_level_denominator,
     _unit_without_grouping_levels,
     is_calendar_point_unit,
+    is_unset_unit,
     resolve_agnostic_ttsim_unit,
     ttsim_unit_from_yaml_value,
     units_are_equivalent,
@@ -65,19 +65,17 @@ from ttsim.tt.units import (
 from ttsim.typing import (
     SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
 )
-from ttsim.unit_checks.contracts import (
+from ttsim.unit_validation import (
+    _as_boolean_level,
+    _boolean_quantity,
+    _combined_boolean_level,
+    _dimensionless_unit,
     _resolve_input_axes,
     _resolve_schedule_input_unit,
     _resolved_return_structure,
     _returns_a_schedule,
     _ScheduleFieldKind,
     _structured_field_kinds,
-)
-from ttsim.unit_checks.resolution import (
-    _as_boolean_level,
-    _boolean_quantity,
-    _combined_boolean_level,
-    _dimensionless_unit,
 )
 
 
@@ -227,7 +225,7 @@ def _representative_values_by_qname(
     - A ``piecewise_*``/lookup-table parameter becomes a :class:`_UnitCheckSchedule`
       carrying its input/output axes, so a consumer's ``piecewise_polynomial`` /
       ``look_up`` call resolves to the output unit.
-    - A schedule-building param function (``unit=InputOutputUnit(...)``) becomes a
+    - A schedule-building param function (``unit=InputOutputUnits(...)``) becomes a
       :class:`_UnitCheckSchedule` carrying the declared axes, so its consumers
       screen and resolve exactly as for a schedule parameter.
     - A dict parameter with a scalar ``unit:`` declaration becomes a dict of
@@ -249,10 +247,10 @@ def _representative_values_by_qname(
         elif (
             isinstance(obj, ParamFunction)
             and _returns_a_schedule(obj)
-            and isinstance(obj.unit, InputOutputUnit)
+            and isinstance(obj.unit, InputOutputUnits)
             and not isinstance(unit, dict)
         ):
-            # A schedule builder declares its axes with `unit=InputOutputUnit(...)`:
+            # A schedule builder declares its axes with `unit=InputOutputUnits(...)`:
             # `look_up`/`piecewise_polynomial` screens each domain argument against
             # the input axis (a single axis applied to every argument, or a tuple
             # screened positionally) and yields the output.
@@ -274,7 +272,7 @@ def _representative_values_by_qname(
         else:
             out[qname] = _representative_value(resolved_unit=unit, registry=registry)
     for qname, obj in env.items():
-        if isinstance(obj, ParamFunction) and obj.unit is UNSET_UNIT:
+        if isinstance(obj, ParamFunction) and is_unset_unit(obj.unit):
             out[qname] = _param_function_stand_in(
                 qname=qname, obj=obj, unit_system=unit_system
             )
@@ -292,7 +290,7 @@ def _param_function_stand_in(
     parameters, so its stand-in is a :class:`_UnitCheckStructuredValue` typed with
     the return dataclass where one resolves — annotated plucks then carry their
     field units, and an unannotated pluck stays opaque and is cast at the site.
-    A schedule builder (``unit=InputOutputUnit(...)``) is handled separately as a
+    A schedule builder (``unit=InputOutputUnits(...)``) is handled separately as a
     :class:`_UnitCheckSchedule` in :func:`_representative_values_by_qname`.
     """
     cls, item_cls = _resolved_return_structure(obj.function)
@@ -1197,7 +1195,7 @@ class _UnitCheckSchedule:
     ``piecewise_polynomial(x, parameters=…)`` or ``….look_up(idx)`` on it and gets
     an array. The unit check needs only the unit that falls out. This stand-in
     carries the resolved ``input_unit``/``output_unit`` axes — a schedule
-    parameter's own, a schedule builder's ``InputOutputUnit`` declaration, or a
+    parameter's own, a schedule builder's ``InputOutputUnits`` declaration, or a
     schedule-typed dataclass field's: it screens each domain argument against
     ``input_unit`` (as ``+`` screens an operand) and produces the ``output_unit``.
 
@@ -1403,7 +1401,7 @@ def _piecewise_polynomial_for_unit_check(x: Any, parameters: Any, xnp: Any) -> A
     Screen ``x`` against the schedule's ``input_unit`` and produce its
     ``output_unit``. Every schedule arrives as a :class:`_UnitCheckSchedule`
     carrying the axes its producer declared — a parameter's YAML axes or a
-    builder's ``InputOutputUnit``. An opaque structured pluck (an unannotated
+    builder's ``InputOutputUnits``. An opaque structured pluck (an unannotated
     field of a structured value) propagates unchanged for the caller to cast;
     anything else cannot be evaluated here.
     """
@@ -1492,7 +1490,7 @@ def _time_conversion_stand_ins(registry: pint.UnitRegistry) -> dict[str, Any]:
 def _time_conversion_stand_in(
     from_pint: str, to_pint: str, registry: pint.UnitRegistry, *, is_flow: bool
 ) -> Callable[[Any], Any]:
-    """Build the unit-check stand-in for one ``ttsim.unit_converters`` time converter.
+    """Build the unit-check stand-in for one ``ttsim.time_converters`` time converter.
 
     A converter restates a value on a different time period by multiplying by a
     whole number — a *dimensionless* factor pint cannot see — so the stand-in

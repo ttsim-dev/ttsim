@@ -8,16 +8,16 @@ import numpy
 import pandas as pd
 import pint
 
-from ttsim.interface_dag_elements.currency import CurrencyConversion
+from ttsim.interface_dag_elements.currency import _convert_currency_value
 from ttsim.interface_dag_elements.data_converters import (
     nested_data_to_df_with_mapped_columns,
     nested_data_to_df_with_nested_columns,
     nested_data_to_df_with_qname_columns,
 )
 from ttsim.interface_dag_elements.interface_node_objects import interface_function
-from ttsim.tt.currencies import UnitSystem
 from ttsim.tt.units import (
     UnitAnnotatedColumn,
+    UnitSystem,
     input_target_unit_in_data_currency,
     output_unit_in_data_currency,
     param_unit_in_computation_currency,
@@ -53,14 +53,13 @@ def tree(
     columns requested as targets are returned exactly as provided, hence already in the
     data currency.
     """
-    conversion = CurrencyConversion.between(
-        qnames=raw_results__columns_with_original_p_ids,
-        specialized_environment=(
-            specialized_environment__without_tree_logic_and_with_derived_functions
-        ),
-        source_currency=computation_currency,
-        target_currency=data_currency,
-        unit_system=unit_system,
+    factor = (
+        None
+        if computation_currency == data_currency
+        else unit_system.currency_conversion_factor(
+            source_currency=computation_currency,
+            target_currency=data_currency,
+        )
     )
 
     restore_order = numpy.empty(len(input_data__sort_indices), dtype=int)
@@ -76,7 +75,14 @@ def tree(
             **raw_results__params,
             **raw_results__from_input_data,
             **{
-                k: conversion.apply(value=reorder_arrays(v), qname=k)
+                k: _convert_currency_value(
+                    value=reorder_arrays(v),
+                    factor=factor,
+                    qname=k,
+                    specialized_environment=(
+                        specialized_environment__without_tree_logic_and_with_derived_functions
+                    ),
+                )
                 for k, v in raw_results__columns_with_original_p_ids.items()
             },
         }

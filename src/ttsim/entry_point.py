@@ -38,7 +38,7 @@ from ttsim.main_args import (
     TTTargets,
 )
 from ttsim.main_target import MainTarget, MainTargetABC
-from ttsim.tt.currencies import UnitSystem
+from ttsim.tt.units import UnitSystem
 from ttsim.typing import (
     DashedISOString,
     FlatInterfaceObjects,

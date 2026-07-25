@@ -9,6 +9,7 @@ import pandas as pd
 import pytest
 from mettsim import middle_earth
 
+from tests.test_unit_system import TEST_UNIT_SYSTEM
 from ttsim import InputData, MainTarget, OrigPolicyObjects, TTTargets, main
 from ttsim.tt import ScalarParam, TTSIMUnit, group_creation_function, policy_function
 
@@ -41,7 +42,7 @@ def mettsim_environment(backend) -> PolicyEnvironment:
     return main(
         main_target="policy_environment",
         orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
-        unit_system=middle_earth.UNIT_SYSTEM,
+        unit_system=TEST_UNIT_SYSTEM,
         policy_date=datetime.date(2025, 1, 1),
         backend=backend,
     )
@@ -92,7 +93,7 @@ def test_warn_if_functions_and_data_columns_overlap(backend):
             rounding=False,
             include_fail_nodes=False,
             backend=backend,
-            unit_system=middle_earth.UNIT_SYSTEM,
+            unit_system=TEST_UNIT_SYSTEM,
         )
 
 
@@ -113,7 +114,7 @@ def test_warn_if_functions_and_columns_overlap_no_warning_if_no_overlap(backend)
             rounding=False,
             include_fail_nodes=False,
             backend=backend,
-            unit_system=middle_earth.UNIT_SYSTEM,
+            unit_system=TEST_UNIT_SYSTEM,
         )
         assert not w, f"Expected no warning, but got at least: {w[0].message}"
 
@@ -137,7 +138,7 @@ def test_warn_if_evaluation_date_set_in_multiple_places(backend):
             processed_data={},
             tt_targets=TTTargets.tree({}),
             backend=backend,
-            unit_system=middle_earth.UNIT_SYSTEM,
+            unit_system=TEST_UNIT_SYSTEM,
         )
 
 
@@ -161,7 +162,7 @@ def test_warn_if_evaluation_date_set_in_multiple_places_implicitly_added(backend
             input_data=InputData.tree(tree={"p_id": xnp.array([0])}),
             tt_targets=TTTargets.tree({"p_id": None}),
             backend=backend,
-            unit_system=middle_earth.UNIT_SYSTEM,
+            unit_system=TEST_UNIT_SYSTEM,
         )
 
 
@@ -183,7 +184,7 @@ def test_do_not_need_to_warn_if_evaluation_date_is_set_only_once(backend, xnp):
             input_data=InputData.tree(tree={"p_id": xnp.array([0])}),
             tt_targets=TTTargets.tree({"p_id": None}),
             backend=backend,
-            unit_system=middle_earth.UNIT_SYSTEM,
+            unit_system=TEST_UNIT_SYSTEM,
         )
         assert not w, f"Expected no warning, but got at least: {w[0].message}"
 
@@ -204,7 +205,7 @@ def test_warn_if_tt_dag_includes_functions_with_warn_msg_if_included_set(
             tt_targets=TTTargets.tree({"fam_id": None}),
             input_data=InputData.tree(tree=minimal_data_tree),
             backend=backend,
-            unit_system=middle_earth.UNIT_SYSTEM,
+            unit_system=TEST_UNIT_SYSTEM,
         )
 
 
@@ -221,5 +222,5 @@ def test_warn_if_tt_function_type_annotations_turned_off(
             input_data=InputData.tree(tree=minimal_data_tree),
             tt_function_set_annotations=False,
             backend=backend,
-            unit_system=middle_earth.UNIT_SYSTEM,
+            unit_system=TEST_UNIT_SYSTEM,
         )

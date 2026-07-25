@@ -36,7 +36,6 @@ from ttsim.tt.column_objects_param_function import (
     ParamFunction,
     PolicyInput,
 )
-from ttsim.tt.currencies import UnitSystem
 from ttsim.tt.param_objects import (
     PLACEHOLDER_FIELD,
     PLACEHOLDER_VALUE,
@@ -45,6 +44,8 @@ from ttsim.tt.param_objects import (
 from ttsim.tt.units import (
     UNSET_UNIT,
     CompositeUnit,
+    UnitDeclaration,
+    UnitSystem,
     UserNestedUnitAnnotatedData,
     ttsim_unit_has_agnostic_currency,
 )
@@ -66,7 +67,7 @@ from ttsim.typing import (
     SpecEnvWithPartialledParamsAndScalars,
     UnorderedQNames,
 )
-from ttsim.unit_checks import (
+from ttsim.unit_validation import (
     fail_if_environment_units_are_inconsistent,
     fail_if_environment_units_are_missing,
     fail_if_input_units_are_inconsistent,
@@ -778,7 +779,7 @@ def backend_has_changed(
 def tt_dag_includes_function_with_fail_msg_if_included_set(
     specialized_environment__without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
     specialized_environment__tt_dag: nx.DiGraph,
-    labels__input_columns: UnorderedQNames,
+    labels__data_qnames: UnorderedQNames,
 ) -> None:
     """Fail if the TT DAG includes functions that are marked as invalid."""
 
@@ -790,7 +791,7 @@ def tt_dag_includes_function_with_fail_msg_if_included_set(
             node not in env
             or
             # ColumnObjects overridden by data are fine
-            (not isinstance(env[node], PolicyInput) and node in labels__input_columns)
+            (not isinstance(env[node], PolicyInput) and node in labels__data_qnames)
         ):
             continue
         # Check for attribute existence because ParamObjects can be overridden by
@@ -850,7 +851,7 @@ def tt_root_nodes_are_missing(
 @fail_function()
 def targets_are_not_in_specialized_environment_or_data(
     specialized_environment__without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
-    labels__input_columns: UnorderedQNames,
+    labels__data_qnames: UnorderedQNames,
     tt_targets__qname: QNameTTTargets,
 ) -> None:
     """Fail if some target is not among functions."""
@@ -859,7 +860,7 @@ def targets_are_not_in_specialized_environment_or_data(
         for n in tt_targets__qname
         if n
         not in specialized_environment__without_tree_logic_and_with_derived_functions
-        and n not in labels__input_columns
+        and n not in labels__data_qnames
     ]
     if missing_targets:
         formatted = format_list_linewise(missing_targets)
@@ -936,7 +937,7 @@ def _param_with_active_periods(
         param_spec.get("description", None),
     )
     p_s_unit = cast(
-        "str | dict[str | int, Any] | CompositeUnit",
+        "str | dict[str | int, Any] | UnitDeclaration",
         param_spec.get("unit", UNSET_UNIT),
     )
 
@@ -1056,7 +1057,7 @@ def input_currency_is_not_concrete(
     include_if_any_element_present=["input_data__tree_with_unit_annotations"]
 )
 def input_units_are_inconsistent(
-    input_data__unit_tokens: dict[str, CompositeUnit],
+    input_data__ttsim_units: dict[str, CompositeUnit],
     unit_checks__resolved_pint_units: dict[str, pint.Unit | dict[str | int, Any]],
     unit_checks__declared_ttsim_units: dict[str, CompositeUnit],
     unit_system: UnitSystem,
@@ -1068,7 +1069,7 @@ def input_units_are_inconsistent(
             unit.
     """
     fail_if_input_units_are_inconsistent(
-        input_unit_tokens=input_data__unit_tokens,
+        input_ttsim_units=input_data__ttsim_units,
         resolved_pint_units=unit_checks__resolved_pint_units,
         unit_system=unit_system,
         declared_ttsim_units=unit_checks__declared_ttsim_units,

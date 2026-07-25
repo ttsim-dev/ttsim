@@ -16,6 +16,29 @@ from ttsim.interface_dag_elements.shared import (
     get_re_pattern_for_specific_time_units_and_groupings,
     group_pattern,
 )
+from ttsim.time_converters import (
+    TIME_UNIT_IDS_TO_LABELS,
+    per_d_to_per_m,
+    per_d_to_per_q,
+    per_d_to_per_w,
+    per_d_to_per_y,
+    per_m_to_per_d,
+    per_m_to_per_q,
+    per_m_to_per_w,
+    per_m_to_per_y,
+    per_q_to_per_d,
+    per_q_to_per_m,
+    per_q_to_per_w,
+    per_q_to_per_y,
+    per_w_to_per_d,
+    per_w_to_per_m,
+    per_w_to_per_q,
+    per_w_to_per_y,
+    per_y_to_per_d,
+    per_y_to_per_m,
+    per_y_to_per_q,
+    per_y_to_per_w,
+)
 from ttsim.tt.aggregation import AggType, grouped_sum
 from ttsim.tt.column_objects_param_function import (
     DEFAULT_END_DATE,
@@ -41,38 +64,17 @@ from ttsim.tt.type_resolution import (
 from ttsim.tt.units import (
     UNSET_UNIT,
     CompositeUnit,
+    UnitDeclaration,
+    is_unset_unit,
+    replace_time_unit,
     ttsim_unit_with_agnostic_currency,
     unit_for_aggregation,
-    unit_with_rebased_period,
 )
 from ttsim.typing import (
     OrderedQNames,
     PolicyEnvironment,
     QNameStrings,
     UnorderedQNames,
-)
-from ttsim.unit_converters import (
-    TIME_UNIT_IDS_TO_LABELS,
-    per_d_to_per_m,
-    per_d_to_per_q,
-    per_d_to_per_w,
-    per_d_to_per_y,
-    per_m_to_per_d,
-    per_m_to_per_q,
-    per_m_to_per_w,
-    per_m_to_per_y,
-    per_q_to_per_d,
-    per_q_to_per_m,
-    per_q_to_per_w,
-    per_q_to_per_y,
-    per_w_to_per_d,
-    per_w_to_per_m,
-    per_w_to_per_q,
-    per_w_to_per_y,
-    per_y_to_per_d,
-    per_y_to_per_m,
-    per_y_to_per_q,
-    per_y_to_per_w,
 )
 
 if TYPE_CHECKING:
@@ -165,7 +167,7 @@ def _convertibles(
 
 def create_time_conversion_functions(
     qname_policy_environment: PolicyEnvironment,
-    input_columns: UnorderedQNames,
+    data_qnames: UnorderedQNames,
     grouping_levels: OrderedQNames,
 ) -> DerivedColumnObjects:
     """
@@ -198,7 +200,7 @@ def create_time_conversion_functions(
 
     Args:
         qname_policy_environment: The policy environment with qualified names as keys.
-        input_columns: The names of the input columns, represented by qualified names.
+        data_qnames: The names of the input columns, represented by qualified names.
         grouping_levels: The grouping levels.
 
     Returns:
@@ -237,7 +239,7 @@ def create_time_conversion_functions(
     converted_elements: dict[str, ColumnObject] = {}
     input_stubs: dict[str, PolicyInput] = {}
     for bngs, inputs in bngs_to_time_conversion_inputs.items():
-        for col_name in input_columns:
+        for col_name in data_qnames:
             # If a time variant of this base name and grouping level is provided
             # in the data, base the time conversions on that. The input column
             # must sit at the same grouping level as the declaration: a
@@ -272,7 +274,7 @@ def create_time_conversion_functions(
         for time_unit_id in time_units:
             qname = f"{bngs[0]}_{time_unit_id}{grouping_suffix}"
             if (
-                qname in input_columns
+                qname in data_qnames
                 and qname not in variations
                 and qname not in qname_policy_environment
             ):
@@ -302,11 +304,11 @@ def _time_converted_input_stub(
     period, exactly as a conversion *away* from that element would (GEP 10).
     """
     declared = getattr(element, "unit", UNSET_UNIT)
-    if declared is UNSET_UNIT:
+    if is_unset_unit(declared):
         return None
     return _input_column_stub(
         qname=qname,
-        unit=unit_with_rebased_period(
+        unit=replace_time_unit(
             unit=ttsim_unit_with_agnostic_currency(declared),
             time_unit_id=time_unit_id,
         ),
@@ -325,6 +327,9 @@ def _create_one_set_of_time_conversion_functions(
     time_units: OrderedQNames,
 ) -> dict[str, TimeConversionFunction]:
     result: dict[str, TimeConversionFunction] = {}
+    declared = getattr(element, "unit", UNSET_UNIT)
+    if is_unset_unit(declared):
+        return result
     dependencies = (
         set(inspect.signature(element).parameters)
         if isinstance(element, ColumnFunction)
@@ -368,10 +373,8 @@ def _create_one_set_of_time_conversion_functions(
                 f"Time conversion of {dt.tree_path_from_qname(qname_source)} "
                 f"from per {time_unit} to per {target_time_unit}"
             ),
-            unit=unit_with_rebased_period(
-                unit=ttsim_unit_with_agnostic_currency(
-                    getattr(element, "unit", UNSET_UNIT)
-                ),
+            unit=replace_time_unit(
+                unit=ttsim_unit_with_agnostic_currency(declared),
                 time_unit_id=target_time_unit,
             ),
         )
@@ -406,7 +409,7 @@ def create_agg_by_group_functions(
     column_functions: dict[str, ColumnFunction],
     qname_policy_environment: PolicyEnvironment,
     time_converted_input_stubs: Mapping[str, PolicyInput],
-    input_columns: UnorderedQNames,
+    data_qnames: UnorderedQNames,
     tt_targets: QNameStrings,
     grouping_levels: OrderedQNames,
 ) -> DerivedColumnObjects:
@@ -427,7 +430,7 @@ def create_agg_by_group_functions(
             their dtype can be resolved.
         time_converted_input_stubs: Stubs for time variants the input data
             supplies.
-        input_columns: The qualified names of the input data columns.
+        data_qnames: The qualified names of the input data columns.
         tt_targets: The requested targets.
         grouping_levels: The grouping levels.
 
@@ -438,7 +441,7 @@ def create_agg_by_group_functions(
     gp = group_pattern(grouping_levels)
     all_functions_and_data = {
         **column_functions,
-        **dict.fromkeys(input_columns),
+        **dict.fromkeys(data_qnames),
     }
     potential_agg_by_group_function_names = {
         # Targets that end with a grouping suffix are potential aggregation targets.
@@ -460,7 +463,7 @@ def create_agg_by_group_functions(
     }
     agg_by_group_input_names = {
         c
-        for c in input_columns
+        for c in data_qnames
         if gp.match(c)
         and c not in column_functions
         and c not in qname_policy_environment
@@ -506,7 +509,7 @@ def create_agg_by_group_functions(
                 column_functions=column_functions,
                 qname_policy_environment=source_environment,
             )
-            if supplied_by_data and source_unit is UNSET_UNIT:
+            if supplied_by_data and is_unset_unit(source_unit):
                 # Nothing to derive the stub's unit from; the mandatory-units
                 # check reports the input.
                 continue
@@ -522,6 +525,8 @@ def create_agg_by_group_functions(
                 target_level=group_id,
                 source_is_boolean=source_kind in BOOL_KINDS,
             )
+            if is_unset_unit(unit):
+                continue
             output_kind = resolve_agg_output_kind(
                 agg_type=AggType.SUM, input_kind=source_kind, node_name=abgfn
             )
@@ -570,7 +575,7 @@ def _resolve_source_unit(
     source_name: str,
     column_functions: dict[str, ColumnFunction],
     qname_policy_environment: PolicyEnvironment,
-) -> CompositeUnit:
+) -> UnitDeclaration:
     """Resolve the unit of an auto-aggregation source column.
 
     The source is a column function, a `PolicyInput` declared at `source_name`, or a
@@ -583,6 +588,8 @@ def _resolve_source_unit(
     )
     if source is not None:
         declared = getattr(source, "unit", UNSET_UNIT)
+        if is_unset_unit(declared):
+            return UNSET_UNIT
         # A derived function computes on already-converted values, so a
         # concrete currency token passes its agnostic counterpart on.
         return ttsim_unit_with_agnostic_currency(declared)
@@ -590,9 +597,9 @@ def _resolve_source_unit(
         source_name=source_name,
         qname_policy_environment=qname_policy_environment,
     )
-    if sibling is None or sibling.unit is UNSET_UNIT:
+    if sibling is None or is_unset_unit(sibling.unit):
         return UNSET_UNIT
-    return unit_with_rebased_period(
+    return replace_time_unit(
         unit=ttsim_unit_with_agnostic_currency(sibling.unit),
         time_unit_id=source_name.rpartition("_")[2],
     )

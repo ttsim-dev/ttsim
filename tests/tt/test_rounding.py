@@ -8,9 +8,9 @@ import numpy
 import pandas as pd
 import pytest
 from beartype.roar import BeartypeCallHintViolation
-from mettsim import middle_earth
 from pandas._testing import assert_series_equal
 
+from tests.test_unit_system import TEST_UNIT_SYSTEM
 from ttsim import InputData, TTTargets, main
 from ttsim.exceptions import (
     PolicyFunctionDefinitionError,
@@ -138,7 +138,7 @@ def test_rounding(rounding_spec, input_values, exp_output, backend):
         include_fail_nodes=False,
         include_warn_nodes=False,
         backend=backend,
-        unit_system=middle_earth.UNIT_SYSTEM,
+        unit_system=TEST_UNIT_SYSTEM,
     )
     assert_series_equal(
         pd.Series(results__tree["namespace"]["test_func"]),
@@ -181,7 +181,7 @@ def test_rounding_with_time_conversion(backend, xnp):
         include_fail_nodes=False,
         include_warn_nodes=False,
         backend=backend,
-        unit_system=middle_earth.UNIT_SYSTEM,
+        unit_system=TEST_UNIT_SYSTEM,
     )
     assert_series_equal(
         pd.Series(results__tree["test_func_y"]),
@@ -225,7 +225,7 @@ def test_no_rounding(
         include_warn_nodes=False,
         rounding=False,
         backend=backend,
-        unit_system=middle_earth.UNIT_SYSTEM,
+        unit_system=TEST_UNIT_SYSTEM,
     )
     assert_series_equal(
         pd.Series(results__tree["test_func"]),

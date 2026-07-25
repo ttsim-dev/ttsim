@@ -19,8 +19,8 @@ from typing import TYPE_CHECKING
 import numpy as np
 import pandas as pd
 import pytest
-from mettsim import middle_earth
 
+from tests.test_unit_system import TEST_UNIT_SYSTEM
 from ttsim import InputData, MainTarget, TTTargets, main
 from ttsim.interface_dag_elements.processed_data import (
     _canonicalize_input_dtype,
@@ -59,7 +59,7 @@ def test_float_nullable_input_with_na_round_trips_as_nan(
         policy_date=datetime.date(2025, 1, 1),
         evaluation_date=datetime.date(2025, 1, 1),
         backend=backend,
-        unit_system=middle_earth.UNIT_SYSTEM,
+        unit_system=TEST_UNIT_SYSTEM,
     )
 
     expected = pd.DataFrame(
@@ -148,7 +148,7 @@ def test_int_input_with_na_fails_with_actionable_message(
             policy_date=datetime.date(2025, 1, 1),
             evaluation_date=_DATE,
             backend=backend,
-            unit_system=middle_earth.UNIT_SYSTEM,
+            unit_system=TEST_UNIT_SYSTEM,
         )
 
 
@@ -172,7 +172,7 @@ def test_bool_input_with_na_fails_with_actionable_message(
             policy_date=datetime.date(2025, 1, 1),
             evaluation_date=_DATE,
             backend=backend,
-            unit_system=middle_earth.UNIT_SYSTEM,
+            unit_system=TEST_UNIT_SYSTEM,
         )
 
 
@@ -204,7 +204,7 @@ def test_multiple_int_or_bool_columns_with_na_all_reported(
             policy_date=datetime.date(2025, 1, 1),
             evaluation_date=_DATE,
             backend=backend,
-            unit_system=middle_earth.UNIT_SYSTEM,
+            unit_system=TEST_UNIT_SYSTEM,
         )
 
 
@@ -227,7 +227,7 @@ def test_pyarrow_int_input_round_trips_as_int(backend: Literal["numpy", "jax"]):
         policy_date=datetime.date(2025, 1, 1),
         evaluation_date=_DATE,
         backend=backend,
-        unit_system=middle_earth.UNIT_SYSTEM,
+        unit_system=TEST_UNIT_SYSTEM,
     )
     assert result[("age",)].tolist() == [25, 35, 45]
 
@@ -255,7 +255,7 @@ def test_uint64_overflow_fails_with_actionable_message(
             policy_date=datetime.date(2025, 1, 1),
             evaluation_date=_DATE,
             backend=backend,
-            unit_system=middle_earth.UNIT_SYSTEM,
+            unit_system=TEST_UNIT_SYSTEM,
         )
 
 
@@ -283,5 +283,5 @@ def test_uint64_overflow_from_dataframe_fails_with_actionable_message(
             policy_date=datetime.date(2025, 1, 1),
             evaluation_date=_DATE,
             backend=backend,
-            unit_system=middle_earth.UNIT_SYSTEM,
+            unit_system=TEST_UNIT_SYSTEM,
         )

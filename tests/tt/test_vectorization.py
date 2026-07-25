@@ -14,6 +14,7 @@ from dags import get_annotations as dags_get_annotations
 from mettsim import middle_earth
 from numpy.testing import assert_array_equal
 
+from tests.test_unit_system import TEST_UNIT_SYSTEM
 from ttsim.interface_dag_elements.orig_policy_objects import (
     column_objects_and_param_functions,
 )
@@ -26,7 +27,7 @@ from ttsim.tt import (
     TTSIMUnit,
     policy_function,
 )
-from ttsim.tt._source_rewriting import is_lambda_function
+from ttsim.tt._function_rewriting import is_lambda_function
 from ttsim.tt.column_objects_param_function import (
     AggByGroupFunction,
     AggByPIDFunction,
@@ -356,7 +357,7 @@ for year in range(1990, 2023):
                     ),
                     policy_date=datetime.date(year=year, month=1, day=1),
                     computation_currency=(
-                        middle_earth.UNIT_SYSTEM.statutory_currency_for_date(
+                        TEST_UNIT_SYSTEM.statutory_currency_for_date(
                             datetime.date(year=year, month=1, day=1)
                         )
                     ),
