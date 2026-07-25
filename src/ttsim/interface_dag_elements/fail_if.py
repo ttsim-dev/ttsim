@@ -28,12 +28,6 @@ from ttsim.interface_dag_elements.shared import (
     get_name_of_group_by_id,
     param_has_substantive_content,
 )
-from ttsim.interface_dag_elements.unit_checks import (
-    fail_if_environment_units_are_inconsistent,
-    fail_if_environment_units_are_missing,
-    fail_if_input_units_are_inconsistent,
-    flatten_unit_annotated_input_tree,
-)
 from ttsim.tt.column_objects_param_function import (
     DEFAULT_END_DATE,
     ColumnFunction,
@@ -71,6 +65,12 @@ from ttsim.typing import (
     SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
     SpecEnvWithPartialledParamsAndScalars,
     UnorderedQNames,
+)
+from ttsim.unit_checks import (
+    fail_if_environment_units_are_inconsistent,
+    fail_if_environment_units_are_missing,
+    fail_if_input_units_are_inconsistent,
+    flatten_unit_annotated_input_tree,
 )
 
 

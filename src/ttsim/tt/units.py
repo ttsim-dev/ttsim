@@ -20,7 +20,7 @@ for error messages.
 pint is a build-time tool only — it never wraps a live array (a :class:`pint.Quantity`
 is not a JAX pytree and does not trace under ``jit``). It serves two build-time jobs:
 
-- the build-time dimensionality check (:mod:`ttsim.interface_dag_elements.unit_checks`);
+- the build-time dimensionality check (:mod:`ttsim.unit_checks`);
 - sourcing the time- and currency-conversion factors baked into the numeric workers.
 
 Every declaration is a fully-spelled :class:`CompositeUnit` — a base optionally divided
@@ -1359,7 +1359,7 @@ def head_count_from_boolean_sum(
     ``COUNT`` mints. Every other aggregation keeps its own type. This is the
     single source of truth used by both the declared-token minter
     (:func:`unit_for_aggregation`) and the resolved-unit deriver
-    (:func:`ttsim.interface_dag_elements.unit_checks._resolve_agg_by_group_unit`),
+    (:func:`ttsim.unit_checks.resolution._resolve_agg_by_group_unit`),
     so the two cannot drift.
     """
     if agg_type is AggType.SUM and source_is_boolean:
@@ -1523,7 +1523,7 @@ def fail_if_units_are_missing(
     A missing unit is a definition error. :attr:`TTSIMUnit.DIMENSIONLESS` is *not*
     missing — it declares a dimensionless quantity; a node without any declaration
     maps to :data:`UNSET_UNIT`. This is the leaf check that
-    :func:`ttsim.interface_dag_elements.unit_checks.fail_if_environment_units_are_missing`
+    :func:`ttsim.unit_checks.declarations.fail_if_environment_units_are_missing`
     runs over the whole assembled environment (wired in as a ``fail_if``).
 
     Raises:

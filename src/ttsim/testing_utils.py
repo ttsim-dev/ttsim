@@ -22,10 +22,6 @@ from ttsim.interface_dag_elements.shared import to_datetime
 from ttsim.interface_dag_elements.specialized_environment_for_plotting_and_templates import (  # noqa: E501
     dummy_callable,
 )
-from ttsim.interface_dag_elements.unit_checks import (
-    fail_if_environment_units_are_inconsistent,
-    fail_if_environment_units_are_missing,
-)
 from ttsim.main_args import InputData, OrigPolicyObjects, TTTargets
 from ttsim.tt.currencies import UnitSystem
 from ttsim.typing import (
@@ -34,6 +30,10 @@ from ttsim.typing import (
     NestedData,
     NestedInputStructureDict,
     PolicyEnvironment,
+)
+from ttsim.unit_checks import (
+    fail_if_environment_units_are_inconsistent,
+    fail_if_environment_units_are_missing,
 )
 
 # Set display options to show all columns without truncation

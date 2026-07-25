@@ -21,10 +21,6 @@ from ttsim.interface_dag_elements.input_data import (
     flat_from_tree_with_unit_annotations,
     unit_tokens_from_tree_with_unit_annotations,
 )
-from ttsim.interface_dag_elements.unit_checks import (
-    fail_if_input_units_are_inconsistent,
-    fail_if_not_all_leaves_are_unit_annotated_columns,
-)
 from ttsim.tt.currencies import UnitSystem
 from ttsim.tt.grouping_levels import register_grouping_levels
 from ttsim.tt.units import (
@@ -34,6 +30,10 @@ from ttsim.tt.units import (
     output_unit_in_data_currency,
     resolve_ttsim_unit,
     resolve_ttsim_unit_for_column,
+)
+from ttsim.unit_checks import (
+    fail_if_input_units_are_inconsistent,
+    fail_if_not_all_leaves_are_unit_annotated_columns,
 )
 
 # A representative system whose registry these boundary tests resolve against.

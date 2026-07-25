@@ -101,7 +101,7 @@ class UnitSystem:
     """Memo of the resolved pint units annotating each parameter dataclass the
     unit check has seen, keyed by class. Each value maps a field name to what its
     pluck yields — a :class:`pint.Unit`, a nested dataclass ``type``, or a
-    schedule-field marker built in :mod:`ttsim.interface_dag_elements.unit_checks`
+    schedule-field marker built in :mod:`ttsim.unit_checks.contracts`
     (kept loose here so this module owns no private name from that layer). The
     pint units are this system's registry's, so the memo is the system's."""
 
