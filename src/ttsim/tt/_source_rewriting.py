@@ -178,7 +178,7 @@ def boolop_to_call(node: ast.BoolOp, module: str) -> ast.Call:
         )
 
     values: list[ast.Call | ast.expr] = [
-        boolop_to_call(v, module=module) if isinstance(v, ast.BoolOp) else v
+        boolop_to_call(node=v, module=module) if isinstance(v, ast.BoolOp) else v
         for v in node.values
     ]
 

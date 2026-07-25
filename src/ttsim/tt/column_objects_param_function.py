@@ -141,9 +141,17 @@ class PolicyInput(ColumnObject):
     """
 
     data_type: Any
-    """Annotated as `Any` because callers pass the literal annotation from
-    `func.__annotations__["return"]`, which is a string form under
-    `from __future__ import annotations`, not the live type object."""
+    """The input's column type, as an annotation or an already-resolved kind.
+
+    Annotated as `Any` because it holds either of two things, and
+    `resolve_kind_of_annotation` accepts both:
+
+    - the literal annotation from `func.__annotations__["return"]`, which is a
+      string form under `from __future__ import annotations` rather than the
+      live type object — what a hand-declared `@policy_input` carries;
+    - a `ResolvedKind`, for a stub derived from an aggregation whose kind is
+      computed rather than written down.
+    """
     foreign_key_type: FKType = FKType.IRRELEVANT
     warn_msg_if_included: str | None = None
     fail_msg_if_included: str | None = None
