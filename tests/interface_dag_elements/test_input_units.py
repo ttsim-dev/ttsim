@@ -32,8 +32,8 @@ from ttsim.tt.units import (
     TTSIMUnit,
     UnitAnnotatedColumn,
     output_unit_in_data_currency,
-    resolve_compositional_column_unit,
-    resolve_compositional_unit,
+    resolve_ttsim_unit,
+    resolve_ttsim_unit_for_column,
 )
 
 # A representative system whose registry these boundary tests resolve against.
@@ -49,7 +49,7 @@ register_grouping_levels(names=["hh"], registry=REGISTRY)
 
 def _resolved(unit: CompositeUnit) -> pint.Unit:
     """Resolve a CompositeUnit to its pint unit."""
-    return resolve_compositional_unit(unit=unit, registry=REGISTRY)
+    return resolve_ttsim_unit(unit=unit, registry=REGISTRY)
 
 
 def _column(
@@ -59,7 +59,7 @@ def _column(
     grouping_level: str | None = None,
 ) -> pint.Unit:
     """A column's resolved unit exactly as the DAG builds it (bare when unsuffixed)."""
-    return resolve_compositional_column_unit(
+    return resolve_ttsim_unit_for_column(
         unit=unit,
         time_unit_id=time_unit_id,
         grouping_level=grouping_level,
@@ -193,7 +193,7 @@ def test_input_level_must_match_declared():
     with pytest.raises(UnitConsistencyError, match="level"):
         fail_if_input_units_are_inconsistent(
             input_unit_tokens={"miete_m_hh": TTSIMUnit.CURRENCY.PER_MONTH},
-            resolved_units={
+            resolved_pint_units={
                 "miete_m_hh": _column(
                     TTSIMUnit.CURRENCY.PER_MONTH.PER_HH,
                     time_unit_id="m",
@@ -214,7 +214,7 @@ def test_input_level_matching_declared_passes():
             "miete_m_hh": TTSIMUnit.CURRENCY.PER_MONTH.PER_HH,
             "wage_m": TTSIMUnit.CURRENCY.PER_MONTH,
         },
-        resolved_units={"miete_m_hh": miete, "wage_m": wage},
+        resolved_pint_units={"miete_m_hh": miete, "wage_m": wage},
         unit_system=SYSTEM,
     )
 
@@ -225,9 +225,9 @@ def test_group_level_tag_does_not_match_a_bare_declaration():
     with pytest.raises(UnitConsistencyError, match="level"):
         fail_if_input_units_are_inconsistent(
             input_unit_tokens={"betrag_m": TTSIMUnit.CURRENCY.PER_MONTH.PER_HH},
-            resolved_units={"betrag_m": _resolved(TTSIMUnit.CURRENCY.PER_MONTH)},
+            resolved_pint_units={"betrag_m": _resolved(TTSIMUnit.CURRENCY.PER_MONTH)},
             unit_system=SYSTEM,
-            declared_unit_tokens={"betrag_m": TTSIMUnit.CURRENCY.PER_MONTH},
+            declared_ttsim_units={"betrag_m": TTSIMUnit.CURRENCY.PER_MONTH},
         )
 
 
@@ -235,7 +235,7 @@ def test_input_share_at_group_suffix_stays_level_less():
     # A group suffix must not force a level onto a level-less quantity.
     fail_if_input_units_are_inconsistent(
         input_unit_tokens={"rate_hh": TTSIMUnit.DIMENSIONLESS},
-        resolved_units={"rate_hh": _resolved(TTSIMUnit.DIMENSIONLESS)},
+        resolved_pint_units={"rate_hh": _resolved(TTSIMUnit.DIMENSIONLESS)},
         unit_system=SYSTEM,
     )
 
@@ -247,7 +247,7 @@ def test_input_units_consistent_passes():
     }
     fail_if_input_units_are_inconsistent(
         input_unit_tokens={"wage_m": TTSIMUnit.CURRENCY.PER_MONTH},
-        resolved_units=resolved,
+        resolved_pint_units=resolved,
         unit_system=SYSTEM,
     )
 
@@ -257,7 +257,7 @@ def test_input_units_dimension_mismatch_raises():
     with pytest.raises(UnitConsistencyError, match="inconsistent with the DAG"):
         fail_if_input_units_are_inconsistent(
             input_unit_tokens={"alter": TTSIMUnit.CURRENCY},
-            resolved_units=resolved,
+            resolved_pint_units=resolved,
             unit_system=SYSTEM,
         )
 
@@ -276,7 +276,7 @@ def test_input_units_compatible_but_differently_scaled_raises(tag, declared):
     with pytest.raises(UnitConsistencyError, match="not equivalent"):
         fail_if_input_units_are_inconsistent(
             input_unit_tokens={"some_column": tag},
-            resolved_units={"some_column": _resolved(declared)},
+            resolved_pint_units={"some_column": _resolved(declared)},
             unit_system=SYSTEM,
         )
 
@@ -289,7 +289,7 @@ def test_input_units_period_mismatch_is_left_to_the_suffix_guard():
     resolved = {"wage_m": _resolved(TTSIMUnit.CURRENCY.PER_MONTH)}
     fail_if_input_units_are_inconsistent(
         input_unit_tokens={"wage_m": TTSIMUnit.CURRENCY.PER_YEAR},
-        resolved_units=resolved,
+        resolved_pint_units=resolved,
         unit_system=SYSTEM,
     )
 
@@ -309,7 +309,7 @@ def test_input_units_currency_tag_mismatch_raises(tag, declared):
     with pytest.raises(UnitConsistencyError, match="one carries a currency"):
         fail_if_input_units_are_inconsistent(
             input_unit_tokens={"some_column": tag},
-            resolved_units={"some_column": _resolved(declared)},
+            resolved_pint_units={"some_column": _resolved(declared)},
             unit_system=SYSTEM,
         )
 
@@ -323,6 +323,6 @@ def test_input_units_skips_columns_without_a_scalar_declared_unit():
             "some_dict_param": TTSIMUnit.CURRENCY,
             "not_in_env": TTSIMUnit.YEARS,
         },
-        resolved_units=resolved,
+        resolved_pint_units=resolved,
         unit_system=SYSTEM,
     )

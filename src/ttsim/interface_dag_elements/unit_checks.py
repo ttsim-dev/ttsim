@@ -3,7 +3,7 @@
 Builds on the per-function engine in :mod:`ttsim.tt.units` to verify a fully
 assembled policy environment on two counts:
 
-- **Every active node declares a unit.** Author declarations (``unit=`` /
+- **Every active node declares a TTSIM unit.** Author declarations (``unit=`` /
   ``unit:``) cover inputs, functions, parameters, and param functions; derived
   nodes (aggregations, time-conversion variants, group ids) and the framework
   date nodes get theirs assigned here.
@@ -12,8 +12,13 @@ assembled policy environment on two counts:
   from its producers' resolved units. A body the check cannot evaluate must opt
   out with ``verify_units=False``.
 
-Checking a body is an abstract interpretation over units: the real body runs, but
-on stand-in values carrying a unit and no meaningful magnitude. Each
+The two layers of :mod:`ttsim.tt.units` both appear here: a node's declared
+*TTSIM unit* (:class:`~ttsim.tt.units.CompositeUnit`) is resolved once against the
+environment's registry, and every check downstream compares the resulting *pint
+units*.
+
+Checking a body is an abstract interpretation over pint units: the real body runs,
+but on stand-in values carrying a pint unit and no meaningful magnitude. Each
 ``Quantity(1.0, unit)`` is wrapped in a :class:`_UnitCheckQuantity`, whose
 arithmetic propagates units while a :class:`_PathExplorer` drives its branch
 decisions — so a body is checked down every reachable path.
@@ -94,21 +99,21 @@ from ttsim.tt.units import (
     _grouping_levels_with_exponent,
     _unit_level_denominator,
     _unit_without_grouping_levels,
-    coerce_to_composite_unit,
     fail_if_units_are_missing,
     head_count_from_boolean_sum,
     is_calendar_point_unit,
     parse_unit,
-    replace_concrete_with_agnostic_currency,
-    resolve_compositional_body_unit,
-    resolve_compositional_column_unit,
-    resolve_compositional_param_unit,
-    resolve_compositional_unit,
+    pint_unit_has_currency,
+    resolve_agnostic_ttsim_unit,
+    resolve_ttsim_unit,
+    resolve_ttsim_unit_for_column,
+    resolve_ttsim_unit_for_param,
     resolved_unit_for_aggregation,
-    token_declares_a_currency,
-    token_is_agnostic_currency,
-    token_source_currency,
-    unit_has_currency_component,
+    ttsim_unit_currency,
+    ttsim_unit_from_yaml_value,
+    ttsim_unit_has_agnostic_currency,
+    ttsim_unit_has_currency,
+    ttsim_unit_with_agnostic_currency,
     unit_residual_excluding_currency_and_flow_period,
     units_are_equivalent,
 )
@@ -216,12 +221,12 @@ def _dimensionless_unit(registry: pint.UnitRegistry) -> pint.Unit:
 
 
 @interface_function()
-def resolved_units(
+def resolved_pint_units(
     specialized_environment__without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,  # noqa: E501
     labels__grouping_levels: OrderedQNames,
     unit_system: UnitSystem,
 ) -> dict[str, pint.Unit | dict[str | int, Any]]:
-    """The resolved pint unit of every annotated node in the environment."""
+    """The pint unit every annotated node's declared TTSIM unit resolves to."""
     return resolve_environment_units(
         env=specialized_environment__without_tree_logic_and_with_derived_functions,
         grouping_levels=labels__grouping_levels,
@@ -230,10 +235,10 @@ def resolved_units(
 
 
 @interface_function()
-def declared_unit_tokens(
+def declared_ttsim_units(
     specialized_environment__without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,  # noqa: E501
 ) -> dict[str, CompositeUnit]:
-    """Each node's *declared* compositional unit token, by qname."""
+    """Each node's declared TTSIM unit, by qname."""
     env = specialized_environment__without_tree_logic_and_with_derived_functions
     return {
         qname: token
@@ -296,7 +301,7 @@ def resolve_environment_units(
                 # `piecewise_polynomial` consumers receive), resolved agnostically
                 # like a field annotation — concrete currencies rejected, no
                 # name-suffix rules.
-                resolved[qname] = resolve_compositional_body_unit(
+                resolved[qname] = resolve_agnostic_ttsim_unit(
                     unit=token.output_unit,
                     registry=registry,
                     where=f"Schedule param function {qname!r}",
@@ -328,7 +333,7 @@ def _resolve_leveled_column_unit(
     """Resolve a column/function's full unit, including its grouping level."""
     time_unit_id = match.group("time_unit") if match else None
     grouping_level = _suffix_grouping_level(match)
-    return resolve_compositional_column_unit(
+    return resolve_ttsim_unit_for_column(
         unit=token,
         time_unit_id=time_unit_id,
         grouping_level=grouping_level,
@@ -572,7 +577,9 @@ def fail_if_environment_units_are_missing(
             if (
                 rounding_spec is not None
                 and rounding_spec.unit is None
-                and token_is_agnostic_currency(cast("CompositeUnit", declared_unit))
+                and ttsim_unit_has_agnostic_currency(
+                    cast("CompositeUnit", declared_unit)
+                )
             ):
                 units_by_qname[f"{qname} (rounding_spec)"] = UNSET_UNIT
     fail_if_units_are_missing(units_by_qname)
@@ -581,7 +588,7 @@ def fail_if_environment_units_are_missing(
 def _agg_declaration_inconsistency(
     qname: str,
     obj: AggByGroupFunction,
-    resolved_units: Mapping[str, pint.Unit | dict[str | int, Any]],
+    resolved_pint_units: Mapping[str, pint.Unit | dict[str | int, Any]],
     registry: pint.UnitRegistry,
 ) -> str | None:
     """Error message if an aggregation's declared unit ≠ what it derives."""
@@ -591,11 +598,11 @@ def _agg_declaration_inconsistency(
         # for the rare group-property aggregation whose declared level the
         # derivation cannot express (a MEAN the author states `PER_KIN`).
         return None
-    derived = resolved_units.get(qname)
+    derived = resolved_pint_units.get(qname)
     declared_token = getattr(obj, "unit", UNSET_UNIT)
     if derived is None or isinstance(derived, dict) or declared_token is UNSET_UNIT:
         return None
-    declared_unit = resolve_compositional_param_unit(
+    declared_unit = resolve_ttsim_unit_for_param(
         unit=cast("CompositeUnit", declared_token),
         registry=registry,
         where=f"Aggregation {qname!r}",
@@ -613,7 +620,7 @@ def _agg_declaration_inconsistency(
 
 def _aggregation_declaration_errors(
     env: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
-    resolved_units: Mapping[str, pint.Unit | dict[str | int, Any]],
+    resolved_pint_units: Mapping[str, pint.Unit | dict[str | int, Any]],
     registry: pint.UnitRegistry,
 ) -> list[str]:
     """Declared-vs-derived errors for every group aggregation."""
@@ -623,7 +630,10 @@ def _aggregation_declaration_errors(
         if isinstance(obj, AggByGroupFunction)
         and (
             error := _agg_declaration_inconsistency(
-                qname=qname, obj=obj, resolved_units=resolved_units, registry=registry
+                qname=qname,
+                obj=obj,
+                resolved_pint_units=resolved_pint_units,
+                registry=registry,
             )
         )
         is not None
@@ -652,24 +662,24 @@ def _rounding_spec_declaration_inconsistency(
     declared = getattr(obj, "unit", UNSET_UNIT)
     if spec is None or spec.unit is None or declared is UNSET_UNIT:
         return None
-    if not token_is_agnostic_currency(cast("CompositeUnit", declared)):
+    if not ttsim_unit_has_agnostic_currency(cast("CompositeUnit", declared)):
         return (
             f"{qname}: the rounding spec declares `{spec.unit}` but the function's "
             f"unit `{declared}` has no currency base, so there is nothing to "
             f"convert; drop the spec's `unit=`."
         )
-    if token_is_agnostic_currency(spec.unit):
+    if ttsim_unit_has_agnostic_currency(spec.unit):
         return (
             f"{qname}: the rounding spec's magnitudes are written in a concrete "
             f"currency; declare it (e.g. `TTSIMUnit.DM.PER_YEAR`), not the agnostic "
             f"`{spec.unit}`."
         )
-    if token_source_currency(spec.unit) is None:
+    if ttsim_unit_currency(spec.unit) is None:
         return (
             f"{qname}: the rounding spec's unit `{spec.unit}` does not pin down a "
             f"registered currency."
         )
-    if replace_concrete_with_agnostic_currency(spec.unit) != declared:
+    if ttsim_unit_with_agnostic_currency(spec.unit) != declared:
         return (
             f"{qname}: the rounding spec's unit `{spec.unit}` must equal the "
             f"function's declared `{declared}` with the agnostic base swapped for "
@@ -695,7 +705,7 @@ def fail_if_environment_units_are_inconsistent(
     env: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
     grouping_levels: OrderedQNames,
     unit_system: UnitSystem,
-    resolved_units: dict[str, pint.Unit | dict[str | int, Any]] | None = None,
+    resolved_pint_units: dict[str, pint.Unit | dict[str | int, Any]] | None = None,
 ) -> None:
     """Conservative body/edge verification over an assembled environment.
 
@@ -733,12 +743,12 @@ def fail_if_environment_units_are_inconsistent(
     """
     registry = unit_system.registry
     _fail_if_structured_field_annotations_are_invalid(env=env, unit_system=unit_system)
-    if resolved_units is None:
-        resolved_units = resolve_environment_units(
+    if resolved_pint_units is None:
+        resolved_pint_units = resolve_environment_units(
             env=env, grouping_levels=grouping_levels, unit_system=unit_system
         )
     representative_values = _representative_values_by_qname(
-        env=env, resolved_units=resolved_units, unit_system=unit_system
+        env=env, resolved_pint_units=resolved_pint_units, unit_system=unit_system
     )
     boolean_nodes = {
         qname
@@ -747,14 +757,14 @@ def fail_if_environment_units_are_inconsistent(
         and node_is_boolean(qname=qname, obj=obj)
     }
     errors: list[str] = _aggregation_declaration_errors(
-        env=env, resolved_units=resolved_units, registry=registry
+        env=env, resolved_pint_units=resolved_pint_units, registry=registry
     )
     errors.extend(_rounding_spec_declaration_errors(env=env))
     errors.extend(_schedule_param_function_contract_errors(env=env))
     errors.extend(
         _body_verification_errors(
             env=env,
-            resolved_units=resolved_units,
+            resolved_pint_units=resolved_pint_units,
             representative_values=representative_values,
             boolean_nodes=boolean_nodes,
             unit_system=unit_system,
@@ -784,7 +794,7 @@ def _anchor_schedules_on_body_explorer(
 
 def _body_verification_errors(
     env: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
-    resolved_units: Mapping[str, pint.Unit | dict[str | int, Any]],
+    resolved_pint_units: Mapping[str, pint.Unit | dict[str | int, Any]],
     representative_values: Mapping[str, Any],
     boolean_nodes: set[str],
     unit_system: UnitSystem,
@@ -817,11 +827,11 @@ def _body_verification_errors(
             # unit is the schedule's output contract (screened at the consumer's
             # `look_up`/`piecewise_polynomial`), so there is no scalar body to infer.
             continue
-        if qname not in resolved_units or not obj.verify_units:
+        if qname not in resolved_pint_units or not obj.verify_units:
             # Still UNSET (the mandatory-units check reports it), or the body
             # opted out — its declared unit stays the edge contract either way.
             continue
-        declared = resolved_units[qname]
+        declared = resolved_pint_units[qname]
         if isinstance(declared, dict):
             continue
         parameters = tuple(inspect.signature(obj.function).parameters)
@@ -901,15 +911,15 @@ def flatten_unit_annotated_input_tree(
 
 
 def _composite_token_level(token: CompositeUnit) -> str | None:
-    """The grouping level a compositional token spells, or ``None`` if bare."""
+    """The grouping level a TTSIM unit spells, or ``None`` if bare."""
     return token.level.lower() if token.level is not None else None
 
 
 def fail_if_input_units_are_inconsistent(
     input_unit_tokens: Mapping[str, CompositeUnit],
-    resolved_units: Mapping[str, Any],
+    resolved_pint_units: Mapping[str, Any],
     unit_system: UnitSystem,
-    declared_unit_tokens: Mapping[str, CompositeUnit] | None = None,
+    declared_ttsim_units: Mapping[str, CompositeUnit] | None = None,
 ) -> None:
     """Fail if an input column's tag disagrees with the unit declared for it.
 
@@ -939,23 +949,21 @@ def fail_if_input_units_are_inconsistent(
     registry = unit_system.registry
     errors: list[str] = []
     for qname, tag_token in input_unit_tokens.items():
-        tag = resolve_compositional_unit(
-            unit=tag_token, registry=registry, with_level=True
-        )
-        expected = resolved_units.get(qname)
+        tag = resolve_ttsim_unit(unit=tag_token, registry=registry, with_level=True)
+        expected = resolved_pint_units.get(qname)
         if not isinstance(expected, pint.Unit):
             # No scalar declared unit (absent, or a dict parameter); nothing to check.
             continue
-        if unit_has_currency_component(
+        if pint_unit_has_currency(
             units=tag, registry=registry
-        ) != unit_has_currency_component(units=expected, registry=registry):
+        ) != pint_unit_has_currency(units=expected, registry=registry):
             errors.append(
                 f"  {qname}: tagged '{tag}' but declared '{expected}' — one carries "
                 "a currency and the other does not."
             )
             continue
         tag_level = _composite_token_level(tag_token)
-        declared_token = (declared_unit_tokens or {}).get(qname)
+        declared_token = (declared_ttsim_units or {}).get(qname)
         expected_level = (
             _composite_token_level(declared_token)
             if declared_token is not None
@@ -1016,23 +1024,23 @@ def _is_checkable_node(qname: str, obj: Any) -> bool:  # noqa: ANN401
     return qname not in FRAMEWORK_DATE_NODE_UNITS
 
 
-def _spell_token(token: Any) -> str:  # noqa: ANN401
-    """Spell a declaration token for an error message."""
-    if token is UNSET_UNIT:
+def _spell_ttsim_unit(ttsim_unit: Any) -> str:  # noqa: ANN401
+    """Spell a declared TTSIM unit for an error message."""
+    if ttsim_unit is UNSET_UNIT:
         return "unset"
-    return str(token)
+    return str(ttsim_unit)
 
 
-def _fail_if_param_token_is_agnostic_currency(
-    token: CompositeUnit | None,
+def _fail_if_param_ttsim_unit_is_agnostic_currency(
+    ttsim_unit: CompositeUnit | None,
     where: str,
 ) -> None:
-    """Reject an agnostic currency unit on a parameter."""
-    if token_is_agnostic_currency(token):
-        suffixes = str(token).removeprefix("CURRENCY")
+    """Reject a parameter whose declared TTSIM unit is the agnostic currency."""
+    if ttsim_unit_has_agnostic_currency(ttsim_unit):
+        suffixes = str(ttsim_unit).removeprefix("CURRENCY")
         raise UnitDefinitionError(
             f"{where}: parameters must pin down the concrete currency their "
-            f"numbers are written in; the agnostic unit {token} is not "
+            f"numbers are written in; the agnostic unit {ttsim_unit} is not "
             f"allowed here. Declare the statutory currency at the parameter's "
             f"dates, e.g. DM{suffixes} or EUR{suffixes} (GEP 10)."
         )
@@ -1069,7 +1077,7 @@ def _resolve_param_mapping_object_units(
                 f"mappings (GEP 10)."
             )
         token = cast("CompositeUnit", raw)
-        _fail_if_param_token_is_agnostic_currency(token=token, where=where)
+        _fail_if_param_ttsim_unit_is_agnostic_currency(ttsim_unit=token, where=where)
         tokens[axis] = token
     output_token = tokens["output_unit"]
     if name_time_unit_id is not None:
@@ -1081,12 +1089,12 @@ def _resolve_param_mapping_object_units(
         )
     input_token = tokens["input_unit"]
     if input_token is not UNSET_UNIT:
-        resolve_compositional_param_unit(
+        resolve_ttsim_unit_for_param(
             unit=input_token, registry=registry, where=f"Parameter {qname!r}"
         )
     if output_token is UNSET_UNIT:
         return None
-    return resolve_compositional_param_unit(
+    return resolve_ttsim_unit_for_param(
         unit=output_token, registry=registry, where=f"Parameter {qname!r}"
     )
 
@@ -1107,9 +1115,9 @@ def _fail_if_name_suffix_disagrees_with_output_axis(
         raise UnitDefinitionError(
             f"Parameter {qname!r}: the name carries a time-unit suffix "
             f"(_{name_time_unit_id}), which denotes a flow, but "
-            f"`output_unit:` is {_spell_token(output_token)} (GEP 10)."
+            f"`output_unit:` is {_spell_ttsim_unit(output_token)} (GEP 10)."
         )
-    resolve_compositional_param_unit(
+    resolve_ttsim_unit_for_param(
         unit=output_token,
         registry=registry,
         time_unit_id=name_time_unit_id,
@@ -1123,7 +1131,7 @@ def _resolve_param_object_unit(
     registry: pint.UnitRegistry,
     name_time_unit_id: str | None = None,
 ) -> pint.Unit | dict[str | int, Any] | None:
-    """Resolve a parameter's declared compositional unit.
+    """Resolve a parameter's declared TTSIM unit to a pint unit.
 
     Every parameter spells its unit fully: a **scalar** additionally
     takes a time suffix on its *name*, which must agree with the spelled period
@@ -1152,10 +1160,12 @@ def _resolve_param_object_unit(
             registry=registry,
         )
     token = cast("CompositeUnit", obj.unit)
-    _fail_if_param_token_is_agnostic_currency(token=token, where=f"Parameter {qname!r}")
+    _fail_if_param_ttsim_unit_is_agnostic_currency(
+        ttsim_unit=token, where=f"Parameter {qname!r}"
+    )
     # A scalar parameter takes its period from a time suffix on its name; a
     # dict/raw parameter has no single name to suffix.
-    return resolve_compositional_param_unit(
+    return resolve_ttsim_unit_for_param(
         unit=token,
         registry=registry,
         time_unit_id=name_time_unit_id if isinstance(obj, ScalarParam) else None,
@@ -1183,10 +1193,10 @@ def _resolve_unit_mapping(
             )
             continue
         where = f"Parameter {qname!r}, unit of leaf {key!r}"
-        _fail_if_param_token_is_agnostic_currency(token=token, where=where)
+        _fail_if_param_ttsim_unit_is_agnostic_currency(ttsim_unit=token, where=where)
         match = _QNAME_TIME_SUFFIX_PATTERN.search(str(key))
         suffix_id = match.group("time_unit") if match else None
-        resolved[key] = resolve_compositional_param_unit(
+        resolved[key] = resolve_ttsim_unit_for_param(
             unit=cast("CompositeUnit", token),
             registry=registry,
             time_unit_id=suffix_id,
@@ -1461,7 +1471,7 @@ def _structured_field_kinds(
                 f"value; a scalar field states a single unit (GEP 10)."
             )
         elif composite_tokens:
-            resolved = resolve_compositional_body_unit(
+            resolved = resolve_agnostic_ttsim_unit(
                 unit=composite_tokens[0],
                 registry=unit_system.registry,
                 where=where,
@@ -1534,7 +1544,7 @@ def _schedule_field_kind(
             f"only for a multi-dimensional lookup table (GEP 10)."
         )
     if issubclass(base, ConsecutiveIntLookupTableParamValue) and any(
-        token_declares_a_currency(cast("CompositeUnit", axis)) for axis in input_axes
+        ttsim_unit_has_currency(cast("CompositeUnit", axis)) for axis in input_axes
     ):
         raise UnitDefinitionError(
             f"{where}: is a lookup table keyed by consecutive integers, so no "
@@ -1546,7 +1556,7 @@ def _schedule_field_kind(
         input_unit=_resolve_input_axes(
             input_unit=io_token.input_unit, registry=unit_system.registry, where=where
         ),
-        output_unit=resolve_compositional_body_unit(
+        output_unit=resolve_agnostic_ttsim_unit(
             unit=io_token.output_unit,
             registry=unit_system.registry,
             where=where,
@@ -1683,7 +1693,7 @@ def _schedule_param_function_contract_errors(
                 f"(PiecewisePolynomialParamValue / "
                 f"ConsecutiveIntLookupTableParamValue), so it must declare its two "
                 f"axes with `unit=InputOutputUnit(input_unit=…, output_unit=…)`, not "
-                f"`unit={_spell_token(obj.unit)}` (GEP 10)."
+                f"`unit={_spell_ttsim_unit(obj.unit)}` (GEP 10)."
             )
             continue
         if not declares_io:
@@ -1703,8 +1713,7 @@ def _schedule_param_function_contract_errors(
                 f"(GEP 10)."
             )
         if builds_lookup_table and any(
-            token_declares_a_currency(cast("CompositeUnit", axis))
-            for axis in input_axes
+            ttsim_unit_has_currency(cast("CompositeUnit", axis)) for axis in input_axes
         ):
             errors.append(
                 f"{qname}: builds a lookup table but declares a currency "
@@ -1733,7 +1742,7 @@ def _resolve_schedule_input_unit(
     """
     if obj.input_unit is UNSET_UNIT:
         return None
-    return resolve_compositional_param_unit(
+    return resolve_ttsim_unit_for_param(
         unit=cast("CompositeUnit", obj.input_unit),
         registry=registry,
         where="A schedule input axis",
@@ -1754,7 +1763,7 @@ def _resolve_input_axes(
     """
     if isinstance(input_unit, tuple):
         return tuple(
-            resolve_compositional_body_unit(
+            resolve_agnostic_ttsim_unit(
                 unit=cast("CompositeUnit", axis),
                 registry=registry,
                 where=where,
@@ -1762,14 +1771,14 @@ def _resolve_input_axes(
             )
             for axis in input_unit
         )
-    return resolve_compositional_body_unit(
+    return resolve_agnostic_ttsim_unit(
         unit=input_unit, registry=registry, where=where, what="the declaration"
     )
 
 
 def _representative_values_by_qname(
     env: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
-    resolved_units: Mapping[str, pint.Unit | dict[str | int, Any]],
+    resolved_pint_units: Mapping[str, pint.Unit | dict[str | int, Any]],
     unit_system: UnitSystem,
 ) -> dict[str, Any]:
     """Representative unit-check values for every unit-resolved node.
@@ -1788,7 +1797,7 @@ def _representative_values_by_qname(
     """
     registry = unit_system.registry
     out: dict[str, Any] = {}
-    for qname, unit in resolved_units.items():
+    for qname, unit in resolved_pint_units.items():
         obj = env.get(qname)
         if isinstance(obj, ParamMappingObject) and not isinstance(unit, dict):
             out[qname] = _UnitCheckSchedule(
@@ -2850,8 +2859,8 @@ def _cast_ttsim_unit_for_unit_check(
     token raises a :class:`UnitDefinitionError`, which :func:`_verify_one_body`
     re-raises rather than misreporting as an un-evaluable body.
     """
-    token = coerce_to_composite_unit(value=unit, where="A `cast_ttsim_unit` call")
-    resolved = resolve_compositional_body_unit(
+    token = ttsim_unit_from_yaml_value(value=unit, where="A `cast_ttsim_unit` call")
+    resolved = resolve_agnostic_ttsim_unit(
         unit=token,
         registry=unit_system.registry,
         where="A `cast_ttsim_unit` call",

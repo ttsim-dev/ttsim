@@ -50,7 +50,7 @@ def fail_if_grouping_level_names_are_invalid(names: Iterable[str]) -> None:
       a ``month`` level would turn ``PER_MONTH`` from a flow period into a
       grouping level for every declaration in the process;
     - any name that is not lower-case, because a level is registered verbatim but
-      resolved lower-cased (:func:`ttsim.tt.units.resolve_compositional_unit`), so
+      resolved lower-cased (:func:`ttsim.tt.units.resolve_ttsim_unit`), so
       ``"HH"`` would register a level that ``.PER_HH`` cannot resolve.
 
     Levels are derived from the policy environment's ``*_id`` columns — one per

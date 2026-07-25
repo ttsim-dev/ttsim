@@ -41,7 +41,7 @@ from ttsim.tt.type_resolution import (
 from ttsim.tt.units import (
     UNSET_UNIT,
     CompositeUnit,
-    replace_concrete_with_agnostic_currency,
+    ttsim_unit_with_agnostic_currency,
     unit_for_aggregation,
     unit_with_rebased_period,
 )
@@ -299,7 +299,7 @@ def _time_converted_input_stub(
     return _input_column_stub(
         qname=qname,
         unit=unit_with_rebased_period(
-            unit=replace_concrete_with_agnostic_currency(declared),
+            unit=ttsim_unit_with_agnostic_currency(declared),
             time_unit_id=time_unit_id,
         ),
         # The synthesized time converters return floats, so a column supplied at
@@ -361,7 +361,7 @@ def _create_one_set_of_time_conversion_functions(
                 f"from per {time_unit} to per {target_time_unit}"
             ),
             unit=unit_with_rebased_period(
-                unit=replace_concrete_with_agnostic_currency(
+                unit=ttsim_unit_with_agnostic_currency(
                     getattr(element, "unit", UNSET_UNIT)
                 ),
                 time_unit_id=target_time_unit,
@@ -577,7 +577,7 @@ def _resolve_source_unit(
         declared = getattr(source, "unit", UNSET_UNIT)
         # A derived function computes on already-converted values, so a
         # concrete currency token passes its agnostic counterpart on.
-        return replace_concrete_with_agnostic_currency(declared)
+        return ttsim_unit_with_agnostic_currency(declared)
     sibling = _find_sibling_policy_input_at_other_time_unit(
         source_name=source_name,
         qname_policy_environment=qname_policy_environment,
@@ -585,7 +585,7 @@ def _resolve_source_unit(
     if sibling is None or sibling.unit is UNSET_UNIT:
         return UNSET_UNIT
     return unit_with_rebased_period(
-        unit=replace_concrete_with_agnostic_currency(sibling.unit),
+        unit=ttsim_unit_with_agnostic_currency(sibling.unit),
         time_unit_id=source_name.rpartition("_")[2],
     )
 

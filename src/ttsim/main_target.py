@@ -196,8 +196,8 @@ class Templates(MainTargetABC):
 
 @dataclass(frozen=True)
 class UnitChecks(MainTargetABC):
-    resolved_units: str = "unit_checks__resolved_units"
-    declared_unit_tokens: str = "unit_checks__declared_unit_tokens"
+    resolved_pint_units: str = "unit_checks__resolved_pint_units"
+    declared_ttsim_units: str = "unit_checks__declared_ttsim_units"
 
 
 @dataclass(frozen=True)

@@ -38,8 +38,8 @@ from ttsim.tt.units import (
     UNSET_UNIT,
     TTSIMUnit,
     _registered_currencies,
-    parse_compositional_unit,
-    token_source_currency,
+    parse_ttsim_unit,
+    ttsim_unit_currency,
 )
 from ttsim.warnings import PotentialCurrencyMismatchWarning
 
@@ -578,7 +578,10 @@ def test_annotated_results_label_a_parameter_in_the_statutory_currency():
         tree={"a_param_m": 25.0, "a_column_m": np.array([1.0, 2.0])},
         raw_results__from_input_data={},
         raw_results__params={"a_param_m": 25.0},
-        unit_checks__resolved_units={"a_param_m": agnostic, "a_column_m": agnostic},
+        unit_checks__resolved_pint_units={
+            "a_param_m": agnostic,
+            "a_column_m": agnostic,
+        },
         data_currency="CASTAR",
         computation_currency="SILVER_PENNY",
         unit_system=system,
@@ -596,7 +599,7 @@ def test_annotated_results_label_each_leaf_of_a_dict_parameter():
         tree={"rates": {"low": 25.0, "high": 50.0}},
         raw_results__from_input_data={},
         raw_results__params={"rates": {"low": 25.0, "high": 50.0}},
-        unit_checks__resolved_units={
+        unit_checks__resolved_pint_units={
             "rates": {
                 "low": registry.parse_units("CURRENCY / month"),
                 "high": registry.parse_units("CURRENCY / year"),
@@ -620,7 +623,7 @@ def test_annotated_results_spread_one_unit_over_a_uniform_dict_parameter():
         tree={"rates": {"low": 25.0, "high": 50.0}},
         raw_results__from_input_data={},
         raw_results__params={"rates": {"low": 25.0, "high": 50.0}},
-        unit_checks__resolved_units={
+        unit_checks__resolved_pint_units={
             "rates": system.registry.parse_units("CURRENCY / month")
         },
         data_currency="CASTAR",
@@ -641,7 +644,7 @@ def test_annotated_results_leave_an_unresolved_dict_parameter_leaf_bare():
         tree={"rates": {"low": 25.0, "high": 50.0}},
         raw_results__from_input_data={},
         raw_results__params={"rates": {"low": 25.0, "high": 50.0}},
-        unit_checks__resolved_units={
+        unit_checks__resolved_pint_units={
             "rates": {"low": system.registry.parse_units("CURRENCY / month")}
         },
         data_currency="CASTAR",
@@ -697,7 +700,7 @@ def test_currency_claiming_the_agnostic_base_is_rejected():
 def test_agnostic_token_pins_down_no_concrete_currency():
     """`TTSIMUnit.CURRENCY` never resolves to one of the system's currencies."""
     _fresh_system()
-    assert token_source_currency(TTSIMUnit.CURRENCY) is None
+    assert ttsim_unit_currency(TTSIMUnit.CURRENCY) is None
 
 
 def test_registered_currency_token_round_trips_through_the_parser():
@@ -705,7 +708,7 @@ def test_registered_currency_token_round_trips_through_the_parser():
     system = _fresh_system()
     for name in sorted(system.currencies):
         token = getattr(TTSIMUnit, name.upper())
-        assert parse_compositional_unit(str(token)) == token
+        assert parse_ttsim_unit(str(token)) == token
 
 
 def test_annotated_results_label_a_declarationless_dimensionless_target_as_such():
@@ -716,7 +719,9 @@ def test_annotated_results_label_a_declarationless_dimensionless_target_as_such(
         tree={"policy_month": np.array([6, 7])},
         raw_results__from_input_data={},
         raw_results__params={},
-        unit_checks__resolved_units={"policy_month": system.registry.dimensionless},
+        unit_checks__resolved_pint_units={
+            "policy_month": system.registry.dimensionless
+        },
         data_currency="CASTAR",
         computation_currency="SILVER_PENNY",
         unit_system=system,

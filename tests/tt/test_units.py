@@ -34,21 +34,21 @@ from ttsim.tt import (
 from ttsim.tt.grouping_levels import register_grouping_levels
 from ttsim.tt.units import (
     CURRENCY_TOKEN,
-    coerce_to_composite_unit,
-    composite_from_resolved_unit,
     fail_if_units_are_missing,
     is_calendar_point_unit,
     output_unit_in_data_currency,
-    parse_compositional_unit,
+    parse_ttsim_unit,
     parse_unit,
-    resolve_compositional_body_unit,
-    resolve_compositional_column_unit,
-    resolve_compositional_param_unit,
-    resolve_compositional_unit,
+    resolve_agnostic_ttsim_unit,
+    resolve_ttsim_unit,
+    resolve_ttsim_unit_for_column,
+    resolve_ttsim_unit_for_param,
     resolved_unit_for_aggregation,
     strip_input_quantity_at_boundary,
-    token_is_agnostic_currency,
-    token_source_currency,
+    ttsim_unit_currency,
+    ttsim_unit_from_pint_unit,
+    ttsim_unit_from_yaml_value,
+    ttsim_unit_has_agnostic_currency,
     unit_for_aggregation,
     units_are_equivalent,
 )
@@ -128,8 +128,8 @@ _BASE_SPELLINGS = [
         "HOURS_PER_WEEK",
     ],
 )
-def test_coerce_to_composite_unit_round_trips_spellings(spelling):
-    token = coerce_to_composite_unit(value=spelling, where="test")
+def test_ttsim_unit_from_yaml_value_round_trips_spellings(spelling):
+    token = ttsim_unit_from_yaml_value(value=spelling, where="test")
     assert isinstance(token, CompositeUnit)
     assert str(token) == spelling
 
@@ -138,11 +138,13 @@ def test_coerce_to_composite_unit_round_trips_spellings(spelling):
     ("construct", "match"),
     [
         (
-            lambda: parse_compositional_unit("PERSON_COUNT_PER_HH"),
+            lambda: parse_ttsim_unit("PERSON_COUNT_PER_HH"),
             "Unknown compositional base",
         ),
         (
-            lambda: coerce_to_composite_unit(value="PERSON_COUNT_PER_HH", where="test"),
+            lambda: ttsim_unit_from_yaml_value(
+                value="PERSON_COUNT_PER_HH", where="test"
+            ),
             "invalid unit declaration",
         ),
     ],
@@ -154,12 +156,12 @@ def test_person_count_is_not_a_spelling(construct, match):
         construct()
 
 
-def test_coerce_to_composite_unit_rejects_none():
+def test_ttsim_unit_from_yaml_value_rejects_none():
     # `None` is not a dimensionless declaration (GEP 10): it reaches
-    # `coerce_to_composite_unit` only through an internal bug, so the package claw
+    # `ttsim_unit_from_yaml_value` only through an internal bug, so the package claw
     # rejects it before the body runs.
     with pytest.raises(BeartypeCallHintViolation):
-        coerce_to_composite_unit(value=None, where="test")  # ty: ignore[invalid-argument-type]
+        ttsim_unit_from_yaml_value(value=None, where="test")  # ty: ignore[invalid-argument-type]
 
 
 @pytest.mark.parametrize(
@@ -176,9 +178,9 @@ def test_coerce_to_composite_unit_rejects_none():
         "kelvin",
     ],
 )
-def test_coerce_to_composite_unit_rejects_non_members(value):
+def test_ttsim_unit_from_yaml_value_rejects_non_members(value):
     with pytest.raises(UnitDefinitionError, match="invalid unit declaration"):
-        coerce_to_composite_unit(value=value, where="test")
+        ttsim_unit_from_yaml_value(value=value, where="test")
 
 
 def test_compositional_flow_is_marked_by_a_period():
@@ -263,40 +265,40 @@ def test_relative_currency_bakes_correct_factor():
     ],
 )
 def test_registered_currency_is_a_compositional_base(spelling, currency, is_flow):
-    token = coerce_to_composite_unit(value=spelling, where="test")
+    token = ttsim_unit_from_yaml_value(value=spelling, where="test")
     assert isinstance(token, CompositeUnit)
     assert str(token) == spelling
-    assert token_source_currency(token) == currency
+    assert ttsim_unit_currency(token) == currency
     assert token.is_flow == is_flow
 
 
 def test_coerce_currency_token_is_idempotent():
-    token = coerce_to_composite_unit(value="CASTAR", where="test")
-    assert coerce_to_composite_unit(value=token, where="test") is token
-    assert coerce_to_composite_unit(value="CASTAR", where="test") == token
+    token = ttsim_unit_from_yaml_value(value="CASTAR", where="test")
+    assert ttsim_unit_from_yaml_value(value=token, where="test") is token
+    assert ttsim_unit_from_yaml_value(value="CASTAR", where="test") == token
 
 
-def test_token_source_currency():
-    assert token_source_currency(
-        coerce_to_composite_unit(value="CASTAR_PER_MONTH", where="t")
+def test_ttsim_unit_currency():
+    assert ttsim_unit_currency(
+        ttsim_unit_from_yaml_value(value="CASTAR_PER_MONTH", where="t")
     ) == ("CASTAR")
-    assert token_source_currency(TTSIMUnit.CURRENCY.PER_MONTH) is None
-    assert token_source_currency(TTSIMUnit.HECTARE) is None
-    assert token_source_currency(None) is None
+    assert ttsim_unit_currency(TTSIMUnit.CURRENCY.PER_MONTH) is None
+    assert ttsim_unit_currency(TTSIMUnit.HECTARE) is None
+    assert ttsim_unit_currency(None) is None
 
 
 def test_unregistered_currency_spelling_is_rejected():
     with pytest.raises(UnitDefinitionError, match="invalid unit declaration"):
-        coerce_to_composite_unit(value="MITHRIL", where="test")
+        ttsim_unit_from_yaml_value(value="MITHRIL", where="test")
 
 
 def test_currency_agnostic_base_rejected_on_column_at_resolution():
     # A function runs in the statutory currency of the policy date, so a
     # concrete currency base is rejected when a column's compositional unit
     # is resolved (GEP 10).
-    token = coerce_to_composite_unit(value="CASTAR_PER_MONTH", where="test")
+    token = ttsim_unit_from_yaml_value(value="CASTAR_PER_MONTH", where="test")
     with pytest.raises(UnitDefinitionError, match="agnostic CURRENCY"):
-        resolve_compositional_column_unit(
+        resolve_ttsim_unit_for_column(
             unit=token,
             time_unit_id="m",
             grouping_level=None,
@@ -455,8 +457,8 @@ def test_policy_function_explicit_dimensionless():
         (TTSIMUnit.HECTARE, "hectare"),
     ],
 )
-def test_resolve_compositional_unit_period_mapping(token, expected):
-    resolved = resolve_compositional_unit(unit=token, registry=REGISTRY)
+def test_resolve_ttsim_unit_period_mapping(token, expected):
+    resolved = resolve_ttsim_unit(unit=token, registry=REGISTRY)
     assert units_are_equivalent(
         left=resolved,
         right=parse_unit(unit_str=expected, registry=REGISTRY),
@@ -464,12 +466,10 @@ def test_resolve_compositional_unit_period_mapping(token, expected):
     )
 
 
-def test_resolve_compositional_unit_dimensionless():
+def test_resolve_ttsim_unit_dimensionless():
     # A share, a rate, a head count: declared `TTSIMUnit.DIMENSIONLESS`.
     assert units_are_equivalent(
-        left=resolve_compositional_unit(
-            unit=TTSIMUnit.DIMENSIONLESS, registry=REGISTRY
-        ),
+        left=resolve_ttsim_unit(unit=TTSIMUnit.DIMENSIONLESS, registry=REGISTRY),
         right=REGISTRY.dimensionless,
         registry=REGISTRY,
     )
@@ -598,7 +598,7 @@ def test_time_conversion_variants_rebased_period():
     betrag_y_unit = variants.functions["betrag_y"].unit  # ty: ignore[unresolved-attribute]
     assert betrag_y_unit == TTSIMUnit.CURRENCY.PER_YEAR
     assert units_are_equivalent(
-        left=resolve_compositional_unit(unit=betrag_y_unit, registry=REGISTRY),
+        left=resolve_ttsim_unit(unit=betrag_y_unit, registry=REGISTRY),
         right=parse_unit(unit_str="CURRENCY / year", registry=REGISTRY),
         registry=REGISTRY,
     )
@@ -650,25 +650,27 @@ def test_auto_aggregation_over_a_boolean_source_mints_a_head_count():
 
 def test_concrete_currency_per_square_meter_base():
     # A concrete currency divided by an area is a valid compositional unit.
-    token = coerce_to_composite_unit(
+    token = ttsim_unit_from_yaml_value(
         value="CASTAR_PER_SQUARE_METER_PER_MONTH", where="test"
     )
     assert isinstance(token, CompositeUnit)
-    assert token_source_currency(token) == "CASTAR"
+    assert ttsim_unit_currency(token) == "CASTAR"
     assert token.base == "CASTAR"
     assert token.area == "SQUARE_METER"
     assert token.is_flow
 
 
-def test_token_is_agnostic_currency():
-    assert token_is_agnostic_currency(TTSIMUnit.CURRENCY)
-    assert token_is_agnostic_currency(TTSIMUnit.CURRENCY.PER_MONTH)
-    assert token_is_agnostic_currency(TTSIMUnit.CURRENCY.PER_SQUARE_METER.PER_MONTH)
-    assert not token_is_agnostic_currency(TTSIMUnit.HECTARE)
-    assert not token_is_agnostic_currency(TTSIMUnit.DIMENSIONLESS.PER_YEAR)
-    assert not token_is_agnostic_currency(None)
-    assert not token_is_agnostic_currency(
-        coerce_to_composite_unit(value="CASTAR", where="test")
+def test_ttsim_unit_has_agnostic_currency():
+    assert ttsim_unit_has_agnostic_currency(TTSIMUnit.CURRENCY)
+    assert ttsim_unit_has_agnostic_currency(TTSIMUnit.CURRENCY.PER_MONTH)
+    assert ttsim_unit_has_agnostic_currency(
+        TTSIMUnit.CURRENCY.PER_SQUARE_METER.PER_MONTH
+    )
+    assert not ttsim_unit_has_agnostic_currency(TTSIMUnit.HECTARE)
+    assert not ttsim_unit_has_agnostic_currency(TTSIMUnit.DIMENSIONLESS.PER_YEAR)
+    assert not ttsim_unit_has_agnostic_currency(None)
+    assert not ttsim_unit_has_agnostic_currency(
+        ttsim_unit_from_yaml_value(value="CASTAR", where="test")
     )
 
 
@@ -796,20 +798,20 @@ def test_builder_round_trips_with_flat_spelling():
     # The fluent `.py` builder and the flat YAML string are the same unit.
     built = TTSIMUnit.CURRENCY.PER_SQUARE_METER.PER_MONTH
     assert str(built) == "CURRENCY_PER_SQUARE_METER_PER_MONTH"
-    assert parse_compositional_unit(str(built)) == built
+    assert parse_ttsim_unit(str(built)) == built
 
 
 def test_builder_round_trips_with_level():
     built = TTSIMUnit.CURRENCY.PER_MONTH.PER_BG
     assert str(built) == "CURRENCY_PER_MONTH_PER_BG"
-    assert parse_compositional_unit("CURRENCY_PER_MONTH_PER_BG") == built
+    assert parse_ttsim_unit("CURRENCY_PER_MONTH_PER_BG") == built
 
 
 def test_builder_generic_per_level_matches_attribute():
     assert (
         TTSIMUnit.DIMENSIONLESS.PER_LEVEL("bg")
         == TTSIMUnit.DIMENSIONLESS.PER_BG
-        == parse_compositional_unit("DIMENSIONLESS_PER_BG")
+        == parse_ttsim_unit("DIMENSIONLESS_PER_BG")
     )
 
 
@@ -832,18 +834,16 @@ def test_builder_generic_per_level_matches_attribute():
         ),
     ],
 )
-def test_parse_compositional_unit_classifies_denominators(
-    spelling, base, area, period, level
-):
-    parsed = parse_compositional_unit(spelling)
+def test_parse_ttsim_unit_classifies_denominators(spelling, base, area, period, level):
+    parsed = parse_ttsim_unit(spelling)
     assert parsed == CompositeUnit(base=base, area=area, period=period, level=level)
     assert str(parsed) == spelling
 
 
-def test_parse_compositional_unit_accepts_concrete_currency_base():
+def test_parse_ttsim_unit_accepts_concrete_currency_base():
     # Concrete currencies (param YAML only) are valid bases; CASTAR is the
     # mettsim base currency, registered on import.
-    parsed = parse_compositional_unit("CASTAR_PER_MONTH")
+    parsed = parse_ttsim_unit("CASTAR_PER_MONTH")
     assert parsed.base == "CASTAR"
     assert parsed.period == "MONTH"
 
@@ -860,9 +860,9 @@ def test_parse_compositional_unit_accepts_concrete_currency_base():
         "CURRENCY_PER_MONTH_PER_HOURS",  # non-canonical (hours after period)
     ],
 )
-def test_parse_compositional_unit_rejects_bad_spellings(spelling):
+def test_parse_ttsim_unit_rejects_bad_spellings(spelling):
     with pytest.raises(UnitDefinitionError):
-        parse_compositional_unit(spelling)
+        parse_ttsim_unit(spelling)
 
 
 def test_builder_rejects_non_canonical_order():
@@ -877,8 +877,8 @@ def test_builder_rejects_non_canonical_order():
 def test_person_per_level_resolves_to_head_count():
     # DIMENSIONLESS_PER_BG is a head count at bg: a dimensionless 1 / [bg], the unit
     # a COUNT aggregation to bg mints (GEP 10).
-    compositional = resolve_compositional_unit(
-        unit=parse_compositional_unit("DIMENSIONLESS_PER_BG"), registry=REGISTRY
+    compositional = resolve_ttsim_unit(
+        unit=parse_ttsim_unit("DIMENSIONLESS_PER_BG"), registry=REGISTRY
     )
     assert units_are_equivalent(
         left=compositional,
@@ -895,27 +895,27 @@ def test_there_is_no_per_person_spelling():
     with pytest.raises(AttributeError):
         _ = TTSIMUnit.CURRENCY.PER_MONTH.PER_PERSON
     with pytest.raises(UnitDefinitionError, match="Unknown grouping level 'person'"):
-        resolve_compositional_unit(
-            unit=parse_compositional_unit("CURRENCY_PER_MONTH_PER_PERSON"),
+        resolve_ttsim_unit(
+            unit=parse_ttsim_unit("CURRENCY_PER_MONTH_PER_PERSON"),
             registry=REGISTRY,
         )
 
 
 def test_concrete_currency_base_resolves_like_agnostic():
     # For dimensionality a concrete currency means exactly what CURRENCY means.
-    concrete = resolve_compositional_unit(
-        unit=parse_compositional_unit("CASTAR_PER_MONTH"), registry=REGISTRY
+    concrete = resolve_ttsim_unit(
+        unit=parse_ttsim_unit("CASTAR_PER_MONTH"), registry=REGISTRY
     )
-    agnostic = resolve_compositional_unit(
-        unit=parse_compositional_unit("CURRENCY_PER_MONTH"), registry=REGISTRY
+    agnostic = resolve_ttsim_unit(
+        unit=parse_ttsim_unit("CURRENCY_PER_MONTH"), registry=REGISTRY
     )
     assert units_are_equivalent(left=concrete, right=agnostic, registry=REGISTRY)
 
 
-def test_resolve_compositional_unit_rejects_unregistered_level():
+def test_resolve_ttsim_unit_rejects_unregistered_level():
     with pytest.raises(UnitDefinitionError, match="grouping level"):
-        resolve_compositional_unit(
-            unit=parse_compositional_unit("CURRENCY_PER_NEVERLAND"), registry=REGISTRY
+        resolve_ttsim_unit(
+            unit=parse_ttsim_unit("CURRENCY_PER_NEVERLAND"), registry=REGISTRY
         )
 
 
@@ -925,7 +925,7 @@ def test_working_hour_is_its_own_dimension():
     # bare dimensionless number the way a `[time] / [time]` hour-flow would.
     assert REGISTRY.Quantity(1.0, "working_hour").dimensionality == {"[hours]": 1}
     assert not REGISTRY.Quantity(1.0, "working_hour").is_compatible_with("day")
-    hours_per_week = resolve_compositional_unit(
+    hours_per_week = resolve_ttsim_unit(
         unit=TTSIMUnit.HOURS.PER_WEEK, registry=REGISTRY
     )
     assert REGISTRY.Quantity(1.0, hours_per_week).dimensionality == {
@@ -944,11 +944,11 @@ def test_bare_time_hour_is_no_longer_an_admissible_token():
 def test_hours_per_week_rebases_period_only():
     # The one conversion working hours admit: re-basing the [time] period
     # (week -> month) leaves the [hours] numerator untouched.
-    per_week = resolve_compositional_unit(
-        unit=parse_compositional_unit("HOURS_PER_WEEK"), registry=REGISTRY
+    per_week = resolve_ttsim_unit(
+        unit=parse_ttsim_unit("HOURS_PER_WEEK"), registry=REGISTRY
     )
-    per_month = resolve_compositional_unit(
-        unit=parse_compositional_unit("HOURS_PER_MONTH"), registry=REGISTRY
+    per_month = resolve_ttsim_unit(
+        unit=parse_ttsim_unit("HOURS_PER_MONTH"), registry=REGISTRY
     )
     assert (
         per_week.dimensionality
@@ -974,13 +974,13 @@ def test_cast_target_resolves_like_a_column_declaration():
     # The cast states a unit in the declaration vocabulary: an omitted level is
     # level-neutral, exactly as for a column declaration.
     assert units_are_equivalent(
-        left=resolve_compositional_body_unit(
+        left=resolve_agnostic_ttsim_unit(
             unit=TTSIMUnit.CURRENCY.PER_MONTH,
             where="test",
             registry=REGISTRY,
             what="a cast inside a body",
         ),
-        right=resolve_compositional_column_unit(
+        right=resolve_ttsim_unit_for_column(
             unit=TTSIMUnit.CURRENCY.PER_MONTH,
             time_unit_id="m",
             grouping_level=None,
@@ -990,21 +990,21 @@ def test_cast_target_resolves_like_a_column_declaration():
         registry=REGISTRY,
     )
     assert units_are_equivalent(
-        left=resolve_compositional_body_unit(
+        left=resolve_agnostic_ttsim_unit(
             unit=TTSIMUnit.MONTHS,
             where="test",
             registry=REGISTRY,
             what="a cast inside a body",
         ),
-        right=resolve_compositional_unit(unit=TTSIMUnit.MONTHS, registry=REGISTRY),
+        right=resolve_ttsim_unit(unit=TTSIMUnit.MONTHS, registry=REGISTRY),
         registry=REGISTRY,
     )
 
 
 def test_cast_target_must_be_currency_agnostic():
-    token = coerce_to_composite_unit(value="CASTAR_PER_MONTH", where="test")
+    token = ttsim_unit_from_yaml_value(value="CASTAR_PER_MONTH", where="test")
     with pytest.raises(UnitDefinitionError, match="agnostic CURRENCY"):
-        resolve_compositional_body_unit(
+        resolve_agnostic_ttsim_unit(
             unit=token,
             where="test",
             registry=REGISTRY,
@@ -1018,7 +1018,7 @@ def test_hours_denominator_resolves_level_neutral():
     # cleanly against the physical quantity (GEP 10) — the same as areas.
     expected = parse_unit(unit_str="CURRENCY / working_hour", registry=REGISTRY)
     assert units_are_equivalent(
-        left=resolve_compositional_column_unit(
+        left=resolve_ttsim_unit_for_column(
             unit=TTSIMUnit.CURRENCY.PER_HOURS,
             time_unit_id=None,
             grouping_level=None,
@@ -1029,8 +1029,8 @@ def test_hours_denominator_resolves_level_neutral():
         registry=REGISTRY,
     )
     assert units_are_equivalent(
-        left=resolve_compositional_param_unit(
-            unit=coerce_to_composite_unit(value="CASTAR_PER_HOURS", where="test"),
+        left=resolve_ttsim_unit_for_param(
+            unit=ttsim_unit_from_yaml_value(value="CASTAR_PER_HOURS", where="test"),
             where="test",
             registry=REGISTRY,
         ),
@@ -1039,18 +1039,16 @@ def test_hours_denominator_resolves_level_neutral():
     )
 
 
-def test_composite_from_resolved_unit_reconstructs_the_hours_denominator():
+def test_ttsim_unit_from_pint_unit_reconstructs_the_hours_denominator():
     # The output-side label round trip for a wage floor: the working-hour
     # denominator maps back to the physical-denominator slot.
-    resolved = resolve_compositional_unit(
-        unit=TTSIMUnit.CURRENCY.PER_HOURS, registry=REGISTRY
-    )
+    resolved = resolve_ttsim_unit(unit=TTSIMUnit.CURRENCY.PER_HOURS, registry=REGISTRY)
     in_data_currency = output_unit_in_data_currency(
         units=resolved, data_currency="CASTAR", registry=REGISTRY
     )
-    assert composite_from_resolved_unit(
+    assert ttsim_unit_from_pint_unit(
         units=in_data_currency, registry=REGISTRY
-    ) == coerce_to_composite_unit(value="CASTAR_PER_HOURS", where="test")
+    ) == ttsim_unit_from_yaml_value(value="CASTAR_PER_HOURS", where="test")
 
 
 def test_area_denominator_resolves_level_neutral():
@@ -1059,7 +1057,7 @@ def test_area_denominator_resolves_level_neutral():
     # the physical quantity (GEP 10). Both the column and parameter resolver apply.
     expected = parse_unit(unit_str="CURRENCY / meter ** 2 / month", registry=REGISTRY)
     assert units_are_equivalent(
-        left=resolve_compositional_column_unit(
+        left=resolve_ttsim_unit_for_column(
             unit=TTSIMUnit.CURRENCY.PER_SQUARE_METER.PER_MONTH,
             time_unit_id="m",
             grouping_level=None,
@@ -1070,8 +1068,8 @@ def test_area_denominator_resolves_level_neutral():
         registry=REGISTRY,
     )
     assert units_are_equivalent(
-        left=resolve_compositional_param_unit(
-            unit=coerce_to_composite_unit(
+        left=resolve_ttsim_unit_for_param(
+            unit=ttsim_unit_from_yaml_value(
                 value="CASTAR_PER_SQUARE_METER_PER_MONTH", where="test"
             ),
             where="test",
@@ -1086,7 +1084,7 @@ def test_bare_area_base_is_level_neutral():
     # A bare SQUARE_METER base carries no grouping level (GEP 10). A per-person
     # dwelling area is bare; a household's area spells its group level.
     assert units_are_equivalent(
-        left=resolve_compositional_column_unit(
+        left=resolve_ttsim_unit_for_column(
             unit=TTSIMUnit.SQUARE_METER,
             time_unit_id=None,
             grouping_level=None,
@@ -1102,7 +1100,7 @@ def test_area_base_with_group_level_carries_the_group_level():
     # A household's dwelling area spells its group level: SQUARE_METER_PER_HH
     # resolves to meter ** 2 / [hh].
     assert units_are_equivalent(
-        left=resolve_compositional_column_unit(
+        left=resolve_ttsim_unit_for_column(
             unit=TTSIMUnit.SQUARE_METER.PER_HH,
             time_unit_id=None,
             grouping_level="hh",

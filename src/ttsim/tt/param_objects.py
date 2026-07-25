@@ -11,8 +11,8 @@ from ttsim.exceptions import UnitDefinitionError
 from ttsim.tt.units import (
     UNSET_UNIT,
     CompositeUnit,
-    coerce_to_composite_unit,
-    token_declares_a_currency,
+    ttsim_unit_from_yaml_value,
+    ttsim_unit_has_currency,
 )
 from ttsim.typing import DictParamValue, NestedLookupDict
 
@@ -74,12 +74,12 @@ def _coerce_unit_declaration(
             key: _coerce_unit_declaration(declared=sub, obj=obj)
             if isinstance(sub, dict)
             # Present leaves are tokens (``DIMENSIONLESS`` for a dimensionless leaf).
-            else coerce_to_composite_unit(
+            else ttsim_unit_from_yaml_value(
                 value=sub, where=f"{where} (unit of leaf {key!r})"
             )
             for key, sub in declared.items()
         }
-    return coerce_to_composite_unit(value=declared, where=where)
+    return ttsim_unit_from_yaml_value(value=declared, where=where)
 
 
 def _coerce_axis_unit_declarations(obj: ParamObject) -> None:
@@ -183,7 +183,7 @@ class ConsecutiveIntLookupTableParam(ParamMappingObject):
     def __post_init__(self) -> None:
         super().__post_init__()
         input_unit = cast("CompositeUnit", self.input_unit)
-        if input_unit is not UNSET_UNIT and token_declares_a_currency(input_unit):
+        if input_unit is not UNSET_UNIT and ttsim_unit_has_currency(input_unit):
             raise UnitDefinitionError(
                 f"A lookup table is keyed by consecutive integers, so its "
                 f"`input_unit:` cannot be a currency (got {input_unit}); the "

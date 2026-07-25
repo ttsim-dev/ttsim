@@ -37,7 +37,7 @@ from ttsim.tt.column_objects_param_function import (
 )
 from ttsim.tt.interval_utils import merge_piecewise_intervals
 from ttsim.tt.piecewise_polynomial import PIECEWISE_TYPES, get_piecewise_parameters
-from ttsim.tt.units import coerce_to_composite_unit, token_source_currency
+from ttsim.tt.units import ttsim_unit_currency, ttsim_unit_from_yaml_value
 from ttsim.typing import (
     FlatColumnObjectsParamFunctions,
     FlatOrigParamSpecs,
@@ -181,7 +181,7 @@ def _fail_if_rounding_spec_currency_is_not_statutory(
     spec = getattr(obj, "rounding_spec", None)
     if spec is None or spec.unit is None:
         return
-    source = token_source_currency(spec.unit)
+    source = ttsim_unit_currency(spec.unit)
     if source is None or source == computation_currency:
         return
     raise UnitDefinitionError(
@@ -245,10 +245,10 @@ def _collect_currencies_in_param_units(raw_token: Any) -> set[str]:  # noqa: ANN
             for sub_token in raw_token.values()
             for currency in _collect_currencies_in_param_units(sub_token)
         }
-    token = coerce_to_composite_unit(
+    token = ttsim_unit_from_yaml_value(
         value=raw_token, where="the statutory-currency check"
     )
-    source = token_source_currency(token)
+    source = ttsim_unit_currency(token)
     return {source} if source is not None else set()
 
 

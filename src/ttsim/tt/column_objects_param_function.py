@@ -636,7 +636,7 @@ def group_creation_function(
         end_date: The date until which the function is active (inclusive).
         reorder: Whether the created Group ID's should be reordered to be
             consecutively numbered starting from 0.
-        unit: The group id's compositional unit. A group id is a dimensionless
+        unit: The group id's TTSIM unit. A group id is a dimensionless
             identifier, so this is ``TTSIMUnit.DIMENSIONLESS``.
 
     """

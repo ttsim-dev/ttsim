@@ -28,9 +28,9 @@ from ttsim.tt.units import (
     _unit_builder_levels,
     divide_by_grouping_level,
     parse_unit,
-    resolve_compositional_column_unit,
-    resolve_compositional_param_unit,
-    resolve_compositional_unit,
+    resolve_ttsim_unit,
+    resolve_ttsim_unit_for_column,
+    resolve_ttsim_unit_for_param,
     resolved_unit_for_aggregation,
     unit_for_aggregation,
     units_are_equivalent,
@@ -134,9 +134,7 @@ def test_unregistered_grouping_level_is_rejected():
 
 
 def test_currency_flow_resolves_with_hh_denominator_at_level_hh():
-    base = resolve_compositional_unit(
-        unit=TTSIMUnit.CURRENCY.PER_MONTH, registry=REGISTRY
-    )
+    base = resolve_ttsim_unit(unit=TTSIMUnit.CURRENCY.PER_MONTH, registry=REGISTRY)
     at_hh = divide_by_grouping_level(unit=base, level="hh", registry=REGISTRY)
     assert units_are_equivalent(
         left=at_hh,
@@ -160,7 +158,7 @@ def test_currency_flow_resolves_with_hh_denominator_at_level_hh():
 def test_bare_tokens_resolve_without_a_level(token):
     # A bare unit carries no grouping denominator: the resolved unit is the plain
     # physical unit, unchanged by any level.
-    resolved = resolve_compositional_unit(unit=token, registry=REGISTRY)
+    resolved = resolve_ttsim_unit(unit=token, registry=REGISTRY)
     hh_division = divide_by_grouping_level(
         unit=parse_unit(unit_str="CURRENCY", registry=REGISTRY),
         level="hh",
@@ -210,7 +208,7 @@ def test_absent_level_is_bare():
     # A bare CURRENCY_PER_YEAR carries no grouping level — it is a per-person /
     # level-neutral amount (GEP 10), so it multiplies a leveled quantity without
     # polluting its level.
-    resolved = resolve_compositional_param_unit(
+    resolved = resolve_ttsim_unit_for_param(
         unit=TTSIMUnit.CURRENCY.PER_YEAR, where="test", registry=REGISTRY
     )
     assert units_are_equivalent(
@@ -222,7 +220,7 @@ def test_absent_level_is_bare():
 
 def test_spelled_level_on_stock_param():
     # A non-flow per-group amount: CURRENCY at level hh.
-    resolved = resolve_compositional_param_unit(
+    resolved = resolve_ttsim_unit_for_param(
         unit=TTSIMUnit.CURRENCY.PER_HH, where="test", registry=REGISTRY
     )
     expected = divide_by_grouping_level(
@@ -235,7 +233,7 @@ def test_spelled_level_on_stock_param():
 
 def test_unknown_level_is_rejected():
     with pytest.raises(UnitDefinitionError, match="Unknown grouping level"):
-        resolve_compositional_param_unit(
+        resolve_ttsim_unit_for_param(
             unit=TTSIMUnit.CURRENCY.PER_YEAR.PER_LEVEL("not_a_level"),
             where="test",
             registry=REGISTRY,
@@ -245,7 +243,7 @@ def test_unknown_level_is_rejected():
 def test_column_omitting_the_level_is_bare():
     # Omitting the level at a group suffix makes the column bare — no ``[bg]``
     # (GEP 10). A per-person amount constant within the group is bare too.
-    resolved = resolve_compositional_column_unit(
+    resolved = resolve_ttsim_unit_for_column(
         unit=TTSIMUnit.CURRENCY.PER_MONTH,
         time_unit_id="m",
         grouping_level="bg",
@@ -260,7 +258,7 @@ def test_column_omitting_the_level_is_bare():
 
 
 def test_intensive_column_omitting_the_level_stays_bare_at_a_group_suffix():
-    resolved = resolve_compositional_column_unit(
+    resolved = resolve_ttsim_unit_for_column(
         unit=TTSIMUnit.MONTHS,
         time_unit_id=None,
         grouping_level="bg",
@@ -277,7 +275,7 @@ def test_intensive_column_omitting_the_level_stays_bare_at_a_group_suffix():
 def test_intensive_column_with_a_spelled_group_level_resolves():
     # GEP 10's ``alter_monate_jüngstes_mitglied_fg``: the family's property, so
     # the duration carries the group level — declared, not read off the base.
-    resolved = resolve_compositional_column_unit(
+    resolved = resolve_ttsim_unit_for_column(
         unit=TTSIMUnit.MONTHS.PER_LEVEL("hh"),
         time_unit_id=None,
         grouping_level="hh",
@@ -294,7 +292,7 @@ def test_intensive_column_with_a_spelled_group_level_resolves():
 
 def test_spelled_group_level_contradicting_the_suffix_is_rejected():
     with pytest.raises(UnitDefinitionError, match="must match the suffix"):
-        resolve_compositional_column_unit(
+        resolve_ttsim_unit_for_column(
             unit=TTSIMUnit.CURRENCY.PER_MONTH.PER_LEVEL("bg"),
             time_unit_id="m",
             grouping_level="hh",
@@ -307,7 +305,7 @@ def test_spelled_group_level_on_an_unsuffixed_name_is_rejected():
     # An unsuffixed name is bare; spelling a group level on it contradicts the
     # (absent) suffix (GEP 10).
     with pytest.raises(UnitDefinitionError, match="no level"):
-        resolve_compositional_column_unit(
+        resolve_ttsim_unit_for_column(
             unit=TTSIMUnit.CURRENCY.PER_MONTH.PER_HH,
             time_unit_id="m",
             grouping_level=None,
@@ -320,7 +318,7 @@ def test_boolean_omitting_the_level_is_bare():
     # A bare DIMENSIONLESS boolean is a level-neutral / individual flag (GEP 10):
     # omitting the level yields plain dimensionless. A group indicator spells its
     # group.
-    resolved = resolve_compositional_column_unit(
+    resolved = resolve_ttsim_unit_for_column(
         unit=TTSIMUnit.DIMENSIONLESS,
         time_unit_id=None,
         grouping_level="hh",
@@ -335,7 +333,7 @@ def test_boolean_omitting_the_level_is_bare():
 def test_group_level_indicator_carries_its_group_level():
     # A group-level boolean spells its level (GEP 10): DIMENSIONLESS_PER_HH
     # resolves to 1 / [hh].
-    resolved = resolve_compositional_column_unit(
+    resolved = resolve_ttsim_unit_for_column(
         unit=TTSIMUnit.DIMENSIONLESS.PER_HH,
         time_unit_id=None,
         grouping_level="hh",
@@ -352,7 +350,7 @@ def test_calendar_point_carries_a_level():
     # GEP 10's ``baujahr_immobilie_hh``: the dwelling's construction year is the
     # household's property — a leveled calendar point. Attaching and comparing
     # the level must stay clear of pint's offset-arithmetic rules.
-    resolved = resolve_compositional_column_unit(
+    resolved = resolve_ttsim_unit_for_column(
         unit=TTSIMUnit.CALENDAR_YEAR.PER_LEVEL("hh"),
         time_unit_id=None,
         grouping_level="hh",
@@ -551,7 +549,7 @@ def test_declared_head_count_at_group_level_matches_a_count():
     # A DIMENSIONLESS_PER_HH column resolves to 1/[hh] — the same unit a COUNT
     # aggregation to hh mints, so a declaration and an aggregation compose and
     # compare cleanly (GEP 10).
-    at_hh = resolve_compositional_param_unit(
+    at_hh = resolve_ttsim_unit_for_param(
         unit=TTSIMUnit.DIMENSIONLESS.PER_HH, where="test", registry=REGISTRY
     )
     assert units_are_equivalent(

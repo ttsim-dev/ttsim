@@ -6,7 +6,10 @@ mapping — and the pint registry both are defined in.
 
 The unit *vocabulary* a declaration is spelled in — the ``CURRENCY`` token, the
 ``TTSIMUnit`` builder, the :class:`CompositeUnit` grammar — is shared and lives in
-:mod:`ttsim.tt.units`.
+:mod:`ttsim.tt.units`, along with the two-layer split this module inherits: a
+declared *TTSIM unit* (:class:`CompositeUnit`) resolves against a registry to a
+*pint unit* (:class:`pint.Unit`). A currency exists at both layers — as a base a
+declaration may spell, and as a pint unit in this system's registry.
 """
 
 from __future__ import annotations
@@ -24,7 +27,7 @@ from pint.util import to_units_container
 from ttsim.exceptions import UnitDefinitionError
 from ttsim.tt.units import (
     _ALLOWED_UNIT_TOKENS,
-    _COMPOSITIONAL_BASE_TO_PINT,
+    _TTSIM_UNIT_BASE_TO_PINT,
     CURRENCY_TOKEN,
     CompositeUnit,
     TTSIMUnit,
@@ -95,12 +98,12 @@ class UnitSystem:
     field_units_by_class: dict[type, dict[str, Any] | None] = dataclasses.field(
         init=False, repr=False, default_factory=dict
     )
-    """Memo of the resolved unit annotations of each parameter dataclass the
+    """Memo of the resolved pint units annotating each parameter dataclass the
     unit check has seen, keyed by class. Each value maps a field name to what its
-    pluck yields — a resolved ``pint.Unit``, a nested dataclass ``type``, or a
+    pluck yields — a :class:`pint.Unit`, a nested dataclass ``type``, or a
     schedule-field marker built in :mod:`ttsim.interface_dag_elements.unit_checks`
     (kept loose here so this module owns no private name from that layer). The
-    units are this system's registry's, so the memo is the system's."""
+    pint units are this system's registry's, so the memo is the system's."""
 
     def __post_init__(self) -> None:
         # Snapshot the caller's containers: everything derived below (the parsed
@@ -203,7 +206,7 @@ class UnitSystem:
             # Surface the concrete currency on the `TTSIMUnit` builder (`TTSIMUnit.EUR`,
             # `TTSIMUnit.DM`, `TTSIMUnit.SILVER_PENNY`) so it can tag a
             # `UnitAnnotatedColumn` of input data. A column/function declaration
-            # still rejects a concrete base (`resolve_compositional_column_unit`);
+            # still rejects a concrete base (`resolve_ttsim_unit_for_column`);
             # this only makes it reachable.
             setattr(TTSIMUnit, name.upper(), CompositeUnit(base=name.upper()))
 
@@ -211,13 +214,13 @@ class UnitSystem:
         """Reject a currency whose ``TTSIMUnit`` base the shared vocabulary owns.
 
         A currency reaches the builder namespace under its upper-cased name, and
-        :func:`ttsim.tt.units.parse_compositional_unit` matches a base against that
+        :func:`ttsim.tt.units.parse_ttsim_unit` matches a base against that
         same upper-cased form. Colliding with the agnostic :data:`CURRENCY_TOKEN`
         or with a non-currency base would silently shadow that base for every
         policy package in the process.
         """
         base = name.upper()
-        if base == CURRENCY_TOKEN or base in _COMPOSITIONAL_BASE_TO_PINT:
+        if base == CURRENCY_TOKEN or base in _TTSIM_UNIT_BASE_TO_PINT:
             raise UnitDefinitionError(
                 f"Cannot register currency {name!r}: the unit base {base!r} is a "
                 f"non-currency base the shared unit vocabulary already owns, so "

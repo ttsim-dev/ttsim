@@ -18,10 +18,10 @@ from ttsim.interface_dag_elements.interface_node_objects import interface_functi
 from ttsim.tt.currencies import UnitSystem
 from ttsim.tt.units import (
     UnitAnnotatedColumn,
-    composite_from_resolved_unit,
     input_target_unit_in_data_currency,
     output_unit_in_data_currency,
     param_unit_in_computation_currency,
+    ttsim_unit_from_pint_unit,
 )
 from ttsim.typing import (
     FlatData,
@@ -88,7 +88,7 @@ def tree_with_unit_annotations(
     tree: NestedResults,
     raw_results__from_input_data: QNameData,
     raw_results__params: QNameResults,
-    unit_checks__resolved_units: dict[str, pint.Unit | dict[str | int, Any]],
+    unit_checks__resolved_pint_units: dict[str, pint.Unit | dict[str | int, Any]],
     data_currency: str,
     computation_currency: str,
     unit_system: UnitSystem,
@@ -110,7 +110,7 @@ def tree_with_unit_annotations(
     A leaf with no resolved unit is left bare.
     """
     registry = unit_system.registry
-    resolved = unit_checks__resolved_units
+    resolved = unit_checks__resolved_pint_units
     tagged: dict[str, Any] = {}
     param_leaf_qnames = set(
         dt.flatten_to_qnames(dt.unflatten_from_qnames(dict(raw_results__params)))
@@ -130,7 +130,7 @@ def tree_with_unit_annotations(
             result_unit = output_unit_in_data_currency(
                 units=unit, data_currency=data_currency, registry=registry
             )
-        label = composite_from_resolved_unit(units=result_unit, registry=registry)
+        label = ttsim_unit_from_pint_unit(units=result_unit, registry=registry)
         tagged[qname] = UnitAnnotatedColumn(values=value, unit=label)
     for qname, value in raw_results__params.items():
         tagged[qname] = _annotated_param(
@@ -185,7 +185,7 @@ def _annotated_param(
     )
     return UnitAnnotatedColumn(
         values=value,
-        unit=composite_from_resolved_unit(units=result_unit, registry=registry),
+        unit=ttsim_unit_from_pint_unit(units=result_unit, registry=registry),
     )
 
 
