@@ -19,15 +19,7 @@ from ttsim.exceptions import (
 from ttsim.interface_dag_elements.automatically_added_functions import (
     create_agg_by_group_functions,
 )
-from ttsim.interface_dag_elements.unit_checks import (
-    _resolved_return_structure,
-    _structured_field_kinds,
-    declared_ttsim_units,
-    fail_if_environment_units_are_inconsistent,
-    fail_if_environment_units_are_missing,
-    node_is_boolean,
-    resolve_environment_units,
-)
+from ttsim.interface_dag_elements.unit_checks import declared_ttsim_units
 from ttsim.tt import (
     UNSET_UNIT,
     AggType,
@@ -65,6 +57,16 @@ from ttsim.typing import (
     FloatColumn,
     IntColumn,
     RawParamValue,
+)
+from ttsim.unit_checks import (
+    fail_if_environment_units_are_inconsistent,
+    fail_if_environment_units_are_missing,
+    node_is_boolean,
+    resolve_environment_units,
+)
+from ttsim.unit_checks.contracts import (
+    _resolved_return_structure,
+    _structured_field_kinds,
 )
 from ttsim.unit_converters import m_to_y, per_m_to_per_y, y_to_m
 
@@ -2148,7 +2150,7 @@ def test_path_cap_truncation_demands_opt_out(monkeypatch):
     2**3 = 8 reachable paths; the explorer must stop and report rather than
     return success with most paths unchecked.
     """
-    monkeypatch.setattr("ttsim.interface_dag_elements.unit_checks._MAX_PATHS", 4)
+    monkeypatch.setattr("ttsim.unit_checks.execution._MAX_PATHS", 4)
 
     @policy_input(unit=TTSIMUnit.DIMENSIONLESS)
     def flag_a() -> bool:

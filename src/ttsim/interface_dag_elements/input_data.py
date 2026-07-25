@@ -19,9 +19,6 @@ from ttsim.interface_dag_elements.interface_node_objects import (
 from ttsim.interface_dag_elements.processed_data import (
     _canonicalize_input_dtype,
 )
-from ttsim.interface_dag_elements.unit_checks import (
-    flatten_unit_annotated_input_tree,
-)
 from ttsim.tt.currencies import UnitSystem
 from ttsim.tt.units import (
     CompositeUnit,
@@ -29,6 +26,7 @@ from ttsim.tt.units import (
     input_strip_unit,
     strip_input_quantity_at_boundary,
 )
+from ttsim.unit_checks import flatten_unit_annotated_input_tree
 
 if TYPE_CHECKING:
     from types import ModuleType
