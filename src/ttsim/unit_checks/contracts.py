@@ -251,8 +251,6 @@ def _structured_field_kinds(
         memo[cls] = None
         return None
     kinds: dict[str, pint.Unit | type | _ScheduleFieldKind] = {}
-    # `cls` reaches here only via `_dataclass_or_none` / `_mapping_value_dataclass`,
-    # which already established it is a dataclass.
     for field in dataclasses.fields(cast("Any", cls)):
         hint = hints.get(field.name, field.type)
         metadata = getattr(hint, "__metadata__", ())
@@ -546,9 +544,6 @@ def _resolvable_type_hints(cls: type) -> dict[str, Any]:
     for klass in reversed(cls.__mro__):
         module = sys.modules.get(getattr(klass, "__module__", ""))
         namespace = {**(vars(module) if module else {}), **vars(klass)}
-        # `__dict__` access, not `inspect.get_annotations`: this walks the MRO to
-        # merge each class's *own* annotations, and needs them raw — the
-        # namespace they resolve against is built per class below.
         annotations = klass.__dict__.get("__annotations__", {})  # noqa: RUF063
         for name, annotation in annotations.items():
             resolved = _resolve_one_annotation(
