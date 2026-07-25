@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import inspect
+from typing import cast
 
 import pytest
 
@@ -10,6 +11,7 @@ from ttsim.interface_dag_elements.automatically_added_functions import (
     create_time_conversion_functions,
 )
 from ttsim.tt import TTSIMUnit, policy_function, policy_input
+from ttsim.tt.column_objects_param_function import TimeConversionFunction
 from ttsim.unit_converters import (
     per_d_to_per_m,
     per_d_to_per_w,
@@ -336,3 +338,59 @@ def test_input_at_a_time_variant_of_a_grouped_declaration_is_not_re_derived():
         grouping_levels=("kin",),
     )
     assert "bonus_y_kin" not in result.input_stubs
+
+
+def test_time_conversion_source_ignores_input_at_another_grouping_level():
+    """A group-level input column does not feed an individual-level declaration.
+
+    `wage_m_kin` is the household's monthly wage; the individual-level `wage_y`
+    must keep converting from itself, not from the group total.
+    """
+    result = create_time_conversion_functions(
+        qname_policy_environment={
+            "wage_y": policy_function(leaf_name="wage_y", unit=TTSIMUnit.DIMENSIONLESS)(
+                return_one_float
+            ),
+        },
+        input_columns={"wage_m_kin"},
+        grouping_levels=("kin",),
+    )
+
+    source = cast("TimeConversionFunction", result.all_objects["wage_d"]).source
+    assert source == "wage_y"
+
+
+def test_time_conversion_source_ignores_ungrouped_input_for_grouped_declaration():
+    """An individual-level input column does not feed a group-level declaration.
+
+    `wage_m` is a person's monthly wage; the group-level `wage_y_kin` must keep
+    converting from itself, not from the per-person amount.
+    """
+    result = create_time_conversion_functions(
+        qname_policy_environment={
+            "wage_y_kin": policy_function(
+                leaf_name="wage_y_kin", unit=TTSIMUnit.DIMENSIONLESS
+            )(return_one_float),
+        },
+        input_columns={"wage_m"},
+        grouping_levels=("kin",),
+    )
+
+    source = cast("TimeConversionFunction", result.all_objects["wage_d_kin"]).source
+    assert source == "wage_y_kin"
+
+
+def test_time_conversion_source_is_the_input_at_the_same_grouping_level():
+    """A same-level input column is the source the conversions lead away from."""
+    result = create_time_conversion_functions(
+        qname_policy_environment={
+            "wage_y_kin": policy_function(
+                leaf_name="wage_y_kin", unit=TTSIMUnit.DIMENSIONLESS
+            )(return_one_float),
+        },
+        input_columns={"wage_m_kin"},
+        grouping_levels=("kin",),
+    )
+
+    source = cast("TimeConversionFunction", result.all_objects["wage_d_kin"]).source
+    assert source == "wage_m_kin"
