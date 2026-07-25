@@ -47,10 +47,9 @@ def declared_ttsim_units(
     specialized_environment__without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,  # noqa: E501
 ) -> dict[str, CompositeUnit]:
     """Each node's declared TTSIM unit, by qname."""
-    env = specialized_environment__without_tree_logic_and_with_derived_functions
     return {
         qname: token
-        for qname, obj in env.items()
+        for qname, obj in specialized_environment__without_tree_logic_and_with_derived_functions.items()  # noqa: E501
         if isinstance((token := getattr(obj, "unit", UNSET_UNIT)), CompositeUnit)
         and token is not UNSET_UNIT
     }

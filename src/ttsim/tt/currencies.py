@@ -3,13 +3,6 @@
 A :class:`UnitSystem` is the value a policy package builds once, at import, and
 hands to ``main(unit_system=...)``: its currencies, the dated statutory-currency
 mapping — and the pint registry both are defined in.
-
-The unit *vocabulary* a declaration is spelled in — the ``CURRENCY`` token, the
-``TTSIMUnit`` builder, the :class:`CompositeUnit` grammar — is shared and lives in
-:mod:`ttsim.tt.units`, along with the two-layer split this module inherits: a
-declared *TTSIM unit* (:class:`CompositeUnit`) resolves against a registry to a
-*pint unit* (:class:`pint.Unit`). A currency exists at both layers — as a base a
-declaration may spell, and as a pint unit in this system's registry.
 """
 
 from __future__ import annotations

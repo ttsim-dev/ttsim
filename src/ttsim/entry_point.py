@@ -58,6 +58,17 @@ if TYPE_CHECKING:
     )
 
 
+#: The `main()` keywords that supply data. Supplying any of them requires
+#: `tt_targets`, because it is ambiguous what to compute once a column that
+#: could be derived from primitives is overridden.
+_SUPPLIABLE_DATA_QNAMES: frozenset[str] = frozenset(
+    {
+        MainTarget.processed_data,
+        *dt.flatten_to_qnames(MainTarget.input_data.to_dict()).values(),
+    }
+)
+
+
 @beartype(conf=ENTRY_POINT_CONF)
 def main(
     *,
@@ -198,17 +209,6 @@ def _harmonize_inputs(inputs: dict[str, Any]) -> dict[str, Any]:
         with suppress(KeyError, TypeError):
             qname_inputs[qname] = acc(dict_inputs)
     return {k: v for k, v in qname_inputs.items() if v is not None}
-
-
-#: The `main()` keywords that supply data. Supplying any of them requires
-#: `tt_targets`, because it is ambiguous what to compute once a column that
-#: could be derived from primitives is overridden.
-_SUPPLIABLE_DATA_QNAMES: frozenset[str] = frozenset(
-    {
-        MainTarget.processed_data,
-        *dt.flatten_to_qnames(MainTarget.input_data.to_dict()).values(),
-    }
-)
 
 
 _MSG_FOR_MISSING_TT_TARGETS = """When providing data, `tt_targets` must be provided.

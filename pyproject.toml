@@ -42,7 +42,7 @@ dependencies = [
   "openpyxl",
   "optree>=0.16",
   "pandas>=3",
-  "pint>=0.24",
+  "pint>=0.25",
   "plotly>=6.5",
   "portion",
   "pygments",
@@ -86,7 +86,7 @@ numpy_groupies = "*"
 numpydoc = "*"
 openpyxl = "*"
 pandas = ">=3"
-pint = ">=0.24"
+pint = "~=0.25.0"
 portion = "*"
 prek = "*"
 pygments = "*"

@@ -117,13 +117,9 @@ def processed_data(
 
     We replace identifiers by consecutive integers starting at zero and sort the data
     according to the original `p_id`. Values arrive already denominated in the
-    computation currency (GEP 10).
+    computation currency.
 
     The transformations will be undone when going from raw results to results.
-
-    Supplying this node via ``main(processed_data=...)`` bypasses
-    :func:`ttsim.interface_dag_elements.currency.input_data_in_computation_currency`,
-    so the data handed over are assumed to be in the computation currency already.
     """
     orig_p_ids = _canonicalize_input_dtype(
         arr=input_data_in_computation_currency[("p_id",)],

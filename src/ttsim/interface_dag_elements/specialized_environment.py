@@ -69,7 +69,13 @@ def without_tree_logic_and_with_derived_functions(
     labels__top_level_namespace: UnorderedQNames,
     labels__grouping_levels: OrderedQNames,
 ) -> SpecEnvWithoutTreeLogicAndWithDerivedFunctions:
-    """Return a flat policy environment which includes derived functions."""
+    """Return a flat policy environment which includes derived functions.
+
+    Two steps:
+    1. Remove all tree logic from the policy environment.
+    2. Add derived functions to the policy environment.
+
+    """
     qname_env_without_tree_logic = _remove_tree_logic_from_policy_environment(
         qname_env=dt.flatten_to_qnames(policy_environment),
         labels__top_level_namespace=labels__top_level_namespace,
@@ -107,11 +113,23 @@ def _add_derived_functions(
 ) -> SpecEnvWithoutTreeLogicAndWithDerivedFunctions:
     """Return the environment extended by derived functions and input stubs.
 
-    Derived functions are time-converted functions and aggregation functions
-    (aggregate by p_id or by group). Each creator also mints a `PolicyInput` stub
-    for a derived name the input data supplies — no function is created there
-    because the data would override it, yet the name still needs the unit
-    declaration the derivation implies (GEP 10).
+    Derived functions are time converted functions and aggregation functions (aggregate
+    by p_id or by group).
+
+    Check that all targets have a corresponding function in the functions tree or can
+    be taken from the data.
+
+    Args:
+        column_objects_param_functions: Dict with qualified function names as keys
+            and functions with qualified arguments as values.
+        tt_targets: The list of targets with qualified names.
+        data: Dict with qualified data names as keys and arrays as values.
+        labels__top_level_namespace: Set of top-level namespaces.
+
+    Returns:
+        The specialized environment with derived functions (aggregations and time
+            conversions), and without tree logic, i.e. absolute qualified names in
+            all keys and function arguments.
     """
     # Create functions for different time units
     time_conversions = create_time_conversion_functions(

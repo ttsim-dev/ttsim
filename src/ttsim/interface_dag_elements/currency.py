@@ -24,12 +24,7 @@ if TYPE_CHECKING:
 
 @dataclass(frozen=True)
 class CurrencyConversion:
-    """The scalar factor crossing one currency into another, and where it applies.
-
-    Currency-denominated values are converted; everything else passes through
-    untouched. `apply` is the only way the factor reaches a value, so a caller
-    cannot accidentally scale a value whose unit declares no currency.
-    """
+    """The scalar factor crossing one currency into another, and where it applies."""
 
     factor: float
     """Multiplier taking a magnitude from the source into the target currency."""
