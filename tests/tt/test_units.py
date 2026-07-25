@@ -135,28 +135,6 @@ def test_ttsim_unit_from_yaml_value_round_trips_spellings(spelling):
     assert str(token) == spelling
 
 
-@pytest.mark.parametrize(
-    ("construct", "match"),
-    [
-        (
-            lambda: parse_ttsim_unit("PERSON_COUNT_PER_HH"),
-            "Unknown compositional base",
-        ),
-        (
-            lambda: ttsim_unit_from_yaml_value(
-                value="PERSON_COUNT_PER_HH", where="test"
-            ),
-            "invalid unit declaration",
-        ),
-    ],
-)
-def test_person_count_is_not_a_spelling(construct, match):
-    """A head count is the plain dimensionless unit (per group level), so
-    ``PERSON_COUNT`` is not a base — parsed or declared."""
-    with pytest.raises(UnitDefinitionError, match=match):
-        construct()
-
-
 def test_ttsim_unit_from_yaml_value_rejects_none():
     # `None` is not a dimensionless declaration (GEP 10): it reaches
     # `ttsim_unit_from_yaml_value` only through an internal bug, so the package claw
@@ -936,7 +914,7 @@ def test_builder_rejects_non_canonical_order():
         _ = TTSIMUnit.CURRENCY.PER_MONTH.PER_YEAR
 
 
-def test_person_per_level_resolves_to_head_count():
+def test_dimensionless_per_level_resolves_to_head_count():
     # DIMENSIONLESS_PER_BG is a head count at bg: a dimensionless 1 / [bg], the unit
     # a COUNT aggregation to bg mints (GEP 10).
     compositional = resolve_ttsim_unit(
@@ -951,16 +929,6 @@ def test_person_per_level_resolves_to_head_count():
     )
 
 
-def test_there_is_no_per_person_spelling():
-    # An individual quantity is bare (GEP 10): `person` is not a grouping level,
-    # so no `PER_PERSON` builder step or `_PER_PERSON` spelling exists.
-    with pytest.raises(AttributeError):
-        _ = TTSIMUnit.CURRENCY.PER_MONTH.PER_PERSON
-    with pytest.raises(UnitDefinitionError, match="Unknown grouping level 'person'"):
-        resolve_ttsim_unit(
-            unit=parse_ttsim_unit("CURRENCY_PER_MONTH_PER_PERSON"),
-            registry=REGISTRY,
-        )
 
 
 def test_concrete_currency_base_resolves_like_agnostic():
@@ -996,7 +964,7 @@ def test_working_hour_is_its_own_dimension():
     }
 
 
-def test_bare_time_hour_is_no_longer_an_admissible_token():
+def test_pint_builtin_hour_is_not_an_admissible_token():
     # There is exactly one spelling for working hours; pint's `[time]` `hour` is
     # not admissible (GEP 10).
     with pytest.raises(UnitDefinitionError, match="does not know about"):

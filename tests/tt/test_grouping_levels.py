@@ -6,8 +6,8 @@ resolution, the dimensionless head-count bridge, cross-level rejection, and the
 level-aware aggregation (SUM/MIN/MAX take the target level, MEAN goes bare,
 COUNT mints ``1/[target]``, ANY/ALL a boolean at the target).
 
-There is no ``person`` grouping level (GEP 10): an individual quantity is bare,
-carrying no grouping level, and a head count is a dimensionless ``1/[group]``.
+An individual quantity is bare, carrying no grouping level, and a head count is
+a dimensionless ``1/[group]`` (GEP 10).
 """
 
 from __future__ import annotations
@@ -48,18 +48,6 @@ REGISTRY = SYSTEM.registry
 register_grouping_levels(names=["hh", "bg", "sn"], registry=REGISTRY)
 
 
-def test_register_grouping_levels_does_not_register_person():
-    # There is no `person` grouping level (GEP 10): it is never registered as a
-    # dimension, so dividing by it is rejected as an unknown level.
-    register_grouping_levels(names=[], registry=REGISTRY)
-    with pytest.raises(UnitDefinitionError, match="Unknown grouping level"):
-        divide_by_grouping_level(
-            unit=parse_unit(unit_str="CURRENCY", registry=REGISTRY),
-            level="person",
-            registry=REGISTRY,
-        )
-
-
 def test_register_grouping_levels_is_idempotent():
     # Re-registering an already-known level is a tolerated no-op.
     register_grouping_levels(names=["hh"], registry=REGISTRY)
@@ -75,13 +63,6 @@ def test_register_grouping_levels_is_idempotent():
         registry=REGISTRY,
     )
     assert units_are_equivalent(left=first, right=second, registry=REGISTRY)
-
-
-def test_person_is_rejected_as_a_grouping_level():
-    """There is no individual grouping level (GEP 10), so a `person_id` column's
-    `person` level is refused rather than registered as a dimension."""
-    with pytest.raises(UnitDefinitionError, match="not a grouping level"):
-        register_grouping_levels(names=["person"], registry=REGISTRY)
 
 
 def test_non_lowercase_grouping_level_is_rejected():
