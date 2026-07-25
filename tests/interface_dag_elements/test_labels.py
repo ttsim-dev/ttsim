@@ -4,13 +4,14 @@ import networkx as nx
 import numpy as np
 import pytest
 
+from ttsim import TTTargets, main
 from ttsim.interface_dag_elements.labels import (
     all_qnames_in_policy_environment,
     column_targets,
+    data_qnames_from_input_data,
+    data_qnames_from_processed_data,
+    data_qnames_is_empty_set,
     grouping_levels,
-    input_columns_from_input_data,
-    input_columns_from_processed_data,
-    input_columns_is_empty_set,
     input_data_targets,
     param_targets,
     policy_inputs,
@@ -112,40 +113,55 @@ def test_grouping_levels_empty_environment():
 
 
 # =============================================================================
-# input_columns_from_input_data / input_columns_from_processed_data tests
+# data_qnames_from_input_data / data_qnames_from_processed_data tests
 # =============================================================================
-def test_input_columns_from_input_data_returns_qnames():
+def test_data_qnames_from_input_data_returns_qnames():
     input_data__flat = {
         ("p_id",): [0, 1, 2],
         ("n0", "income"): [100, 200, 300],
     }
 
-    result = input_columns_from_input_data(input_data__flat=input_data__flat)
+    result = data_qnames_from_input_data(input_data__flat=input_data__flat)
 
     assert result == {"p_id", "n0__income"}
 
 
-def test_input_columns_from_input_data_empty():
-    result = input_columns_from_input_data(input_data__flat={})
+def test_data_qnames_from_input_data_empty():
+    result = data_qnames_from_input_data(input_data__flat={})
     assert result == set()
 
 
-def test_input_columns_from_processed_data_returns_keys():
+def test_data_qnames_from_processed_data_returns_keys():
     processed_data = {
         "p_id": [0, 1, 2],
         "income": [100, 200, 300],
     }
 
-    result = input_columns_from_processed_data(processed_data=processed_data)
+    result = data_qnames_from_processed_data(processed_data=processed_data)
+
+    assert result == {"p_id", "income"}
+
+
+def test_data_qnames_from_processed_data_is_selected_via_main():
+    result = main(
+        main_target="labels__data_qnames",
+        processed_data={
+            "p_id": np.array([0]),
+            "income": np.array([100]),
+        },
+        tt_targets=TTTargets.qname(()),
+        include_fail_nodes=False,
+        include_warn_nodes=False,
+    )
 
     assert result == {"p_id", "income"}
 
 
 # =============================================================================
-# input_columns_is_empty_set tests
+# data_qnames_is_empty_set tests
 # =============================================================================
-def test_input_columns_is_empty_set_returns_empty():
-    result = input_columns_is_empty_set(xnp=np)
+def test_data_qnames_is_empty_set_returns_empty():
+    result = data_qnames_is_empty_set(xnp=np)
     assert result == set()
 
 
@@ -228,28 +244,28 @@ def test_root_nodes_filters_to_dag_roots():
     dag.add_edge("input_a", "intermediate")
     dag.add_edge("intermediate", "output")
 
-    input_columns = {"input_a", "intermediate", "output", "extra_input"}
+    data_qnames = {"input_a", "intermediate", "output", "extra_input"}
 
     result = root_nodes(
         specialized_environment__tt_dag=dag,
-        input_columns=input_columns,
+        data_qnames=data_qnames,
     )
 
-    # Only input_a is a root node (in_degree == 0) AND in input_columns
+    # Only input_a is a root node (in_degree == 0) AND in data_qnames
     assert result == {"input_a"}
 
 
 def test_root_nodes_excludes_non_input_roots():
-    # Root node that's not in input_columns should be excluded
+    # Root node that's not in data_qnames should be excluded
     dag = nx.DiGraph()
     dag.add_node("root_not_in_input")
     dag.add_edge("root_in_input", "output")
 
-    input_columns = {"root_in_input"}
+    data_qnames = {"root_in_input"}
 
     result = root_nodes(
         specialized_environment__tt_dag=dag,
-        input_columns=input_columns,
+        data_qnames=data_qnames,
     )
 
     assert "root_in_input" in result
@@ -258,11 +274,11 @@ def test_root_nodes_excludes_non_input_roots():
 
 def test_root_nodes_empty_dag():
     dag = nx.DiGraph()
-    input_columns = {"some_input"}
+    data_qnames = {"some_input"}
 
     result = root_nodes(
         specialized_environment__tt_dag=dag,
-        input_columns=input_columns,
+        data_qnames=data_qnames,
     )
 
     assert result == set()
@@ -273,11 +289,11 @@ def test_root_nodes_multiple_roots():
     dag.add_edge("root_a", "output")
     dag.add_edge("root_b", "output")
 
-    input_columns = {"root_a", "root_b", "output"}
+    data_qnames = {"root_a", "root_b", "output"}
 
     result = root_nodes(
         specialized_environment__tt_dag=dag,
-        input_columns=input_columns,
+        data_qnames=data_qnames,
     )
 
     assert result == {"root_a", "root_b"}
@@ -286,13 +302,13 @@ def test_root_nodes_multiple_roots():
 # =============================================================================
 # input_data_targets tests
 # =============================================================================
-def test_input_data_targets_filters_to_input_columns():
+def test_input_data_targets_filters_to_data_qnames():
     tt_targets = ["col_a", "col_b", "col_c"]
-    input_columns = {"col_a", "col_c"}
+    data_qnames = {"col_a", "col_c"}
 
     result = input_data_targets(
         tt_targets__qname=tt_targets,
-        input_columns=input_columns,
+        data_qnames=data_qnames,
     )
 
     assert "col_a" in result
@@ -302,11 +318,11 @@ def test_input_data_targets_filters_to_input_columns():
 
 def test_input_data_targets_preserves_order():
     tt_targets = ["z", "a", "m"]
-    input_columns = {"z", "a", "m"}
+    data_qnames = {"z", "a", "m"}
 
     result = input_data_targets(
         tt_targets__qname=tt_targets,
-        input_columns=input_columns,
+        data_qnames=data_qnames,
     )
 
     assert result == ["z", "a", "m"]
@@ -314,11 +330,11 @@ def test_input_data_targets_preserves_order():
 
 def test_input_data_targets_empty_intersection():
     tt_targets = ["col_a", "col_b"]
-    input_columns = {"col_c", "col_d"}
+    data_qnames = {"col_c", "col_d"}
 
     result = input_data_targets(
         tt_targets__qname=tt_targets,
-        input_columns=input_columns,
+        data_qnames=data_qnames,
     )
 
     assert result == []

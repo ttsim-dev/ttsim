@@ -10,12 +10,12 @@ from ttsim.interface_dag_elements.automatically_added_functions import (
     create_agg_by_group_functions,
     create_time_conversion_functions,
 )
-from ttsim.tt import TTSIMUnit, policy_function, policy_input
-from ttsim.tt.column_objects_param_function import TimeConversionFunction
-from ttsim.unit_converters import (
+from ttsim.time_converters import (
     per_d_to_per_m,
     per_d_to_per_w,
 )
+from ttsim.tt import TTSIMUnit, policy_function, policy_input
+from ttsim.tt.column_objects_param_function import TimeConversionFunction
 
 
 def return_one() -> int:
@@ -68,7 +68,7 @@ def test_should_create_functions_for_other_time_units(
                 return_one
             ),
         },
-        input_columns=set(),
+        data_qnames=set(),
         grouping_levels=("sn", "kin"),
     )
 
@@ -83,7 +83,7 @@ def test_should_not_create_functions_automatically_that_exist_already() -> None:
                 leaf_name="test1_d", unit=TTSIMUnit.DIMENSIONLESS
             )(return_one),
         },
-        input_columns={"test2_y"},
+        data_qnames={"test2_y"},
         grouping_levels=("sn", "kin"),
     )
 
@@ -98,7 +98,7 @@ def test_should_overwrite_with_data_cols_differing_only_in_time_period() -> None
                 return_one
             ),
         },
-        input_columns={"test_y"},
+        data_qnames={"test_y"},
         grouping_levels=("sn", "kin"),
     )
 
@@ -136,7 +136,7 @@ def test_time_conversions_should_not_create_cycle():
                 x
             )
         },
-        input_columns=set(),
+        data_qnames=set(),
         grouping_levels=(),
     )
 
@@ -159,7 +159,7 @@ def test_grouping_functions_should_not_create_cycle():
         },
         qname_policy_environment={},
         time_converted_input_stubs={},
-        input_columns=set(),
+        data_qnames=set(),
         tt_targets=("some_other_function_requiring_x_hh",),
         grouping_levels=("hh",),
     )
@@ -172,7 +172,7 @@ def test_grouping_functions_should_not_create_cycle():
         "column_functions",
         "qname_policy_environment",
         "tt_targets",
-        "input_columns",
+        "data_qnames",
         "expected",
     ),
     [
@@ -211,7 +211,7 @@ def test_derived_aggregation_functions_are_in_correct_namespace(
     column_functions,
     qname_policy_environment,
     tt_targets,
-    input_columns,
+    data_qnames,
     expected,
 ):
     """Test that the derived aggregation functions are in the correct namespace.
@@ -223,7 +223,7 @@ def test_derived_aggregation_functions_are_in_correct_namespace(
         column_functions=column_functions,
         qname_policy_environment=qname_policy_environment,
         time_converted_input_stubs={},
-        input_columns=input_columns,
+        data_qnames=data_qnames,
         tt_targets=tt_targets,
         grouping_levels=("kin",),
     )
@@ -246,7 +246,7 @@ def test_agg_by_group_resolves_source_dtype_from_sibling_time_unit() -> None:
             "bonus_m": policy_input(unit=TTSIMUnit.DIMENSIONLESS)(return_one_float)
         },
         time_converted_input_stubs={},
-        input_columns={"bonus_y"},
+        data_qnames={"bonus_y"},
         tt_targets={"bonus_y_kin": None},
         grouping_levels=("kin",),
     )
@@ -266,7 +266,7 @@ def test_input_at_a_group_aggregate_name_gets_a_stub_carrying_the_aggregated_uni
             "bonus_m": policy_input(unit=TTSIMUnit.CURRENCY.PER_MONTH)(return_one_float)
         },
         time_converted_input_stubs={},
-        input_columns={"bonus_m_kin"},
+        data_qnames={"bonus_m_kin"},
         tt_targets={},
         grouping_levels=("kin",),
     )
@@ -289,7 +289,7 @@ def test_input_at_a_group_aggregate_of_a_time_variant_resolves_through_the_sibli
             "bonus_m": policy_input(unit=TTSIMUnit.CURRENCY.PER_MONTH)(return_one_float)
         },
         time_converted_input_stubs={},
-        input_columns={"bonus_y_kin"},
+        data_qnames={"bonus_y_kin"},
         tt_targets={},
         grouping_levels=("kin",),
     )
@@ -308,7 +308,7 @@ def test_input_at_a_time_converted_name_gets_a_stub_with_the_rebased_unit():
         qname_policy_environment={
             "bonus_m": policy_input(unit=TTSIMUnit.CURRENCY.PER_MONTH)(return_one_float)
         },
-        input_columns={"bonus_y"},
+        data_qnames={"bonus_y"},
         grouping_levels=("kin",),
     )
     assert result.input_stubs["bonus_y"].unit == TTSIMUnit.CURRENCY.PER_YEAR
@@ -333,7 +333,7 @@ def test_input_at_a_time_variant_of_a_grouped_declaration_is_not_re_derived():
                 unit=TTSIMUnit.CURRENCY.PER_YEAR.PER_LEVEL("kin")
             )(return_one_float)
         },
-        input_columns={"bonus_y_kin"},
+        data_qnames={"bonus_y_kin"},
         tt_targets={},
         grouping_levels=("kin",),
     )
@@ -352,7 +352,7 @@ def test_time_conversion_source_ignores_input_at_another_grouping_level():
                 return_one_float
             ),
         },
-        input_columns={"wage_m_kin"},
+        data_qnames={"wage_m_kin"},
         grouping_levels=("kin",),
     )
 
@@ -372,7 +372,7 @@ def test_time_conversion_source_ignores_ungrouped_input_for_grouped_declaration(
                 leaf_name="wage_y_kin", unit=TTSIMUnit.DIMENSIONLESS
             )(return_one_float),
         },
-        input_columns={"wage_m"},
+        data_qnames={"wage_m"},
         grouping_levels=("kin",),
     )
 
@@ -388,7 +388,7 @@ def test_time_conversion_source_is_the_input_at_the_same_grouping_level():
                 leaf_name="wage_y_kin", unit=TTSIMUnit.DIMENSIONLESS
             )(return_one_float),
         },
-        input_columns={"wage_m_kin"},
+        data_qnames={"wage_m_kin"},
         grouping_levels=("kin",),
     )
 

@@ -12,6 +12,7 @@ import pytest
 from beartype.roar import BeartypeCallHintParamViolation
 from mettsim import middle_earth
 
+from tests.test_unit_system import TEST_UNIT_SYSTEM
 from ttsim import (
     InputData,
     Labels,
@@ -269,8 +270,8 @@ def test_input_data_classmethods(instance_factory, expected_field_name, xnp):
         ),
         # Labels
         (
-            lambda _xnp: Labels.input_columns({"test_column"}),
-            lambda _xnp: Labels(input_columns={"test_column"}),  # ty: ignore[unknown-argument]
+            lambda _xnp: Labels.data_qnames({"test_column"}),
+            lambda _xnp: Labels(data_qnames={"test_column"}),  # ty: ignore[unknown-argument]
         ),
         (
             lambda _xnp: Labels.column_targets(["target1", "target2"]),
@@ -635,7 +636,7 @@ def test_fail_if_data_is_provided_but_no_tt_targets(backend, xnp):
                 }
             ),
             orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
-            unit_system=middle_earth.UNIT_SYSTEM,
+            unit_system=TEST_UNIT_SYSTEM,
             backend=backend,
         )
 

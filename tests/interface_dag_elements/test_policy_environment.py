@@ -9,6 +9,7 @@ import optree
 import pandas as pd
 import pytest
 
+from tests.test_unit_system import TEST_UNIT_SYSTEM
 from ttsim import OrigPolicyObjects, main
 from ttsim.interface_dag_elements.orig_policy_objects import (
     column_objects_and_param_functions,
@@ -81,7 +82,7 @@ def test_input_is_recognized_as_potential_group_id(backend):
     assert "kin" in main(
         main_target="labels__grouping_levels",
         orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
-        unit_system=middle_earth.UNIT_SYSTEM,
+        unit_system=TEST_UNIT_SYSTEM,
         policy_date=datetime.date(2020, 1, 1),
         backend=backend,
     )
@@ -91,7 +92,7 @@ def test_p_id_not_recognized_as_potential_group_id(backend):
     assert "p" not in main(
         main_target="labels__grouping_levels",
         orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
-        unit_system=middle_earth.UNIT_SYSTEM,
+        unit_system=TEST_UNIT_SYSTEM,
         policy_date=datetime.date(2020, 1, 1),
         backend=backend,
     )
@@ -211,16 +212,12 @@ def test_active_tree_with_column_objects_and_param_functions(
     functions_last_day = _active_column_objects_and_param_functions(
         orig=orig,
         policy_date=last_day,
-        computation_currency=middle_earth.UNIT_SYSTEM.statutory_currency_for_date(
-            last_day
-        ),
+        computation_currency=TEST_UNIT_SYSTEM.statutory_currency_for_date(last_day),
     )
     functions_next_day = _active_column_objects_and_param_functions(
         orig=orig,
         policy_date=next_day,
-        computation_currency=middle_earth.UNIT_SYSTEM.statutory_currency_for_date(
-            next_day
-        ),
+        computation_currency=TEST_UNIT_SYSTEM.statutory_currency_for_date(next_day),
     )
 
     accessor = optree.tree_accessors(tree, none_is_leaf=True)[0]  # ty: ignore[invalid-argument-type]

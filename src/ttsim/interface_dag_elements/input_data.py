@@ -19,14 +19,14 @@ from ttsim.interface_dag_elements.interface_node_objects import (
 from ttsim.interface_dag_elements.processed_data import (
     _canonicalize_input_dtype,
 )
-from ttsim.tt.currencies import UnitSystem
 from ttsim.tt.units import (
     CompositeUnit,
+    UnitSystem,
     UserNestedUnitAnnotatedData,
-    input_strip_unit,
+    resolve_ttsim_unit_for_input,
     strip_input_quantity_at_boundary,
 )
-from ttsim.unit_checks import flatten_unit_annotated_input_tree
+from ttsim.unit_validation import flatten_unit_annotated_input_tree
 
 if TYPE_CHECKING:
     from types import ModuleType
@@ -210,7 +210,8 @@ def flat_from_tree_with_unit_annotations(
     return {
         path: strip_input_quantity_at_boundary(
             quantity=registry.Quantity(
-                col.values, input_strip_unit(unit=col.unit, registry=registry)
+                col.values,
+                resolve_ttsim_unit_for_input(unit=col.unit, registry=registry),
             ),
             data_currency=data_currency,
             registry=registry,
@@ -222,9 +223,9 @@ def flat_from_tree_with_unit_annotations(
 
 @input_dependent_interface_function(
     include_if_all_inputs_present=["input_data__tree_with_unit_annotations"],
-    leaf_name="unit_tokens",
+    leaf_name="ttsim_units",
 )
-def unit_tokens_from_tree_with_unit_annotations(
+def ttsim_units_from_tree_with_unit_annotations(
     tree_with_unit_annotations: UserNestedUnitAnnotatedData,
 ) -> dict[str, CompositeUnit]:
     """Each input column's tag as a TTSIM unit, by qname.

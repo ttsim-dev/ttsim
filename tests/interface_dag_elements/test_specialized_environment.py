@@ -8,8 +8,8 @@ import dags.tree as dt
 import numpy
 import pandas as pd
 import pytest
-from mettsim import middle_earth
 
+from tests.test_unit_system import TEST_UNIT_SYSTEM
 from ttsim import main, merge_trees
 from ttsim.interface_dag_elements.specialized_environment import (
     with_partialled_params_and_scalars,
@@ -422,7 +422,7 @@ def test_create_agg_by_group_functions(
         tt_targets=TTTargets.tree(tt_targets__tree),
         rounding=False,
         backend=backend,
-        unit_system=middle_earth.UNIT_SYSTEM,
+        unit_system=TEST_UNIT_SYSTEM,
     )
 
 
@@ -441,7 +441,7 @@ def test_output_is_tree(minimal_input_data, backend, xnp):
         tt_targets=TTTargets.tree({"module": {"some_func": None}}),
         rounding=False,
         backend=backend,
-        unit_system=middle_earth.UNIT_SYSTEM,
+        unit_system=TEST_UNIT_SYSTEM,
     )
 
     assert isinstance(out, dict)
@@ -476,7 +476,7 @@ def test_params_target_is_allowed(minimal_input_data):
         tt_targets=TTTargets.tree({"some_param": None, "module": {"some_func": None}}),
         rounding=False,
         backend="numpy",
-        unit_system=middle_earth.UNIT_SYSTEM,
+        unit_system=TEST_UNIT_SYSTEM,
     )
 
     assert isinstance(out, dict)
@@ -515,7 +515,7 @@ def test_function_without_data_dependency_is_not_mistaken_for_data(
         tt_targets=TTTargets.tree({"b": None}),
         rounding=False,
         backend=backend,
-        unit_system=middle_earth.UNIT_SYSTEM,
+        unit_system=TEST_UNIT_SYSTEM,
     )
     numpy.testing.assert_array_almost_equal(
         results__tree["b"],
@@ -588,7 +588,7 @@ def test_user_provided_aggregate_by_group_specs(backend):
         tt_targets=TTTargets.tree({"module_name": {"betrag_m_fam": None}}),
         rounding=False,
         backend=backend,
-        unit_system=middle_earth.UNIT_SYSTEM,
+        unit_system=TEST_UNIT_SYSTEM,
     )
 
     pd.testing.assert_series_equal(
@@ -638,7 +638,7 @@ def test_user_provided_aggregation(backend):
         tt_targets=TTTargets.tree({"module_name": {"betrag_double_m_fam": None}}),
         rounding=False,
         backend=backend,
-        unit_system=middle_earth.UNIT_SYSTEM,
+        unit_system=TEST_UNIT_SYSTEM,
     )
 
     pd.testing.assert_series_equal(
@@ -694,7 +694,7 @@ def test_user_provided_aggregation_with_time_conversion(backend):
         tt_targets=TTTargets.tree({"module_name": {"max_betrag_double_y_fam": None}}),
         rounding=False,
         backend=backend,
-        unit_system=middle_earth.UNIT_SYSTEM,
+        unit_system=TEST_UNIT_SYSTEM,
     )
 
     pd.testing.assert_series_equal(
@@ -792,7 +792,7 @@ def test_user_provided_aggregate_by_p_id_specs(
         tt_targets=TTTargets.tree(target_tree),
         rounding=False,
         backend=backend,
-        unit_system=middle_earth.UNIT_SYSTEM,
+        unit_system=TEST_UNIT_SYSTEM,
     )
 
     pd.testing.assert_series_equal(
@@ -916,7 +916,7 @@ def test_can_override_ttsim_objects_with_data(
         include_fail_nodes=False,
         rounding=False,
         backend=backend,
-        unit_system=middle_earth.UNIT_SYSTEM,
+        unit_system=TEST_UNIT_SYSTEM,
     )
 
     flat_actual = dt.flatten_to_tree_paths(actual)
@@ -945,7 +945,7 @@ def test_scalars_in_input_data_become_part_of_specialized_environment(xnp, backe
         evaluation_date_str="2024-01-01",
         backend=backend,
         include_warn_nodes=False,
-        unit_system=middle_earth.UNIT_SYSTEM,
+        unit_system=TEST_UNIT_SYSTEM,
     )
     assert root_nodes == set()
 
@@ -978,12 +978,12 @@ def test_derived_time_converted_scalar_drives_derived_consumer(xnp, backend):
     root_nodes = main(
         main_target=MainTarget.labels.root_nodes,
         **common_kwargs,  # ty: ignore[invalid-argument-type]
-        unit_system=middle_earth.UNIT_SYSTEM,
+        unit_system=TEST_UNIT_SYSTEM,
     )
     assert root_nodes == set()
     result = main(
         main_target=MainTarget.results.tree,
         **common_kwargs,  # ty: ignore[invalid-argument-type]
-        unit_system=middle_earth.UNIT_SYSTEM,
+        unit_system=TEST_UNIT_SYSTEM,
     )
     numpy.testing.assert_allclose(result["benefit_m"], numpy.full(3, 500.0))

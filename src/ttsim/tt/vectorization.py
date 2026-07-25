@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any, Literal, cast
 import numpy
 
 from ttsim.exceptions import TTSIMError
-from ttsim.tt._source_rewriting import (
+from ttsim.tt._function_rewriting import (
     WRAPPER_ASSIGNMENTS_NO_ANNOTATIONS,
     boolop_to_call,
     func_to_ast,

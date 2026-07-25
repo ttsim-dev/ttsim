@@ -23,6 +23,7 @@ import numpy as np
 import pytest
 from mettsim import middle_earth
 
+from tests.test_unit_system import TEST_UNIT_SYSTEM
 from ttsim import MainTarget, OrigPolicyObjects, main
 from ttsim.exceptions import UnitDefinitionError
 from ttsim.interface_dag_elements.policy_environment import (
@@ -30,15 +31,16 @@ from ttsim.interface_dag_elements.policy_environment import (
 )
 from ttsim.interface_dag_elements.results import tree_with_unit_annotations
 from ttsim.interface_dag_elements.warn_if import (
-    statutory_currency_and_base_currency_differ,
+    statutory_currency_and_default_data_currency_differ,
 )
-from ttsim.tt.currencies import UnitSystem, isolated_currency_registration
+from ttsim.testing_utils import isolated_unit_vocabulary
 from ttsim.tt.param_objects import RawParam
 from ttsim.tt.units import (
     _ALLOWED_UNIT_TOKENS,
-    UNSET_UNIT,
     TTSIMUnit,
+    UnitSystem,
     _registered_currencies,
+    is_unset_unit,
     parse_ttsim_unit,
     ttsim_unit_currency,
 )
@@ -56,7 +58,7 @@ def _policy_environment(backend, policy_date=POLICY_DATE):
     return main(
         main_target=MainTarget.policy_environment,
         orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
-        unit_system=middle_earth.UNIT_SYSTEM,
+        unit_system=TEST_UNIT_SYSTEM,
         policy_date=policy_date,
         backend=backend,
     )
@@ -67,7 +69,7 @@ def test_data_currency_defaults_to_registered_base(backend):
         main(
             main_target=MainTarget.data_currency,
             orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
-            unit_system=middle_earth.UNIT_SYSTEM,
+            unit_system=TEST_UNIT_SYSTEM,
             policy_date=POLICY_DATE,
             backend=backend,
         )
@@ -89,7 +91,7 @@ def test_computation_currency_is_the_statutory_currency_at_the_policy_date(
         main(
             main_target=MainTarget.computation_currency,
             orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
-            unit_system=middle_earth.UNIT_SYSTEM,
+            unit_system=TEST_UNIT_SYSTEM,
             policy_date=policy_date,
             backend=backend,
         )
@@ -295,7 +297,7 @@ def test_unit_resolution_never_backfills_from_a_later_entry():
         policy_date=datetime.date(1950, 1, 1),
         computation_currency="CASTAR",
     )
-    assert param.unit is UNSET_UNIT
+    assert is_unset_unit(param.unit)
 
 
 def test_updates_previous_combined_with_a_unit_restatement_is_rejected():
@@ -544,15 +546,15 @@ def _fresh_system(**overrides: Any) -> UnitSystem:
 
 
 def test_base_currency_is_the_declared_base():
-    assert middle_earth.UNIT_SYSTEM.base_currency == "CASTAR"
+    assert TEST_UNIT_SYSTEM.base_currency == "CASTAR"
 
 
 def test_system_currencies_are_interconvertible():
     # silver_penny = castar / 4, so the factors are reciprocal.
-    assert middle_earth.UNIT_SYSTEM.currency_conversion_factor(
+    assert TEST_UNIT_SYSTEM.currency_conversion_factor(
         source_currency="SILVER_PENNY", target_currency="CASTAR"
     ) == pytest.approx(0.25)
-    assert middle_earth.UNIT_SYSTEM.currency_conversion_factor(
+    assert TEST_UNIT_SYSTEM.currency_conversion_factor(
         source_currency="CASTAR", target_currency="SILVER_PENNY"
     ) == pytest.approx(4.0)
 
@@ -561,7 +563,7 @@ def test_currency_conversion_rejects_the_abstract_currency_token():
     # The agnostic CURRENCY token is a pint unit but not one of the system's
     # currencies; conversion (and hence `data_currency=`) requires a concrete one.
     with pytest.raises(UnitDefinitionError, match="not a registered currency"):
-        middle_earth.UNIT_SYSTEM.currency_conversion_factor(
+        TEST_UNIT_SYSTEM.currency_conversion_factor(
             source_currency="CURRENCY", target_currency="CASTAR"
         )
 
@@ -659,7 +661,7 @@ def test_currency_named_after_a_non_currency_base_is_rejected():
     """A currency whose name projects onto a non-currency unit base is rejected: it
     would shadow that base for every policy package in the process."""
     with (
-        isolated_currency_registration(),
+        isolated_unit_vocabulary(),
         pytest.raises(UnitDefinitionError, match="non-currency unit base"),
     ):
         _fresh_system(
@@ -672,7 +674,7 @@ def test_currencies_differing_only_in_case_are_rejected():
     would silently shadow the other on the builder namespace, and a conversion could
     pick either one's exchange rate."""
     with (
-        isolated_currency_registration(),
+        isolated_unit_vocabulary(),
         pytest.raises(UnitDefinitionError, match="'CASTAR' already claims the unit"),
     ):
         _fresh_system(
@@ -684,7 +686,7 @@ def test_currency_name_spelling_the_denominator_delimiter_is_rejected():
     """A currency name containing `_PER_` is refused: its base would parse back as a
     base plus a denominator, so the token would not round-trip."""
     with (
-        isolated_currency_registration(),
+        isolated_unit_vocabulary(),
         pytest.raises(UnitDefinitionError, match="would parse back as 'GOLD'"),
     ):
         _fresh_system(
@@ -750,7 +752,7 @@ def test_currency_claiming_the_agnostic_base_is_rejected():
     """A currency whose base is the agnostic `CURRENCY` token is refused: it would
     make every agnostic declaration name a concrete currency."""
     with (
-        isolated_currency_registration(),
+        isolated_unit_vocabulary(),
         pytest.raises(UnitDefinitionError, match="agnostic currency base"),
     ):
         _fresh_system(
@@ -799,7 +801,7 @@ def test_definition_referencing_no_system_currency_is_rejected():
 
 
 def test_statutory_currency_follows_the_dated_mapping():
-    system = middle_earth.UNIT_SYSTEM
+    system = TEST_UNIT_SYSTEM
     assert (
         system.statutory_currency_for_date(datetime.date(2019, 12, 31))
         == "SILVER_PENNY"
@@ -831,22 +833,22 @@ def test_warns_when_statutory_currency_differs_from_default_data_currency():
     sits at its default (the base) may hold data denominated in the wrong
     currency — the user gets a nudge."""
     with pytest.warns(PotentialCurrencyMismatchWarning, match="denominated"):
-        statutory_currency_and_base_currency_differ(
+        statutory_currency_and_default_data_currency_differ(
             computation_currency="SILVER_PENNY",
             data_currency="CASTAR",
             policy_date=datetime.date(2019, 1, 1),
-            unit_system=middle_earth.UNIT_SYSTEM,
+            unit_system=TEST_UNIT_SYSTEM,
         )
 
 
 def test_no_warning_when_statutory_currency_is_the_base():
     with warnings.catch_warnings():
         warnings.simplefilter("error")
-        statutory_currency_and_base_currency_differ(
+        statutory_currency_and_default_data_currency_differ(
             computation_currency="CASTAR",
             data_currency="CASTAR",
             policy_date=datetime.date(2025, 1, 1),
-            unit_system=middle_earth.UNIT_SYSTEM,
+            unit_system=TEST_UNIT_SYSTEM,
         )
 
 
@@ -854,9 +856,9 @@ def test_no_warning_when_the_data_currency_is_set_off_the_base():
     # The user chose a data currency explicitly; nothing to nudge about.
     with warnings.catch_warnings():
         warnings.simplefilter("error")
-        statutory_currency_and_base_currency_differ(
+        statutory_currency_and_default_data_currency_differ(
             computation_currency="SILVER_PENNY",
             data_currency="SILVER_PENNY",
             policy_date=datetime.date(2019, 1, 1),
-            unit_system=middle_earth.UNIT_SYSTEM,
+            unit_system=TEST_UNIT_SYSTEM,
         )

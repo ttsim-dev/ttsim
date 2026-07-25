@@ -7,7 +7,7 @@ import datetime
 import pytest
 
 from ttsim.exceptions import UnitDefinitionError
-from ttsim.tt.currencies import UnitSystem
+from ttsim.tt.units import UnitSystem
 
 
 @pytest.fixture

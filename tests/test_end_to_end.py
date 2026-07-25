@@ -9,6 +9,7 @@ import pandas as pd
 import pytest
 from mettsim import middle_earth
 
+from tests.test_unit_system import TEST_UNIT_SYSTEM
 from ttsim import InputData, MainTarget, OrigPolicyObjects, TTTargets, main
 from ttsim.tt import AggType, TTSIMUnit, agg_by_group_function
 from ttsim.tt.column_objects_param_function import policy_function, policy_input
@@ -201,7 +202,7 @@ def test_end_to_end(input_data_arg, backend: Literal["numpy", "jax"]):
         policy_date_str="2025-01-01",
         rounding=False,
         orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
-        unit_system=middle_earth.UNIT_SYSTEM,
+        unit_system=TEST_UNIT_SYSTEM,
         backend=backend,
     )
     pd.testing.assert_frame_equal(
@@ -241,7 +242,7 @@ def test_results_shapes_render_payroll_tax_amount_y(
         policy_date_str="2025-01-01",
         rounding=False,
         orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
-        unit_system=middle_earth.UNIT_SYSTEM,
+        unit_system=TEST_UNIT_SYSTEM,
         backend=backend,
     )
 
@@ -286,7 +287,7 @@ def test_uint_wage_input_does_not_underflow(
         policy_date_str="2025-01-01",
         rounding=False,
         orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
-        unit_system=middle_earth.UNIT_SYSTEM,
+        unit_system=TEST_UNIT_SYSTEM,
         backend=backend,
     )
     amount_y = result["payroll_tax"]["amount_y"]
@@ -316,7 +317,7 @@ def test_df_with_qname_columns_has_qname_string_columns(
         policy_date_str="2025-01-01",
         rounding=False,
         orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
-        unit_system=middle_earth.UNIT_SYSTEM,
+        unit_system=TEST_UNIT_SYSTEM,
         backend=backend,
     )
     assert list(result.columns) == [
@@ -398,7 +399,7 @@ def test_cloudpickle_round_trip_preserves_tt_function_output(tmp_path):
             policy_date_str="2025-01-01",
             input_data=InputData.flat(data),
             orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
-            unit_system=middle_earth.UNIT_SYSTEM,
+            unit_system=TEST_UNIT_SYSTEM,
             tt_targets=TTTargets.tree({"payroll_tax": {"amount_y": None}}),
             backend="numpy",
         )
@@ -491,7 +492,7 @@ def test_can_create_input_template(backend: Literal["numpy", "jax"]):
         main_target=MainTarget.templates.input_data_dtypes.tree,
         policy_date_str="2025-01-01",
         orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
-        unit_system=middle_earth.UNIT_SYSTEM,
+        unit_system=TEST_UNIT_SYSTEM,
         backend=backend,
         tt_targets=TTTargets.tree(TARGETS_TREE),
     )
@@ -508,7 +509,7 @@ def test_modify_evaluation_date_after_creating_policy_environment(
         main_target=MainTarget.policy_environment,
         policy_date_str="2000-01-01",
         orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
-        unit_system=middle_earth.UNIT_SYSTEM,
+        unit_system=TEST_UNIT_SYSTEM,
         backend=backend,
     )
     input_data = InputData.tree(
@@ -530,7 +531,7 @@ def test_modify_evaluation_date_after_creating_policy_environment(
             {"property_tax": {"amount_y": "property_tax_amount_y"}}
         ),
         backend=backend,
-        unit_system=middle_earth.UNIT_SYSTEM,
+        unit_system=TEST_UNIT_SYSTEM,
     )
     expected = pd.DataFrame(
         {
@@ -567,7 +568,7 @@ def test_different_evaluation_dates_across_data_rows(
         ),
         tt_targets=TTTargets.tree({"f": None}),
         backend=backend,
-        unit_system=middle_earth.UNIT_SYSTEM,
+        unit_system=TEST_UNIT_SYSTEM,
     )
 
     expected = pd.DataFrame(
@@ -596,7 +597,7 @@ def test_input_data_as_targets(xnp: ModuleType, backend: Literal["numpy", "jax"]
         ),
         tt_targets=TTTargets.tree({"kin_id": None, "payroll_tax": {"amount_y": None}}),
         orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
-        unit_system=middle_earth.UNIT_SYSTEM,
+        unit_system=TEST_UNIT_SYSTEM,
         backend=backend,
         include_warn_nodes=False,
     )
@@ -631,7 +632,7 @@ def test_input_data_reordering_with_distinct_values(
         # Request input columns as outputs to see if they maintain correct order
         tt_targets=TTTargets.tree({"age": None, "wealth": None}),
         orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
-        unit_system=middle_earth.UNIT_SYSTEM,
+        unit_system=TEST_UNIT_SYSTEM,
         backend=backend,
         include_warn_nodes=False,
     )
@@ -673,7 +674,7 @@ def test_derived_time_converted_scalar_can_partialled(xnp, backend):
         evaluation_date_str="2024-01-01",
         backend=backend,
         include_warn_nodes=False,
-        unit_system=middle_earth.UNIT_SYSTEM,
+        unit_system=TEST_UNIT_SYSTEM,
     )
     assert root_nodes == set()
 
@@ -725,7 +726,7 @@ def test_scalar_input_to_not_required_function_is_broadcast(xnp, backend):
         evaluation_date_str="2024-01-01",
         backend=backend,
         include_warn_nodes=False,
-        unit_system=middle_earth.UNIT_SYSTEM,
+        unit_system=TEST_UNIT_SYSTEM,
     )
     numpy.testing.assert_array_equal(
         results["cumulative_broadcast_x"],
@@ -753,7 +754,7 @@ def test_scalar_input_to_not_required_function_is_baked_in(xnp, backend):
         evaluation_date_str="2024-01-01",
         backend=backend,
         include_warn_nodes=False,
-        unit_system=middle_earth.UNIT_SYSTEM,
+        unit_system=TEST_UNIT_SYSTEM,
     )
     assert "broadcast_x" not in root_nodes
     assert root_nodes == set()
@@ -804,7 +805,7 @@ def test_auto_aggregation_resolves_dtype_from_sibling_time_unit(
         rounding=False,
         backend=backend,
         include_warn_nodes=False,
-        unit_system=middle_earth.UNIT_SYSTEM,
+        unit_system=TEST_UNIT_SYSTEM,
     )
     expected = pd.DataFrame(
         {("doubled_y_fam",): [3600.0, 3600.0, 4800.0]},
@@ -898,7 +899,7 @@ def test_unit_annotated_input_and_output_round_trip(
         rounding=False,
         data_currency="CASTAR",
         backend=backend,
-        unit_system=middle_earth.UNIT_SYSTEM,
+        unit_system=TEST_UNIT_SYSTEM,
     )
     tagged = main(
         main_target=MainTarget.results.tree_with_unit_annotations,
@@ -911,7 +912,7 @@ def test_unit_annotated_input_and_output_round_trip(
         rounding=False,
         data_currency="CASTAR",
         backend=backend,
-        unit_system=middle_earth.UNIT_SYSTEM,
+        unit_system=TEST_UNIT_SYSTEM,
     )
     amount = tagged["payroll_tax"]["amount_y"]
     assert isinstance(amount, UnitAnnotatedColumn)
@@ -942,7 +943,7 @@ def test_currency_conversion_of_scalar_input_matches_column_input(
             rounding=False,
             data_currency="CASTAR",
             backend=backend,
-            unit_system=middle_earth.UNIT_SYSTEM,
+            unit_system=TEST_UNIT_SYSTEM,
         )
 
     scalar_result = run(scalar_tree)

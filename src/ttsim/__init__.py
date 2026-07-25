@@ -50,7 +50,7 @@ except ImportError:
     version = "unknown"
     version_tuple = ("unknown", "unknown", "unknown")
 
-from ttsim import plot, unit_converters
+from ttsim import plot, time_converters
 from ttsim.entry_point import main
 from ttsim.interface_dag_elements.shared import (
     copy_environment,
@@ -84,7 +84,7 @@ SpecializedEnvironmentForPlottingAndTemplates = (
     SpecializedEnvironmentForPlottingAndTemplates
 )
 TTTargets = TTTargets
-unit_converters = unit_converters
+time_converters = time_converters
 
 __all__ = [
     "InputData",
@@ -102,7 +102,7 @@ __all__ = [
     "main",
     "merge_trees",
     "plot",
-    "unit_converters",
+    "time_converters",
     "upsert_tree",
     "version",
     "version_tuple",

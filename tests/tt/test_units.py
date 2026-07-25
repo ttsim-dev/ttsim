@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import copy
+import pickle
+
 # Importing the mettsim package registers its base currency (``castar``) and
 # makes the tracer-bullet policy function importable.
 import mettsim.middle_earth  # noqa: F401
@@ -9,7 +12,7 @@ import numpy as np
 import pytest
 from beartype.roar import BeartypeCallHintViolation
 
-from ttsim import unit_converters
+from ttsim import time_converters
 from ttsim.exceptions import (
     PolicyFunctionDefinitionError,
     PolicyInputDefinitionError,
@@ -31,15 +34,16 @@ from ttsim.tt import (
     policy_input,
     register_unit_builder_levels,
 )
-from ttsim.tt.grouping_levels import register_grouping_levels
 from ttsim.tt.units import (
     CURRENCY_TOKEN,
     _suffix_period_of,
     fail_if_units_are_missing,
     is_calendar_point_unit,
+    is_unset_unit,
     output_unit_in_data_currency,
     parse_ttsim_unit,
     parse_unit,
+    register_grouping_levels,
     resolve_agnostic_ttsim_unit,
     resolve_ttsim_unit,
     resolve_ttsim_unit_for_column,
@@ -53,6 +57,20 @@ from ttsim.tt.units import (
     unit_for_aggregation,
     units_are_equivalent,
 )
+
+
+@pytest.mark.parametrize(
+    "copied",
+    [
+        copy.deepcopy(UNSET_UNIT),
+        pickle.loads(pickle.dumps(UNSET_UNIT)),  # noqa: S301  (trusted test value)
+    ],
+)
+def test_unset_unit_survives_copy_and_serialization(copied):
+    assert is_unset_unit(copied)
+    with pytest.raises(UnitDefinitionError, match="missing"):
+        fail_if_units_are_missing({"missing": copied})
+
 
 # A representative policy system for the compositional tests: its registry holds
 # Middle Earth's currencies (CASTAR base, SILVER_PENNY); the GETTSIM-style
@@ -74,8 +92,8 @@ def _registered_levels():
     Autouse (and idempotent), so every compositional test sees ``bg`` / ``hh``
     without threading the fixture through its signature.
     """
-    register_grouping_levels(names=["bg", "hh"], registry=REGISTRY)
-    register_unit_builder_levels(["bg", "hh"])
+    register_grouping_levels(names=["bg", "fam", "hh", "kin"], registry=REGISTRY)
+    register_unit_builder_levels(["bg", "fam", "hh", "kin"])
 
 
 def _return_one_float() -> float:
@@ -456,18 +474,18 @@ def test_resolve_ttsim_unit_dimensionless():
 
 def test_unit_converter_factors_match_gep1():
     # The stock converters multiply by GEP 1's canonical periods-per-year factors.
-    assert unit_converters.y_to_q(1.0) == pytest.approx(4.0)
-    assert unit_converters.y_to_m(1.0) == pytest.approx(12.0)
-    assert unit_converters.y_to_w(1.0) == pytest.approx(365.25 / 7)
-    assert unit_converters.y_to_d(1.0) == pytest.approx(365.25)
+    assert time_converters.y_to_q(1.0) == pytest.approx(4.0)
+    assert time_converters.y_to_m(1.0) == pytest.approx(12.0)
+    assert time_converters.y_to_w(1.0) == pytest.approx(365.25 / 7)
+    assert time_converters.y_to_d(1.0) == pytest.approx(365.25)
 
 
 def test_integral_factors_keep_integer_type():
     # Stock conversions must keep ints as ints (e.g. y_to_m of an int stock).
-    assert unit_converters.y_to_q(2) == 8
-    assert isinstance(unit_converters.y_to_q(2), int)
-    assert unit_converters.y_to_m(2) == 24
-    assert isinstance(unit_converters.y_to_m(2), int)
+    assert time_converters.y_to_q(2) == 8
+    assert isinstance(time_converters.y_to_q(2), int)
+    assert time_converters.y_to_m(2) == 24
+    assert isinstance(time_converters.y_to_m(2), int)
 
 
 def test_duration_conversion_year_to_month():
@@ -528,8 +546,8 @@ def test_unit_for_aggregation(agg_type, source_unit, expected):
 
 
 def test_unit_for_aggregation_preserves_unannotated_source():
-    assert (
-        unit_for_aggregation(source_unit=UNSET_UNIT, agg_type=AggType.SUM) is UNSET_UNIT
+    assert is_unset_unit(
+        unit_for_aggregation(source_unit=UNSET_UNIT, agg_type=AggType.SUM)
     )
     # COUNT mints a head count and ANY/ALL a boolean, both independent of source.
     assert (
@@ -570,7 +588,7 @@ def test_time_conversion_variants_rebased_period():
                 leaf_name="betrag_m", unit=TTSIMUnit.CURRENCY.PER_MONTH
             )(_return_one_float),
         },
-        input_columns=set(),
+        data_qnames=set(),
         grouping_levels=("sn", "kin"),
     )
     # Generated betrag_y re-bases the flow's period to its own _y suffix.
@@ -594,7 +612,7 @@ def test_auto_aggregation_carries_the_target_level():
         },
         qname_policy_environment={},
         time_converted_input_stubs={},
-        input_columns=set(),
+        data_qnames=set(),
         tt_targets={"betrag_m_kin"},
         grouping_levels=("kin",),
     )
@@ -617,7 +635,7 @@ def test_auto_aggregation_over_a_boolean_source_mints_a_head_count():
         },
         qname_policy_environment={},
         time_converted_input_stubs={},
-        input_columns=set(),
+        data_qnames=set(),
         tt_targets={"is_adult_fam"},
         grouping_levels=("fam",),
     )

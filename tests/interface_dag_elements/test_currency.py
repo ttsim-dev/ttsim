@@ -4,10 +4,9 @@ import dags.tree as dt
 import numpy
 import pandas as pd
 import pytest
-from mettsim.middle_earth import UNIT_SYSTEM
 
+from tests.test_unit_system import TEST_UNIT_SYSTEM
 from ttsim.interface_dag_elements.currency import (
-    CurrencyConversion,
     input_data_in_computation_currency,
 )
 from ttsim.interface_dag_elements.specialized_environment import (
@@ -21,7 +20,7 @@ def _spec_env(policy_environment, input_data__flat, grouping_levels=()):
     return _add_derived_functions(
         qname_env_without_tree_logic=policy_environment,
         tt_targets={},
-        input_columns={dt.qname_from_tree_path(p) for p in input_data__flat},
+        data_qnames={dt.qname_from_tree_path(p) for p in input_data__flat},
         grouping_levels=grouping_levels,
     )
 
@@ -34,7 +33,7 @@ def test_pint_tagged_currency_input_is_stripped_and_rescaled():
     """
     input_data__flat = {
         ("p_id",): numpy.array([0, 1]),
-        ("wealth",): UNIT_SYSTEM.registry.Quantity(
+        ("wealth",): TEST_UNIT_SYSTEM.registry.Quantity(
             numpy.array([4.0, 8.0]), "SILVER_PENNY"
         ),
     }
@@ -43,9 +42,9 @@ def test_pint_tagged_currency_input_is_stripped_and_rescaled():
         specialized_environment__without_tree_logic_and_with_derived_functions={},
         data_currency="CASTAR",
         computation_currency="CASTAR",
-        unit_system=UNIT_SYSTEM,
+        unit_system=TEST_UNIT_SYSTEM,
     )
-    assert not isinstance(out[("wealth",)], UNIT_SYSTEM.registry.Quantity)
+    assert not isinstance(out[("wealth",)], TEST_UNIT_SYSTEM.registry.Quantity)
     assert list(numpy.asarray(out[("wealth",)])) == pytest.approx([1.0, 2.0])
 
 
@@ -81,7 +80,7 @@ def test_untagged_input_converts_by_declared_unit():
         ),
         data_currency="SILVER_PENNY",
         computation_currency="CASTAR",
-        unit_system=UNIT_SYSTEM,
+        unit_system=TEST_UNIT_SYSTEM,
     )
     assert list(numpy.asarray(out[("wealth",)])) == pytest.approx([1.0, 2.0])
     assert list(numpy.asarray(out[("age",)])) == [30, 40]
@@ -116,7 +115,7 @@ def test_derived_input_ignores_siblings_a_derivation_cannot_produce():
         ),
         data_currency="SILVER_PENNY",
         computation_currency="CASTAR",
-        unit_system=UNIT_SYSTEM,
+        unit_system=TEST_UNIT_SYSTEM,
     )
     assert list(numpy.asarray(out[("income_hh",)])) == pytest.approx([4.0, 4.0])
 
@@ -148,7 +147,7 @@ def test_derived_input_converts_via_its_stub():
         ),
         data_currency="SILVER_PENNY",
         computation_currency="CASTAR",
-        unit_system=UNIT_SYSTEM,
+        unit_system=TEST_UNIT_SYSTEM,
     )
     assert list(numpy.asarray(out[("wage_m_hh",)])) == pytest.approx([1.0, 1.0])
 
@@ -179,40 +178,58 @@ def test_time_variant_input_converts_via_its_stub():
         ),
         data_currency="SILVER_PENNY",
         computation_currency="CASTAR",
-        unit_system=UNIT_SYSTEM,
+        unit_system=TEST_UNIT_SYSTEM,
     )
     assert list(numpy.asarray(out[("wage_y",)])) == pytest.approx([1.0, 1.0])
 
 
-def test_conversion_between_identical_currencies_is_the_identity():
-    """Crossing a currency into itself scales nothing: factor 1.0, no qnames."""
-
-    @policy_input(unit=TTSIMUnit.CURRENCY)
-    def wealth() -> float:
-        pass
-
-    conversion = CurrencyConversion.between(
-        source_currency="CASTAR",
-        target_currency="CASTAR",
-        qnames=["wealth"],
-        specialized_environment={"wealth": wealth},
-        unit_system=UNIT_SYSTEM,
-    )
-    assert conversion.factor == 1.0
-    assert conversion.qnames == frozenset()
-
-
-def test_apply_leaves_object_dtype_column_untouched():
+def test_input_currency_conversion_leaves_object_dtype_column_untouched():
     """An object-dtype column carries `pd.NA` and is handed back as it came in.
 
     Multiplying it would destroy the missing value the downstream fail-if needs
     to report, so the factor is not applied even though the column's name is one
     the conversion covers.
     """
-    conversion = CurrencyConversion(factor=4.0, qnames=frozenset({"wealth"}))
+
+    @policy_input(unit=TTSIMUnit.CURRENCY)
+    def wealth() -> float:
+        pass
+
     column = pd.Series([1, pd.NA], dtype="Int64").to_numpy(dtype=object)
+    result = input_data_in_computation_currency(
+        input_data__flat={
+            ("p_id",): numpy.array([0, 1]),
+            ("wealth",): column,
+        },
+        specialized_environment__without_tree_logic_and_with_derived_functions={
+            "wealth": wealth
+        },
+        data_currency="SILVER_PENNY",
+        computation_currency="CASTAR",
+        unit_system=TEST_UNIT_SYSTEM,
+    )
 
-    result = conversion.apply(value=column, qname="wealth")
+    assert result[("wealth",)][0] == 1
+    assert result[("wealth",)][1] is pd.NA
 
-    assert result[0] == 1
-    assert result[1] is pd.NA
+
+def test_identity_currency_conversion_preserves_integer_dtype():
+    @policy_input(unit=TTSIMUnit.CURRENCY)
+    def wealth() -> int:
+        pass
+
+    column = numpy.array([1, 2], dtype=numpy.int32)
+    result = input_data_in_computation_currency(
+        input_data__flat={
+            ("p_id",): numpy.array([0, 1]),
+            ("wealth",): column,
+        },
+        specialized_environment__without_tree_logic_and_with_derived_functions={
+            "wealth": wealth
+        },
+        data_currency="CASTAR",
+        computation_currency="CASTAR",
+        unit_system=TEST_UNIT_SYSTEM,
+    )
+
+    assert result[("wealth",)].dtype == numpy.dtype("int32")
