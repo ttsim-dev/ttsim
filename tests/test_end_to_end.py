@@ -379,6 +379,7 @@ def test_cloudpickle_round_trip_preserves_tt_function_output(tmp_path):
         import numpy as np
         from mettsim import middle_earth
 
+        from tests.test_unit_system import TEST_UNIT_SYSTEM
         from ttsim import InputData, OrigPolicyObjects, TTTargets, main
 
         data = {
