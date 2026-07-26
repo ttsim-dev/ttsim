@@ -379,8 +379,17 @@ def test_cloudpickle_round_trip_preserves_tt_function_output(tmp_path):
         import numpy as np
         from mettsim import middle_earth
 
-        from tests.test_unit_system import TEST_UNIT_SYSTEM
         from ttsim import InputData, OrigPolicyObjects, TTTargets, main
+        from ttsim.tt import UnitSystem
+
+        TEST_UNIT_SYSTEM = UnitSystem(
+            base_currency="CASTAR",
+            other_currencies={"SILVER_PENNY": "CASTAR / 4"},
+            statutory_currencies={
+                "0001-01-01": "SILVER_PENNY",
+                "2020-01-01": "CASTAR",
+            },
+        )
 
         data = {
             ("birth_year",): np.array([1995, 1995]),
