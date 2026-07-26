@@ -54,7 +54,7 @@ def tree(
     data currency.
     """
     factor = (
-        None
+        1.0
         if computation_currency == data_currency
         else unit_system.currency_conversion_factor(
             source_currency=computation_currency,

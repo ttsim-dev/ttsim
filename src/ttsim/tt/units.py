@@ -13,16 +13,6 @@ names which one it means:
   *resolves to* against a :class:`pint.UnitRegistry`. It carries the dimensions the
   check does arithmetic on and lives only at build/check time.
 
-`resolve_ttsim_unit` and its siblings are the one-way bridge from the first to the
-second; :func:`ttsim_unit_from_pint_unit` spells a pint unit back as a TTSIM unit
-for error messages.
-
-pint is a build-time tool only — it never wraps a live array (a :class:`pint.Quantity`
-is not a JAX pytree and does not trace under ``jit``). It serves two build-time jobs:
-
-- the build-time dimensionality check (:mod:`ttsim.unit_validation`);
-- sourcing the time- and currency-conversion factors baked into the numeric workers.
-
 Every declaration is a fully-spelled :class:`CompositeUnit` — a base optionally divided
 by a physical denominator (an area or working hours), a period, and a grouping level, in
 that canonical order. It has two round-tripping spellings (via
@@ -31,11 +21,6 @@ that canonical order. It has two round-tripping spellings (via
 - fluent, off the :class:`TTSIMUnit` namespace
   (``TTSIMUnit.CURRENCY.PER_MONTH.PER_BG``);
 - flat canonical string, in YAML (``CURRENCY_PER_MONTH_PER_BG``).
-
-The base is ``CURRENCY`` on columns and functions; on parameters it is a registered
-concrete currency (``SILVER_PENNY``, ``DM``, …) that also names the currency the numbers
-are written in, so the build-time guard can hold it against the policy date's statutory
-currency. For dimensionality a concrete currency means exactly what ``CURRENCY`` means.
 """
 
 from __future__ import annotations

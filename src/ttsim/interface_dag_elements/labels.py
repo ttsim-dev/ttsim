@@ -125,7 +125,7 @@ def data_qnames_from_input_data(input_data__flat: FlatData) -> UnorderedQNames:
 
     In particular, directly supplied `processed_data` bypasses `input_data__flat`.
     Its producer therefore obtains the same labels from `processed_data`; without it,
-    that route would still require `input_data__flat`.
+    that route would otherwise still require `input_data__flat`.
     """
     return {dt.qname_from_tree_path(path) for path in input_data__flat}
 
@@ -146,7 +146,7 @@ def data_qnames_from_processed_data(processed_data: QNameData) -> UnorderedQName
 
     In particular, directly supplied `processed_data` bypasses `input_data__flat`.
     Its producer therefore obtains the same labels from `processed_data`; without it,
-    that route would still require `input_data__flat`.
+    that route would otherwise still require `input_data__flat`.
     """
     return set(processed_data.keys())
 
@@ -178,7 +178,7 @@ def data_qnames_is_empty_set(
 
     In particular, directly supplied `processed_data` bypasses `input_data__flat`.
     Its producer therefore obtains the same labels from `processed_data`; without it,
-    that route would still require `input_data__flat`.
+    that route would otherwise still require `input_data__flat`.
     """
     return set()
 

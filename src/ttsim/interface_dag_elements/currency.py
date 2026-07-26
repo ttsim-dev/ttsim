@@ -9,7 +9,6 @@ import pint
 from ttsim.interface_dag_elements.interface_node_objects import interface_function
 from ttsim.tt.units import (
     UNSET_UNIT,
-    CompositeUnit,
     UnitSystem,
     strip_input_quantity_at_boundary,
     ttsim_unit_has_currency,
@@ -47,20 +46,7 @@ def input_data_in_computation_currency(
     computation_currency: str,
     unit_system: UnitSystem,
 ) -> FlatData:
-    """The input data with every value a bare magnitude in the computation currency.
-
-    Two currency crossings happen here, and nowhere else on the way in (GEP 10):
-
-    - a column the user pint-tagged is converted into the data currency and its
-      tag stripped, so the tag overrides the blanket "untagged data is in the
-      data currency" assumption for that column alone;
-    - every currency-denominated value is then crossed from the data currency
-      into the computation currency by one scalar factor.
-
-    `p_id` is an identifier, never currency-denominated, and passes through
-    untouched. The factor is elementwise, so applying it here — before the data
-    are sorted and reindexed in :func:`processed_data` — is equivalent.
-    """
+    """The input data with every value a bare magnitude in the computation currency."""
     registry: pint.UnitRegistry = unit_system.registry
     stripped = {
         path: (
@@ -83,9 +69,7 @@ def input_data_in_computation_currency(
     )
     return {
         path: (
-            value
-            if path == ("p_id",)
-            else _convert_currency_value(
+            _convert_currency_value(
                 value=value,
                 factor=factor,
                 qname=dt.qname_from_tree_path(path),
@@ -101,17 +85,12 @@ def input_data_in_computation_currency(
 def _convert_currency_value(
     value: Any,  # noqa: ANN401 (a column array or an input scalar)
     *,
-    factor: float | None,
+    factor: float,
     qname: str,
     specialized_environment: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
 ) -> Any:  # noqa: ANN401
     """Apply a currency factor when the qname declares a currency quantity."""
-    if factor is None:
-        return value
     declared_unit = getattr(specialized_environment.get(qname), "unit", UNSET_UNIT)
-    if not (
-        isinstance(declared_unit, CompositeUnit)
-        and ttsim_unit_has_currency(declared_unit)
-    ):
+    if not ttsim_unit_has_currency(declared_unit):
         return value
     return value * factor
