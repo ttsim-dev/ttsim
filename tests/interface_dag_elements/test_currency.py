@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import datetime
+
 import dags.tree as dt
 import numpy
-import pandas as pd
 import pytest
 
 from tests.test_unit_system import TEST_UNIT_SYSTEM
+from ttsim import InputData, MainTarget, TTTargets, main
 from ttsim.interface_dag_elements.currency import (
     input_data_in_computation_currency,
 )
@@ -183,34 +185,28 @@ def test_time_variant_input_converts_via_its_stub():
     assert list(numpy.asarray(out[("wage_y",)])) == pytest.approx([1.0, 1.0])
 
 
-def test_input_currency_conversion_leaves_object_dtype_column_untouched():
-    """An object-dtype column carries `pd.NA` and is handed back as it came in.
-
-    Multiplying it would destroy the missing value the downstream fail-if needs
-    to report, so the factor is not applied even though the column's name is one
-    the conversion covers.
-    """
+def test_object_dtype_input_fails_before_currency_conversion():
+    """Input validation rejects object arrays before currency arithmetic."""
 
     @policy_input(unit=TTSIMUnit.CURRENCY)
     def wealth() -> float:
         pass
 
-    column = pd.Series([1, pd.NA], dtype="Int64").to_numpy(dtype=object)
-    result = input_data_in_computation_currency(
-        input_data__flat={
-            ("p_id",): numpy.array([0, 1]),
-            ("wealth",): column,
-        },
-        specialized_environment__without_tree_logic_and_with_derived_functions={
-            "wealth": wealth
-        },
-        data_currency="SILVER_PENNY",
-        computation_currency="CASTAR",
-        unit_system=TEST_UNIT_SYSTEM,
-    )
-
-    assert result[("wealth",)][0] == 1
-    assert result[("wealth",)][1] is pd.NA
+    with pytest.raises(ValueError, match=r"(?s)object dtype.*wealth"):
+        main(
+            main_target=MainTarget.processed_data,
+            input_data=InputData.tree(
+                {
+                    "p_id": numpy.array([0, 1]),
+                    "wealth": numpy.array(["unknown", "unknown"], dtype=object),
+                }
+            ),
+            policy_environment={"wealth": wealth},
+            policy_date=datetime.date(2020, 1, 1),
+            tt_targets=TTTargets.tree({"wealth": None}),
+            data_currency="SILVER_PENNY",
+            unit_system=TEST_UNIT_SYSTEM,
+        )
 
 
 def test_identity_currency_conversion_preserves_integer_dtype():

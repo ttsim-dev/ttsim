@@ -24,6 +24,7 @@ from ttsim.interface_dag_elements.fail_if import (
     foreign_keys_are_invalid_in_data,
     group_ids_are_outside_top_level_namespace,
     group_variables_are_not_constant_within_groups,
+    input_data_has_object_dtype_columns,
     input_data_is_invalid,
     input_data_uint64_values_overflow_int64,
     input_df_has_bool_or_numeric_column_names,
@@ -1000,6 +1001,15 @@ def test_fail_if_uint64_input_overflows_int64_ignores_non_uint64_columns():
         ("wage",): numpy.array([0, 100], dtype=numpy.uint32),
     }
     input_data_uint64_values_overflow_int64(data)
+
+
+def test_fail_if_input_data_has_object_dtype_columns_raises():
+    data = {
+        ("p_id",): numpy.array([1, 2], dtype=numpy.int64),
+        ("status",): numpy.array(["employed", "retired"], dtype=object),
+    }
+    with pytest.raises(ValueError, match=r"(?s)object dtype.*status"):
+        input_data_has_object_dtype_columns(data)
 
 
 def test_fail_if_p_id_is_missing_via_main(backend):

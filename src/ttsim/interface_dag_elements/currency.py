@@ -105,11 +105,7 @@ def _convert_currency_value(
     qname: str,
     specialized_environment: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
 ) -> Any:  # noqa: ANN401
-    """Apply a currency factor when the qname declares a currency quantity.
-
-    Object arrays pass through unchanged because they may contain `pd.NA`; the
-    missing-value validation reports those values downstream.
-    """
+    """Apply a currency factor when the qname declares a currency quantity."""
     if factor is None:
         return value
     declared_unit = getattr(specialized_environment.get(qname), "unit", UNSET_UNIT)
@@ -117,8 +113,5 @@ def _convert_currency_value(
         isinstance(declared_unit, CompositeUnit)
         and ttsim_unit_has_currency(declared_unit)
     ):
-        return value
-    dtype = getattr(value, "dtype", None)
-    if dtype is not None and dtype.kind == "O":
         return value
     return value * factor

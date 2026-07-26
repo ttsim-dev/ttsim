@@ -380,6 +380,27 @@ def input_data_has_int_or_bool_missing_values(input_data__flat: FlatData) -> Non
 
 
 @fail_function(include_if_any_element_present=["input_data__flat"])
+def input_data_has_object_dtype_columns(input_data__flat: FlatData) -> None:
+    """Fail when an input column has object dtype.
+
+    The taxes-and-transfers DAG operates on numeric and boolean arrays. Object arrays
+    cannot safely participate in arithmetic and must not reach input processing or
+    currency conversion.
+    """
+    offending = [
+        dt.qname_from_tree_path(path)
+        for path, data in input_data__flat.items()
+        if getattr(data, "dtype", None) == numpy.dtype(object)
+    ]
+    if offending:
+        msg = format_errors_and_warnings(
+            "The following input columns have object dtype, which is not supported:\n"
+            f"{format_list_linewise(offending)}"
+        )
+        raise ValueError(msg)
+
+
+@fail_function(include_if_any_element_present=["input_data__flat"])
 def input_data_uint64_values_overflow_int64(input_data__flat: FlatData) -> None:
     """Fail when a uint64 input column has any value outside the int64 range.
 
