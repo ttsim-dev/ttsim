@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from ttsim.tt import (
-    InputOutputUnit,
+    InputOutputUnits,
     PiecewisePolynomialParamValue,
     TTSIMUnit,
     get_consecutive_int_lookup_table_param_value,
@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 
 
 @param_function(
-    unit=InputOutputUnit(
+    unit=InputOutputUnits(
         input_unit=TTSIMUnit.CURRENCY,
         output_unit=TTSIMUnit.CURRENCY.PER_YEAR,
     ),
@@ -71,7 +71,7 @@ def amount_y(
 
 
 @param_function(
-    unit=InputOutputUnit(
+    unit=InputOutputUnits(
         input_unit=TTSIMUnit.DIMENSIONLESS.PER_KIN,
         output_unit=TTSIMUnit.CURRENCY.PER_YEAR.PER_KIN,
     ),

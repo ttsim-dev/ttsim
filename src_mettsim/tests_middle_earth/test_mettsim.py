@@ -13,7 +13,7 @@ from ttsim.main_args import InputData
 from ttsim.testing_utils import (
     PolicyTest,
     check_env_completeness,
-    check_env_units,
+    check_policy_environment_units,
     execute_test,
     load_policy_cases,
 )
@@ -172,7 +172,7 @@ def test_mettsim_units_are_complete_and_consistent(orig_mettsim_objects, date):
     function body the check can evaluate must infer a unit consistent with
     its declaration.
     """
-    check_env_units(
+    check_policy_environment_units(
         policy_date=date,
         orig_policy_objects=orig_mettsim_objects,
         unit_system=middle_earth.UNIT_SYSTEM,
