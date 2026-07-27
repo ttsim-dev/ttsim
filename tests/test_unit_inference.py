@@ -3823,8 +3823,7 @@ def test_same_group_level_addition_in_a_body_passes():
 
 def test_missing_check_accepts_structured_param_function():
     fail_if_environment_units_are_missing(
-        env={"raw_child_rate": make_raw_child_rate(), "child_rate": child_rate},
-        grouping_levels=GROUPING_LEVELS,
+        {"raw_child_rate": make_raw_child_rate(), "child_rate": child_rate}
     )
 
 
@@ -3838,7 +3837,4 @@ def test_missing_check_reports_uncovered_require_converter_leaf():
     with pytest.raises(
         UnitDefinitionError, match=r"raw_child_rate\[bounds\]\[max_age\]"
     ):
-        fail_if_environment_units_are_missing(
-            env={"raw_child_rate": raw},
-            grouping_levels=GROUPING_LEVELS,
-        )
+        fail_if_environment_units_are_missing({"raw_child_rate": raw})

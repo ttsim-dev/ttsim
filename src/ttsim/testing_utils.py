@@ -367,7 +367,7 @@ def check_policy_environment_units(
         "without_tree_logic_and_with_derived_functions"
     ]
     grouping_levels = targets["labels"]["grouping_levels"]
-    fail_if_environment_units_are_missing(env=env, grouping_levels=grouping_levels)
+    fail_if_environment_units_are_missing(env)
     fail_if_environment_units_are_inconsistent(
         env=env, grouping_levels=grouping_levels, unit_system=unit_system
     )

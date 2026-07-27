@@ -1009,8 +1009,7 @@ def tt_units_are_missing(
             unit declaration.
     """
     fail_if_environment_units_are_missing(
-        env=specialized_environment__without_tree_logic_and_with_derived_functions,
-        grouping_levels=labels__grouping_levels,
+        specialized_environment__without_tree_logic_and_with_derived_functions
     )
 
 
