@@ -50,14 +50,6 @@ def coming_of_age_celebration(age: int) -> bool:
     ) or age == cast_ttsim_unit(value=111, unit=TTSIMUnit.YEARS)
 
 
-@policy_function(vectorization_strategy="vectorize", unit=TTSIMUnit.DIMENSIONLESS)
-def of_age(age: int) -> bool:
-    """Whether the person has reached the age of majority."""
-    # The bound is stated in years, so it is written that way rather than as a
-    # bare number.
-    return age >= cast_ttsim_unit(value=33, unit=TTSIMUnit.YEARS)
-
-
 @policy_function(
     vectorization_strategy="vectorize", unit=TTSIMUnit.DIMENSIONLESS.PER_KIN
 )
