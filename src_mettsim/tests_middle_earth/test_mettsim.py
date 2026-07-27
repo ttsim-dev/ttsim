@@ -43,6 +43,7 @@ def get_orig_mettsim_objects() -> dict[
             "orig_policy_objects__param_specs",
         ],
         orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+        unit_system=middle_earth.UNIT_SYSTEM,
     )["orig_policy_objects"]
 
 
@@ -70,7 +71,13 @@ def orig_mettsim_objects():
     ids=POLICY_TEST_IDS_AND_CASES.keys(),
 )
 def test_policy_cases(test: PolicyTest, backend: Literal["numpy", "jax"]):
-    execute_test(test=test, root=middle_earth.ROOT_PATH, backend=backend)
+    execute_test(
+        test=test,
+        root=middle_earth.ROOT_PATH,
+        backend=backend,
+        unit_system=middle_earth.UNIT_SYSTEM,
+        default_data_currency="SILVER_PENNY",
+    )
 
 
 def test_enough_policy_cases_are_collected():
@@ -101,7 +108,13 @@ def test_python314_annotation_extraction_bug(backend: Literal["numpy", "jax"]):
         if str(test.path) == str(test_file):
             # In Python 3.14, this will raise AnnotationMismatchError (test fails)
             # In Python 3.13, this will succeed (test passes)
-            execute_test(test=test, root=middle_earth.ROOT_PATH, backend=backend)
+            execute_test(
+                test=test,
+                root=middle_earth.ROOT_PATH,
+                backend=backend,
+                unit_system=middle_earth.UNIT_SYSTEM,
+                default_data_currency="SILVER_PENNY",
+            )
             break
     else:
         pytest.fail(f"Could not find test case: {test_file}")
@@ -114,6 +127,7 @@ def test_mettsim_policy_environment_dag_with_params():
         include_params=True,
         title="METTSIM Policy Environment DAG with parameters",
         show_node_description=True,
+        unit_system=middle_earth.UNIT_SYSTEM,
     )
 
 
@@ -124,6 +138,7 @@ def test_mettsim_policy_environment_dag_without_params():
         include_params=False,
         title="METTSIM Policy Environment DAG without parameters",
         show_node_description=True,
+        unit_system=middle_earth.UNIT_SYSTEM,
     )
 
 
@@ -138,6 +153,7 @@ def test_mettsim_policy_environment_is_complete(orig_mettsim_objects, date):
         name="METTSIM",
         policy_date=date,
         orig_policy_objects=orig_mettsim_objects,
+        unit_system=middle_earth.UNIT_SYSTEM,
     )
 
 
@@ -154,4 +170,5 @@ def test_fail_functions_are_executed_with_priority(backend: Literal["numpy", "ja
             orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
             tt_targets=TTTargets.tree({"property_tax": {"amount_y": None}}),
             backend=backend,
+            unit_system=middle_earth.UNIT_SYSTEM,
         )

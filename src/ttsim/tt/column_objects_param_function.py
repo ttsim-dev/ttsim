@@ -65,7 +65,7 @@ from ttsim.tt.units import (
     CompositeUnit,
     InputOutputUnits,
     UnitDeclaration,
-    is_unset_unit,
+    UnsetUnit,
 )
 from ttsim.tt.vectorization import vectorize_function
 from ttsim.typing import DashedISOString, IntColumn, UnorderedQNames
@@ -819,7 +819,7 @@ def _fail_if_unit_is_unset(
     orig_location: str,
 ) -> None:
     """Fail if an aggregation does not declare a unit."""
-    if is_unset_unit(unit):
+    if isinstance(unit, UnsetUnit):
         msg = (
             f"{decorator_name} at {orig_location} must declare a `unit=` (GEP 10). "
             f"Every aggregation states its unit explicitly, whatever the operation."

@@ -4,13 +4,12 @@ import datetime
 from typing import TYPE_CHECKING, Any
 
 import dags.tree as dt
-import pint
 
 from ttsim.interface_dag_elements.interface_node_objects import interface_function
 from ttsim.tt.units import (
     UNSET_UNIT,
     UnitSystem,
-    strip_input_quantity_at_boundary,
+    UnsetUnit,
     ttsim_unit_has_currency,
 )
 from ttsim.typing import SpecEnvWithoutTreeLogicAndWithDerivedFunctions
@@ -46,23 +45,14 @@ def input_data_in_computation_currency(
     computation_currency: str,
     unit_system: UnitSystem,
 ) -> FlatData:
-    """The input data with every value a bare magnitude in the computation currency."""
-    registry: pint.UnitRegistry = unit_system.registry
-    stripped = {
-        path: (
-            strip_input_quantity_at_boundary(
-                quantity=value,
-                data_currency=data_currency,
-                registry=registry,
-                column_label=dt.qname_from_tree_path(path),
-            )
-            if isinstance(value, pint.Quantity)
-            else value
-        )
-        for path, value in input_data__flat.items()
-    }
+    """The input data with every value a bare magnitude in the computation currency.
+
+    Input columns arrive in the data currency — a unit-annotated column crossed
+    into it at its own boundary — so the crossing into the computation currency
+    is one uniform factor applied to every currency-valued column.
+    """
     if data_currency == computation_currency:
-        return stripped
+        return input_data__flat
     factor = unit_system.currency_conversion_factor(
         source_currency=data_currency,
         target_currency=computation_currency,
@@ -78,7 +68,7 @@ def input_data_in_computation_currency(
                 ),
             )
         )
-        for path, value in stripped.items()
+        for path, value in input_data__flat.items()
     }
 
 
@@ -91,6 +81,8 @@ def _convert_currency_value(
 ) -> Any:  # noqa: ANN401
     """Apply a currency factor when the qname declares a currency quantity."""
     declared_unit = getattr(specialized_environment.get(qname), "unit", UNSET_UNIT)
-    if not ttsim_unit_has_currency(declared_unit):
+    if isinstance(declared_unit, UnsetUnit) or not ttsim_unit_has_currency(
+        declared_unit
+    ):
         return value
     return value * factor

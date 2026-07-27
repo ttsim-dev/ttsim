@@ -9,6 +9,8 @@ registered. The concrete currency conversion / substitution and the end-to-end
 
 from __future__ import annotations
 
+from typing import Any
+
 import numpy
 import pint
 import pytest
@@ -21,60 +23,68 @@ from ttsim.interface_dag_elements.input_data import (
     flat_from_tree_with_unit_annotations,
     ttsim_units_from_tree_with_unit_annotations,
 )
+from ttsim.main_args import InputData
 from ttsim.tt.units import (
     CompositeUnit,
+    Currency,
     TTSIMUnit,
     UnitAnnotatedColumn,
     UnitSystem,
-    output_unit_in_data_currency,
+    pint_unit_from_ttsim_unit,
+    pint_unit_from_ttsim_unit_for_column,
+    pint_unit_has_agnostic_currency,
+    pint_unit_with_currency,
     register_grouping_levels,
-    resolve_ttsim_unit,
-    resolve_ttsim_unit_for_column,
 )
 from ttsim.unit_validation import (
     fail_if_input_units_are_inconsistent,
     fail_if_not_all_leaves_are_unit_annotated_columns,
+    flatten_unit_annotated_input_tree,
 )
 
 # A representative system whose registry these boundary tests resolve against.
 # They pass the agnostic ``CURRENCY`` as the data currency explicitly, so the
 # base currency is never exercised; the grouping level ``hh`` is.
-SYSTEM = UnitSystem(
-    base_currency="EUR",
-    statutory_currencies={"0001-01-01": "EUR"},
-)
+SYSTEM = UnitSystem(currencies={"EUR": Currency(statutory_from="0001-01-01")})
 REGISTRY = SYSTEM.registry
-register_grouping_levels(names=["hh"], registry=REGISTRY)
+# The policy environment's grouping levels, as a resolver receives them.
+GROUPING_LEVELS = ("hh",)
+register_grouping_levels(names=GROUPING_LEVELS, registry=REGISTRY)
 
 
 def _resolved(unit: CompositeUnit) -> pint.Unit:
     """Resolve a CompositeUnit to its pint unit."""
-    return resolve_ttsim_unit(unit=unit, registry=REGISTRY)
+    return pint_unit_from_ttsim_unit(unit=unit, registry=REGISTRY)
 
 
-def _column(
-    unit: CompositeUnit,
-    *,
-    time_unit_id: str | None = None,
-    grouping_level: str | None = None,
-) -> pint.Unit:
+def _column(unit: CompositeUnit, *, name: str | None = None) -> pint.Unit:
     """A column's resolved unit exactly as the DAG builds it (bare when unsuffixed)."""
-    return resolve_ttsim_unit_for_column(
+    return pint_unit_from_ttsim_unit_for_column(
         unit=unit,
-        time_unit_id=time_unit_id,
-        grouping_level=grouping_level,
+        grouping_levels=GROUPING_LEVELS,
+        name=name,
         where="test",
         registry=REGISTRY,
     )
 
 
-def test_output_unit_in_data_currency_leaves_non_currency_units_untouched():
+def test_resolved_column_unit_always_carries_the_agnostic_currency():
+    """A computed result column's resolved unit never pins a concrete currency.
+
+    The column resolver admits only the agnostic ``CURRENCY``, so relabelling a
+    computed result into the data currency is unconditional.
+    """
+    assert pint_unit_has_agnostic_currency(
+        units=_column(TTSIMUnit.CURRENCY.PER_MONTH, name="wage_m"),
+        registry=REGISTRY,
+    )
+
+
+def test_pint_unit_with_currency_leaves_non_currency_units_untouched():
     for composite in (TTSIMUnit.YEARS, TTSIMUnit.HECTARE, TTSIMUnit.DIMENSIONLESS):
         unit = _resolved(composite)
         assert (
-            output_unit_in_data_currency(
-                units=unit, data_currency="CURRENCY", registry=REGISTRY
-            )
+            pint_unit_with_currency(units=unit, currency="CURRENCY", registry=REGISTRY)
             == unit
         )
 
@@ -114,6 +124,18 @@ def test_fail_if_not_all_leaves_are_unit_annotated_columns_rejects_bare_leaf():
         fail_if_not_all_leaves_are_unit_annotated_columns(flat=flat)
 
 
+def test_bare_leaf_passed_to_input_data_reports_the_path_listing_diagnostic():
+    """A bare leaf is reported by name, not rejected by the type boundary.
+
+    ``InputData.tree_with_unit_annotations`` accepts any leaf so the untagged
+    columns can be listed by qualified name when the tree is flattened.
+    """
+    tree: dict[str, Any] = {"wage_m": numpy.array([1.0, 2.0])}
+    InputData.tree_with_unit_annotations(tree)
+    with pytest.raises(UnitConsistencyError, match="bare: wage_m"):
+        flatten_unit_annotated_input_tree(tree)
+
+
 def test_flat_from_tree_with_unit_annotations_strips_to_bare_arrays():
     tree = {
         "wage_m": UnitAnnotatedColumn(
@@ -124,7 +146,10 @@ def test_flat_from_tree_with_unit_annotations_strips_to_bare_arrays():
         ),
     }
     flat = flat_from_tree_with_unit_annotations(
-        tree_with_unit_annotations=tree, data_currency="CURRENCY", unit_system=SYSTEM
+        tree_with_unit_annotations=tree,
+        data_currency="CURRENCY",
+        unit_system=SYSTEM,
+        labels__grouping_levels=GROUPING_LEVELS,
     )
     assert not isinstance(flat[("wage_m",)], pint.Quantity)
     assert not isinstance(flat[("p_id",)], pint.Quantity)
@@ -157,6 +182,7 @@ def test_flat_from_tree_with_unit_annotations_fails_on_period_mismatch():
             tree_with_unit_annotations=tree,
             data_currency="CURRENCY",
             unit_system=SYSTEM,
+            labels__grouping_levels=GROUPING_LEVELS,
         )
 
 
@@ -195,9 +221,7 @@ def test_input_level_must_match_declared():
             input_ttsim_units={"miete_m_hh": TTSIMUnit.CURRENCY.PER_MONTH},
             resolved_pint_units={
                 "miete_m_hh": _column(
-                    TTSIMUnit.CURRENCY.PER_MONTH.PER_HH,
-                    time_unit_id="m",
-                    grouping_level="hh",
+                    TTSIMUnit.CURRENCY.PER_MONTH.PER_HH, name="miete_m_hh"
                 )
             },
             unit_system=SYSTEM,
@@ -205,10 +229,8 @@ def test_input_level_must_match_declared():
 
 
 def test_input_level_matching_declared_passes():
-    miete = _column(
-        TTSIMUnit.CURRENCY.PER_MONTH.PER_HH, time_unit_id="m", grouping_level="hh"
-    )
-    wage = _column(TTSIMUnit.CURRENCY.PER_MONTH, time_unit_id="m")
+    miete = _column(TTSIMUnit.CURRENCY.PER_MONTH.PER_HH, name="miete_m_hh")
+    wage = _column(TTSIMUnit.CURRENCY.PER_MONTH, name="wage_m")
     fail_if_input_units_are_inconsistent(
         input_ttsim_units={
             "miete_m_hh": TTSIMUnit.CURRENCY.PER_MONTH.PER_HH,

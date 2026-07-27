@@ -18,9 +18,7 @@ from ttsim.interface_dag_elements.interface_node_objects import interface_functi
 from ttsim.tt.units import (
     UnitAnnotatedColumn,
     UnitSystem,
-    input_target_unit_in_data_currency,
-    output_unit_in_data_currency,
-    param_unit_in_computation_currency,
+    pint_unit_with_currency,
     ttsim_unit_from_pint_unit,
 )
 from ttsim.typing import (
@@ -53,9 +51,10 @@ def tree(
     columns requested as targets are returned exactly as provided, hence already in the
     data currency.
     """
+    currencies_agree = computation_currency == data_currency
     factor = (
         1.0
-        if computation_currency == data_currency
+        if currencies_agree
         else unit_system.currency_conversion_factor(
             source_currency=computation_currency,
             target_currency=data_currency,
@@ -75,7 +74,9 @@ def tree(
             **raw_results__params,
             **raw_results__from_input_data,
             **{
-                k: _convert_currency_value(
+                k: reorder_arrays(v)
+                if currencies_agree
+                else _convert_currency_value(
                     value=reorder_arrays(v),
                     factor=factor,
                     qname=k,
@@ -92,7 +93,6 @@ def tree(
 @interface_function()
 def tree_with_unit_annotations(
     tree: NestedResults,
-    raw_results__from_input_data: QNameData,
     raw_results__params: QNameResults,
     unit_checks__resolved_pint_units: dict[str, pint.Unit | dict[str | int, Any]],
     data_currency: str,
@@ -128,14 +128,12 @@ def tree_with_unit_annotations(
         if not isinstance(unit, pint.Unit):
             tagged[qname] = value
             continue
-        if qname in raw_results__from_input_data:
-            result_unit = input_target_unit_in_data_currency(
-                units=unit, data_currency=data_currency, registry=registry
-            )
-        else:
-            result_unit = output_unit_in_data_currency(
-                units=unit, data_currency=data_currency, registry=registry
-            )
+        # An input column returned as a target keeps the values the user handed
+        # in, and a computed column crossed into the data currency at the result
+        # boundary: both are labelled in the data currency.
+        result_unit = pint_unit_with_currency(
+            units=unit, currency=data_currency, registry=registry
+        )
         label = ttsim_unit_from_pint_unit(units=result_unit, registry=registry)
         tagged[qname] = UnitAnnotatedColumn(values=value, unit=label)
     for qname, value in raw_results__params.items():
@@ -184,10 +182,8 @@ def _annotated_param(
         }
     if not isinstance(resolved_unit, pint.Unit):
         return value
-    result_unit = param_unit_in_computation_currency(
-        units=resolved_unit,
-        computation_currency=computation_currency,
-        registry=registry,
+    result_unit = pint_unit_with_currency(
+        units=resolved_unit, currency=computation_currency, registry=registry
     )
     return UnitAnnotatedColumn(
         values=value,

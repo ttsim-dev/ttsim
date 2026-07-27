@@ -46,7 +46,6 @@ from ttsim.tt.units import (
     CompositeUnit,
     UnitDeclaration,
     UnitSystem,
-    UserNestedUnitAnnotatedData,
     ttsim_unit_has_agnostic_currency,
 )
 from ttsim.typing import (
@@ -66,6 +65,7 @@ from ttsim.typing import (
     SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
     SpecEnvWithPartialledParamsAndScalars,
     UnorderedQNames,
+    UserNestedUnitAnnotatedData,
 )
 from ttsim.unit_validation import (
     fail_if_environment_units_are_inconsistent,

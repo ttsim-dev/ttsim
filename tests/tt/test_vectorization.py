@@ -387,9 +387,7 @@ def test_housing_benefits_amount_m_fam(backend, xnp):
     # Test original function on scalar input
     # ==============================================================================
     eligibility__requirement_fulfilled_fam = True
-    income__amount_m_fam = 1000.0
-    assistance_rate = 0.8
-    max_amount_m_fam = 1000.0
+    benefit_share_m_fam = 800.0
 
     from mettsim.middle_earth.housing_benefits.amount import (  # noqa: PLC0415
         amount_m_fam,
@@ -397,19 +395,13 @@ def test_housing_benefits_amount_m_fam(backend, xnp):
 
     exp = amount_m_fam.function(
         eligibility__requirement_fulfilled_fam=eligibility__requirement_fulfilled_fam,
-        income__amount_m_fam=income__amount_m_fam,
-        assistance_rate=assistance_rate,
-        max_amount_m_fam=max_amount_m_fam,
-        xnp=xnp,
+        benefit_share_m_fam=benefit_share_m_fam,
     )
     assert exp == 800.0
 
     exp_false = amount_m_fam.function(
         eligibility__requirement_fulfilled_fam=False,
-        income__amount_m_fam=income__amount_m_fam,
-        assistance_rate=assistance_rate,
-        max_amount_m_fam=max_amount_m_fam,
-        xnp=xnp,
+        benefit_share_m_fam=benefit_share_m_fam,
     )
     assert exp_false == 0.0
 
@@ -417,16 +409,12 @@ def test_housing_benefits_amount_m_fam(backend, xnp):
     # ==============================================================================
     shape = (10, 2)
     eligibility__requirement_fulfilled_fam = xnp.full(shape, True)  # noqa: FBT003
-    income__amount_m_fam = xnp.full(shape, income__amount_m_fam)
-    assistance_rate = xnp.full(shape, assistance_rate)
+    benefit_share_m_fam = xnp.full(shape, benefit_share_m_fam)
 
     with pytest.raises(ValueError, match="truth value of an array with more than"):
         amount_m_fam.function(
             eligibility__requirement_fulfilled_fam=eligibility__requirement_fulfilled_fam,
-            income__amount_m_fam=income__amount_m_fam,
-            assistance_rate=assistance_rate,
-            max_amount_m_fam=max_amount_m_fam,
-            xnp=xnp,
+            benefit_share_m_fam=benefit_share_m_fam,
         )
 
     # Call converted function on array input and test result
@@ -438,24 +426,17 @@ def test_housing_benefits_amount_m_fam(backend, xnp):
     )
     got = converted(
         eligibility__requirement_fulfilled_fam=eligibility__requirement_fulfilled_fam,
-        income__amount_m_fam=income__amount_m_fam,
-        assistance_rate=assistance_rate,
-        max_amount_m_fam=max_amount_m_fam,
-        xnp=xnp,
+        benefit_share_m_fam=benefit_share_m_fam,
     )
     assert_array_equal(got, xnp.full(shape, exp))
 
     # Test mixed eligibility
     eligibility__requirement_fulfilled_fam = xnp.array([[True, False], [False, True]])
-    income__amount_m_fam = xnp.array([[1000.0, 1000.0], [1000.0, 1000.0]])
-    assistance_rate = xnp.array([[0.8, 0.8], [0.8, 0.8]])
+    benefit_share_m_fam = xnp.array([[800.0, 800.0], [800.0, 800.0]])
 
     got_mixed = converted(
         eligibility__requirement_fulfilled_fam=eligibility__requirement_fulfilled_fam,
-        income__amount_m_fam=income__amount_m_fam,
-        assistance_rate=assistance_rate,
-        max_amount_m_fam=max_amount_m_fam,
-        xnp=xnp,
+        benefit_share_m_fam=benefit_share_m_fam,
     )
     expected_mixed = xnp.array([[800.0, 0.0], [0.0, 800.0]])
     assert_array_equal(got_mixed, expected_mixed)

@@ -27,29 +27,6 @@ def _spec_env(policy_environment, input_data__flat, grouping_levels=()):
     )
 
 
-def test_pint_tagged_currency_input_is_stripped_and_rescaled():
-    """A pint-tagged column is crossed into the data currency and loses its tag.
-
-    A wealth column handed in as silver pennies rides along castar data; four
-    silver pennies make one castar, so the magnitudes are quartered.
-    """
-    input_data__flat = {
-        ("p_id",): numpy.array([0, 1]),
-        ("wealth",): TEST_UNIT_SYSTEM.registry.Quantity(
-            numpy.array([4.0, 8.0]), "SILVER_PENNY"
-        ),
-    }
-    out = input_data_in_computation_currency(
-        input_data__flat=input_data__flat,
-        specialized_environment__without_tree_logic_and_with_derived_functions={},
-        data_currency="CASTAR",
-        computation_currency="CASTAR",
-        unit_system=TEST_UNIT_SYSTEM,
-    )
-    assert not isinstance(out[("wealth",)], TEST_UNIT_SYSTEM.registry.Quantity)
-    assert list(numpy.asarray(out[("wealth",)])) == pytest.approx([1.0, 2.0])
-
-
 def test_untagged_input_converts_by_declared_unit():
     """Untagged data converts iff the column's declared unit carries a currency.
 

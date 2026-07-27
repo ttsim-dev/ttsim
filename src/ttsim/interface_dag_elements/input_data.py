@@ -22,10 +22,9 @@ from ttsim.interface_dag_elements.processed_data import (
 from ttsim.tt.units import (
     CompositeUnit,
     UnitSystem,
-    UserNestedUnitAnnotatedData,
-    resolve_ttsim_unit_for_input,
-    strip_input_quantity_at_boundary,
+    input_column_in_data_currency,
 )
+from ttsim.typing import UserNestedUnitAnnotatedData
 from ttsim.unit_validation import flatten_unit_annotated_input_tree
 
 if TYPE_CHECKING:
@@ -36,6 +35,7 @@ if TYPE_CHECKING:
         IntColumn,
         NestedData,
         NestedInputsMapper,
+        OrderedQNames,
         QNameData,
     )
 
@@ -203,18 +203,18 @@ def flat_from_tree_with_unit_annotations(
     tree_with_unit_annotations: UserNestedUnitAnnotatedData,
     data_currency: str,
     unit_system: UnitSystem,
+    labels__grouping_levels: OrderedQNames,
 ) -> FlatData:
     """The input data as a flat dictionary of arrays."""
     registry = unit_system.registry
     flat = flatten_unit_annotated_input_tree(tree=tree_with_unit_annotations)
     return {
-        path: strip_input_quantity_at_boundary(
-            quantity=registry.Quantity(
-                col.values,
-                resolve_ttsim_unit_for_input(unit=col.unit, registry=registry),
-            ),
+        path: input_column_in_data_currency(
+            values=col.values,
+            unit=col.unit,
             data_currency=data_currency,
             registry=registry,
+            grouping_levels=labels__grouping_levels,
             column_label=dt.qname_from_tree_path(path),
         )
         for path, col in flat.items()

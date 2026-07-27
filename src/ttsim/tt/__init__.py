@@ -43,12 +43,13 @@ from ttsim.tt.shared import join
 from ttsim.tt.units import (
     UNSET_UNIT,
     CompositeUnit,
+    Currency,
     InputOutputUnits,
     TTSIMUnit,
     UnitAnnotatedColumn,
     UnitSystem,
+    UnsetUnit,
     cast_ttsim_unit,
-    is_unset_unit,
     register_unit_builder_levels,
 )
 
@@ -62,6 +63,7 @@ __all__ = [
     "CompositeUnit",
     "ConsecutiveIntLookupTableParam",
     "ConsecutiveIntLookupTableParamValue",
+    "Currency",
     "DictParam",
     "FKType",
     "GroupCreationFunction",
@@ -81,6 +83,7 @@ __all__ = [
     "TimeConversionFunction",
     "UnitAnnotatedColumn",
     "UnitSystem",
+    "UnsetUnit",
     "agg_by_group_function",
     "agg_by_p_id_function",
     "cast_ttsim_unit",
@@ -91,7 +94,6 @@ __all__ = [
     "get_year_based_phase_inout_of_age_thresholds_param_value",
     "group_creation_function",
     "intervals_to_thresholds",
-    "is_unset_unit",
     "join",
     "merge_piecewise_intervals",
     "param_function",

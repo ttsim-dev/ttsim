@@ -18,6 +18,10 @@ sites rather than this module, to avoid an import cycle:
 
 Both are caught by `except TTSIMError`; import them from their defining
 modules.
+
+`ttsim._unit_inference._UnitCheckError` and its subclasses also subclass
+`TTSIMError` at their own site, but are internal control-flow signals thrown and
+caught within the unit check rather than part of this user-facing vocabulary.
 """
 
 

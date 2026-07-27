@@ -23,14 +23,15 @@ from ttsim.tt import (
 from ttsim.tt.units import (
     _ALLOWED_UNIT_TOKENS,
     CURRENCY_TOKEN,
+    Currency,
     UnitSystem,
     _unit_builder_levels,
     divide_by_grouping_level,
-    parse_unit,
+    pint_unit_from_string,
+    pint_unit_from_ttsim_unit,
+    pint_unit_from_ttsim_unit_for_column,
+    pint_unit_from_ttsim_unit_for_param,
     register_grouping_levels,
-    resolve_ttsim_unit,
-    resolve_ttsim_unit_for_column,
-    resolve_ttsim_unit_for_param,
     resolved_unit_for_aggregation,
     unit_for_aggregation,
     units_are_equivalent,
@@ -40,12 +41,15 @@ from ttsim.tt.units import (
 # levels on its registry mirrors what the build does with the levels derived
 # from the policy environment's `*_id` columns.
 SYSTEM = UnitSystem(
-    base_currency="CASTAR",
-    other_currencies={"SILVER_PENNY": "CASTAR / 4"},
-    statutory_currencies={"0001-01-01": "CASTAR"},
+    currencies={
+        "CASTAR": Currency(statutory_from="0001-01-01"),
+        "SILVER_PENNY": Currency(value="CASTAR / 4"),
+    },
 )
 REGISTRY = SYSTEM.registry
-register_grouping_levels(names=["hh", "bg", "sn"], registry=REGISTRY)
+# The policy environment's grouping levels, as a resolver receives them.
+GROUPING_LEVELS = ("hh", "bg", "sn")
+register_grouping_levels(names=GROUPING_LEVELS, registry=REGISTRY)
 
 
 def test_register_grouping_levels_is_idempotent():
@@ -53,12 +57,12 @@ def test_register_grouping_levels_is_idempotent():
     register_grouping_levels(names=["hh"], registry=REGISTRY)
     register_grouping_levels(names=["hh", "bg"], registry=REGISTRY)
     first = divide_by_grouping_level(
-        unit=parse_unit(unit_str="CURRENCY", registry=REGISTRY),
+        unit=pint_unit_from_string(unit_str="CURRENCY", registry=REGISTRY),
         level="hh",
         registry=REGISTRY,
     )
     second = divide_by_grouping_level(
-        unit=parse_unit(unit_str="CURRENCY", registry=REGISTRY),
+        unit=pint_unit_from_string(unit_str="CURRENCY", registry=REGISTRY),
         level="hh",
         registry=REGISTRY,
     )
@@ -92,12 +96,12 @@ def test_malformed_grouping_level_widens_no_global_vocabulary():
 def test_each_level_is_its_own_base_dimension():
     # No conversion between levels: hh and bg denominators are distinct dimensions.
     at_hh = divide_by_grouping_level(
-        unit=parse_unit(unit_str="CURRENCY / month", registry=REGISTRY),
+        unit=pint_unit_from_string(unit_str="CURRENCY / month", registry=REGISTRY),
         level="hh",
         registry=REGISTRY,
     )
     at_bg = divide_by_grouping_level(
-        unit=parse_unit(unit_str="CURRENCY / month", registry=REGISTRY),
+        unit=pint_unit_from_string(unit_str="CURRENCY / month", registry=REGISTRY),
         level="bg",
         registry=REGISTRY,
     )
@@ -108,19 +112,21 @@ def test_each_level_is_its_own_base_dimension():
 def test_unregistered_grouping_level_is_rejected():
     with pytest.raises(UnitDefinitionError, match="Unknown grouping level"):
         divide_by_grouping_level(
-            unit=parse_unit(unit_str="CURRENCY", registry=REGISTRY),
+            unit=pint_unit_from_string(unit_str="CURRENCY", registry=REGISTRY),
             level="eg_not_registered",
             registry=REGISTRY,
         )
 
 
 def test_currency_flow_resolves_with_hh_denominator_at_level_hh():
-    base = resolve_ttsim_unit(unit=TTSIMUnit.CURRENCY.PER_MONTH, registry=REGISTRY)
+    base = pint_unit_from_ttsim_unit(
+        unit=TTSIMUnit.CURRENCY.PER_MONTH, registry=REGISTRY
+    )
     at_hh = divide_by_grouping_level(unit=base, level="hh", registry=REGISTRY)
     assert units_are_equivalent(
         left=at_hh,
         right=divide_by_grouping_level(
-            unit=parse_unit(unit_str="CURRENCY / month", registry=REGISTRY),
+            unit=pint_unit_from_string(unit_str="CURRENCY / month", registry=REGISTRY),
             level="hh",
             registry=REGISTRY,
         ),
@@ -139,9 +145,9 @@ def test_currency_flow_resolves_with_hh_denominator_at_level_hh():
 def test_bare_tokens_resolve_without_a_level(token):
     # A bare unit carries no grouping denominator: the resolved unit is the plain
     # physical unit, unchanged by any level.
-    resolved = resolve_ttsim_unit(unit=token, registry=REGISTRY)
+    resolved = pint_unit_from_ttsim_unit(unit=token, registry=REGISTRY)
     hh_division = divide_by_grouping_level(
-        unit=parse_unit(unit_str="CURRENCY", registry=REGISTRY),
+        unit=pint_unit_from_string(unit_str="CURRENCY", registry=REGISTRY),
         level="hh",
         registry=REGISTRY,
     )
@@ -153,7 +159,7 @@ def test_bare_tokens_resolve_without_a_level(token):
 def test_count_bridges_hh_to_bare_via_division():
     # (CURRENCY/month/[hh]) / (1/[hh]) == CURRENCY/month (bare per-person amount).
     rent_at_hh = divide_by_grouping_level(
-        unit=parse_unit(unit_str="CURRENCY / month", registry=REGISTRY),
+        unit=pint_unit_from_string(unit_str="CURRENCY / month", registry=REGISTRY),
         level="hh",
         registry=REGISTRY,
     )
@@ -163,7 +169,7 @@ def test_count_bridges_hh_to_bare_via_division():
     bridged = (
         REGISTRY.Quantity(1.0, rent_at_hh) / REGISTRY.Quantity(1.0, count_to_hh)
     ).units
-    expected = parse_unit(unit_str="CURRENCY / month", registry=REGISTRY)
+    expected = pint_unit_from_string(unit_str="CURRENCY / month", registry=REGISTRY)
     assert units_are_equivalent(left=bridged, right=expected, registry=REGISTRY)
 
 
@@ -173,12 +179,12 @@ def test_count_bridges_bare_to_sn_via_multiplication():
     count_to_sn = resolved_unit_for_aggregation(
         agg_type=AggType.COUNT, target_level="sn", registry=REGISTRY
     )  # 1/[sn]
-    per_person = parse_unit(unit_str="CURRENCY / year", registry=REGISTRY)
+    per_person = pint_unit_from_string(unit_str="CURRENCY / year", registry=REGISTRY)
     product = (
         REGISTRY.Quantity(1.0, count_to_sn) * REGISTRY.Quantity(1.0, per_person)
     ).units
     expected = divide_by_grouping_level(
-        unit=parse_unit(unit_str="CURRENCY / year", registry=REGISTRY),
+        unit=pint_unit_from_string(unit_str="CURRENCY / year", registry=REGISTRY),
         level="sn",
         registry=REGISTRY,
     )
@@ -189,23 +195,31 @@ def test_absent_level_is_bare():
     # A bare CURRENCY_PER_YEAR carries no grouping level — it is a per-person /
     # level-neutral amount (GEP 10), so it multiplies a leveled quantity without
     # polluting its level.
-    resolved = resolve_ttsim_unit_for_param(
-        unit=TTSIMUnit.CURRENCY.PER_YEAR, where="test", registry=REGISTRY
+    resolved = pint_unit_from_ttsim_unit_for_param(
+        unit=TTSIMUnit.CASTAR.PER_YEAR,
+        grouping_levels=GROUPING_LEVELS,
+        name=None,
+        where="test",
+        registry=REGISTRY,
     )
     assert units_are_equivalent(
         left=resolved,
-        right=parse_unit(unit_str="CURRENCY / year", registry=REGISTRY),
+        right=pint_unit_from_string(unit_str="CURRENCY / year", registry=REGISTRY),
         registry=REGISTRY,
     )
 
 
 def test_spelled_level_on_stock_param():
     # A non-flow per-group amount: CURRENCY at level hh.
-    resolved = resolve_ttsim_unit_for_param(
-        unit=TTSIMUnit.CURRENCY.PER_HH, where="test", registry=REGISTRY
+    resolved = pint_unit_from_ttsim_unit_for_param(
+        unit=TTSIMUnit.CASTAR.PER_HH,
+        grouping_levels=GROUPING_LEVELS,
+        name=None,
+        where="test",
+        registry=REGISTRY,
     )
     expected = divide_by_grouping_level(
-        unit=parse_unit(unit_str="CURRENCY", registry=REGISTRY),
+        unit=pint_unit_from_string(unit_str="CURRENCY", registry=REGISTRY),
         level="hh",
         registry=REGISTRY,
     )
@@ -214,8 +228,10 @@ def test_spelled_level_on_stock_param():
 
 def test_unknown_level_is_rejected():
     with pytest.raises(UnitDefinitionError, match="Unknown grouping level"):
-        resolve_ttsim_unit_for_param(
-            unit=TTSIMUnit.CURRENCY.PER_YEAR.PER_LEVEL("not_a_level"),
+        pint_unit_from_ttsim_unit_for_param(
+            unit=TTSIMUnit.CASTAR.PER_YEAR.PER_LEVEL("not_a_level"),
+            grouping_levels=GROUPING_LEVELS,
+            name=None,
             where="test",
             registry=REGISTRY,
         )
@@ -224,31 +240,31 @@ def test_unknown_level_is_rejected():
 def test_column_omitting_the_level_is_bare():
     # Omitting the level at a group suffix makes the column bare — no ``[bg]``
     # (GEP 10). A per-person amount constant within the group is bare too.
-    resolved = resolve_ttsim_unit_for_column(
+    resolved = pint_unit_from_ttsim_unit_for_column(
         unit=TTSIMUnit.CURRENCY.PER_MONTH,
-        time_unit_id="m",
-        grouping_level="bg",
+        grouping_levels=GROUPING_LEVELS,
+        name="betrag_m_bg",
         where="test",
         registry=REGISTRY,
     )
     assert units_are_equivalent(
         left=resolved,
-        right=parse_unit(unit_str="CURRENCY / month", registry=REGISTRY),
+        right=pint_unit_from_string(unit_str="CURRENCY / month", registry=REGISTRY),
         registry=REGISTRY,
     )
 
 
 def test_intensive_column_omitting_the_level_stays_bare_at_a_group_suffix():
-    resolved = resolve_ttsim_unit_for_column(
+    resolved = pint_unit_from_ttsim_unit_for_column(
         unit=TTSIMUnit.MONTHS,
-        time_unit_id=None,
-        grouping_level="bg",
+        grouping_levels=GROUPING_LEVELS,
+        name="dauer_bg",
         where="test",
         registry=REGISTRY,
     )
     assert units_are_equivalent(
         left=resolved,
-        right=parse_unit(unit_str="delta_calendar_month", registry=REGISTRY),
+        right=pint_unit_from_string(unit_str="delta_calendar_month", registry=REGISTRY),
         registry=REGISTRY,
     )
 
@@ -256,15 +272,15 @@ def test_intensive_column_omitting_the_level_stays_bare_at_a_group_suffix():
 def test_intensive_column_with_a_spelled_group_level_resolves():
     # GEP 10's ``alter_monate_jüngstes_mitglied_fg``: the family's property, so
     # the duration carries the group level — declared, not read off the base.
-    resolved = resolve_ttsim_unit_for_column(
+    resolved = pint_unit_from_ttsim_unit_for_column(
         unit=TTSIMUnit.MONTHS.PER_LEVEL("hh"),
-        time_unit_id=None,
-        grouping_level="hh",
+        grouping_levels=GROUPING_LEVELS,
+        name="dauer_hh",
         where="test",
         registry=REGISTRY,
     )
     expected = divide_by_grouping_level(
-        unit=parse_unit(unit_str="delta_calendar_month", registry=REGISTRY),
+        unit=pint_unit_from_string(unit_str="delta_calendar_month", registry=REGISTRY),
         level="hh",
         registry=REGISTRY,
     )
@@ -273,10 +289,10 @@ def test_intensive_column_with_a_spelled_group_level_resolves():
 
 def test_spelled_group_level_contradicting_the_suffix_is_rejected():
     with pytest.raises(UnitDefinitionError, match="must match the suffix"):
-        resolve_ttsim_unit_for_column(
+        pint_unit_from_ttsim_unit_for_column(
             unit=TTSIMUnit.CURRENCY.PER_MONTH.PER_LEVEL("bg"),
-            time_unit_id="m",
-            grouping_level="hh",
+            grouping_levels=GROUPING_LEVELS,
+            name="betrag_m_hh",
             where="test",
             registry=REGISTRY,
         )
@@ -286,10 +302,10 @@ def test_spelled_group_level_on_an_unsuffixed_name_is_rejected():
     # An unsuffixed name is bare; spelling a group level on it contradicts the
     # (absent) suffix (GEP 10).
     with pytest.raises(UnitDefinitionError, match="no level"):
-        resolve_ttsim_unit_for_column(
+        pint_unit_from_ttsim_unit_for_column(
             unit=TTSIMUnit.CURRENCY.PER_MONTH.PER_HH,
-            time_unit_id="m",
-            grouping_level=None,
+            grouping_levels=GROUPING_LEVELS,
+            name="betrag_m",
             where="test",
             registry=REGISTRY,
         )
@@ -299,10 +315,10 @@ def test_boolean_omitting_the_level_is_bare():
     # A bare DIMENSIONLESS boolean is a level-neutral / individual flag (GEP 10):
     # omitting the level yields plain dimensionless. A group indicator spells its
     # group.
-    resolved = resolve_ttsim_unit_for_column(
+    resolved = pint_unit_from_ttsim_unit_for_column(
         unit=TTSIMUnit.DIMENSIONLESS,
-        time_unit_id=None,
-        grouping_level="hh",
+        grouping_levels=GROUPING_LEVELS,
+        name="flag_hh",
         where="test",
         registry=REGISTRY,
     )
@@ -314,10 +330,10 @@ def test_boolean_omitting_the_level_is_bare():
 def test_group_level_indicator_carries_its_group_level():
     # A group-level boolean spells its level (GEP 10): DIMENSIONLESS_PER_HH
     # resolves to 1 / [hh].
-    resolved = resolve_ttsim_unit_for_column(
+    resolved = pint_unit_from_ttsim_unit_for_column(
         unit=TTSIMUnit.DIMENSIONLESS.PER_HH,
-        time_unit_id=None,
-        grouping_level="hh",
+        grouping_levels=GROUPING_LEVELS,
+        name="flag_hh",
         where="test",
         registry=REGISTRY,
     )
@@ -331,22 +347,22 @@ def test_calendar_point_carries_a_level():
     # GEP 10's ``baujahr_immobilie_hh``: the dwelling's construction year is the
     # household's property — a leveled calendar point. Attaching and comparing
     # the level must stay clear of pint's offset-arithmetic rules.
-    resolved = resolve_ttsim_unit_for_column(
+    resolved = pint_unit_from_ttsim_unit_for_column(
         unit=TTSIMUnit.CALENDAR_YEAR.PER_LEVEL("hh"),
-        time_unit_id=None,
-        grouping_level="hh",
+        grouping_levels=GROUPING_LEVELS,
+        name="jahr_hh",
         where="test",
         registry=REGISTRY,
     )
     expected = divide_by_grouping_level(
-        unit=parse_unit(unit_str="calendar_year", registry=REGISTRY),
+        unit=pint_unit_from_string(unit_str="calendar_year", registry=REGISTRY),
         level="hh",
         registry=REGISTRY,
     )
     assert units_are_equivalent(left=resolved, right=expected, registry=REGISTRY)
     assert not units_are_equivalent(
         left=resolved,
-        right=parse_unit(unit_str="calendar_year", registry=REGISTRY),
+        right=pint_unit_from_string(unit_str="calendar_year", registry=REGISTRY),
         registry=REGISTRY,
     )
 
@@ -356,7 +372,7 @@ def test_resolved_aggregation_sum_over_bare_source_acquires_target_level(
     source_spelling,
 ):
     # SUM of a bare per-person source to hh acquires the [hh] denominator.
-    source = parse_unit(unit_str=source_spelling, registry=REGISTRY)
+    source = pint_unit_from_string(unit_str=source_spelling, registry=REGISTRY)
     result = resolved_unit_for_aggregation(
         source_unit=source,
         agg_type=AggType.SUM,
@@ -399,7 +415,7 @@ def test_resolved_aggregation_count_to_individual_target_is_bare_dimensionless()
 def test_resolved_aggregation_min_over_bare_source_acquires_target_level():
     # An extreme is a property of the target group whatever the source's base
     # (GEP 10): an ``_hh`` min of a bare month-duration age carries ``[hh]``.
-    source = parse_unit(unit_str="delta_calendar_month", registry=REGISTRY)
+    source = pint_unit_from_string(unit_str="delta_calendar_month", registry=REGISTRY)
     result = resolved_unit_for_aggregation(
         source_unit=source,
         agg_type=AggType.MIN,
@@ -434,7 +450,7 @@ def test_resolved_aggregation_mean_resolves_to_bare():
     # leveling it to the target would break ``mean · count = sum``. The source
     # level is dropped, leaving a bare per-person amount.
     source = divide_by_grouping_level(
-        unit=parse_unit(unit_str=CURRENCY_TOKEN, registry=REGISTRY),
+        unit=pint_unit_from_string(unit_str=CURRENCY_TOKEN, registry=REGISTRY),
         level="hh",
         registry=REGISTRY,
     )
@@ -445,14 +461,14 @@ def test_resolved_aggregation_mean_resolves_to_bare():
         source_level="hh",
         registry=REGISTRY,
     )
-    expected = parse_unit(unit_str=CURRENCY_TOKEN, registry=REGISTRY)
+    expected = pint_unit_from_string(unit_str=CURRENCY_TOKEN, registry=REGISTRY)
     assert units_are_equivalent(left=result, right=expected, registry=REGISTRY)
 
 
 def test_resolved_aggregation_mean_over_bare_source_stays_bare():
     # The individual reading of an intensive base is bare, so an age's mean stays
     # comparable to bare thresholds.
-    source = parse_unit(unit_str="delta_calendar_month", registry=REGISTRY)
+    source = pint_unit_from_string(unit_str="delta_calendar_month", registry=REGISTRY)
     result = resolved_unit_for_aggregation(
         source_unit=source,
         agg_type=AggType.MEAN,
@@ -485,7 +501,7 @@ def test_resolved_aggregation_sum_to_individual_target_drops_source_level():
     # An agg_by_p_id SUM (individual target) over a leveled source lands on a
     # person as a bare amount.
     source = divide_by_grouping_level(
-        unit=parse_unit(unit_str="CURRENCY", registry=REGISTRY),
+        unit=pint_unit_from_string(unit_str="CURRENCY", registry=REGISTRY),
         level="hh",
         registry=REGISTRY,
     )
@@ -498,7 +514,7 @@ def test_resolved_aggregation_sum_to_individual_target_drops_source_level():
     )
     assert units_are_equivalent(
         left=result,
-        right=parse_unit(unit_str="CURRENCY", registry=REGISTRY),
+        right=pint_unit_from_string(unit_str="CURRENCY", registry=REGISTRY),
         registry=REGISTRY,
     )
 
@@ -507,7 +523,7 @@ def test_resolved_aggregation_min_over_leveled_calendar_point_swaps_level():
     # Re-leveling a calendar point must not trip pint's offset-arithmetic rules:
     # levels attach and strip via *unit* arithmetic (GEP 10).
     source = divide_by_grouping_level(
-        unit=parse_unit(unit_str="calendar_year", registry=REGISTRY),
+        unit=pint_unit_from_string(unit_str="calendar_year", registry=REGISTRY),
         level="hh",
         registry=REGISTRY,
     )
@@ -519,7 +535,7 @@ def test_resolved_aggregation_min_over_leveled_calendar_point_swaps_level():
         registry=REGISTRY,
     )
     expected = divide_by_grouping_level(
-        unit=parse_unit(unit_str="calendar_year", registry=REGISTRY),
+        unit=pint_unit_from_string(unit_str="calendar_year", registry=REGISTRY),
         level="sn",
         registry=REGISTRY,
     )
@@ -530,8 +546,12 @@ def test_declared_head_count_at_group_level_matches_a_count():
     # A DIMENSIONLESS_PER_HH column resolves to 1/[hh] — the same unit a COUNT
     # aggregation to hh mints, so a declaration and an aggregation compose and
     # compare cleanly (GEP 10).
-    at_hh = resolve_ttsim_unit_for_param(
-        unit=TTSIMUnit.DIMENSIONLESS.PER_HH, where="test", registry=REGISTRY
+    at_hh = pint_unit_from_ttsim_unit_for_param(
+        unit=TTSIMUnit.DIMENSIONLESS.PER_HH,
+        grouping_levels=GROUPING_LEVELS,
+        name=None,
+        where="test",
+        registry=REGISTRY,
     )
     assert units_are_equivalent(
         left=at_hh,

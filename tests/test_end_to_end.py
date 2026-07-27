@@ -380,14 +380,14 @@ def test_cloudpickle_round_trip_preserves_tt_function_output(tmp_path):
         from mettsim import middle_earth
 
         from ttsim import InputData, OrigPolicyObjects, TTTargets, main
-        from ttsim.tt import UnitSystem
+        from ttsim.tt import Currency, UnitSystem
 
         TEST_UNIT_SYSTEM = UnitSystem(
-            base_currency="CASTAR",
-            other_currencies={"SILVER_PENNY": "CASTAR / 4"},
-            statutory_currencies={
-                "0001-01-01": "SILVER_PENNY",
-                "2020-01-01": "CASTAR",
+            currencies={
+                "CASTAR": Currency(statutory_from="2020-01-01"),
+                "SILVER_PENNY": Currency(
+                    value="CASTAR / 4", statutory_from="0001-01-01"
+                ),
             },
         )
 
@@ -439,6 +439,7 @@ def test_cloudpickle_round_trip_with_inline_policy_environment(tmp_path):
 
         from ttsim import InputData, TTTargets, main
         from ttsim.tt import (
+            Currency,
             TTSIMUnit,
             UnitSystem,
             policy_function,
@@ -446,10 +447,9 @@ def test_cloudpickle_round_trip_with_inline_policy_environment(tmp_path):
         )
 
         # A bare-ttsim run ships no policy package, so it declares its own unit
-        # system — a base currency and the statutory-currency mapping (GEP 10).
+        # system — one currency, statutory from the beginning (GEP 10).
         UNIT_SYSTEM = UnitSystem(
-            base_currency="euro",
-            statutory_currencies={"0001-01-01": "euro"},
+            currencies={"euro": Currency(statutory_from="0001-01-01")},
         )
 
 

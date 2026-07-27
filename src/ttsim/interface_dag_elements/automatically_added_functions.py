@@ -65,7 +65,7 @@ from ttsim.tt.units import (
     UNSET_UNIT,
     CompositeUnit,
     UnitDeclaration,
-    is_unset_unit,
+    UnsetUnit,
     replace_time_unit,
     ttsim_unit_with_agnostic_currency,
     unit_for_aggregation,
@@ -292,7 +292,7 @@ def _time_converted_input_stub(
 ) -> PolicyInput | None:
     """A `PolicyInput` stub for data supplied at a time-converted name."""
     declared = getattr(element, "unit", UNSET_UNIT)
-    if is_unset_unit(declared):
+    if isinstance(declared, UnsetUnit):
         return None
     return _input_column_stub(
         qname=qname,
@@ -316,7 +316,7 @@ def _create_one_set_of_time_conversion_functions(
 ) -> dict[str, TimeConversionFunction]:
     result: dict[str, TimeConversionFunction] = {}
     declared = getattr(element, "unit", UNSET_UNIT)
-    if is_unset_unit(declared):
+    if isinstance(declared, UnsetUnit):
         return result
     dependencies = (
         set(inspect.signature(element).parameters)
@@ -497,7 +497,7 @@ def create_agg_by_group_functions(
                 column_functions=column_functions,
                 qname_policy_environment=source_environment,
             )
-            if supplied_by_data and is_unset_unit(source_unit):
+            if supplied_by_data and isinstance(source_unit, UnsetUnit):
                 # Nothing to derive the stub's unit from, cannot create a stub,
                 # unit validation will fail downstream
                 continue
@@ -512,7 +512,7 @@ def create_agg_by_group_functions(
                 target_level=group_id,
                 source_is_boolean=source_kind in BOOL_KINDS,
             )
-            if is_unset_unit(unit):
+            if isinstance(unit, UnsetUnit):
                 continue
             output_kind = resolve_agg_output_kind(
                 agg_type=AggType.SUM, input_kind=source_kind, node_name=abgfn
@@ -575,7 +575,7 @@ def _resolve_source_unit(
     )
     if source is not None:
         declared = getattr(source, "unit", UNSET_UNIT)
-        if is_unset_unit(declared):
+        if isinstance(declared, UnsetUnit):
             return UNSET_UNIT
         # A derived function computes on already-converted values, so a
         # concrete currency token passes its agnostic counterpart on.
@@ -584,7 +584,7 @@ def _resolve_source_unit(
         source_name=source_name,
         qname_policy_environment=qname_policy_environment,
     )
-    if sibling is None or is_unset_unit(sibling.unit):
+    if sibling is None or isinstance(sibling.unit, UnsetUnit):
         return UNSET_UNIT
     return replace_time_unit(
         unit=ttsim_unit_with_agnostic_currency(sibling.unit),
