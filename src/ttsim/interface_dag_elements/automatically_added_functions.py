@@ -65,7 +65,7 @@ from ttsim.tt.units import (
     UNSET_UNIT,
     CompositeUnit,
     UnitDeclaration,
-    is_unset_unit,
+    UnsetUnit,
     replace_time_unit,
     ttsim_unit_with_agnostic_currency,
     unit_for_aggregation,
@@ -93,17 +93,13 @@ if TYPE_CHECKING:
 
 @dataclass(frozen=True)
 class DerivedColumnObjects:
-    """What one derivation rule contributes to the policy environment.
+    """Container for column objects created by derivation rules.
 
     A derivation rule (time conversion, aggregation by group) turns a declared
     column into further columns at derived names. Where the input data supplies
     such a name, no function is created — the data would override it — and the
     name gets a `PolicyInput` stub carrying the unit and dtype the rule implies
-    instead, so that every input column has a unit declaration (GEP 10).
-
-    The two are kept apart because they are not interchangeable as resolution
-    sources: a stub is data, not a node the DAG computes, and its dtype is the
-    one a supplied column carries rather than the one the declaration states.
+    instead, so that every input column has a unit declaration.
     """
 
     functions: MappingProxyType[str, ColumnObject]
@@ -205,7 +201,7 @@ def create_time_conversion_functions(
 
     Returns:
         The time conversion functions, plus a `PolicyInput` stub for each time
-        variant the input data supplies (no function is created there).
+        variant the input data supplies.
 
     """
     time_units = tuple(TIME_UNIT_IDS_TO_LABELS)
@@ -241,10 +237,7 @@ def create_time_conversion_functions(
     for bngs, inputs in bngs_to_time_conversion_inputs.items():
         for col_name in data_qnames:
             # If a time variant of this base name and grouping level is provided
-            # in the data, base the time conversions on that. The input column
-            # must sit at the same grouping level as the declaration: a
-            # household total is not the source of a per-person quantity, nor
-            # the other way round.
+            # in the data, base the time conversions on that.
             pattern_specific = get_re_pattern_for_specific_time_units_and_groupings(
                 base_name=bngs[0],
                 all_time_units=time_units,
@@ -271,6 +264,8 @@ def create_time_conversion_functions(
         )
         converted_elements = {**converted_elements, **variations}
 
+        # Create input stubs to obtain unit and type declarations for input data that
+        # is a time conversion of a policy input
         for time_unit_id in time_units:
             qname = f"{bngs[0]}_{time_unit_id}{grouping_suffix}"
             if (
@@ -295,16 +290,9 @@ def _time_converted_input_stub(
     element: ColumnObject | ParamFunction | ScalarParam,
     time_unit_id: str,
 ) -> PolicyInput | None:
-    """A `PolicyInput` stub for data supplied at a time-converted name.
-
-    Data at such a name is the *source* of the conversions, so no function is
-    created for it and it would carry no unit declaration — yet the input-side
-    currency conversion and the input-tag checks read units off the environment.
-    The stub carries the declared element's unit re-based to the supplied name's
-    period, exactly as a conversion *away* from that element would (GEP 10).
-    """
+    """A `PolicyInput` stub for data supplied at a time-converted name."""
     declared = getattr(element, "unit", UNSET_UNIT)
-    if is_unset_unit(declared):
+    if isinstance(declared, UnsetUnit):
         return None
     return _input_column_stub(
         qname=qname,
@@ -328,7 +316,7 @@ def _create_one_set_of_time_conversion_functions(
 ) -> dict[str, TimeConversionFunction]:
     result: dict[str, TimeConversionFunction] = {}
     declared = getattr(element, "unit", UNSET_UNIT)
-    if is_unset_unit(declared):
+    if isinstance(declared, UnsetUnit):
         return result
     dependencies = (
         set(inspect.signature(element).parameters)
@@ -436,7 +424,7 @@ def create_agg_by_group_functions(
 
     Returns:
         The `AggByGroupFunction`s, plus a `PolicyInput` stub for each group
-        aggregate the input data supplies (no function is created there).
+        aggregate the input data supplies.
     """
     gp = group_pattern(grouping_levels)
     all_functions_and_data = {
@@ -509,15 +497,14 @@ def create_agg_by_group_functions(
                 column_functions=column_functions,
                 qname_policy_environment=source_environment,
             )
-            if supplied_by_data and is_unset_unit(source_unit):
-                # Nothing to derive the stub's unit from; the mandatory-units
-                # check reports the input.
+            if supplied_by_data and isinstance(source_unit, UnsetUnit):
+                # Nothing to derive the stub's unit from, cannot create a stub,
+                # unit validation will fail downstream
                 continue
             source_kind = _resolve_source_column_kind(
                 source_name=base_name_with_time_unit,
                 column_functions=column_functions,
                 qname_policy_environment=source_environment,
-                input_stub_name=abgfn if supplied_by_data else None,
             )
             unit = unit_for_aggregation(
                 source_unit=source_unit,
@@ -525,14 +512,14 @@ def create_agg_by_group_functions(
                 target_level=group_id,
                 source_is_boolean=source_kind in BOOL_KINDS,
             )
-            if is_unset_unit(unit):
+            if isinstance(unit, UnsetUnit):
                 continue
             output_kind = resolve_agg_output_kind(
                 agg_type=AggType.SUM, input_kind=source_kind, node_name=abgfn
             )
             if supplied_by_data:
                 # Add policy input stubs for already aggregated input data to ensure
-                # fully specified DAG unit annotations (GEP 10).
+                # fully specified DAG unit annotations.
                 input_stubs[abgfn] = _input_column_stub(
                     qname=abgfn,
                     unit=unit,
@@ -588,7 +575,7 @@ def _resolve_source_unit(
     )
     if source is not None:
         declared = getattr(source, "unit", UNSET_UNIT)
-        if is_unset_unit(declared):
+        if isinstance(declared, UnsetUnit):
             return UNSET_UNIT
         # A derived function computes on already-converted values, so a
         # concrete currency token passes its agnostic counterpart on.
@@ -597,7 +584,7 @@ def _resolve_source_unit(
         source_name=source_name,
         qname_policy_environment=qname_policy_environment,
     )
-    if sibling is None or is_unset_unit(sibling.unit):
+    if sibling is None or isinstance(sibling.unit, UnsetUnit):
         return UNSET_UNIT
     return replace_time_unit(
         unit=ttsim_unit_with_agnostic_currency(sibling.unit),
@@ -609,8 +596,6 @@ def _resolve_source_column_kind(
     source_name: str,
     column_functions: dict[str, ColumnFunction],
     qname_policy_environment: PolicyEnvironment,
-    *,
-    input_stub_name: str | None = None,
 ) -> ResolvedKind:
     """Resolve the column kind of an auto-aggregation source column.
 
@@ -633,11 +618,6 @@ def _resolve_source_column_kind(
         source_name: The qualified name of the source column.
         column_functions: Qualified-name to column function mapping.
         qname_policy_environment: The flat policy environment.
-        input_stub_name: The derived name whose `PolicyInput` stub the kind is
-            resolved for, or `None` when resolving for an aggregation function.
-            A stub whose kind does not resolve would be dropped and its input
-            would silently escape currency conversion and unit validation, so
-            the failure is reported against the input's name.
 
     Returns:
         The source column's `ResolvedKind` (always a column kind).
@@ -647,54 +627,40 @@ def _resolve_source_column_kind(
             at `source_name`, or declared `PolicyInput` at a sibling time
             unit carries a kind.
     """
-    if input_stub_name is None:
-        msg = (
-            f"Cannot resolve the dtype of auto-aggregation source column "
-            f"{source_name!r}: it is neither a column function in the DAG, a "
-            f"`PolicyInput` with a declared `data_type`, nor a sibling of any "
-            f"declared `PolicyInput` at another time unit. A concrete source "
-            f"dtype is required to synthesize a typed aggregation wrapper."
+    source_function = column_functions.get(source_name)
+    if source_function is not None:
+        kind = resolve_kind_of_column_function(
+            source_function,
+            node_name=source_name,
         )
-    else:
-        msg = (
-            f"Cannot derive the unit of input {input_stub_name!r} from its "
-            f"aggregation source {source_name!r}: the source declares a unit but "
-            f"its column kind does not resolve, and a SUM over a boolean carries "
-            f"a different unit than one over a number. Declare {source_name!r} "
-            f"with a resolvable data type."
+        return vectorized_column_kind(kind, node_name=source_name)
+
+    policy_input = qname_policy_environment.get(source_name)
+    if isinstance(policy_input, PolicyInput):
+        kind = resolve_kind_of_annotation(
+            policy_input.data_type,
+            node_name=source_name,
         )
-    try:
-        source_function = column_functions.get(source_name)
-        if source_function is not None:
-            kind = resolve_kind_of_column_function(
-                source_function,
-                node_name=source_name,
-            )
-            return vectorized_column_kind(kind, node_name=source_name)
+        return vectorized_column_kind(kind, node_name=source_name)
 
-        policy_input = qname_policy_environment.get(source_name)
-        if isinstance(policy_input, PolicyInput):
-            kind = resolve_kind_of_annotation(
-                policy_input.data_type,
-                node_name=source_name,
-            )
-            return vectorized_column_kind(kind, node_name=source_name)
-
-        sibling = _find_sibling_policy_input_at_other_time_unit(
-            source_name=source_name,
-            qname_policy_environment=qname_policy_environment,
+    sibling = _find_sibling_policy_input_at_other_time_unit(
+        source_name=source_name,
+        qname_policy_environment=qname_policy_environment,
+    )
+    if sibling is not None:
+        kind = resolve_kind_of_annotation(
+            sibling.data_type,
+            node_name=source_name,
         )
-        if sibling is not None:
-            kind = resolve_kind_of_annotation(
-                sibling.data_type,
-                node_name=source_name,
-            )
-            return vectorized_column_kind(kind, node_name=source_name)
-    except TypeResolutionError as error:
-        if input_stub_name is None:
-            raise
-        raise TypeResolutionError(msg) from error
+        return vectorized_column_kind(kind, node_name=source_name)
 
+    msg = (
+        f"Cannot resolve the dtype of auto-aggregation source column "
+        f"{source_name!r}: it is neither a column function in the DAG, a "
+        f"`PolicyInput` with a declared `data_type`, nor a sibling of any "
+        f"declared `PolicyInput` at another time unit. A concrete source "
+        f"dtype is required to synthesize a typed aggregation wrapper."
+    )
     raise TypeResolutionError(msg)
 
 

@@ -31,14 +31,17 @@ from ttsim.tt import (
     get_consecutive_int_lookup_table_param_value,
     get_month_based_phase_inout_of_age_thresholds_param_value,
     get_year_based_phase_inout_of_age_thresholds_param_value,
-    is_unset_unit,
 )
 from ttsim.tt.column_objects_param_function import (
     DEFAULT_END_DATE,
 )
 from ttsim.tt.interval_utils import merge_piecewise_intervals
 from ttsim.tt.piecewise_polynomial import PIECEWISE_TYPES, get_piecewise_parameters
-from ttsim.tt.units import ttsim_unit_currency, ttsim_unit_from_yaml_value
+from ttsim.tt.units import (
+    UnsetUnit,
+    ttsim_unit_currency,
+    ttsim_unit_from_yaml_value,
+)
 from ttsim.typing import (
     FlatColumnObjectsParamFunctions,
     FlatOrigParamSpecs,
@@ -238,7 +241,7 @@ def _collect_currencies_in_param_units(raw_token: Any) -> set[str]:  # noqa: ANN
     A scalar spelling contributes at most one currency; a per-leaf mapping is
     walked recursively: ``{"4": {"betrag": "DM_PER_MONTH"}}`` yields ``{"DM"}``.
     """
-    if raw_token is None or is_unset_unit(raw_token):
+    if raw_token is None or isinstance(raw_token, UnsetUnit):
         return set()
     if isinstance(raw_token, Mapping):
         return {

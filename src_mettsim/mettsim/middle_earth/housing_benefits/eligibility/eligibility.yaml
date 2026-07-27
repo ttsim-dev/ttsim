@@ -6,6 +6,9 @@ subsistence_income_level:
   description:
     de: Dict, da es sich über die Jahre ändert, aber der Paramtername gleich bleibt.
     en: Dict, because it changes over time, but the parameter name remains the same.
+  unit:
+    per_spouse: SILVER_PENNY_PER_MONTH
+    per_individual: SILVER_PENNY_PER_MONTH
   type: dict
   1900-01-01:
     unit: SILVER_PENNY_PER_MONTH
@@ -14,7 +17,9 @@ subsistence_income_level:
     note: >-
       Re-legislated per individual at the currency reform of 2020;
       denominated in castar (125 castar = 500 silver pennies).
-    unit: CASTAR_PER_MONTH
+    unit:
+      per_spouse: CASTAR_PER_MONTH
+      per_individual: CASTAR_PER_MONTH
     per_individual: 125.0
 max_number_of_family_members:
   name:

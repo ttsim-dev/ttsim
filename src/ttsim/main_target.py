@@ -53,6 +53,9 @@ class FailIf(MainTargetABC):
     input_data_has_int_or_bool_missing_values: str = (
         "fail_if__input_data_has_int_or_bool_missing_values"
     )
+    input_data_has_object_dtype_columns: str = (
+        "fail_if__input_data_has_object_dtype_columns"
+    )
     input_data_is_invalid: str = "fail_if__input_data_is_invalid"
     input_data_tree_is_invalid: str = "fail_if__input_data_tree_is_invalid"
     input_data_uint64_values_overflow_int64: str = (

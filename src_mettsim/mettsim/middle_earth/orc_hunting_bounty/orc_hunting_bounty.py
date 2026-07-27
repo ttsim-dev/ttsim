@@ -69,7 +69,7 @@ def amount_without_topup(
     parent_is_noble: bool,
     bounty_per_orc: BountyPerOrc,
 ) -> float:
-    """Orc-hunting bounty without topup."""
+    """Orc-hunting bounty without topup; nothing for a hunter below the minimum age."""
     bounty_small_orcs = bounty_per_orc.small_orc * small_orcs_hunted
     if parent_is_noble:
         bounty_large_orcs = bounty_per_orc.large_orc.noble_hunter * large_orcs_hunted

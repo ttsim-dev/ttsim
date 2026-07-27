@@ -23,12 +23,15 @@ from ttsim.interface_dag_elements.automatically_added_functions import (
     create_agg_by_group_functions,
     create_time_conversion_functions,
 )
+from ttsim.testing_utils import isolated_unit_vocabulary
 from ttsim.tt import (
     UNSET_UNIT,
     AggType,
     CompositeUnit,
+    Currency,
     TTSIMUnit,
     UnitSystem,
+    UnsetUnit,
     cast_ttsim_unit,
     policy_function,
     policy_input,
@@ -36,22 +39,20 @@ from ttsim.tt import (
 )
 from ttsim.tt.units import (
     CURRENCY_TOKEN,
-    _suffix_period_of,
+    _name_suffixes,
     fail_if_units_are_missing,
+    input_column_in_data_currency,
     is_calendar_point_unit,
-    is_unset_unit,
-    output_unit_in_data_currency,
-    parse_ttsim_unit,
-    parse_unit,
+    pint_unit_from_string,
+    pint_unit_from_ttsim_unit,
+    pint_unit_from_ttsim_unit_for_column,
+    pint_unit_from_ttsim_unit_for_param,
+    pint_unit_with_currency,
     register_grouping_levels,
-    resolve_agnostic_ttsim_unit,
-    resolve_ttsim_unit,
-    resolve_ttsim_unit_for_column,
-    resolve_ttsim_unit_for_param,
     resolved_unit_for_aggregation,
-    strip_input_quantity_at_boundary,
     ttsim_unit_currency,
     ttsim_unit_from_pint_unit,
+    ttsim_unit_from_string,
     ttsim_unit_from_yaml_value,
     ttsim_unit_has_agnostic_currency,
     unit_for_aggregation,
@@ -67,7 +68,7 @@ from ttsim.tt.units import (
     ],
 )
 def test_unset_unit_survives_copy_and_serialization(copied):
-    assert is_unset_unit(copied)
+    assert isinstance(copied, UnsetUnit)
     with pytest.raises(UnitDefinitionError, match="missing"):
         fail_if_units_are_missing({"missing": copied})
 
@@ -78,11 +79,15 @@ def test_unset_unit_survives_copy_and_serialization(copied):
 # fixture below, mirroring what the build does with the environment-derived
 # levels.
 SYSTEM = UnitSystem(
-    base_currency="CASTAR",
-    other_currencies={"SILVER_PENNY": "CASTAR / 4"},
-    statutory_currencies={"0001-01-01": "SILVER_PENNY", "2020-01-01": "CASTAR"},
+    currencies={
+        "CASTAR": Currency(statutory_from="2020-01-01"),
+        "SILVER_PENNY": Currency(value="CASTAR / 4", statutory_from="0001-01-01"),
+    },
 )
 REGISTRY = SYSTEM.registry
+
+# The policy environment's grouping levels, as a resolver receives them.
+GROUPING_LEVELS = ("bg", "fam", "hh", "kin")
 
 
 @pytest.fixture(autouse=True)
@@ -92,8 +97,8 @@ def _registered_levels():
     Autouse (and idempotent), so every compositional test sees ``bg`` / ``hh``
     without threading the fixture through its signature.
     """
-    register_grouping_levels(names=["bg", "fam", "hh", "kin"], registry=REGISTRY)
-    register_unit_builder_levels(["bg", "fam", "hh", "kin"])
+    register_grouping_levels(names=GROUPING_LEVELS, registry=REGISTRY)
+    register_unit_builder_levels(GROUPING_LEVELS)
 
 
 def _return_one_float() -> float:
@@ -200,10 +205,10 @@ def test_compositional_flow_is_marked_by_a_period():
         "CASTAR",
     ],
 )
-def test_parse_unit_accepts_known_units(unit_str):
-    assert parse_unit(unit_str=unit_str, registry=REGISTRY) == REGISTRY.parse_units(
-        unit_str
-    )
+def test_pint_unit_from_string_accepts_known_units(unit_str):
+    assert pint_unit_from_string(
+        unit_str=unit_str, registry=REGISTRY
+    ) == REGISTRY.parse_units(unit_str)
 
 
 @pytest.mark.parametrize(
@@ -221,22 +226,22 @@ def test_parse_unit_accepts_known_units(unit_str):
         "kilometer",
     ],
 )
-def test_parse_unit_rejects_unknown_unit_tokens(unit_str):
+def test_pint_unit_from_string_rejects_unknown_unit_tokens(unit_str):
     with pytest.raises(UnitDefinitionError, match="does not know about"):
-        parse_unit(unit_str=unit_str, registry=REGISTRY)
+        pint_unit_from_string(unit_str=unit_str, registry=REGISTRY)
 
 
 @pytest.mark.parametrize("unit_str", ["dimensionless", ""])
-def test_parse_unit_rejects_dimensionless_spellings(unit_str):
+def test_pint_unit_from_string_rejects_dimensionless_spellings(unit_str):
     # There is exactly one way to declare a dimensionless quantity:
     # `DIMENSIONLESS` — a pint-string spelling is rejected.
     with pytest.raises(UnitDefinitionError, match="DIMENSIONLESS"):
-        parse_unit(unit_str=unit_str, registry=REGISTRY)
+        pint_unit_from_string(unit_str=unit_str, registry=REGISTRY)
 
 
-def test_parse_unit_rejects_unparseable_string():
+def test_pint_unit_from_string_rejects_unparseable_string():
     with pytest.raises(UnitDefinitionError, match="parse"):
-        parse_unit(unit_str="this is not a unit", registry=REGISTRY)
+        pint_unit_from_string(unit_str="this is not a unit", registry=REGISTRY)
 
 
 def test_base_currency_is_a_currency_dimension():
@@ -295,10 +300,10 @@ def test_currency_agnostic_base_rejected_on_column_at_resolution():
     # is resolved (GEP 10).
     token = ttsim_unit_from_yaml_value(value="CASTAR_PER_MONTH", where="test")
     with pytest.raises(UnitDefinitionError, match="agnostic CURRENCY"):
-        resolve_ttsim_unit_for_column(
+        pint_unit_from_ttsim_unit_for_column(
             unit=token,
-            time_unit_id="m",
-            grouping_level=None,
+            grouping_levels=GROUPING_LEVELS,
+            name="betrag_m",
             where="A column",
             registry=REGISTRY,
         )
@@ -306,16 +311,16 @@ def test_currency_agnostic_base_rejected_on_column_at_resolution():
 
 def test_same_unit_is_equivalent():
     assert units_are_equivalent(
-        left=parse_unit(unit_str="hectare", registry=REGISTRY),
-        right=parse_unit(unit_str="hectare", registry=REGISTRY),
+        left=pint_unit_from_string(unit_str="hectare", registry=REGISTRY),
+        right=pint_unit_from_string(unit_str="hectare", registry=REGISTRY),
         registry=REGISTRY,
     )
 
 
 def test_base_currency_equivalent_to_currency_token():
     assert units_are_equivalent(
-        left=parse_unit(unit_str="CASTAR", registry=REGISTRY),
-        right=parse_unit(unit_str="CURRENCY", registry=REGISTRY),
+        left=pint_unit_from_string(unit_str="CASTAR", registry=REGISTRY),
+        right=pint_unit_from_string(unit_str="CURRENCY", registry=REGISTRY),
         registry=REGISTRY,
     )
 
@@ -323,16 +328,16 @@ def test_base_currency_equivalent_to_currency_token():
 def test_month_and_year_flows_are_not_equivalent():
     # Same dimensionality ([currency] / [time]) but different magnitude.
     assert not units_are_equivalent(
-        left=parse_unit(unit_str="CURRENCY / month", registry=REGISTRY),
-        right=parse_unit(unit_str="CURRENCY / year", registry=REGISTRY),
+        left=pint_unit_from_string(unit_str="CURRENCY / month", registry=REGISTRY),
+        right=pint_unit_from_string(unit_str="CURRENCY / year", registry=REGISTRY),
         registry=REGISTRY,
     )
 
 
 def test_different_dimensions_are_not_equivalent():
     assert not units_are_equivalent(
-        left=parse_unit(unit_str="CURRENCY", registry=REGISTRY),
-        right=parse_unit(unit_str="hectare", registry=REGISTRY),
+        left=pint_unit_from_string(unit_str="CURRENCY", registry=REGISTRY),
+        right=pint_unit_from_string(unit_str="hectare", registry=REGISTRY),
         registry=REGISTRY,
     )
 
@@ -341,8 +346,8 @@ def test_calendar_point_is_equivalent_to_itself():
     # A calendar point (affine offset unit) cannot be divided; equivalence is
     # decided by identity (GEP 10).
     assert units_are_equivalent(
-        left=parse_unit(unit_str="calendar_year", registry=REGISTRY),
-        right=parse_unit(unit_str="calendar_year", registry=REGISTRY),
+        left=pint_unit_from_string(unit_str="calendar_year", registry=REGISTRY),
+        right=pint_unit_from_string(unit_str="calendar_year", registry=REGISTRY),
         registry=REGISTRY,
     )
 
@@ -350,45 +355,49 @@ def test_calendar_point_is_equivalent_to_itself():
 def test_calendar_point_is_not_equivalent_to_a_duration():
     # The S1 distinction: a year on the calendar is not a duration in years.
     assert not units_are_equivalent(
-        left=parse_unit(unit_str="calendar_year", registry=REGISTRY),
-        right=parse_unit(unit_str="delta_calendar_year", registry=REGISTRY),
+        left=pint_unit_from_string(unit_str="calendar_year", registry=REGISTRY),
+        right=pint_unit_from_string(unit_str="delta_calendar_year", registry=REGISTRY),
         registry=REGISTRY,
     )
     assert not units_are_equivalent(
-        left=parse_unit(unit_str="calendar_year", registry=REGISTRY),
-        right=parse_unit(unit_str="year", registry=REGISTRY),
+        left=pint_unit_from_string(unit_str="calendar_year", registry=REGISTRY),
+        right=pint_unit_from_string(unit_str="year", registry=REGISTRY),
         registry=REGISTRY,
     )
 
 
 def test_calendar_points_on_different_axes_are_not_equivalent():
     assert not units_are_equivalent(
-        left=parse_unit(unit_str="calendar_year", registry=REGISTRY),
-        right=parse_unit(unit_str="calendar_month", registry=REGISTRY),
+        left=pint_unit_from_string(unit_str="calendar_year", registry=REGISTRY),
+        right=pint_unit_from_string(unit_str="calendar_month", registry=REGISTRY),
         registry=REGISTRY,
     )
 
 
 def test_is_calendar_point_unit():
     assert is_calendar_point_unit(
-        unit=parse_unit(unit_str="calendar_year", registry=REGISTRY), registry=REGISTRY
+        unit=pint_unit_from_string(unit_str="calendar_year", registry=REGISTRY),
+        registry=REGISTRY,
     )
     assert is_calendar_point_unit(
-        unit=parse_unit(unit_str="calendar_month", registry=REGISTRY), registry=REGISTRY
+        unit=pint_unit_from_string(unit_str="calendar_month", registry=REGISTRY),
+        registry=REGISTRY,
     )
     assert is_calendar_point_unit(
-        unit=parse_unit(unit_str="calendar_day", registry=REGISTRY), registry=REGISTRY
+        unit=pint_unit_from_string(unit_str="calendar_day", registry=REGISTRY),
+        registry=REGISTRY,
     )
     # Durations and ordinary units are not points.
     assert not is_calendar_point_unit(
-        unit=parse_unit(unit_str="delta_calendar_year", registry=REGISTRY),
+        unit=pint_unit_from_string(unit_str="delta_calendar_year", registry=REGISTRY),
         registry=REGISTRY,
     )
     assert not is_calendar_point_unit(
-        unit=parse_unit(unit_str="year", registry=REGISTRY), registry=REGISTRY
+        unit=pint_unit_from_string(unit_str="year", registry=REGISTRY),
+        registry=REGISTRY,
     )
     assert not is_calendar_point_unit(
-        unit=parse_unit(unit_str="CURRENCY / month", registry=REGISTRY),
+        unit=pint_unit_from_string(unit_str="CURRENCY / month", registry=REGISTRY),
         registry=REGISTRY,
     )
 
@@ -454,19 +463,19 @@ def test_policy_function_explicit_dimensionless():
         (TTSIMUnit.HECTARE, "hectare"),
     ],
 )
-def test_resolve_ttsim_unit_period_mapping(token, expected):
-    resolved = resolve_ttsim_unit(unit=token, registry=REGISTRY)
+def test_pint_unit_from_ttsim_unit_period_mapping(token, expected):
+    resolved = pint_unit_from_ttsim_unit(unit=token, registry=REGISTRY)
     assert units_are_equivalent(
         left=resolved,
-        right=parse_unit(unit_str=expected, registry=REGISTRY),
+        right=pint_unit_from_string(unit_str=expected, registry=REGISTRY),
         registry=REGISTRY,
     )
 
 
-def test_resolve_ttsim_unit_dimensionless():
+def test_pint_unit_from_ttsim_unit_dimensionless():
     # A share, a rate, a head count: declared `TTSIMUnit.DIMENSIONLESS`.
     assert units_are_equivalent(
-        left=resolve_ttsim_unit(unit=TTSIMUnit.DIMENSIONLESS, registry=REGISTRY),
+        left=pint_unit_from_ttsim_unit(unit=TTSIMUnit.DIMENSIONLESS, registry=REGISTRY),
         right=REGISTRY.dimensionless,
         registry=REGISTRY,
     )
@@ -546,8 +555,8 @@ def test_unit_for_aggregation(agg_type, source_unit, expected):
 
 
 def test_unit_for_aggregation_preserves_unannotated_source():
-    assert is_unset_unit(
-        unit_for_aggregation(source_unit=UNSET_UNIT, agg_type=AggType.SUM)
+    assert isinstance(
+        unit_for_aggregation(source_unit=UNSET_UNIT, agg_type=AggType.SUM), UnsetUnit
     )
     # COUNT mints a head count and ANY/ALL a boolean, both independent of source.
     assert (
@@ -595,8 +604,8 @@ def test_time_conversion_variants_rebased_period():
     betrag_y_unit = variants.functions["betrag_y"].unit  # ty: ignore[unresolved-attribute]
     assert betrag_y_unit == TTSIMUnit.CURRENCY.PER_YEAR
     assert units_are_equivalent(
-        left=resolve_ttsim_unit(unit=betrag_y_unit, registry=REGISTRY),
-        right=parse_unit(unit_str="CURRENCY / year", registry=REGISTRY),
+        left=pint_unit_from_ttsim_unit(unit=betrag_y_unit, registry=REGISTRY),
+        right=pint_unit_from_string(unit_str="CURRENCY / year", registry=REGISTRY),
         registry=REGISTRY,
     )
 
@@ -654,6 +663,7 @@ def test_concrete_currency_per_square_meter_base():
     assert ttsim_unit_currency(token) == "CASTAR"
     assert token.base == "CASTAR"
     assert token.area == "SQUARE_METER"
+    assert token.hours is None
     assert token.is_flow
 
 
@@ -678,135 +688,187 @@ def test_currency_conversion_factor_of_a_currency_to_itself_is_one():
     ) == pytest.approx(1.0)
 
 
-def test_strip_at_boundary_converts_to_data_currency():
-    # silver_penny tag, castar data currency -> divide by four.
-    tagged = REGISTRY.Quantity(np.array([4.0]), "SILVER_PENNY")
-    bare = strip_input_quantity_at_boundary(
-        quantity=tagged,
+def test_input_column_converts_to_data_currency():
+    # A silver-penny tag against castar data: four silver pennies make one castar.
+    bare = input_column_in_data_currency(
+        values=np.array([4.0]),
+        unit=ttsim_unit_from_yaml_value(value="SILVER_PENNY", where="test"),
         data_currency="CASTAR",
+        grouping_levels=GROUPING_LEVELS,
         column_label="wealth",
         registry=REGISTRY,
     )
-    assert not isinstance(bare, REGISTRY.Quantity)
     assert bare == pytest.approx([1.0])
 
 
-def test_strip_at_boundary_converts_flow_currency_preserving_period():
-    # silver_penny / month -> castar / month: only the currency is rescaled. The
-    # tag's /month matches the column's `_m` suffix.
-    tagged = REGISTRY.Quantity(np.array([4.0]), "SILVER_PENNY / month")
-    bare = strip_input_quantity_at_boundary(
-        quantity=tagged,
+def test_input_column_converts_flow_currency_preserving_period():
+    # Only the currency is rescaled; the `_m` suffix matches the tag's PER_MONTH.
+    bare = input_column_in_data_currency(
+        values=np.array([4.0]),
+        unit=ttsim_unit_from_yaml_value(value="SILVER_PENNY_PER_MONTH", where="test"),
         data_currency="CASTAR",
+        grouping_levels=GROUPING_LEVELS,
         column_label="income_m",
         registry=REGISTRY,
     )
     assert bare == pytest.approx([1.0])
 
 
-def test_strip_at_boundary_fails_on_missing_period():
+def test_input_column_fails_on_missing_period():
     # A flow column (`_m`) tagged without a period: strict mismatch.
-    tagged = REGISTRY.Quantity(np.array([4.0]), "SILVER_PENNY")
-    with pytest.raises(UnitConsistencyError, match="must match the column's suffix"):
-        strip_input_quantity_at_boundary(
-            quantity=tagged,
+    with pytest.raises(UnitConsistencyError, match="'MONTH'"):
+        input_column_in_data_currency(
+            values=np.array([4.0]),
+            unit=ttsim_unit_from_yaml_value(value="SILVER_PENNY", where="test"),
             data_currency="CASTAR",
+            grouping_levels=GROUPING_LEVELS,
             column_label="income_m",
             registry=REGISTRY,
         )
 
 
-def test_strip_at_boundary_fails_on_wrong_period():
-    # silver_penny / year against a `_m` column: 12-fold footgun, caught.
-    tagged = REGISTRY.Quantity(np.array([4.0]), "SILVER_PENNY / year")
-    with pytest.raises(UnitConsistencyError, match="month"):
-        strip_input_quantity_at_boundary(
-            quantity=tagged,
+def test_input_column_fails_on_wrong_period():
+    # A yearly tag against a `_m` column: a 12-fold footgun, caught.
+    with pytest.raises(UnitConsistencyError, match="'MONTH'"):
+        input_column_in_data_currency(
+            values=np.array([4.0]),
+            unit=ttsim_unit_from_yaml_value(
+                value="SILVER_PENNY_PER_YEAR", where="test"
+            ),
             data_currency="CASTAR",
+            grouping_levels=GROUPING_LEVELS,
             column_label="income_m",
             registry=REGISTRY,
         )
 
 
-def test_strip_at_boundary_fails_on_period_for_unsuffixed_column():
+def test_input_column_fails_on_period_for_unsuffixed_column():
     # A stock column (no suffix) tagged with a period.
-    tagged = REGISTRY.Quantity(np.array([4.0]), "SILVER_PENNY / month")
-    with pytest.raises(UnitConsistencyError, match="no time suffix"):
-        strip_input_quantity_at_boundary(
-            quantity=tagged,
+    with pytest.raises(UnitConsistencyError, match="None"):
+        input_column_in_data_currency(
+            values=np.array([4.0]),
+            unit=ttsim_unit_from_yaml_value(
+                value="SILVER_PENNY_PER_MONTH", where="test"
+            ),
             data_currency="CASTAR",
+            grouping_levels=GROUPING_LEVELS,
             column_label="wealth",
             registry=REGISTRY,
         )
 
 
-def test_strip_at_boundary_does_not_flag_numerator_time_unit():
-    # An age tagged in years: `year` is a numerator, not a flow period, so an
+def test_input_column_does_not_flag_numerator_time_unit():
+    # An age tagged in years: `YEARS` is the base, not a flow period, so an
     # unsuffixed column is fine. Nothing to convert (no currency).
-    tagged = REGISTRY.Quantity(np.array([30.0]), "year")
-    bare = strip_input_quantity_at_boundary(
-        quantity=tagged, data_currency="CASTAR", column_label="age", registry=REGISTRY
+    bare = input_column_in_data_currency(
+        values=np.array([30.0]),
+        unit=TTSIMUnit.YEARS,
+        data_currency="CASTAR",
+        grouping_levels=GROUPING_LEVELS,
+        column_label="age",
+        registry=REGISTRY,
     )
     assert bare == pytest.approx([30.0])
 
 
-def test_strip_at_boundary_keys_period_off_denominator_for_hours_flow():
-    # `arbeitsstunden_w` is HOURS_FLOW (`working_hour / week`): the flow period
-    # is the denominator (week), not the `[hours]` numerator. The tag's `/week`
-    # matches the `_w` suffix; there is no currency, so the value passes through.
-    tagged = REGISTRY.Quantity(np.array([40.0]), "working_hour / week")
-    bare = strip_input_quantity_at_boundary(
-        quantity=tagged,
+def test_input_column_keys_period_off_the_period_slot_for_an_hours_flow():
+    # `arbeitsstunden_w` is HOURS_PER_WEEK: the flow period is the `WEEK` slot,
+    # not the `[hours]` base. There is no currency, so values pass through.
+    bare = input_column_in_data_currency(
+        values=np.array([40.0]),
+        unit=TTSIMUnit.HOURS.PER_WEEK,
         data_currency="CASTAR",
+        grouping_levels=GROUPING_LEVELS,
         column_label="arbeitsstunden_w",
         registry=REGISTRY,
     )
     assert bare == pytest.approx([40.0])
 
-    # A wrong period is still caught (month != week).
-    with pytest.raises(UnitConsistencyError, match="week"):
-        strip_input_quantity_at_boundary(
-            quantity=REGISTRY.Quantity(np.array([40.0]), "working_hour / month"),
+
+def test_input_column_fails_on_wrong_period_for_an_hours_flow():
+    with pytest.raises(UnitConsistencyError, match="'WEEK'"):
+        input_column_in_data_currency(
+            values=np.array([40.0]),
+            unit=TTSIMUnit.HOURS.PER_MONTH,
             data_currency="CASTAR",
+            grouping_levels=GROUPING_LEVELS,
             column_label="arbeitsstunden_w",
             registry=REGISTRY,
         )
 
 
-def test_strip_at_boundary_strips_matching_currency():
-    tagged = REGISTRY.Quantity(np.array([3.0]), "CASTAR")
-    bare = strip_input_quantity_at_boundary(
-        quantity=tagged, data_currency="CASTAR", registry=REGISTRY
+def test_input_column_passes_matching_currency_through():
+    bare = input_column_in_data_currency(
+        values=np.array([3.0]),
+        unit=ttsim_unit_from_yaml_value(value="CASTAR", where="test"),
+        data_currency="CASTAR",
+        grouping_levels=GROUPING_LEVELS,
+        column_label="wealth",
+        registry=REGISTRY,
     )
-    assert not isinstance(bare, REGISTRY.Quantity)
     assert list(bare) == [3.0]
 
 
-def test_strip_at_boundary_passes_non_currency_tag_through():
-    # No currency component -> nothing to convert.
-    tagged = REGISTRY.Quantity(np.array([5.0]), "working_hour")
-    bare = strip_input_quantity_at_boundary(
-        quantity=tagged, data_currency="CASTAR", registry=REGISTRY
-    )
-    assert bare == pytest.approx([5.0])
+def _system_without_registered_levels() -> UnitSystem:
+    """A policy system whose registry knows no grouping level.
+
+    The input boundary runs before the environment's levels reach any registry,
+    so an input column's name suffixes must be read off the levels passed in,
+    not off the registry.
+    """
+    return UnitSystem(currencies={"MITHRIL": Currency(statutory_from="0001-01-01")})
+
+
+def test_input_column_accepts_matching_period_on_grouped_column():
+    """A `_m_hh` column tagged `PER_MONTH` passes on a registry without levels."""
+    with isolated_unit_vocabulary():
+        system = _system_without_registered_levels()
+        bare = input_column_in_data_currency(
+            values=np.array([500.0]),
+            unit=ttsim_unit_from_yaml_value(
+                value="MITHRIL_PER_MONTH_PER_HH", where="test"
+            ),
+            data_currency="MITHRIL",
+            grouping_levels=("hh",),
+            column_label="wohnen__bruttokaltmiete_m_hh",
+            registry=system.registry,
+        )
+    assert bare == pytest.approx([500.0])
+
+
+def test_input_column_fails_on_wrong_period_for_grouped_column():
+    """A `_m_hh` column tagged `PER_YEAR` is still a 12-fold footgun, caught."""
+    with isolated_unit_vocabulary():
+        system = _system_without_registered_levels()
+        with pytest.raises(UnitConsistencyError, match="'MONTH'"):
+            input_column_in_data_currency(
+                values=np.array([500.0]),
+                unit=ttsim_unit_from_yaml_value(
+                    value="MITHRIL_PER_YEAR_PER_HH", where="test"
+                ),
+                data_currency="MITHRIL",
+                grouping_levels=("hh",),
+                column_label="wohnen__bruttokaltmiete_m_hh",
+                registry=system.registry,
+            )
 
 
 @pytest.mark.parametrize(
-    ("column_label", "expected_pint_name"),
+    ("column_label", "expected_time_unit_id"),
     [
         # Ungrouped, suffixed.
-        ("rent_m", "month"),
-        ("rent_y", "year"),
-        ("rent_w", "week"),
-        ("rent_q", "quarter_year"),
-        ("rent_d", "day"),
+        ("rent_m", "m"),
+        ("rent_y", "y"),
+        ("rent_w", "w"),
+        ("rent_q", "q"),
+        ("rent_d", "d"),
         # Grouped, suffixed: GEP-1 puts the time unit before the grouping level.
-        ("rent_m_hh", "month"),
-        ("rent_m_bg", "month"),
-        ("rent_y_hh", "year"),
-        ("rent_q_bg", "quarter_year"),
-        ("rent_d_hh", "day"),
-        ("wohngeld__betrag_m_bg", "month"),
+        ("rent_m_hh", "m"),
+        ("rent_m_bg", "m"),
+        ("rent_y_hh", "y"),
+        ("rent_q_bg", "q"),
+        ("rent_d_hh", "d"),
+        ("wohngeld__betrag_m_bg", "m"),
         # Unsuffixed, ungrouped and grouped.
         ("wealth", None),
         ("wealth_hh", None),
@@ -818,90 +880,70 @@ def test_strip_at_boundary_passes_non_currency_tag_through():
         ("rent_m_sn", None),
     ],
 )
-def test_suffix_period_reads_the_time_unit_before_any_grouping_level(
-    column_label, expected_pint_name
+def test_name_suffixes_reads_the_time_unit_before_any_grouping_level(
+    column_label, expected_time_unit_id
 ):
     """A GEP-1 time suffix is found whether or not a grouping suffix follows it."""
-    expected = (
-        None if expected_pint_name is None else REGISTRY.parse_units(expected_pint_name)
-    )
-    assert _suffix_period_of(column_label=column_label, registry=REGISTRY) == expected
-
-
-def test_strip_at_boundary_accepts_matching_period_on_grouped_column():
-    """A `/month` tag matches the `_m` suffix of a household-level column."""
-    tagged = REGISTRY.Quantity(np.array([4.0]), "SILVER_PENNY / month")
-    bare = strip_input_quantity_at_boundary(
-        quantity=tagged,
-        data_currency="CASTAR",
-        column_label="income_m_hh",
-        registry=REGISTRY,
-    )
-    assert bare == pytest.approx([1.0])
-
-
-def test_strip_at_boundary_fails_on_wrong_period_for_grouped_column():
-    """A `/year` tag on a `_m_hh` column is a 12-fold error and is rejected."""
-    tagged = REGISTRY.Quantity(np.array([4.0]), "SILVER_PENNY / year")
-    with pytest.raises(UnitConsistencyError, match="month"):
-        strip_input_quantity_at_boundary(
-            quantity=tagged,
-            data_currency="CASTAR",
-            column_label="income_m_hh",
-            registry=REGISTRY,
-        )
+    time_unit_id, _ = _name_suffixes(name=column_label, grouping_levels=GROUPING_LEVELS)
+    assert time_unit_id == expected_time_unit_id
 
 
 def test_builder_round_trips_with_flat_spelling():
     # The fluent `.py` builder and the flat YAML string are the same unit.
     built = TTSIMUnit.CURRENCY.PER_SQUARE_METER.PER_MONTH
     assert str(built) == "CURRENCY_PER_SQUARE_METER_PER_MONTH"
-    assert parse_ttsim_unit(str(built)) == built
+    assert ttsim_unit_from_string(str(built)) == built
 
 
 def test_builder_round_trips_with_level():
     built = TTSIMUnit.CURRENCY.PER_MONTH.PER_BG
     assert str(built) == "CURRENCY_PER_MONTH_PER_BG"
-    assert parse_ttsim_unit("CURRENCY_PER_MONTH_PER_BG") == built
+    assert ttsim_unit_from_string("CURRENCY_PER_MONTH_PER_BG") == built
 
 
 def test_builder_generic_per_level_matches_attribute():
     assert (
         TTSIMUnit.DIMENSIONLESS.PER_LEVEL("bg")
         == TTSIMUnit.DIMENSIONLESS.PER_BG
-        == parse_ttsim_unit("DIMENSIONLESS_PER_BG")
+        == ttsim_unit_from_string("DIMENSIONLESS_PER_BG")
     )
 
 
 @pytest.mark.parametrize(
-    ("spelling", "base", "area", "period", "level"),
+    ("spelling", "base", "area", "hours", "period", "level"),
     [
-        ("CURRENCY", "CURRENCY", None, None, None),
-        ("CURRENCY_PER_MONTH", "CURRENCY", None, "MONTH", None),
-        ("CURRENCY_PER_SQUARE_METER", "CURRENCY", "SQUARE_METER", None, None),
-        ("DIMENSIONLESS_PER_BG", "DIMENSIONLESS", None, None, "BG"),
-        ("DIMENSIONLESS_PER_YEAR", "DIMENSIONLESS", None, "YEAR", None),
-        ("HOURS_PER_WEEK", "HOURS", None, "WEEK", None),
-        ("CURRENCY_PER_HOURS", "CURRENCY", "HOURS", None, None),
+        ("CURRENCY", "CURRENCY", None, None, None, None),
+        ("CURRENCY_PER_MONTH", "CURRENCY", None, None, "MONTH", None),
+        ("CURRENCY_PER_SQUARE_METER", "CURRENCY", "SQUARE_METER", None, None, None),
+        ("DIMENSIONLESS_PER_BG", "DIMENSIONLESS", None, None, None, "BG"),
+        ("DIMENSIONLESS_PER_YEAR", "DIMENSIONLESS", None, None, "YEAR", None),
+        ("HOURS_PER_WEEK", "HOURS", None, None, "WEEK", None),
+        ("CURRENCY_PER_HOURS", "CURRENCY", None, "HOURS", None, None),
+        ("CURRENCY_PER_HOURS_PER_MONTH", "CURRENCY", None, "HOURS", "MONTH", None),
         (
             "CURRENCY_PER_SQUARE_METER_PER_MONTH_PER_BG",
             "CURRENCY",
             "SQUARE_METER",
+            None,
             "MONTH",
             "BG",
         ),
     ],
 )
-def test_parse_ttsim_unit_classifies_denominators(spelling, base, area, period, level):
-    parsed = parse_ttsim_unit(spelling)
-    assert parsed == CompositeUnit(base=base, area=area, period=period, level=level)
+def test_ttsim_unit_from_string_classifies_denominators(
+    spelling, base, area, hours, period, level
+):
+    parsed = ttsim_unit_from_string(spelling)
+    assert parsed == CompositeUnit(
+        base=base, area=area, hours=hours, period=period, level=level
+    )
     assert str(parsed) == spelling
 
 
-def test_parse_ttsim_unit_accepts_concrete_currency_base():
+def test_ttsim_unit_from_string_accepts_concrete_currency_base():
     # Concrete currencies (param YAML only) are valid bases; CASTAR is the
     # mettsim base currency, registered on import.
-    parsed = parse_ttsim_unit("CASTAR_PER_MONTH")
+    parsed = ttsim_unit_from_string("CASTAR_PER_MONTH")
     assert parsed.base == "CASTAR"
     assert parsed.period == "MONTH"
 
@@ -914,13 +956,15 @@ def test_parse_ttsim_unit_accepts_concrete_currency_base():
         "CURRENCY_PER_BG_PER_MONTH",  # non-canonical order (level before period)
         "CURRENCY_PER_MONTH_PER_YEAR",  # two periods
         "CURRENCY_PER_SQUARE_METER_PER_SQUARE_METER",  # two areas
-        "CURRENCY_PER_SQUARE_METER_PER_HOURS",  # two physical denominators
+        "CURRENCY_PER_HOURS_PER_HOURS",  # two hours denominators
+        "CURRENCY_PER_SQUARE_METER_PER_HOURS",  # an area and hours together
+        "CURRENCY_PER_HOURS_PER_SQUARE_METER",  # hours and an area together
         "CURRENCY_PER_MONTH_PER_HOURS",  # non-canonical (hours after period)
     ],
 )
-def test_parse_ttsim_unit_rejects_bad_spellings(spelling):
+def test_ttsim_unit_from_string_rejects_bad_spellings(spelling):
     with pytest.raises(UnitDefinitionError):
-        parse_ttsim_unit(spelling)
+        ttsim_unit_from_string(spelling)
 
 
 def test_builder_rejects_non_canonical_order():
@@ -935,8 +979,8 @@ def test_builder_rejects_non_canonical_order():
 def test_dimensionless_per_level_resolves_to_head_count():
     # DIMENSIONLESS_PER_BG is a head count at bg: a dimensionless 1 / [bg], the unit
     # a COUNT aggregation to bg mints (GEP 10).
-    compositional = resolve_ttsim_unit(
-        unit=parse_ttsim_unit("DIMENSIONLESS_PER_BG"), registry=REGISTRY
+    compositional = pint_unit_from_ttsim_unit(
+        unit=ttsim_unit_from_string("DIMENSIONLESS_PER_BG"), registry=REGISTRY
     )
     assert units_are_equivalent(
         left=compositional,
@@ -949,19 +993,19 @@ def test_dimensionless_per_level_resolves_to_head_count():
 
 def test_concrete_currency_base_resolves_like_agnostic():
     # For dimensionality a concrete currency means exactly what CURRENCY means.
-    concrete = resolve_ttsim_unit(
-        unit=parse_ttsim_unit("CASTAR_PER_MONTH"), registry=REGISTRY
+    concrete = pint_unit_from_ttsim_unit(
+        unit=ttsim_unit_from_string("CASTAR_PER_MONTH"), registry=REGISTRY
     )
-    agnostic = resolve_ttsim_unit(
-        unit=parse_ttsim_unit("CURRENCY_PER_MONTH"), registry=REGISTRY
+    agnostic = pint_unit_from_ttsim_unit(
+        unit=ttsim_unit_from_string("CURRENCY_PER_MONTH"), registry=REGISTRY
     )
     assert units_are_equivalent(left=concrete, right=agnostic, registry=REGISTRY)
 
 
-def test_resolve_ttsim_unit_rejects_unregistered_level():
+def test_pint_unit_from_ttsim_unit_rejects_unregistered_level():
     with pytest.raises(UnitDefinitionError, match="grouping level"):
-        resolve_ttsim_unit(
-            unit=parse_ttsim_unit("CURRENCY_PER_NEVERLAND"), registry=REGISTRY
+        pint_unit_from_ttsim_unit(
+            unit=ttsim_unit_from_string("CURRENCY_PER_NEVERLAND"), registry=REGISTRY
         )
 
 
@@ -971,7 +1015,7 @@ def test_working_hour_is_its_own_dimension():
     # bare dimensionless number the way a `[time] / [time]` hour-flow would.
     assert REGISTRY.Quantity(1.0, "working_hour").dimensionality == {"[hours]": 1}
     assert not REGISTRY.Quantity(1.0, "working_hour").is_compatible_with("day")
-    hours_per_week = resolve_ttsim_unit(
+    hours_per_week = pint_unit_from_ttsim_unit(
         unit=TTSIMUnit.HOURS.PER_WEEK, registry=REGISTRY
     )
     assert REGISTRY.Quantity(1.0, hours_per_week).dimensionality == {
@@ -984,17 +1028,17 @@ def test_pint_builtin_hour_is_not_an_admissible_token():
     # There is exactly one spelling for working hours; pint's `[time]` `hour` is
     # not admissible (GEP 10).
     with pytest.raises(UnitDefinitionError, match="does not know about"):
-        parse_unit(unit_str="working_hour / hour", registry=REGISTRY)
+        pint_unit_from_string(unit_str="working_hour / hour", registry=REGISTRY)
 
 
 def test_hours_per_week_rebases_period_only():
     # The one conversion working hours admit: re-basing the [time] period
     # (week -> month) leaves the [hours] numerator untouched.
-    per_week = resolve_ttsim_unit(
-        unit=parse_ttsim_unit("HOURS_PER_WEEK"), registry=REGISTRY
+    per_week = pint_unit_from_ttsim_unit(
+        unit=ttsim_unit_from_string("HOURS_PER_WEEK"), registry=REGISTRY
     )
-    per_month = resolve_ttsim_unit(
-        unit=parse_ttsim_unit("HOURS_PER_MONTH"), registry=REGISTRY
+    per_month = pint_unit_from_ttsim_unit(
+        unit=ttsim_unit_from_string("HOURS_PER_MONTH"), registry=REGISTRY
     )
     assert (
         per_week.dimensionality
@@ -1020,54 +1064,47 @@ def test_cast_target_resolves_like_a_column_declaration():
     # The cast states a unit in the declaration vocabulary: an omitted level is
     # level-neutral, exactly as for a column declaration.
     assert units_are_equivalent(
-        left=resolve_agnostic_ttsim_unit(
+        left=pint_unit_from_ttsim_unit_for_column(
             unit=TTSIMUnit.CURRENCY.PER_MONTH,
+            grouping_levels=GROUPING_LEVELS,
+            name=None,
             where="test",
             registry=REGISTRY,
-            what="a cast inside a body",
         ),
-        right=resolve_ttsim_unit_for_column(
+        right=pint_unit_from_ttsim_unit_for_column(
             unit=TTSIMUnit.CURRENCY.PER_MONTH,
-            time_unit_id="m",
-            grouping_level=None,
+            grouping_levels=GROUPING_LEVELS,
+            name="betrag_m",
             where="test",
             registry=REGISTRY,
         ),
         registry=REGISTRY,
     )
     assert units_are_equivalent(
-        left=resolve_agnostic_ttsim_unit(
+        left=pint_unit_from_ttsim_unit_for_column(
             unit=TTSIMUnit.MONTHS,
+            grouping_levels=GROUPING_LEVELS,
+            name=None,
             where="test",
             registry=REGISTRY,
-            what="a cast inside a body",
         ),
-        right=resolve_ttsim_unit(unit=TTSIMUnit.MONTHS, registry=REGISTRY),
+        right=pint_unit_from_ttsim_unit(unit=TTSIMUnit.MONTHS, registry=REGISTRY),
         registry=REGISTRY,
     )
-
-
-def test_cast_target_must_be_currency_agnostic():
-    token = ttsim_unit_from_yaml_value(value="CASTAR_PER_MONTH", where="test")
-    with pytest.raises(UnitDefinitionError, match="agnostic CURRENCY"):
-        resolve_agnostic_ttsim_unit(
-            unit=token,
-            where="test",
-            registry=REGISTRY,
-            what="a cast inside a body",
-        )
 
 
 def test_hours_denominator_resolves_level_neutral():
     # A wage floor is a price, owned by nobody: with a working-hours denominator
     # and no spelled level it is level-neutral, so `floor * hours` cancels
     # cleanly against the physical quantity (GEP 10) — the same as areas.
-    expected = parse_unit(unit_str="CURRENCY / working_hour", registry=REGISTRY)
+    expected = pint_unit_from_string(
+        unit_str="CURRENCY / working_hour", registry=REGISTRY
+    )
     assert units_are_equivalent(
-        left=resolve_ttsim_unit_for_column(
+        left=pint_unit_from_ttsim_unit_for_column(
             unit=TTSIMUnit.CURRENCY.PER_HOURS,
-            time_unit_id=None,
-            grouping_level=None,
+            grouping_levels=GROUPING_LEVELS,
+            name="mindestlohn",
             where="test",
             registry=REGISTRY,
         ),
@@ -1075,8 +1112,10 @@ def test_hours_denominator_resolves_level_neutral():
         registry=REGISTRY,
     )
     assert units_are_equivalent(
-        left=resolve_ttsim_unit_for_param(
+        left=pint_unit_from_ttsim_unit_for_param(
             unit=ttsim_unit_from_yaml_value(value="CASTAR_PER_HOURS", where="test"),
+            grouping_levels=GROUPING_LEVELS,
+            name=None,
             where="test",
             registry=REGISTRY,
         ),
@@ -1088,9 +1127,11 @@ def test_hours_denominator_resolves_level_neutral():
 def test_ttsim_unit_from_pint_unit_reconstructs_the_hours_denominator():
     # The output-side label round trip for a wage floor: the working-hour
     # denominator maps back to the physical-denominator slot.
-    resolved = resolve_ttsim_unit(unit=TTSIMUnit.CURRENCY.PER_HOURS, registry=REGISTRY)
-    in_data_currency = output_unit_in_data_currency(
-        units=resolved, data_currency="CASTAR", registry=REGISTRY
+    resolved = pint_unit_from_ttsim_unit(
+        unit=TTSIMUnit.CURRENCY.PER_HOURS, registry=REGISTRY
+    )
+    in_data_currency = pint_unit_with_currency(
+        units=resolved, currency="CASTAR", registry=REGISTRY
     )
     assert ttsim_unit_from_pint_unit(
         units=in_data_currency, registry=REGISTRY
@@ -1101,12 +1142,14 @@ def test_area_denominator_resolves_level_neutral():
     # A rent cap is a price, owned by nobody: with an area denominator and no
     # spelled level it is level-neutral, so `cap * area` cancels cleanly against
     # the physical quantity (GEP 10). Both the column and parameter resolver apply.
-    expected = parse_unit(unit_str="CURRENCY / meter ** 2 / month", registry=REGISTRY)
+    expected = pint_unit_from_string(
+        unit_str="CURRENCY / meter ** 2 / month", registry=REGISTRY
+    )
     assert units_are_equivalent(
-        left=resolve_ttsim_unit_for_column(
+        left=pint_unit_from_ttsim_unit_for_column(
             unit=TTSIMUnit.CURRENCY.PER_SQUARE_METER.PER_MONTH,
-            time_unit_id="m",
-            grouping_level=None,
+            grouping_levels=GROUPING_LEVELS,
+            name="miete_m",
             where="test",
             registry=REGISTRY,
         ),
@@ -1114,10 +1157,12 @@ def test_area_denominator_resolves_level_neutral():
         registry=REGISTRY,
     )
     assert units_are_equivalent(
-        left=resolve_ttsim_unit_for_param(
+        left=pint_unit_from_ttsim_unit_for_param(
             unit=ttsim_unit_from_yaml_value(
                 value="CASTAR_PER_SQUARE_METER_PER_MONTH", where="test"
             ),
+            grouping_levels=GROUPING_LEVELS,
+            name=None,
             where="test",
             registry=REGISTRY,
         ),
@@ -1130,14 +1175,14 @@ def test_bare_area_base_is_level_neutral():
     # A bare SQUARE_METER base carries no grouping level (GEP 10). A per-person
     # dwelling area is bare; a household's area spells its group level.
     assert units_are_equivalent(
-        left=resolve_ttsim_unit_for_column(
+        left=pint_unit_from_ttsim_unit_for_column(
             unit=TTSIMUnit.SQUARE_METER,
-            time_unit_id=None,
-            grouping_level=None,
+            grouping_levels=GROUPING_LEVELS,
+            name="flaeche",
             where="test",
             registry=REGISTRY,
         ),
-        right=parse_unit(unit_str="meter ** 2", registry=REGISTRY),
+        right=pint_unit_from_string(unit_str="meter ** 2", registry=REGISTRY),
         registry=REGISTRY,
     )
 
@@ -1146,13 +1191,15 @@ def test_area_base_with_group_level_carries_the_group_level():
     # A household's dwelling area spells its group level: SQUARE_METER_PER_HH
     # resolves to meter ** 2 / [hh].
     assert units_are_equivalent(
-        left=resolve_ttsim_unit_for_column(
+        left=pint_unit_from_ttsim_unit_for_column(
             unit=TTSIMUnit.SQUARE_METER.PER_HH,
-            time_unit_id=None,
-            grouping_level="hh",
+            grouping_levels=GROUPING_LEVELS,
+            name="flaeche_hh",
             where="test",
             registry=REGISTRY,
         ),
-        right=parse_unit(unit_str="meter ** 2 / grouping_level_hh", registry=REGISTRY),
+        right=pint_unit_from_string(
+            unit_str="meter ** 2 / grouping_level_hh", registry=REGISTRY
+        ),
         registry=REGISTRY,
     )

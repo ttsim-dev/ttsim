@@ -42,10 +42,7 @@ def child_eligible(
     return age <= schedule["max_age"] and in_same_household_as_recipient
 
 
-@policy_function(
-    vectorization_strategy="not_required",
-    unit=TTSIMUnit.DIMENSIONLESS,
-)
+@policy_function(vectorization_strategy="not_required", unit=TTSIMUnit.DIMENSIONLESS)
 def in_same_household_as_recipient(
     p_id: IntColumn,
     kin_id: IntColumn,

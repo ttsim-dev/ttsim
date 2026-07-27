@@ -17,7 +17,7 @@ inputs:
 outputs:
   payroll_tax:
     child_tax_credit:
-      net_wealth_parents:
+      net_income_parents_m:
         - 800.0
         - 1000.0
         - 800.0

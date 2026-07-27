@@ -9,7 +9,6 @@ import pandas as pd
 from beartype import beartype
 
 from ttsim._beartype_conf import INPUT_DATA_CONF, TT_TARGETS_CONF
-from ttsim.tt.units import UserNestedUnitAnnotatedData
 from ttsim.typing import (
     FlatColumnObjectsParamFunctions,
     FlatOrigParamSpecs,
@@ -27,6 +26,7 @@ from ttsim.typing import (
     UnorderedQNames,
     UserFlatData,
     UserNestedData,
+    UserNestedUnitAnnotatedData,
     UserQNameData,
 )
 

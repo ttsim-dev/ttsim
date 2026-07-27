@@ -36,7 +36,7 @@ def p_id_spouse() -> int:
 
 @policy_input(unit=TTSIMUnit.CALENDAR_YEAR)
 def birth_year() -> int:
-    """Year of birth."""
+    """Calendar year the person was born in."""
 
 
 @policy_input(unit=TTSIMUnit.DIMENSIONLESS)

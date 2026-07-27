@@ -1,23 +1,6 @@
-"""Abstract interpretation of a function body over pint units.
+"""Infer the unit of every DAG node's body and check it against the declaration.
 
-Checking a body is an abstract interpretation: the real body runs, but on
-stand-in values carrying a pint unit and no meaningful magnitude. Each
-``Quantity(1.0, unit)`` is wrapped in a :class:`_UnitCheckQuantity` whose
-arithmetic propagates units while a :class:`_PathExplorer` drives its branch
-decisions, so a body is checked down every reachable path; a structured
-parameter becomes a :class:`_UnitCheckStructuredValue` and a schedule a
-:class:`_UnitCheckSchedule`. Module-level helpers a body calls
-(``piecewise_polynomial``, ``join``, ``cast_ttsim_unit``, the time converters)
-are swapped for unit-only stand-ins, and ``xnp`` for :class:`_UnitCheckXnp`.
-
-The representative values are built from the pint units
-:mod:`ttsim.unit_validation` resolved and the field/axis contracts
-:mod:`ttsim.unit_validation` read off the annotations.
-:mod:`ttsim.unit_validation` drives one body at a time through
-:func:`_verify_one_body` and collects the messages the builders at the bottom of
-this module produce.
-
-The unit check always runs in NumPy, regardless of the backend of the actual run.
+GEP 10 specifies the declaration rules the inferred units are checked against.
 """
 
 from __future__ import annotations
@@ -53,12 +36,12 @@ from ttsim.tt.units import (
     CompositeUnit,
     InputOutputUnits,
     UnitSystem,
+    UnsetUnit,
     _grouping_levels_with_exponent,
     _unit_level_denominator,
     _unit_without_grouping_levels,
     is_calendar_point_unit,
-    is_unset_unit,
-    resolve_agnostic_ttsim_unit,
+    pint_unit_from_ttsim_unit_for_column,
     ttsim_unit_from_yaml_value,
     units_are_equivalent,
 )
@@ -272,7 +255,7 @@ def _representative_values_by_qname(
         else:
             out[qname] = _representative_value(resolved_unit=unit, registry=registry)
     for qname, obj in env.items():
-        if isinstance(obj, ParamFunction) and is_unset_unit(obj.unit):
+        if isinstance(obj, ParamFunction) and isinstance(obj.unit, UnsetUnit):
             out[qname] = _param_function_stand_in(
                 qname=qname, obj=obj, unit_system=unit_system
             )
@@ -284,7 +267,7 @@ def _param_function_stand_in(
     obj: ParamFunction,
     unit_system: UnitSystem,
 ) -> _UnitCheckStructuredValue:
-    """The unit check's stand-in for a structured param-function output (GEP 10).
+    """The unit check's stand-in for a structured param-function output.
 
     A ``@param_function(unit=UNSET_UNIT)`` builds a dataclass of related
     parameters, so its stand-in is a :class:`_UnitCheckStructuredValue` typed with
@@ -395,11 +378,22 @@ _MAX_DECISIONS_PER_RUN = 64
 _MAX_NAMED_DECISIONS = 4
 
 
-class _PathBudgetExceededError(TTSIMError):
+class _UnitCheckError(TTSIMError):
+    """Base class of the signals the unit check throws and catches internally.
+
+    Every subclass is raised inside a body run by :func:`_run_one_path` and caught
+    there or by :func:`_verify_one_body`, then translated into a
+    :class:`~ttsim.exceptions.UnitConsistencyError` naming the body. None ever
+    reaches a user, but each subclasses ``TTSIMError`` so that a signal escaping
+    its handler through a defect is still caught by ``except TTSIMError``.
+    """
+
+
+class _PathBudgetExceededError(_UnitCheckError):
     """A single unit-check run made too many branch decisions (likely a loop)."""
 
 
-class _UnitMixError(TTSIMError):
+class _UnitMixError(_UnitCheckError):
     """A body combined two non-equivalent unit-carrying operands.
 
     ``+``, ``-`` and the ordering comparisons are *unit-blind at run time*:
@@ -429,7 +423,7 @@ class _UnitMixError(TTSIMError):
         self.literal = literal
 
 
-class _ScheduleNotEvaluableError(Exception):
+class _ScheduleNotEvaluableError(_UnitCheckError):
     """A schedule/lookup/join call the unit check cannot resolve to a unit.
 
     Raised when a function-like parameter carries no axes (a converter-produced
@@ -439,7 +433,7 @@ class _ScheduleNotEvaluableError(Exception):
     """
 
 
-class _LookupArityError(Exception):
+class _LookupArityError(_UnitCheckError):
     """A multi-dimensional ``look_up`` call supplies the wrong number of arguments.
 
     A lookup declaring a tuple ``input_unit`` screens each argument against its
@@ -454,7 +448,7 @@ class _LookupArityError(Exception):
         self.supplied = supplied
 
 
-class _StructuredValueUsedAsQuantityError(Exception):
+class _StructuredValueUsedAsQuantityError(_UnitCheckError):
     """A value plucked off a structured parameter was used as a quantity —
     caught by :func:`_verify_one_body` and reported with the
     cast-at-the-pluck fix."""
@@ -465,7 +459,7 @@ class _StructuredValueUsedAsQuantityError(Exception):
         self.op = op
 
 
-class _UnsupportedAstypeError(Exception):
+class _UnsupportedAstypeError(_UnitCheckError):
     """A cast whose dtype has no unit reading (a datetime, a string)."""
 
     def __init__(self, dtype: Any) -> None:  # noqa: ANN401
@@ -621,7 +615,7 @@ class _UnitCheckQuantity:
         read off ``self``, falling back to the other operand — for an ordering
         comparison the two are equivalent, so they agree. A comparison of two
         bare quantities is evaluated per person and therefore yields a bare,
-        individual boolean (``None``, GEP 10).
+        individual boolean (``None``).
         """
         level = _unit_level_denominator(cast("pint.Unit", self.q.units))
         if level is not None:
@@ -673,21 +667,19 @@ class _UnitCheckQuantity:
     def _fail_if_additive_operand_is_invalid(self, other: Any, op: str) -> None:  # noqa: ANN401
         """Screen an operand of ``+``/``-``.
 
-        The rules are those of :meth:`_fail_if_other_unit_is_not_equivalent`,
-        with one dispensation: a calendar point (an affine offset unit). Its
-        valid ``point +/- duration`` is *not* equivalence (a point and a duration
-        differ), yet pint's offset algebra permits exactly it. Two *different*
-        offset units of the same ``[time]`` dimension are the trap: pint
-        subtracts ``calendar_year - calendar_month`` with a silent /12
-        (``0.917 delta_calendar_year``) while the run-time subtraction is raw
-        and unconverted, so a point - point across axes is rejected here rather
-        than delegated. A same-axis point +/- duration (or point - point) is left
-        to pint, which raises ``OffsetUnitCalculusError`` /
+        The rules are those of :meth:`_fail_if_other_unit_is_not_equivalent`, with one
+        dispensation: a calendar point (an affine offset unit). Its valid ``point +/-
+        duration`` is *not* equivalence (a point and a duration differ), yet pint's
+        offset algebra permits exactly it. Two *different* offset units of the same
+        ``[time]`` dimension are the trap: pint subtracts ``calendar_year -
+        calendar_month`` with a silent /12 (``0.917 delta_calendar_year``) while the
+        run-time subtraction is raw and unconverted, so a point - point across axes is
+        rejected here rather than delegated. A same-axis point +/- duration (or point -
+        point) is left to pint, which raises ``OffsetUnitCalculusError`` /
         ``DimensionalityError`` on the remaining misuses — caught in
-        :func:`_verify_one_body` and reported as a calendar misuse. Only
-        ``+``/``-`` get the dispensation: they alone run a forward pint
-        operation afterwards, so nothing would catch a point mixed into an
-        ordering or a ``where`` later.
+        :func:`_verify_one_body` and reported as a calendar misuse. Only ``+``/``-`` get
+        the dispensation: they alone run a forward pint operation afterwards, so nothing
+        would catch a point mixed into an ordering or a ``where`` later.
         """
         other_q = _unwrap(other)
         if isinstance(other_q, _UnitCheckStructuredValue):
@@ -719,20 +711,19 @@ class _UnitCheckQuantity:
     def _fail_if_other_unit_is_not_equivalent(self, other: Any, op: str) -> None:  # noqa: ANN401
         """Reject an invalid operand of an ordering comparison or ``where``.
 
-        At run time there is no pint, so these operations are unit-blind (raw
-        arrays are added or compared without conversion); two unit-carrying
-        operands must already be in equivalent units. Equivalence decides
-        calendar points by *identity* (:func:`units_are_equivalent`): ordering
-        two same-axis points (``geburtsjahr <= policy_year``) passes, while a
-        point against a duration — or any other unit — is rejected. A non-zero
-        *bare literal* next to a non-dimensionless quantity is rejected too: it
-        silently carries the quantity's unit (``betrag_m + 100.0`` hides a
-        monthly amount) — promote it to a parameter or tag it with
+        At run time there is no pint, so these operations are unit-blind (raw arrays are
+        added or compared without conversion); two unit-carrying operands must already
+        be in equivalent units. Equivalence decides calendar points by *identity*
+        (:func:`units_are_equivalent`): ordering two same-axis points (``geburtsjahr <=
+        policy_year``) passes, while a point against a duration — or any other unit — is
+        rejected. A non-zero *bare literal* next to a non-dimensionless quantity is
+        rejected too: it silently carries the quantity's unit (``betrag_m + 100.0``
+        hides a monthly amount) — promote it to a parameter or tag it with
         ``cast_ttsim_unit``. Only ``0`` (the ``x + 0.0`` guard, the floor at zero) is
-        allowed inline, and literals next to a dimensionless quantity stay
-        lenient. Unlike ``+``/``-``, an ordering comparison runs no forward pint
-        operation, so calendar points get no delegate-to-pint dispensation here
-        (equivalence decides them by identity: only same-axis points order).
+        allowed inline, and literals next to a dimensionless quantity stay lenient.
+        Unlike ``+``/``-``, an ordering comparison runs no forward pint operation, so
+        calendar points get no delegate-to-pint dispensation here (equivalence decides
+        them by identity: only same-axis points order).
         """
         other_q = _unwrap(other)
         if isinstance(other_q, _UnitCheckStructuredValue):
@@ -1006,7 +997,7 @@ def _wrap_for_unit_check(
 
 class _UnitCheckStructuredValue:
     """The unit check's stand-in for a structured param-function output
-    (``unit=UNSET_UNIT``, GEP 10). A pluck off an ``Annotated`` scalar field of
+    (``unit=UNSET_UNIT``). A pluck off an ``Annotated`` scalar field of
     the producer's return dataclass resolves to a quantity at the field's
     declared unit; a nested-dataclass pluck resolves recursively. Everything
     else stays opaque — attribute access, subscripting, method calls yield an
@@ -1179,7 +1170,7 @@ def _install_structured_value_forbidden_ops() -> None:
     The table covers arithmetic, ordering, equality, logical and truth-value uses.
     A structured value is a container, not a quantity, so any of them is an
     authoring error the unit check reports against the operator it was used with —
-    cast the pluck or opt out (GEP 10).
+    cast the pluck or opt out.
     """
     for dunder, op in _STRUCTURED_VALUE_FORBIDDEN_OPS.items():
         setattr(_UnitCheckStructuredValue, dunder, _structured_value_forbidden_op(op))
@@ -1450,11 +1441,12 @@ def _cast_ttsim_unit_for_unit_check(
     re-raises rather than misreporting as an un-evaluable body.
     """
     token = ttsim_unit_from_yaml_value(value=unit, where="A `cast_ttsim_unit` call")
-    resolved = resolve_agnostic_ttsim_unit(
+    resolved = pint_unit_from_ttsim_unit_for_column(
         unit=token,
-        registry=unit_system.registry,
+        name=None,
+        grouping_levels=(),
         where="A `cast_ttsim_unit` call",
-        what="a cast inside a body",
+        registry=unit_system.registry,
     )
     quantity = unit_system.registry.Quantity(1.0, resolved)
     if isinstance(value, _UnitCheckQuantity):
@@ -1616,7 +1608,7 @@ def _inferred_result_error(
       under a declaration that spells a level fails, and so does the squared
       level of multiplying two group-owned quantities
       (``1/[fam] * CURRENCY/month/[fam]`` → ``…/[fam]**2``). The level is
-      declared, not read off the suffix (GEP 10); a body whose arithmetic cannot
+      declared, not read off the suffix; a body whose arithmetic cannot
       produce the declared levels — an intensive group property computed from
       level-less material, a policy-mandated cross-level product — states the
       intended unit with ``cast_ttsim_unit`` at the site.

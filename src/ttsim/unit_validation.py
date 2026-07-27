@@ -1,4 +1,7 @@
-"""Validate unit declarations across an assembled policy environment."""
+"""Validate unit declarations across an assembled policy environment.
+
+GEP 10 specifies the declaration rules this module enforces.
+"""
 
 from __future__ import annotations
 
@@ -58,14 +61,13 @@ from ttsim.tt.type_resolution import (
 )
 from ttsim.tt.units import (
     _GROUPING_LEVEL_PREFIX,
-    _QNAME_TIME_SUFFIX_PATTERN,
     UNSET_UNIT,
     CompositeUnit,
     InputOutputUnits,
     UnitAnnotatedColumn,
     UnitDeclaration,
     UnitSystem,
-    UserNestedUnitAnnotatedData,
+    UnsetUnit,
     _flow_period_of,
     _grouping_levels_with_exponent,
     _pint_unit_currency,
@@ -73,14 +75,12 @@ from ttsim.tt.units import (
     _unit_without_grouping_levels,
     fail_if_units_are_missing,
     head_count_from_boolean_sum,
-    is_unset_unit,
-    parse_unit,
+    pint_unit_from_string,
+    pint_unit_from_ttsim_unit,
+    pint_unit_from_ttsim_unit_for_column,
+    pint_unit_from_ttsim_unit_for_param,
     pint_unit_has_currency,
     register_grouping_levels,
-    resolve_agnostic_ttsim_unit,
-    resolve_ttsim_unit,
-    resolve_ttsim_unit_for_column,
-    resolve_ttsim_unit_for_param,
     resolved_unit_for_aggregation,
     ttsim_unit_currency,
     ttsim_unit_has_agnostic_currency,
@@ -91,6 +91,7 @@ from ttsim.tt.units import (
 from ttsim.typing import (
     OrderedQNames,
     SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
+    UserNestedUnitAnnotatedData,
 )
 
 #: The unqualified return-annotation names governed by the ``InputOutputUnits``
@@ -118,7 +119,7 @@ def _unit_inference_module() -> ModuleType:
 def _schedule_param_function_contract_errors(
     env: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
 ) -> list[str]:
-    """Check every param function's ``unit=`` against its return annotation (GEP 10).
+    """Check every param function's ``unit=`` against its return annotation.
 
     A schedule builder is a function between quantities, declared with
     ``unit=InputOutputUnits(...)``; a scalar/structured param function is not. The
@@ -218,7 +219,7 @@ def _fail_if_structured_field_annotations_are_invalid(
     """
     visited: set[type] = set()
     for obj in env.values():
-        if not isinstance(obj, ParamFunction) or not is_unset_unit(obj.unit):
+        if not isinstance(obj, ParamFunction) or not isinstance(obj.unit, UnsetUnit):
             continue
         cls, item_cls = _resolved_return_structure(obj.function)
         for start in (cls, item_cls):
@@ -270,7 +271,7 @@ def _structured_field_kinds(
       :class:`_ScheduleFieldKind` carrying the schedule's input and output axes;
     - a nested-dataclass field → its class (whose plucks resolve recursively);
     - anything else (a bare scalar, dict, array) is absent — the pluck stays
-      opaque and is cast at the site (GEP 10).
+      opaque and is cast at the site.
 
     A field whose annotation does not resolve at runtime (a name imported only
     under ``TYPE_CHECKING``) is skipped individually, so its pluck stays opaque
@@ -318,11 +319,12 @@ def _structured_field_kinds(
                 f"value; a scalar field states a single unit (GEP 10)."
             )
         elif composite_tokens:
-            resolved = resolve_agnostic_ttsim_unit(
+            resolved = pint_unit_from_ttsim_unit_for_column(
                 unit=composite_tokens[0],
-                registry=unit_system.registry,
+                name=None,
+                grouping_levels=(),
                 where=where,
-                what="the declaration",
+                registry=unit_system.registry,
             )
             if base in (int, float, bool):
                 kinds[field.name] = resolved
@@ -346,7 +348,7 @@ class _ScheduleFieldKind:
     schedule-returning ``@param_function`` declares them in its ``unit=`` — so a
     pluck of the field yields a :class:`_UnitCheckSchedule` that screens each
     ``look_up`` / ``piecewise_polynomial`` argument against ``input_unit`` and
-    produces ``output_unit`` (GEP 10).
+    produces ``output_unit``.
     """
 
     input_unit: pint.Unit | tuple[pint.Unit, ...]
@@ -368,7 +370,7 @@ def _schedule_field_kind(
     A schedule field states its two axes with exactly one ``InputOutputUnits`` in
     its ``Annotated[...]`` metadata. A bare ``CompositeUnit`` there declares a
     single quantity, which a schedule (a function between quantities) is not, so
-    it is rejected with a pointer to ``InputOutputUnits`` (GEP 10).
+    it is rejected with a pointer to ``InputOutputUnits``.
 
     The same type-specific axis rules the decorator enforces hold here, keyed off
     the field's schedule type: a ``PiecewisePolynomialParamValue`` field takes one
@@ -421,11 +423,12 @@ def _schedule_field_kind(
         input_unit=_resolve_input_axes(
             input_unit=io_token.input_unit, registry=unit_system.registry, where=where
         ),
-        output_unit=resolve_agnostic_ttsim_unit(
+        output_unit=pint_unit_from_ttsim_unit_for_column(
             unit=io_token.output_unit,
-            registry=unit_system.registry,
+            name=None,
+            grouping_levels=(),
             where=where,
-            what="the declaration",
+            registry=unit_system.registry,
         ),
     )
 
@@ -435,7 +438,7 @@ def _resolve_input_axes(
     registry: pint.UnitRegistry,
     where: str,
 ) -> pint.Unit | tuple[pint.Unit, ...]:
-    """Resolve a schedule declaration's input axis or axes (GEP 10).
+    """Resolve a schedule declaration's input axis or axes.
 
     A single :class:`CompositeUnit` resolves to one pint unit, screened against
     every ``look_up`` argument; a tuple resolves to a tuple of pint units screened
@@ -444,16 +447,21 @@ def _resolve_input_axes(
     """
     if isinstance(input_unit, tuple):
         return tuple(
-            resolve_agnostic_ttsim_unit(
+            pint_unit_from_ttsim_unit_for_column(
                 unit=cast("CompositeUnit", axis),
-                registry=registry,
+                name=None,
+                grouping_levels=(),
                 where=where,
-                what="the declaration",
+                registry=registry,
             )
             for axis in input_unit
         )
-    return resolve_agnostic_ttsim_unit(
-        unit=input_unit, registry=registry, where=where, what="the declaration"
+    return pint_unit_from_ttsim_unit_for_column(
+        unit=input_unit,
+        name=None,
+        grouping_levels=(),
+        where=where,
+        registry=registry,
     )
 
 
@@ -466,12 +474,14 @@ def _resolve_schedule_input_unit(
     concrete-currency input axis and an agnostic ``CURRENCY`` consumer argument
     compare as equivalent. ``None`` when the parameter left ``input_unit`` unset.
     """
-    if is_unset_unit(obj.input_unit):
+    if isinstance(obj.input_unit, UnsetUnit):
         return None
-    return resolve_ttsim_unit_for_param(
+    return pint_unit_from_ttsim_unit_for_param(
         unit=cast("CompositeUnit", obj.input_unit),
-        registry=registry,
+        name=None,
+        grouping_levels=(),
         where="A schedule input axis",
+        registry=registry,
     )
 
 
@@ -488,7 +498,7 @@ def _resolved_return_structure(func: Any) -> tuple[type | None, type | None]:  #
     object and its stringified form (PEP 563 / ``from __future__ import
     annotations``) resolve identically, so the two forms never disagree. Anything
     unresolvable yields ``(None, None)``: the output stays opaque and plucks are
-    cast at the site (GEP 10).
+    cast at the site.
     """
     annotation = get_annotations(func, default="").get("return", "")
     if isinstance(annotation, type):
@@ -524,7 +534,7 @@ def _return_annotation_name(func: Any) -> str:  # noqa: ANN401
 #: dataclass name, e.g. ``dict[str, SatzMitAltersgrenzen]``. Only a *flat* mapping
 #: to a dataclass matches; the key type is irrelevant so anything (a bracketed
 #: ``tuple[int, int]`` included) is accepted there, while a nested-container value
-#: (``dict[str, dict[int, ...]]``) fails to match and stays opaque (GEP 10).
+#: (``dict[str, dict[int, ...]]``) fails to match and stays opaque.
 _MAPPING_OF_DATACLASS_RE = re.compile(
     r"^(?:[\w.]+\.)?(?:dict|Dict|Mapping|MutableMapping)"
     r"\[.+,\s*(?P<value>[\w.]+)\s*\]$"
@@ -615,7 +625,7 @@ def _resolve_one_annotation(
 
 def _spell_ttsim_unit(ttsim_unit: Any) -> str:  # noqa: ANN401
     """Spell a declared TTSIM unit for an error message."""
-    if is_unset_unit(ttsim_unit):
+    if isinstance(ttsim_unit, UnsetUnit):
         return "unset"
     return str(ttsim_unit)
 
@@ -643,12 +653,12 @@ def resolve_environment_units(
         grouping_levels=grouping_levels,
     )
     resolved: dict[str, pint.Unit | dict[str | int, Any]] = {
-        # `parse_unit` guides declarations to the DIMENSIONLESS token, so the
+        # `pint_unit_from_string` guides declarations to the DIMENSIONLESS token, so the
         # framework-internal ordinal spelling resolves directly.
         qname: (
             _dimensionless_unit(registry)
             if unit == "dimensionless"
-            else parse_unit(unit_str=unit, registry=registry)
+            else pint_unit_from_string(unit_str=unit, registry=registry)
         )
         for qname, unit in FRAMEWORK_DATE_NODE_UNITS.items()
         if qname in env
@@ -663,6 +673,7 @@ def resolve_environment_units(
             param_unit = _resolve_param_object_unit(
                 qname=qname,
                 obj=obj,
+                grouping_levels=grouping_levels,
                 registry=registry,
                 name_time_unit_id=name_time_unit_id,
             )
@@ -670,7 +681,12 @@ def resolve_environment_units(
                 resolved[qname] = param_unit
         elif isinstance(obj, AggByGroupFunction):
             agg_unit = _resolve_agg_by_group_unit(
-                qname=qname, obj=obj, env=env, pattern=pattern, registry=registry
+                qname=qname,
+                obj=obj,
+                env=env,
+                pattern=pattern,
+                grouping_levels=grouping_levels,
+                registry=registry,
             )
             if agg_unit is not None:
                 resolved[qname] = agg_unit
@@ -683,20 +699,20 @@ def resolve_environment_units(
                 # `piecewise_polynomial` consumers receive), resolved agnostically
                 # like a field annotation — concrete currencies rejected, no
                 # name-suffix rules.
-                resolved[qname] = resolve_agnostic_ttsim_unit(
+                resolved[qname] = pint_unit_from_ttsim_unit_for_column(
                     unit=token.output_unit,
-                    registry=registry,
+                    name=None,
+                    grouping_levels=grouping_levels,
                     where=f"Schedule param function {qname!r}",
-                    what="the declaration",
+                    registry=registry,
                 )
         else:  # ColumnObject | scalar ParamFunction
             token = getattr(obj, "unit", UNSET_UNIT)
             if isinstance(token, CompositeUnit):
-                leaf_name = dt.tree_path_from_qname(qname)[-1]
-                match = pattern.fullmatch(leaf_name)
                 resolved[qname] = _resolve_leveled_column_unit(
                     token=token,
-                    match=match,
+                    leaf_name=dt.tree_path_from_qname(qname)[-1],
+                    grouping_levels=grouping_levels,
                     registry=registry,
                 )
     return resolved
@@ -704,16 +720,15 @@ def resolve_environment_units(
 
 def _resolve_leveled_column_unit(
     token: CompositeUnit,
-    match: re.Match[str] | None,
+    leaf_name: str,
+    grouping_levels: OrderedQNames,
     registry: pint.UnitRegistry,
 ) -> pint.Unit:
     """Resolve a column/function's full unit, including its grouping level."""
-    time_unit_id = match.group("time_unit") if match else None
-    grouping_level = _suffix_grouping_level(match)
-    return resolve_ttsim_unit_for_column(
+    return pint_unit_from_ttsim_unit_for_column(
         unit=token,
-        time_unit_id=time_unit_id,
-        grouping_level=grouping_level,
+        name=leaf_name,
+        grouping_levels=grouping_levels,
         where="A column/function",
         registry=registry,
     )
@@ -724,6 +739,7 @@ def _resolve_agg_by_group_unit(
     obj: AggByGroupFunction,
     env: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
     pattern: re.Pattern[str],
+    grouping_levels: OrderedQNames,
     registry: pint.UnitRegistry,
 ) -> pint.Unit | None:
     """Resolve a group-aggregation node's unit, level-aware.
@@ -737,7 +753,7 @@ def _resolve_agg_by_group_unit(
       the persons the indicator is true for) — mints ``1 / [target]``;
     - ``SUM`` / ``MIN`` / ``MAX`` resolve to the **target** level whatever the
       source (a bare source acquires it); ``MEAN`` resolves to **bare** — a
-      per-head average belongs to the individual (GEP 10);
+      per-head average belongs to the individual;
     - ``ANY`` / ``ALL`` yield a dimensionless boolean at the target level.
 
     The value source is the function's summed/averaged argument, read off the
@@ -752,10 +768,11 @@ def _resolve_agg_by_group_unit(
         token = getattr(obj, "unit", UNSET_UNIT)
         return (
             None
-            if is_unset_unit(token)
+            if isinstance(token, UnsetUnit)
             else _resolve_leveled_column_unit(
                 token=cast("CompositeUnit", token),
-                match=match,
+                leaf_name=dt.tree_path_from_qname(qname)[-1],
+                grouping_levels=grouping_levels,
                 registry=registry,
             )
         )
@@ -779,7 +796,7 @@ def _resolve_agg_by_group_unit(
     source_qname = sources.pop()
     source_obj = env.get(source_qname)
     source_token = getattr(source_obj, "unit", UNSET_UNIT)
-    if is_unset_unit(source_token):
+    if isinstance(source_token, UnsetUnit):
         return None
     source_is_boolean = node_is_boolean(qname=source_qname, obj=source_obj)
     # A SUM over a boolean is a head count of the persons it is true for — the
@@ -794,10 +811,10 @@ def _resolve_agg_by_group_unit(
         return resolved_unit_for_aggregation(
             agg_type=AggType.COUNT, target_level=target_level, registry=registry
         )
-    source_match = pattern.fullmatch(dt.tree_path_from_qname(source_qname)[-1])
     source_unit = _resolve_leveled_column_unit(
         token=cast("CompositeUnit", source_token),
-        match=source_match,
+        leaf_name=dt.tree_path_from_qname(source_qname)[-1],
+        grouping_levels=grouping_levels,
         registry=registry,
     )
     # The source's grouping level, read off its declared token (equivalently, its
@@ -815,6 +832,7 @@ def _resolve_agg_by_group_unit(
 def _resolve_param_object_unit(
     qname: str,
     obj: ParamObject,
+    grouping_levels: OrderedQNames,
     registry: pint.UnitRegistry,
     name_time_unit_id: str | None = None,
 ) -> pint.Unit | dict[str | int, Any] | None:
@@ -836,27 +854,28 @@ def _resolve_param_object_unit(
             qname=qname,
             obj=obj,
             name_time_unit_id=name_time_unit_id,
+            grouping_levels=grouping_levels,
             registry=registry,
         )
-    if is_unset_unit(obj.unit):
+    if isinstance(obj.unit, UnsetUnit):
         return None
     if isinstance(obj.unit, Mapping):
         return _resolve_unit_mapping(
             qname=qname,
             unit_mapping=cast("Mapping[str | int, Any]", obj.unit),
+            grouping_levels=grouping_levels,
             registry=registry,
         )
-    token = cast("CompositeUnit", obj.unit)
-    _fail_if_param_ttsim_unit_is_agnostic_currency(
-        ttsim_unit=token, where=f"Parameter {qname!r}"
-    )
     # A scalar parameter takes its period from a time suffix on its name; a
     # dict/raw parameter has no single name to suffix.
-    return resolve_ttsim_unit_for_param(
-        unit=token,
-        registry=registry,
-        time_unit_id=name_time_unit_id if isinstance(obj, ScalarParam) else None,
+    return pint_unit_from_ttsim_unit_for_param(
+        unit=cast("CompositeUnit", obj.unit),
+        name=dt.tree_path_from_qname(qname)[-1]
+        if isinstance(obj, ScalarParam)
+        else None,
+        grouping_levels=grouping_levels,
         where=f"Parameter {qname!r}",
+        registry=registry,
     )
 
 
@@ -864,6 +883,7 @@ def _resolve_param_mapping_object_units(
     qname: str,
     obj: ParamMappingObject,
     name_time_unit_id: str | None,
+    grouping_levels: OrderedQNames,
     registry: pint.UnitRegistry,
 ) -> pint.Unit | None:
     """Resolve a mapping parameter's per-axis unit declarations.
@@ -881,7 +901,7 @@ def _resolve_param_mapping_object_units(
     """
     tokens: dict[str, UnitDeclaration] = {}
     for axis, raw in (("input_unit", obj.input_unit), ("output_unit", obj.output_unit)):
-        if is_unset_unit(raw):
+        if isinstance(raw, UnsetUnit):
             tokens[axis] = UNSET_UNIT
             continue
         where = f"Parameter {qname!r}, {axis}"
@@ -890,26 +910,33 @@ def _resolve_param_mapping_object_units(
                 f"{where}: per-axis declarations are single units, not "
                 f"mappings (GEP 10)."
             )
-        token = cast("CompositeUnit", raw)
-        _fail_if_param_ttsim_unit_is_agnostic_currency(ttsim_unit=token, where=where)
-        tokens[axis] = token
+        tokens[axis] = cast("CompositeUnit", raw)
     output_token = tokens["output_unit"]
     if name_time_unit_id is not None:
         _fail_if_name_suffix_disagrees_with_output_axis(
             qname=qname,
             output_token=output_token,
             name_time_unit_id=name_time_unit_id,
+            grouping_levels=grouping_levels,
             registry=registry,
         )
     input_token = tokens["input_unit"]
-    if not is_unset_unit(input_token):
-        resolve_ttsim_unit_for_param(
-            unit=input_token, registry=registry, where=f"Parameter {qname!r}"
+    if not isinstance(input_token, UnsetUnit):
+        pint_unit_from_ttsim_unit_for_param(
+            unit=input_token,
+            name=None,
+            grouping_levels=grouping_levels,
+            where=f"Parameter {qname!r}, input_unit",
+            registry=registry,
         )
-    if is_unset_unit(output_token):
+    if isinstance(output_token, UnsetUnit):
         return None
-    return resolve_ttsim_unit_for_param(
-        unit=output_token, registry=registry, where=f"Parameter {qname!r}"
+    return pint_unit_from_ttsim_unit_for_param(
+        unit=output_token,
+        name=None,
+        grouping_levels=grouping_levels,
+        where=f"Parameter {qname!r}, output_unit",
+        registry=registry,
     )
 
 
@@ -917,6 +944,7 @@ def _fail_if_name_suffix_disagrees_with_output_axis(
     qname: str,
     output_token: Any,  # noqa: ANN401
     name_time_unit_id: str,
+    grouping_levels: OrderedQNames,
     registry: pint.UnitRegistry,
 ) -> None:
     """Check the name-suffix ⟺ flow-output coincidence rules.
@@ -925,23 +953,25 @@ def _fail_if_name_suffix_disagrees_with_output_axis(
     its spelled period must agree with the suffix (validated by resolving the
     output unit against the suffix).
     """
-    if is_unset_unit(output_token) or not output_token.is_flow:
+    if isinstance(output_token, UnsetUnit) or not output_token.is_flow:
         raise UnitDefinitionError(
             f"Parameter {qname!r}: the name carries a time-unit suffix "
             f"(_{name_time_unit_id}), which denotes a flow, but "
             f"`output_unit:` is {_spell_ttsim_unit(output_token)} (GEP 10)."
         )
-    resolve_ttsim_unit_for_param(
+    pint_unit_from_ttsim_unit_for_param(
         unit=output_token,
-        registry=registry,
-        time_unit_id=name_time_unit_id,
+        name=dt.tree_path_from_qname(qname)[-1],
+        grouping_levels=grouping_levels,
         where=f"Parameter {qname!r}",
+        registry=registry,
     )
 
 
 def _resolve_unit_mapping(
     qname: str,
     unit_mapping: Mapping[str | int, Any],
+    grouping_levels: OrderedQNames,
     registry: pint.UnitRegistry,
 ) -> dict[str | int, Any]:
     """Resolve a per-leaf ``unit:`` mapping to pint units.
@@ -955,35 +985,21 @@ def _resolve_unit_mapping(
     for key, token in unit_mapping.items():
         if isinstance(token, Mapping):
             resolved[key] = _resolve_unit_mapping(
-                qname=qname, unit_mapping=token, registry=registry
+                qname=qname,
+                unit_mapping=token,
+                grouping_levels=grouping_levels,
+                registry=registry,
             )
             continue
         where = f"Parameter {qname!r}, unit of leaf {key!r}"
-        _fail_if_param_ttsim_unit_is_agnostic_currency(ttsim_unit=token, where=where)
-        match = _QNAME_TIME_SUFFIX_PATTERN.search(str(key))
-        suffix_id = match.group("time_unit") if match else None
-        resolved[key] = resolve_ttsim_unit_for_param(
+        resolved[key] = pint_unit_from_ttsim_unit_for_param(
             unit=cast("CompositeUnit", token),
-            registry=registry,
-            time_unit_id=suffix_id,
+            name=str(key),
+            grouping_levels=grouping_levels,
             where=where,
+            registry=registry,
         )
     return resolved
-
-
-def _fail_if_param_ttsim_unit_is_agnostic_currency(
-    ttsim_unit: CompositeUnit | None,
-    where: str,
-) -> None:
-    """Reject a parameter whose declared TTSIM unit is the agnostic currency."""
-    if ttsim_unit_has_agnostic_currency(ttsim_unit):
-        suffixes = str(ttsim_unit).removeprefix("CURRENCY")
-        raise UnitDefinitionError(
-            f"{where}: parameters must pin down the concrete currency their "
-            f"numbers are written in; the agnostic unit {ttsim_unit} is not "
-            f"allowed here. Declare the statutory currency at the parameter's "
-            f"dates, e.g. DM{suffixes} or EUR{suffixes} (GEP 10)."
-        )
 
 
 def _is_checkable_node(qname: str, obj: Any) -> bool:  # noqa: ANN401
@@ -1050,8 +1066,7 @@ def _as_boolean_level(unit: pint.Unit, registry: pint.UnitRegistry) -> BooleanLe
     dimensionless for a level-less share/flag. A unit with physical content
     (currency, area, a duration) or a grouping-level *numerator* (``[hh]``) is
     *not* a boolean. A head count is ``1 / [hh]``, so it is indistinguishable
-    from a leveled boolean here — both are the plain number over their group
-    (GEP 10).
+    from a leveled boolean here — both are the plain number over their group.
 
     ``1 / [fam]`` → ``(True, "fam")``; a plain ``1`` → ``(True, None)``;
     ``EUR_PER_MONTH`` or ``[hh]`` → ``(False, None)``.
@@ -1081,7 +1096,7 @@ def _combined_boolean_level(left: str | None, right: str | None) -> str | None:
     """Combine two boolean levels for a logical operator.
 
     Equal levels are kept; any mismatch downcasts to the individual level, which
-    is **bare** (``None``, GEP 10).
+    is **bare** (``None``).
 
     Two fam-level indicators give ``"fam"``; the mixed
     ``wealth_fam >= threshold_fam or wealth_kin >= threshold_kin`` combines a fam-
@@ -1108,10 +1123,10 @@ def fail_if_environment_units_are_missing(
     - a ``@param_function`` declaring ``unit=UNSET_UNIT`` (a structured value) or
       ``unit=InputOutputUnits(...)`` (a schedule builder) is exempt — its output is
       not a single quantity, and its units live in the field annotations or the
-      declaration itself, so neither is an omission (GEP 10);
+      declaration itself, so neither is an omission;
     - a rounding spec on a currency-valued function must declare its own unit (its
-      magnitudes are statutory numbers in a concrete currency, like a parameter's
-      — GEP 10); a missing one is reported as ``<qname> (rounding_spec)``.
+      magnitudes are statutory numbers in a concrete currency, like a
+      parameter's); a missing one is reported as ``<qname> (rounding_spec)``.
 
     Raises:
         UnitDefinitionError: If any node (or per-leaf-mapping leaf) lacks a unit
@@ -1125,7 +1140,7 @@ def fail_if_environment_units_are_missing(
             continue
         declared_unit = getattr(obj, "unit", UNSET_UNIT)
         if isinstance(obj, ParamFunction) and (
-            is_unset_unit(declared_unit) or isinstance(declared_unit, InputOutputUnits)
+            isinstance(declared_unit, UnsetUnit | InputOutputUnits)
         ):
             # A structured value (`UNSET_UNIT`) states its units in the return
             # type's field annotations; a schedule builder (`InputOutputUnits`)
@@ -1133,8 +1148,8 @@ def fail_if_environment_units_are_missing(
             continue
         if isinstance(obj, ParamMappingObject | RawParam) and (
             isinstance(obj, ParamMappingObject)
-            or not is_unset_unit(obj.input_unit)
-            or not is_unset_unit(obj.output_unit)
+            or not isinstance(obj.input_unit, UnsetUnit)
+            or not isinstance(obj.output_unit, UnsetUnit)
         ):
             # A schedule/lookup or a per-axis require_converter declares per-axis
             # units instead of a single `unit:`.
@@ -1280,7 +1295,7 @@ def fail_if_input_units_are_inconsistent(
     - **grouping level** — the tag spells its group level (``EUR.PER_MONTH.PER_BG``)
       or omits it for a bare (per-person / level-neutral) quantity, and this must
       equal the level the declared unit carries (the level is declared, not read
-      off the suffix — GEP 10);
+      off the suffix);
     - **measurement** — with currency (converted at the boundary) and flow period
       (screened against the name suffix by the dedicated period guard) factored
       out, the remaining numerator scale must match *exactly*: a ``HECTARES``
@@ -1294,7 +1309,9 @@ def fail_if_input_units_are_inconsistent(
     registry = unit_system.registry
     errors: list[str] = []
     for qname, tag_token in input_ttsim_units.items():
-        tag = resolve_ttsim_unit(unit=tag_token, registry=registry, with_level=True)
+        tag = pint_unit_from_ttsim_unit(
+            unit=tag_token, registry=registry, with_level=True
+        )
         expected = resolved_pint_units.get(qname)
         if not isinstance(expected, pint.Unit):
             # No scalar declared unit (absent, or a dict parameter); nothing to check.
@@ -1414,12 +1431,21 @@ def _agg_declaration_inconsistency(
         return None
     derived = resolved_pint_units.get(qname)
     declared_token = getattr(obj, "unit", UNSET_UNIT)
-    if derived is None or isinstance(derived, dict) or is_unset_unit(declared_token):
+    if (
+        derived is None
+        or isinstance(derived, dict)
+        or isinstance(declared_token, UnsetUnit)
+    ):
         return None
-    declared_unit = resolve_ttsim_unit_for_param(
+    # An aggregation is a column: it declares an agnostic currency, and its
+    # declared level is checked against the derived unit right below rather than
+    # against a name suffix.
+    declared_unit = pint_unit_from_ttsim_unit_for_column(
         unit=cast("CompositeUnit", declared_token),
-        registry=registry,
+        name=None,
+        grouping_levels=(),
         where=f"Aggregation {qname!r}",
+        registry=registry,
     )
     derived_unit = cast("pint.Unit", derived)
     if units_are_equivalent(left=declared_unit, right=derived_unit, registry=registry):
@@ -1452,7 +1478,7 @@ def _rounding_spec_declaration_inconsistency(
     """Error message if a rounding spec's unit disagrees with its function's.
 
     A rounding spec's magnitudes are statutory numbers in a concrete currency,
-    exactly like a parameter's (GEP 10), so:
+    exactly like a parameter's, so:
 
     - on a **currency-valued** function the spec pins down a registered currency
       and spells the full composite, which must equal the function's declared unit
@@ -1465,7 +1491,7 @@ def _rounding_spec_declaration_inconsistency(
     """
     spec = getattr(obj, "rounding_spec", None)
     declared = getattr(obj, "unit", UNSET_UNIT)
-    if spec is None or spec.unit is None or is_unset_unit(declared):
+    if spec is None or spec.unit is None or isinstance(declared, UnsetUnit):
         return None
     if not ttsim_unit_has_agnostic_currency(cast("CompositeUnit", declared)):
         return (

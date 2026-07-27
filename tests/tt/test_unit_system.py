@@ -7,24 +7,26 @@ import datetime
 import pytest
 
 from ttsim.exceptions import UnitDefinitionError
-from ttsim.tt.units import UnitSystem
+from ttsim.tt.units import Currency, UnitSystem
 
 
 @pytest.fixture
 def germany() -> UnitSystem:
     return UnitSystem(
-        base_currency="EUR",
-        other_currencies={"DM": "EUR / 1.95583"},
-        statutory_currencies={"0001-01-01": "DM", "2002-01-01": "EUR"},
+        currencies={
+            "EUR": Currency(statutory_from="2002-01-01"),
+            "DM": Currency(value="EUR / 1.95583", statutory_from="0001-01-01"),
+        },
     )
 
 
 @pytest.fixture
 def middle_earth() -> UnitSystem:
     return UnitSystem(
-        base_currency="CASTAR",
-        other_currencies={"SILVER_PENNY": "CASTAR / 4"},
-        statutory_currencies={"0001-01-01": "SILVER_PENNY", "2020-01-01": "CASTAR"},
+        currencies={
+            "CASTAR": Currency(statutory_from="2020-01-01"),
+            "SILVER_PENNY": Currency(value="CASTAR / 4", statutory_from="0001-01-01"),
+        },
     )
 
 

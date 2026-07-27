@@ -44,10 +44,10 @@ def cached_specialized_environment(
         ),
         policy_date=policy_date,
         orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+        unit_system=middle_earth.UNIT_SYSTEM,
         backend=backend,
         include_fail_nodes=False,
         include_warn_nodes=False,
-        unit_system=middle_earth.UNIT_SYSTEM,
     )
 
 

@@ -40,7 +40,7 @@ from ttsim.tt.column_objects_param_function import (
     policy_function,
 )
 from ttsim.tt.param_objects import ParamObject
-from ttsim.tt.units import TTSIMUnit, is_unset_unit
+from ttsim.tt.units import TTSIMUnit, UnsetUnit
 from ttsim.typing import (
     OrderedQNames,
     PolicyEnvironment,
@@ -257,7 +257,7 @@ def dummy_callable(
         original_docstring = obj.docstring
         if original_docstring:
             dummy.__doc__ = original_docstring
-        unit = TTSIMUnit.DIMENSIONLESS if is_unset_unit(obj.unit) else obj.unit
+        unit = TTSIMUnit.DIMENSIONLESS if isinstance(obj.unit, UnsetUnit) else obj.unit
         return policy_function(
             leaf_name=leaf_name,
             start_date=obj.start_date,

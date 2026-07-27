@@ -26,10 +26,10 @@ def birth_year_of_oldest_member_kin(kin_id: int, birth_year: int) -> int:
     """The birth year of the kinstead's oldest member."""
 
 
-@policy_function(vectorization_strategy="vectorize", unit=TTSIMUnit.YEARS)
-def age(policy_year: int, birth_year: int) -> int:
-    """Age in completed years on the first day of the policy year."""
-    return policy_year - birth_year
+@policy_function(unit=TTSIMUnit.YEARS)
+def age(birth_year: int, evaluation_year: int) -> int:
+    """Age in completed years at the evaluation date."""
+    return evaluation_year - birth_year
 
 
 @policy_function(vectorization_strategy="vectorize", unit=TTSIMUnit.DIMENSIONLESS)
@@ -45,7 +45,9 @@ def coming_of_age_celebration(age: int) -> bool:
     Hobbits come of age at 33 and famously celebrate their eleventy-first
     (111th) birthday.
     """
-    return age == 33 or age == 111
+    return age == cast_ttsim_unit(
+        value=33, unit=TTSIMUnit.YEARS
+    ) or age == cast_ttsim_unit(value=111, unit=TTSIMUnit.YEARS)
 
 
 @policy_function(vectorization_strategy="vectorize", unit=TTSIMUnit.DIMENSIONLESS)
@@ -53,7 +55,7 @@ def of_age(age: int) -> bool:
     """Whether the person has reached the age of majority."""
     # The bound is stated in years, so it is written that way rather than as a
     # bare number.
-    return age >= cast_ttsim_unit(33, TTSIMUnit.YEARS)
+    return age >= cast_ttsim_unit(value=33, unit=TTSIMUnit.YEARS)
 
 
 @policy_function(
@@ -64,5 +66,5 @@ def number_of_dependants_kin(number_of_individuals_kin: int) -> int:
     # The one head subtracted here is a head count of the kinstead, like the
     # count it is subtracted from.
     return number_of_individuals_kin - cast_ttsim_unit(
-        1, TTSIMUnit.DIMENSIONLESS.PER_KIN
+        value=1, unit=TTSIMUnit.DIMENSIONLESS.PER_KIN
     )

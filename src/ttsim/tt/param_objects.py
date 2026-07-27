@@ -12,7 +12,7 @@ from ttsim.tt.units import (
     UNSET_UNIT,
     CompositeUnit,
     UnitDeclaration,
-    is_unset_unit,
+    UnsetUnit,
     ttsim_unit_from_yaml_value,
     ttsim_unit_has_currency,
 )
@@ -69,7 +69,7 @@ def _coerce_unit_declaration(
     mappings."""
     name_en = (obj.name or {}).get("en")
     where = f"Parameter {name_en}" if name_en else "Parameter"
-    if is_unset_unit(declared):
+    if isinstance(declared, UnsetUnit):
         return UNSET_UNIT
     if isinstance(declared, dict):
         return {
@@ -141,7 +141,7 @@ class ParamMappingObject(ParamObject):
 
     def __post_init__(self) -> None:
         super().__post_init__()
-        if not is_unset_unit(self.unit):
+        if not isinstance(self.unit, UnsetUnit):
             raise UnitDefinitionError(
                 f"{type(self).__name__} is a function between quantities and "
                 f"declares `input_unit:` / `output_unit:` instead of `unit:` "
@@ -185,7 +185,9 @@ class ConsecutiveIntLookupTableParam(ParamMappingObject):
     def __post_init__(self) -> None:
         super().__post_init__()
         input_unit = cast("CompositeUnit", self.input_unit)
-        if not is_unset_unit(input_unit) and ttsim_unit_has_currency(input_unit):
+        if not isinstance(input_unit, UnsetUnit) and ttsim_unit_has_currency(
+            input_unit
+        ):
             raise UnitDefinitionError(
                 f"A lookup table is keyed by consecutive integers, so its "
                 f"`input_unit:` cannot be a currency (got {input_unit}); the "
@@ -282,10 +284,10 @@ class RawParam(ParamObject):
             raise ValueError(
                 "'note' and 'reference' cannot be keys in the value dictionary"
             )
-        declares_axes = not is_unset_unit(self.input_unit) or not is_unset_unit(
-            self.output_unit
+        declares_axes = not isinstance(self.input_unit, UnsetUnit) or not isinstance(
+            self.output_unit, UnsetUnit
         )
-        if declares_axes and not is_unset_unit(self.unit):
+        if declares_axes and not isinstance(self.unit, UnsetUnit):
             raise UnitDefinitionError(
                 "A require_converter declares either `unit:` (a single token or "
                 "a per-leaf mapping, one token per leaf) or `input_unit:` / "

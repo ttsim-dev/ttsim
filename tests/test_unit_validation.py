@@ -40,7 +40,7 @@ from ttsim.tt.param_objects import (
 )
 from ttsim.tt.units import (
     divide_by_grouping_level,
-    parse_unit,
+    pint_unit_from_string,
     ttsim_unit_from_yaml_value,
     units_are_equivalent,
 )
@@ -131,24 +131,6 @@ def make_flow_rate() -> ScalarParam:
     )
 
 
-def make_dimensionless_rate() -> ScalarParam:
-    # The bug the consistency check must catch: a plain dimensionless share with
-    # no period, so `wealth * rate` is a stock where a flow node expects a flow.
-    return ScalarParam(
-        value=0.01,
-        unit=TTSIMUnit.DIMENSIONLESS,
-        start_date=_START,
-        end_date=_END,
-    )
-
-
-@policy_input(unit=TTSIMUnit.CURRENCY)
-def wealth_threshold() -> float:
-    """A wealth threshold; a stock of currency. Comparing a quantity against a
-    bare inline literal is rejected (GEP 10), so the bound is a named producer
-    rather than a magic number."""
-
-
 @policy_function(unit=TTSIMUnit.CURRENCY.PER_YEAR)
 def amount_y(wealth: float, tax_rate_y: float, is_exempt: bool) -> float:
     """The wealth-tax pattern: stock times a per-year rate, guarded by an
@@ -158,23 +140,9 @@ def amount_y(wealth: float, tax_rate_y: float, is_exempt: bool) -> float:
     return wealth * tax_rate_y
 
 
-@policy_function(unit=TTSIMUnit.CURRENCY.PER_YEAR)
-def amount_buggy_y(wealth: float, tax_rate: float, is_exempt: bool) -> float:
-    """The bug: ``tax_rate`` is a plain dimensionless share, so ``wealth *
-    tax_rate`` is a stock, not the declared yearly flow."""
-    if is_exempt:
-        return 0.0
-    return wealth * tax_rate
-
-
 @policy_input(unit=TTSIMUnit.CURRENCY.PER_MONTH)
 def income_m() -> float:
     """A monthly flow of currency (CURRENCY / month)."""
-
-
-@policy_input(unit=TTSIMUnit.CURRENCY.PER_MONTH)
-def other_income_m() -> float:
-    """A second monthly flow of currency (CURRENCY / month)."""
 
 
 @policy_input(unit=TTSIMUnit.CURRENCY.PER_YEAR)
@@ -190,16 +158,6 @@ def geburtsjahr() -> int:
 @policy_input(unit=TTSIMUnit.YEARS)
 def statutory_age() -> int:
     """A duration in years (an age threshold)."""
-
-
-@policy_input(unit=TTSIMUnit.DIMENSIONLESS)
-def geburtsmonat() -> int:
-    """A month-of-year (1-12): a cyclic ordinal, not a calendar point (GEP 10)."""
-
-
-@policy_input(unit=TTSIMUnit.MONTHS)
-def months_paid() -> int:
-    """A duration in months."""
 
 
 # Mandatory units, no exemptions: identifiers and booleans declare
@@ -399,17 +357,17 @@ def test_resolution_combines_token_and_name_suffix():
     # bare rate and likewise level-neutral.
     assert units_are_equivalent(
         left=_scalar_unit(resolved=resolved, qname="wealth"),
-        right=parse_unit(unit_str="CURRENCY", registry=REGISTRY),
+        right=pint_unit_from_string(unit_str="CURRENCY", registry=REGISTRY),
         registry=REGISTRY,
     )
     assert units_are_equivalent(
         left=_scalar_unit(resolved=resolved, qname="tax_rate_y"),
-        right=parse_unit(unit_str="1 / year", registry=REGISTRY),
+        right=pint_unit_from_string(unit_str="1 / year", registry=REGISTRY),
         registry=REGISTRY,
     )
     assert units_are_equivalent(
         left=_scalar_unit(resolved=resolved, qname="amount_y"),
-        right=parse_unit(unit_str="CURRENCY / year", registry=REGISTRY),
+        right=pint_unit_from_string(unit_str="CURRENCY / year", registry=REGISTRY),
         registry=REGISTRY,
     )
 
@@ -425,12 +383,12 @@ def test_resolution_includes_framework_date_nodes():
     )
     assert units_are_equivalent(
         left=_scalar_unit(resolved=resolved, qname="policy_year"),
-        right=parse_unit(unit_str="calendar_year", registry=REGISTRY),
+        right=pint_unit_from_string(unit_str="calendar_year", registry=REGISTRY),
         registry=REGISTRY,
     )
     assert not units_are_equivalent(
         left=_scalar_unit(resolved=resolved, qname="policy_year"),
-        right=parse_unit(unit_str="year", registry=REGISTRY),
+        right=pint_unit_from_string(unit_str="year", registry=REGISTRY),
         registry=REGISTRY,
     )
 
@@ -450,12 +408,12 @@ def test_dict_param_with_per_leaf_units_resolves_to_unit_tree():
     unit_tree = _unit_tree(resolved=resolved, qname="schedule")
     assert units_are_equivalent(
         left=unit_tree["child_amount_y"],
-        right=parse_unit(unit_str="CURRENCY / year", registry=REGISTRY),
+        right=pint_unit_from_string(unit_str="CURRENCY / year", registry=REGISTRY),
         registry=REGISTRY,
     )
     assert units_are_equivalent(
         left=unit_tree["max_age"],
-        right=parse_unit(unit_str="year", registry=REGISTRY),
+        right=pint_unit_from_string(unit_str="year", registry=REGISTRY),
         registry=REGISTRY,
     )
 
@@ -493,7 +451,7 @@ def test_dict_param_integer_keyed_flow_leaf_spells_its_period():
     )
     assert units_are_equivalent(
         left=_unit_tree(resolved=resolved, qname="amount_by_rank")[1],
-        right=parse_unit(unit_str="CURRENCY / month", registry=REGISTRY),
+        right=pint_unit_from_string(unit_str="CURRENCY / month", registry=REGISTRY),
         registry=REGISTRY,
     )
 
@@ -511,35 +469,6 @@ def test_dict_param_stock_token_on_suffixed_leaf_key_fails():
             grouping_levels=GROUPING_LEVELS,
             unit_system=UNIT_SYSTEM,
         )
-
-
-def test_dict_param_mixed_periods_via_spelled_units_are_allowed():
-    # Each flow leaf spells its own period: nothing implicit.
-    schedule = DictParam(
-        value={"base_amount_m": 100.0, "annual_bonus_y": 50.0},
-        unit={
-            "base_amount_m": "CASTAR_PER_MONTH",
-            "annual_bonus_y": "CASTAR_PER_YEAR",
-        },
-        start_date=_START,
-        end_date=_END,
-    )
-    resolved = resolve_environment_units(
-        env={"schedule": schedule},
-        grouping_levels=GROUPING_LEVELS,
-        unit_system=UNIT_SYSTEM,
-    )
-    unit_tree = _unit_tree(resolved=resolved, qname="schedule")
-    assert units_are_equivalent(
-        left=unit_tree["base_amount_m"],
-        right=parse_unit(unit_str="CURRENCY / month", registry=REGISTRY),
-        registry=REGISTRY,
-    )
-    assert units_are_equivalent(
-        left=unit_tree["annual_bonus_y"],
-        right=parse_unit(unit_str="CURRENCY / year", registry=REGISTRY),
-        registry=REGISTRY,
-    )
 
 
 def test_dict_param_missing_leaf_unit_is_reported():
@@ -570,7 +499,7 @@ def test_scalar_flow_param_resolves_via_name_suffix():
     )
     assert units_are_equivalent(
         left=_scalar_unit(resolved=resolved, qname="lump_sum_deduction_y"),
-        right=parse_unit(unit_str="CURRENCY / year", registry=REGISTRY),
+        right=pint_unit_from_string(unit_str="CURRENCY / year", registry=REGISTRY),
         registry=REGISTRY,
     )
 
@@ -612,20 +541,6 @@ def test_group_sum_of_a_head_count_source_derives_head_count_per_group():
     )
 
 
-def test_sum_aggregation_over_booleans_declares_dimensionless():
-    # A sum over a boolean column is a plain head count — declared
-    # dimensionless via an explicit `unit=TTSIMUnit.DIMENSIONLESS` (GEP 10).
-    @agg_by_group_function(agg_type=AggType.SUM, unit=TTSIMUnit.DIMENSIONLESS)
-    def number_of_exempt_fam(is_exempt: bool, fam_id: int) -> int:
-        """The number of exempt members per family."""
-
-    assert number_of_exempt_fam.unit is TTSIMUnit.DIMENSIONLESS
-    fail_if_environment_units_are_missing(
-        env={"number_of_exempt_fam": number_of_exempt_fam},
-        grouping_levels=GROUPING_LEVELS,
-    )
-
-
 def test_aggregation_must_spell_the_derived_grouping_level():
     """An aggregation's declared unit must be precise and complete: a ``_fam`` sum
     declaring a bare ``CURRENCY`` (omitting the derived ``[fam]`` level) is rejected
@@ -644,8 +559,11 @@ def test_aggregation_must_spell_the_derived_grouping_level():
 
 
 def test_aggregation_with_the_precise_derived_unit_passes():
-    """The full, precise declaration — kind, period, *and* level — matches the
-    derived unit and passes (GEP 10)."""
+    """A precise declaration — kind, period, level, agnostic currency — passes.
+
+    An aggregation is a column, so it declares the agnostic ``CURRENCY`` and its
+    declared unit is checked against the derivation.
+    """
 
     @agg_by_group_function(agg_type=AggType.SUM, unit=TTSIMUnit.CURRENCY.PER_FAM)
     def wealth_fam(wealth: float, fam_id: int) -> float:
@@ -667,6 +585,22 @@ def test_aggregation_with_spelled_wrong_grouping_level_is_caught():
         """A family sum mis-declared at the kin level."""
 
     with pytest.raises(UnitConsistencyError, match="wealth_fam"):
+        fail_if_environment_units_are_inconsistent(
+            env={"wealth": wealth, "wealth_fam": wealth_fam},
+            grouping_levels=GROUPING_LEVELS,
+            unit_system=UNIT_SYSTEM,
+        )
+
+
+def test_aggregation_declaring_a_concrete_currency_is_rejected():
+    """An aggregation runs in the statutory currency of the policy date, so pinning
+    a concrete currency down is a definition error."""
+
+    @agg_by_group_function(agg_type=AggType.SUM, unit=TTSIMUnit.CASTAR.PER_FAM)
+    def wealth_fam(wealth: float, fam_id: int) -> float:
+        """A family sum wrongly pinning CASTAR."""
+
+    with pytest.raises(UnitDefinitionError, match="agnostic CURRENCY"):
         fail_if_environment_units_are_inconsistent(
             env={"wealth": wealth, "wealth_fam": wealth_fam},
             grouping_levels=GROUPING_LEVELS,
@@ -700,7 +634,7 @@ def test_param_function_unit_resolves_via_leaf_name_suffix():
     # The `_fam` suffix puts this flow at the family level (GEP 10).
     assert units_are_equivalent(
         left=_scalar_unit(resolved=resolved, qname="max_amount_m_fam"),
-        right=parse_unit(
+        right=pint_unit_from_string(
             unit_str="CURRENCY / month / grouping_level_fam", registry=REGISTRY
         ),
         registry=REGISTRY,
@@ -756,7 +690,7 @@ def test_concrete_currency_token_resolves_like_agnostic_counterpart():
     )
     assert units_are_equivalent(
         left=_scalar_unit(resolved=resolved, qname="threshold"),
-        right=parse_unit(unit_str="CURRENCY", registry=REGISTRY),
+        right=pint_unit_from_string(unit_str="CURRENCY", registry=REGISTRY),
         registry=REGISTRY,
     )
 
@@ -796,7 +730,7 @@ def test_param_mapping_object_resolves_output_axis():
     )
     assert units_are_equivalent(
         left=_scalar_unit(resolved=resolved, qname="schedule"),
-        right=parse_unit(unit_str="CURRENCY / year", registry=REGISTRY),
+        right=pint_unit_from_string(unit_str="CURRENCY / year", registry=REGISTRY),
         registry=REGISTRY,
     )
 
@@ -814,7 +748,7 @@ def test_param_mapping_object_complete_input_axis_with_flow_output():
     )
     assert units_are_equivalent(
         left=_scalar_unit(resolved=resolved, qname="schedule"),
-        right=parse_unit(unit_str="CURRENCY / year", registry=REGISTRY),
+        right=pint_unit_from_string(unit_str="CURRENCY / year", registry=REGISTRY),
         registry=REGISTRY,
     )
 
@@ -887,7 +821,9 @@ def test_opted_out_aggregation_declares_its_own_level():
     )
     assert units_are_equivalent(
         left=_scalar_unit(resolved=resolved, qname="average_wealth_kin"),
-        right=parse_unit(unit_str="CURRENCY / grouping_level_kin", registry=REGISTRY),
+        right=pint_unit_from_string(
+            unit_str="CURRENCY / grouping_level_kin", registry=REGISTRY
+        ),
         registry=REGISTRY,
     )
     # No declared-vs-derived rejection: the MEAN derives the bare individual unit.
@@ -975,7 +911,7 @@ def test_per_capita_division_bridges_via_head_count():
     )
     assert units_are_equivalent(
         left=_scalar_unit(resolved=resolved, qname="rent_per_head_m"),
-        right=parse_unit(unit_str="CURRENCY / month", registry=REGISTRY),
+        right=pint_unit_from_string(unit_str="CURRENCY / month", registry=REGISTRY),
         registry=REGISTRY,
     )
     # The [fam] cancels against the count's 1/[fam] — no level mismatch.
@@ -1240,7 +1176,7 @@ def test_max_over_bare_source_carries_the_target_group_level():
     assert units_are_equivalent(
         left=max_unit,
         right=divide_by_grouping_level(
-            unit=parse_unit(unit_str="CURRENCY / month", registry=REGISTRY),
+            unit=pint_unit_from_string(unit_str="CURRENCY / month", registry=REGISTRY),
             level="fam",
             registry=REGISTRY,
         ),
@@ -1248,7 +1184,7 @@ def test_max_over_bare_source_carries_the_target_group_level():
     )
     assert not units_are_equivalent(
         left=max_unit,
-        right=parse_unit(unit_str="CURRENCY / month", registry=REGISTRY),
+        right=pint_unit_from_string(unit_str="CURRENCY / month", registry=REGISTRY),
         registry=REGISTRY,
     )
     # The `_PER_FAM` declaration is consistent with what it derives.

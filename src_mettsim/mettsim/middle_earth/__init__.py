@@ -2,12 +2,11 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from ttsim.tt import UnitSystem, register_unit_builder_levels
+from ttsim.tt import Currency, UnitSystem, register_unit_builder_levels
 
 ROOT_PATH = Path(__file__).parent
 
-# Register the unit-builder levels for Middle Earth. The levels are:
-register_unit_builder_levels(["sp", "fam", "kin"])
+register_unit_builder_levels(["fam", "kin"])
 
 # Middle Earth's unit system, built on import so the [currency] dimension has
 # concrete currencies (GEP 10). The castar — Gondor's coin — is the realm's
@@ -15,9 +14,10 @@ register_unit_builder_levels(["sp", "fam", "kin"])
 # currency; the silver penny — the Shire's coin and the unit of account before
 # the reform — is worth a quarter-castar.
 UNIT_SYSTEM = UnitSystem(
-    base_currency="CASTAR",
-    other_currencies={"SILVER_PENNY": "CASTAR / 4"},
-    statutory_currencies={"0001-01-01": "SILVER_PENNY", "2020-01-01": "CASTAR"},
+    currencies={
+        "CASTAR": Currency(statutory_from="2020-01-01"),
+        "SILVER_PENNY": Currency(value="CASTAR / 4", statutory_from="0001-01-01"),
+    },
 )
 
 COLORMAP: dict[tuple[str, ...] | str, str] = {

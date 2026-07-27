@@ -11,8 +11,8 @@ from ttsim.tt import RoundingSpec, TTSIMUnit, policy_function
 
 
 @policy_function(
-    end_date="2019-12-31",
     leaf_name="amount_m",
+    end_date="2019-12-31",
     rounding_spec=RoundingSpec(
         base=1,
         direction="down",
@@ -21,7 +21,7 @@ from ttsim.tt import RoundingSpec, TTSIMUnit, policy_function
     ),
     unit=TTSIMUnit.CURRENCY.PER_MONTH,
 )
-def amount_m_rounded_to_silver_pennies(
+def amount_m_before_currency_reform(
     payroll_tax__income__gross_wage_m: float,
     payroll_tax__amount_m: float,
     housing_benefits__eligibility__child: bool,
@@ -33,8 +33,8 @@ def amount_m_rounded_to_silver_pennies(
 
 
 @policy_function(
-    start_date="2020-01-01",
     leaf_name="amount_m",
+    start_date="2020-01-01",
     rounding_spec=RoundingSpec(
         base=0.25,
         direction="down",
@@ -43,7 +43,7 @@ def amount_m_rounded_to_silver_pennies(
     ),
     unit=TTSIMUnit.CURRENCY.PER_MONTH,
 )
-def amount_m_rounded_to_quarter_castars(
+def amount_m_after_currency_reform(
     payroll_tax__income__gross_wage_m: float,
     payroll_tax__amount_m: float,
     housing_benefits__eligibility__child: bool,

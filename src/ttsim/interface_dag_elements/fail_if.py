@@ -46,7 +46,6 @@ from ttsim.tt.units import (
     CompositeUnit,
     UnitDeclaration,
     UnitSystem,
-    UserNestedUnitAnnotatedData,
     ttsim_unit_has_agnostic_currency,
 )
 from ttsim.typing import (
@@ -66,6 +65,7 @@ from ttsim.typing import (
     SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
     SpecEnvWithPartialledParamsAndScalars,
     UnorderedQNames,
+    UserNestedUnitAnnotatedData,
 )
 from ttsim.unit_validation import (
     fail_if_environment_units_are_inconsistent,
@@ -375,6 +375,27 @@ def input_data_has_int_or_bool_missing_values(input_data__flat: FlatData) -> Non
             "dtypes:\n"
             f"{formatted}\n\n"
             "Fill the missing values before passing the data."
+        )
+        raise ValueError(msg)
+
+
+@fail_function(include_if_any_element_present=["input_data__flat"])
+def input_data_has_object_dtype_columns(input_data__flat: FlatData) -> None:
+    """Fail when an input column has object dtype.
+
+    The taxes-and-transfers DAG operates on numeric and boolean arrays. Object arrays
+    cannot safely participate in arithmetic and must not reach input processing or
+    currency conversion.
+    """
+    offending = [
+        dt.qname_from_tree_path(path)
+        for path, data in input_data__flat.items()
+        if getattr(data, "dtype", None) == numpy.dtype(object)
+    ]
+    if offending:
+        msg = format_errors_and_warnings(
+            "The following input columns have object dtype, which is not supported:\n"
+            f"{format_list_linewise(offending)}"
         )
         raise ValueError(msg)
 

@@ -37,12 +37,13 @@ from ttsim.testing_utils import isolated_unit_vocabulary
 from ttsim.tt.param_objects import RawParam
 from ttsim.tt.units import (
     _ALLOWED_UNIT_TOKENS,
+    Currency,
     TTSIMUnit,
     UnitSystem,
+    UnsetUnit,
     _registered_currencies,
-    is_unset_unit,
-    parse_ttsim_unit,
     ttsim_unit_currency,
+    ttsim_unit_from_string,
 )
 from ttsim.warnings import PotentialCurrencyMismatchWarning
 
@@ -297,7 +298,7 @@ def test_unit_resolution_never_backfills_from_a_later_entry():
         policy_date=datetime.date(1950, 1, 1),
         computation_currency="CASTAR",
     )
-    assert is_unset_unit(param.unit)
+    assert isinstance(param.unit, UnsetUnit)
 
 
 def test_updates_previous_combined_with_a_unit_restatement_is_rejected():
@@ -534,15 +535,89 @@ def test_unknown_annotation_is_rejected_at_load():
         )
 
 
-def _fresh_system(**overrides: Any) -> UnitSystem:
-    """A Middle-Earth-shaped system, with fields overridable per test."""
-    kwargs: dict[str, Any] = {
-        "base_currency": "CASTAR",
-        "other_currencies": {"SILVER_PENNY": "CASTAR / 4"},
-        "statutory_currencies": {"0001-01-01": "SILVER_PENNY", "2020-01-01": "CASTAR"},
-    }
-    kwargs.update(overrides)
-    return UnitSystem(**kwargs)
+def _fresh_system(currencies: dict[str, Currency] | None = None) -> UnitSystem:
+    """A Middle-Earth-shaped system, with its currencies overridable per test."""
+    return UnitSystem(
+        currencies=currencies
+        if currencies is not None
+        else {
+            "CASTAR": Currency(statutory_from="2020-01-01"),
+            "SILVER_PENNY": Currency(value="CASTAR / 4", statutory_from="0001-01-01"),
+        }
+    )
+
+
+def test_system_without_a_base_currency_is_rejected():
+    """Exactly one currency is the base — the one that states no `value`."""
+    with (
+        isolated_unit_vocabulary(),
+        pytest.raises(UnitDefinitionError, match="exactly one currency"),
+    ):
+        UnitSystem(
+            currencies={
+                "CASTAR": Currency(value="CURRENCY", statutory_from="0001-01-01"),
+                "SILVER_PENNY": Currency(value="CASTAR / 4"),
+            }
+        )
+
+
+def test_system_with_two_base_currencies_is_rejected():
+    """Two currencies stating no `value` leave the base ambiguous."""
+    with (
+        isolated_unit_vocabulary(),
+        pytest.raises(UnitDefinitionError, match="exactly one currency"),
+    ):
+        UnitSystem(
+            currencies={
+                "CASTAR": Currency(statutory_from="0001-01-01"),
+                "MITHRIL": Currency(),
+            }
+        )
+
+
+def test_forward_reference_in_a_currency_value_is_rejected():
+    """A `value` may only reference a currency defined earlier in the mapping."""
+    with (
+        isolated_unit_vocabulary(),
+        pytest.raises(UnitDefinitionError, match="declared further down"),
+    ):
+        UnitSystem(
+            currencies={
+                "SILVER_PENNY": Currency(value="CASTAR / 4"),
+                "CASTAR": Currency(statutory_from="0001-01-01"),
+            }
+        )
+
+
+def test_value_referencing_a_currency_whose_name_contains_a_later_one_is_accepted():
+    """A backward reference stays valid when a later currency's name is a substring.
+
+    `"CASTAR / 4"` references `CASTAR`, defined earlier; the later `STAR` merely
+    occurs inside that spelling and does not make it a forward reference.
+    """
+    with isolated_unit_vocabulary():
+        system = UnitSystem(
+            currencies={
+                "CASTAR": Currency(statutory_from="0001-01-01"),
+                "SILVER_PENNY": Currency(value="CASTAR / 4"),
+                "STAR": Currency(value="CASTAR / 8"),
+            }
+        )
+    assert system.base_currency == "CASTAR"
+
+
+def test_unknown_currency_in_a_value_is_rejected():
+    """A `value` naming a unit the system does not define is refused."""
+    with (
+        isolated_unit_vocabulary(),
+        pytest.raises(UnitDefinitionError, match="does not define"),
+    ):
+        UnitSystem(
+            currencies={
+                "CASTAR": Currency(statutory_from="0001-01-01"),
+                "SILVER_PENNY": Currency(value="GOLD_DRAGON / 4"),
+            }
+        )
 
 
 def test_base_currency_is_the_declared_base():
@@ -579,7 +654,6 @@ def test_annotated_results_label_a_parameter_in_the_statutory_currency():
     agnostic = system.registry.parse_units("CURRENCY / month")
     annotated = tree_with_unit_annotations(
         tree={"a_param_m": 25.0, "a_column_m": np.array([1.0, 2.0])},
-        raw_results__from_input_data={},
         raw_results__params={"a_param_m": 25.0},
         unit_checks__resolved_pint_units={
             "a_param_m": agnostic,
@@ -600,7 +674,6 @@ def test_annotated_results_label_each_leaf_of_a_dict_parameter():
     registry = system.registry
     annotated = tree_with_unit_annotations(
         tree={"rates": {"low": 25.0, "high": 50.0}},
-        raw_results__from_input_data={},
         raw_results__params={"rates": {"low": 25.0, "high": 50.0}},
         unit_checks__resolved_pint_units={
             "rates": {
@@ -624,7 +697,6 @@ def test_annotated_results_spread_one_unit_over_a_uniform_dict_parameter():
     system = _fresh_system()
     annotated = tree_with_unit_annotations(
         tree={"rates": {"low": 25.0, "high": 50.0}},
-        raw_results__from_input_data={},
         raw_results__params={"rates": {"low": 25.0, "high": 50.0}},
         unit_checks__resolved_pint_units={
             "rates": system.registry.parse_units("CURRENCY / month")
@@ -645,7 +717,6 @@ def test_annotated_results_leave_an_unresolved_dict_parameter_leaf_bare():
     system = _fresh_system()
     annotated = tree_with_unit_annotations(
         tree={"rates": {"low": 25.0, "high": 50.0}},
-        raw_results__from_input_data={},
         raw_results__params={"rates": {"low": 25.0, "high": 50.0}},
         unit_checks__resolved_pint_units={
             "rates": {"low": system.registry.parse_units("CURRENCY / month")}
@@ -665,7 +736,11 @@ def test_currency_named_after_a_non_currency_base_is_rejected():
         pytest.raises(UnitDefinitionError, match="non-currency unit base"),
     ):
         _fresh_system(
-            other_currencies={"SILVER_PENNY": "CASTAR / 4", "HECTARE": "CASTAR / 8"}
+            {
+                "CASTAR": Currency(statutory_from="0001-01-01"),
+                "SILVER_PENNY": Currency(value="CASTAR / 4"),
+                "HECTARE": Currency(value="CASTAR / 8"),
+            }
         )
 
 
@@ -678,7 +753,11 @@ def test_currencies_differing_only_in_case_are_rejected():
         pytest.raises(UnitDefinitionError, match="'CASTAR' already claims the unit"),
     ):
         _fresh_system(
-            other_currencies={"SILVER_PENNY": "CASTAR / 4", "castar": "CASTAR / 8"}
+            {
+                "CASTAR": Currency(statutory_from="0001-01-01"),
+                "SILVER_PENNY": Currency(value="CASTAR / 4"),
+                "castar": Currency(value="CASTAR / 8"),
+            }
         )
 
 
@@ -690,9 +769,10 @@ def test_currency_name_spelling_the_denominator_delimiter_is_rejected():
         pytest.raises(UnitDefinitionError, match="would parse back as 'GOLD'"),
     ):
         _fresh_system(
-            other_currencies={
-                "SILVER_PENNY": "CASTAR / 4",
-                "GOLD_PER_OUNCE": "CASTAR / 8",
+            {
+                "CASTAR": Currency(statutory_from="0001-01-01"),
+                "SILVER_PENNY": Currency(value="CASTAR / 4"),
+                "GOLD_PER_OUNCE": Currency(value="CASTAR / 8"),
             }
         )
 
@@ -708,9 +788,11 @@ def test_rejected_currency_name_leaves_the_shared_vocabulary_untouched():
     )
     with pytest.raises(UnitDefinitionError):
         _fresh_system(
-            base_currency="MITHRIL",
-            other_currencies={"MITHRIL_BIT": "MITHRIL / 4", "HECTARE": "MITHRIL / 8"},
-            statutory_currencies={"0001-01-01": "MITHRIL"},
+            {
+                "MITHRIL": Currency(statutory_from="0001-01-01"),
+                "MITHRIL_BIT": Currency(value="MITHRIL / 4"),
+                "HECTARE": Currency(value="MITHRIL / 8"),
+            }
         )
     assert (
         set(_registered_currencies),
@@ -726,18 +808,19 @@ def test_failed_construction_publishes_nothing():
     before = set(_registered_currencies), set(vars(TTSIMUnit))
     with pytest.raises(UnitDefinitionError):
         _fresh_system(
-            base_currency="MITHRIL",
-            other_currencies={"MITHRIL_BIT": "MITHRIL / 4"},
-            statutory_currencies={"not-a-date": "MITHRIL"},
+            {
+                "MITHRIL": Currency(statutory_from="not-a-date"),
+                "MITHRIL_BIT": Currency(value="MITHRIL / 4"),
+            }
         )
     assert (set(_registered_currencies), set(vars(TTSIMUnit))) == before
 
 
-def test_non_iso_statutory_currency_key_names_the_offending_key():
-    """A `statutory_currencies` key that is not an ISO date raises the unit-system
-    error naming the key, not a bare `ValueError`."""
+def test_non_iso_statutory_from_names_the_offending_date():
+    """A `statutory_from` that is not an ISO date raises the unit-system error
+    naming the date, not a bare `ValueError`."""
     with pytest.raises(UnitDefinitionError, match="'01-01-0001'"):
-        _fresh_system(statutory_currencies={"01-01-0001": "CASTAR"})
+        _fresh_system({"CASTAR": Currency(statutory_from="01-01-0001")})
 
 
 @pytest.mark.parametrize("start_date", ["00010101", "2021-W01-1"])
@@ -745,7 +828,27 @@ def test_undashed_statutory_currency_key_is_rejected(start_date):
     """Only the dashed `YYYY-MM-DD` spelling is accepted, though
     `date.fromisoformat` would also parse the basic and week-date forms."""
     with pytest.raises(UnitDefinitionError, match="dashed ISO date"):
-        _fresh_system(statutory_currencies={start_date: "CASTAR"})
+        _fresh_system({"CASTAR": Currency(statutory_from=start_date)})
+
+
+def test_two_currencies_claiming_the_same_statutory_from_are_rejected():
+    """Two currencies becoming statutory on the same date is not resolvable.
+
+    The statutory currency at a policy date must be unambiguous, so the error
+    names the contested date and every currency claiming it.
+    """
+    with (
+        isolated_unit_vocabulary(),
+        pytest.raises(UnitDefinitionError, match=r"0001-01-01.*MITHRIL.*MITHRIL_BIT"),
+    ):
+        _fresh_system(
+            {
+                "MITHRIL": Currency(statutory_from="0001-01-01"),
+                "MITHRIL_BIT": Currency(
+                    value="MITHRIL / 4", statutory_from="0001-01-01"
+                ),
+            }
+        )
 
 
 def test_currency_claiming_the_agnostic_base_is_rejected():
@@ -756,7 +859,11 @@ def test_currency_claiming_the_agnostic_base_is_rejected():
         pytest.raises(UnitDefinitionError, match="agnostic currency base"),
     ):
         _fresh_system(
-            other_currencies={"SILVER_PENNY": "CASTAR / 4", "currency": "CASTAR / 8"}
+            {
+                "CASTAR": Currency(statutory_from="0001-01-01"),
+                "SILVER_PENNY": Currency(value="CASTAR / 4"),
+                "currency": Currency(value="CASTAR / 8"),
+            }
         )
 
 
@@ -771,7 +878,7 @@ def test_registered_currency_token_round_trips_through_the_parser():
     system = _fresh_system()
     for name in sorted(system.currencies):
         token = getattr(TTSIMUnit, name.upper())
-        assert parse_ttsim_unit(str(token)) == token
+        assert ttsim_unit_from_string(str(token)) == token
 
 
 def test_annotated_results_label_a_declarationless_dimensionless_target_as_such():
@@ -780,7 +887,6 @@ def test_annotated_results_label_a_declarationless_dimensionless_target_as_such(
     system = _fresh_system()
     annotated = tree_with_unit_annotations(
         tree={"policy_month": np.array([6, 7])},
-        raw_results__from_input_data={},
         raw_results__params={},
         unit_checks__resolved_pint_units={
             "policy_month": system.registry.dimensionless
@@ -797,7 +903,12 @@ def test_definition_referencing_no_system_currency_is_rejected():
     # definition against the abstract CURRENCY reference alone would start a
     # second, unconnected base.
     with pytest.raises(UnitDefinitionError, match="no currency of this policy system"):
-        _fresh_system(other_currencies={"FLOATING": "CURRENCY / 2"})
+        _fresh_system(
+            {
+                "CASTAR": Currency(statutory_from="0001-01-01"),
+                "FLOATING": Currency(value="CURRENCY / 2"),
+            }
+        )
 
 
 def test_statutory_currency_follows_the_dated_mapping():
@@ -811,21 +922,25 @@ def test_statutory_currency_follows_the_dated_mapping():
 
 
 def test_statutory_currency_is_undefined_before_the_first_entry():
-    system = _fresh_system(statutory_currencies={"1900-01-01": "SILVER_PENNY"})
+    system = _fresh_system(
+        {
+            "CASTAR": Currency(),
+            "SILVER_PENNY": Currency(value="CASTAR / 4", statutory_from="1900-01-01"),
+        }
+    )
     with pytest.raises(UnitDefinitionError, match="Extend the mapping"):
         system.statutory_currency_for_date(datetime.date(1899, 12, 31))
 
 
-def test_empty_statutory_mapping_is_rejected():
-    with pytest.raises(UnitDefinitionError, match="at least one entry"):
-        _fresh_system(statutory_currencies={})
-
-
-def test_statutory_mapping_must_reference_system_currencies():
-    with pytest.raises(
-        UnitDefinitionError, match="not a currency of this policy system"
-    ):
-        _fresh_system(statutory_currencies={"1900-01-01": "GOLD_DRAGON"})
+def test_system_without_any_statutory_currency_is_rejected():
+    """Some currency must be statutory — otherwise no policy date has one."""
+    with pytest.raises(UnitDefinitionError, match="must declare a `statutory_from`"):
+        _fresh_system(
+            {
+                "CASTAR": Currency(),
+                "SILVER_PENNY": Currency(value="CASTAR / 4"),
+            }
+        )
 
 
 def test_warns_when_statutory_currency_differs_from_default_data_currency():
