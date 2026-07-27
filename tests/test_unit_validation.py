@@ -2,15 +2,34 @@
 
 from __future__ import annotations
 
-import datetime
 from dataclasses import dataclass
 from typing import Annotated, Any
 
 import numpy
-import pint
 import pytest
 
-from tests.test_unit_system import TEST_UNIT_SYSTEM
+from tests.test_unit_fixtures import (
+    _END,
+    _START,
+    CASTAR,
+    CASTAR_PER_MONTH,
+    CASTAR_PER_YEAR,
+    GROUPING_LEVELS,
+    REGISTRY,
+    UNIT_SYSTEM,
+    _scalar_unit,
+    _unit_tree,
+    amount_y,
+    bonus_y,
+    fam_id,
+    is_exempt,
+    make_flow_rate,
+    p_id,
+    p_id_recipient,
+    statutory_age,
+    unannotated_income_y,
+    wealth,
+)
 from ttsim.exceptions import (
     AggregationDefinitionError,
     UnitConsistencyError,
@@ -22,12 +41,9 @@ from ttsim.interface_dag_elements.automatically_added_functions import (
 from ttsim.tt import (
     UNSET_UNIT,
     AggType,
-    FKType,
     RoundingSpec,
     TTSIMUnit,
     agg_by_group_function,
-    cast_ttsim_unit,
-    group_creation_function,
     param_function,
     policy_function,
     policy_input,
@@ -41,124 +57,17 @@ from ttsim.tt.param_objects import (
 from ttsim.tt.units import (
     divide_by_grouping_level,
     pint_unit_from_string,
-    ttsim_unit_from_yaml_value,
     units_are_equivalent,
 )
-from ttsim.typing import (
-    IntColumn,
-)
-from ttsim.unit_validation import (
+from ttsim.unit_resolution import (
     _structured_field_kinds,
-    fail_if_environment_units_are_inconsistent,
-    fail_if_environment_units_are_missing,
     node_is_boolean,
     resolve_environment_units,
 )
-
-UNIT_SYSTEM = TEST_UNIT_SYSTEM
-REGISTRY = UNIT_SYSTEM.registry
-
-GROUPING_LEVELS = ("fam", "kin")
-
-_START = datetime.date(2020, 1, 1)
-_END = datetime.date(2030, 12, 31)
-
-# Parameters must pin down the concrete currency their numbers are written in
-# (GEP 10); these are mettsim's concrete (castar) compositional spellings.
-CASTAR_PER_YEAR = ttsim_unit_from_yaml_value(
-    value="CASTAR_PER_YEAR", where="test setup"
+from ttsim.unit_validation import (
+    fail_if_environment_units_are_inconsistent,
+    fail_if_environment_units_are_missing,
 )
-CASTAR_PER_MONTH = ttsim_unit_from_yaml_value(
-    value="CASTAR_PER_MONTH", where="test setup"
-)
-CASTAR = ttsim_unit_from_yaml_value(value="CASTAR", where="test setup")
-
-
-# Fixture objects
-
-
-@policy_input(unit=TTSIMUnit.DIMENSIONLESS)
-def p_id() -> int:
-    """Identifier; a dimensionless quantity (GEP 10)."""
-
-
-@policy_input(foreign_key_type=FKType.MAY_POINT_TO_SELF, unit=TTSIMUnit.DIMENSIONLESS)
-def p_id_recipient() -> int:
-    """Person pointer; a dimensionless quantity (GEP 10)."""
-
-
-@policy_input(unit=TTSIMUnit.CURRENCY)
-def wealth() -> float:
-    """A stock of currency."""
-
-
-@policy_input(unit=TTSIMUnit.DIMENSIONLESS)
-def is_exempt() -> bool:
-    """Boolean input; a dimensionless quantity (GEP 10)."""
-
-
-@policy_input(unit=UNSET_UNIT)
-def unannotated_income_y() -> float:
-    """Carries the UNSET sentinel; the missing-units check must report it."""
-
-
-@group_creation_function(unit=TTSIMUnit.DIMENSIONLESS)
-def fam_id(p_id: IntColumn, xnp: object) -> IntColumn:  # noqa: ARG001
-    """Group creation (a dimensionless id)."""
-    return p_id
-
-
-def _scalar_unit(resolved: dict[str, Any], qname: str) -> pint.Unit:
-    unit = resolved[qname]
-    assert isinstance(unit, pint.Unit)
-    return unit
-
-
-def _unit_tree(resolved: dict[str, Any], qname: str) -> dict[str | int, Any]:
-    unit = resolved[qname]
-    assert isinstance(unit, dict)
-    return unit
-
-
-def make_flow_rate() -> ScalarParam:
-    # A wealth-tax rate is a share per year: `DIMENSIONLESS_PER_YEAR`, used at the
-    # `tax_rate_y` name (the spelled period agrees with the suffix, GEP 10).
-    return ScalarParam(
-        value=0.01,
-        unit=TTSIMUnit.DIMENSIONLESS.PER_YEAR,
-        start_date=_START,
-        end_date=_END,
-    )
-
-
-@policy_function(unit=TTSIMUnit.CURRENCY.PER_YEAR)
-def amount_y(wealth: float, tax_rate_y: float, is_exempt: bool) -> float:
-    """The wealth-tax pattern: stock times a per-year rate, guarded by an
-    exemption. ``tax_rate_y`` is a share per year, so the product is a flow."""
-    if is_exempt:
-        return 0.0
-    return wealth * tax_rate_y
-
-
-@policy_input(unit=TTSIMUnit.CURRENCY.PER_MONTH)
-def income_m() -> float:
-    """A monthly flow of currency (CURRENCY / month)."""
-
-
-@policy_input(unit=TTSIMUnit.CURRENCY.PER_YEAR)
-def bonus_y() -> float:
-    """A yearly flow of currency (CURRENCY / year)."""
-
-
-@policy_input(unit=TTSIMUnit.CALENDAR_YEAR)
-def geburtsjahr() -> int:
-    """A birth year: a point on the calendar, not a duration (GEP 10)."""
-
-
-@policy_input(unit=TTSIMUnit.YEARS)
-def statutory_age() -> int:
-    """A duration in years (an age threshold)."""
-
 
 # Mandatory units, no exemptions: identifiers and booleans declare
 # DIMENSIONLESS; group-creation group ids are auto-assigned DIMENSIONLESS;
@@ -917,184 +826,6 @@ def test_per_capita_division_bridges_via_head_count():
     # The [fam] cancels against the count's 1/[fam] — no level mismatch.
     fail_if_environment_units_are_inconsistent(
         env=env, grouping_levels=GROUPING_LEVELS, unit_system=UNIT_SYSTEM
-    )
-
-
-def test_cast_unit_literal_clamp_floor_inside_max_is_checkable():
-    """A ``cast_ttsim_unit(0, …)`` clamp floor inside ``max()`` is checkable: the
-    tagged literal participates in the ordering screen like any quantity, so the
-    body infers its declared unit rather than reporting as un-evaluable
-    (GEP 10)."""
-
-    @policy_input(unit=TTSIMUnit.CURRENCY.PER_MONTH)
-    def wage_m() -> float: ...
-
-    @policy_function(unit=TTSIMUnit.CURRENCY.PER_MONTH)
-    def clamped_wage_m(wage_m: float) -> float:
-        return max(wage_m, cast_ttsim_unit(0, TTSIMUnit.CURRENCY.PER_MONTH))
-
-    fail_if_environment_units_are_inconsistent(
-        env={"wage_m": wage_m, "clamped_wage_m": clamped_wage_m},
-        grouping_levels=GROUPING_LEVELS,
-        unit_system=UNIT_SYSTEM,
-    )
-
-
-def test_cast_unit_literal_participates_in_every_screened_op():
-    """A cast literal is a first-class unit-check operand across the screened ops, not
-    only ``max``/``min``: arithmetic (``*``/``+``), an ordering comparison, and a
-    ``where`` (ternary) all check with a cast literal on one side (GEP 10)."""
-
-    @policy_input(unit=TTSIMUnit.CURRENCY.PER_MONTH)
-    def wage_m() -> float: ...
-
-    @policy_function(unit=TTSIMUnit.CURRENCY.PER_MONTH)
-    def floored_m(wage_m: float) -> float:
-        floor = cast_ttsim_unit(0, TTSIMUnit.CURRENCY.PER_MONTH)
-        bonus = cast_ttsim_unit(100, TTSIMUnit.CURRENCY.PER_MONTH) * cast_ttsim_unit(
-            1, TTSIMUnit.DIMENSIONLESS
-        )
-        return (wage_m + bonus) if wage_m > floor else floor
-
-    fail_if_environment_units_are_inconsistent(
-        env={"wage_m": wage_m, "floored_m": floored_m},
-        grouping_levels=GROUPING_LEVELS,
-        unit_system=UNIT_SYSTEM,
-    )
-
-
-def test_cast_unit_literal_with_wrong_unit_is_still_screened():
-    """The cast literal is checked, not waved through: currency ordered against a
-    ``YEARS``-tagged literal is rejected as a unit mismatch, not reported as an
-    un-evaluable body (GEP 10)."""
-
-    @policy_input(unit=TTSIMUnit.CURRENCY.PER_MONTH)
-    def wage_m() -> float: ...
-
-    @policy_function(unit=TTSIMUnit.DIMENSIONLESS)
-    def wage_is_positive(wage_m: float) -> bool:
-        return wage_m > cast_ttsim_unit(0, TTSIMUnit.YEARS)
-
-    with pytest.raises(UnitConsistencyError, match="wage_is_positive"):
-        fail_if_environment_units_are_inconsistent(
-            env={"wage_m": wage_m, "wage_is_positive": wage_is_positive},
-            grouping_levels=GROUPING_LEVELS,
-            unit_system=UNIT_SYSTEM,
-        )
-
-
-def test_cross_group_level_subtraction_in_a_body_is_caught():
-    """Subtracting two different group levels is a level mismatch (GEP 10).
-
-    ``income_m_fam`` is ``CURRENCY/month/[fam]`` and ``income_m_kin``
-    ``CURRENCY/month/[kin]``. Broadcast replicates each onto persons but leaves
-    the *unit* level untouched, so the subtraction stays ``[fam] - [kin]`` — the
-    headline cross-level bug the unit check must reject.
-    """
-
-    @policy_input(unit=TTSIMUnit.CURRENCY.PER_MONTH.PER_FAM)
-    def income_m_fam() -> float: ...
-
-    @policy_input(unit=TTSIMUnit.CURRENCY.PER_MONTH.PER_KIN)
-    def income_m_kin() -> float: ...
-
-    @policy_function(unit=TTSIMUnit.CURRENCY.PER_MONTH.PER_FAM)
-    def difference_m_fam(income_m_fam: float, income_m_kin: float) -> float:
-        return income_m_fam - income_m_kin
-
-    with pytest.raises(UnitConsistencyError, match="difference_m_fam"):
-        fail_if_environment_units_are_inconsistent(
-            env={
-                "income_m_fam": income_m_fam,
-                "income_m_kin": income_m_kin,
-                "difference_m_fam": difference_m_fam,
-            },
-            grouping_levels=GROUPING_LEVELS,
-            unit_system=UNIT_SYSTEM,
-        )
-
-
-def test_person_versus_group_level_subtraction_in_a_body_is_caught():
-    """A bare (individual) quantity minus a group-level one is a mismatch (GEP 10).
-
-    ``income_m`` carries no group suffix, so it is bare ``CURRENCY/month``;
-    ``freibetrag_m_fam`` is ``CURRENCY/month/[fam]``. Combining them needs an
-    explicit per-capita reconciliation, so the bare subtraction is rejected.
-    """
-
-    @policy_input(unit=TTSIMUnit.CURRENCY.PER_MONTH)
-    def income_m() -> float: ...
-
-    @policy_input(unit=TTSIMUnit.CURRENCY.PER_MONTH.PER_FAM)
-    def freibetrag_m_fam() -> float: ...
-
-    @policy_function(unit=TTSIMUnit.CURRENCY.PER_MONTH)
-    def difference_m(income_m: float, freibetrag_m_fam: float) -> float:
-        return income_m - freibetrag_m_fam
-
-    with pytest.raises(UnitConsistencyError, match="difference_m"):
-        fail_if_environment_units_are_inconsistent(
-            env={
-                "income_m": income_m,
-                "freibetrag_m_fam": freibetrag_m_fam,
-                "difference_m": difference_m,
-            },
-            grouping_levels=GROUPING_LEVELS,
-            unit_system=UNIT_SYSTEM,
-        )
-
-
-def test_person_versus_group_level_ordering_comparison_is_caught():
-    """An ordering comparison across levels is a mismatch (GEP 10).
-
-    The canonical "person income below a group threshold" shape: ``income_m``
-    (bare) against ``schwelle_m_fam`` (``[fam]``). Ordering two non-equivalent
-    quantities is rejected — a distinct unit-check path from `<`.
-    """
-
-    @policy_input(unit=TTSIMUnit.CURRENCY.PER_MONTH)
-    def income_m() -> float: ...
-
-    @policy_input(unit=TTSIMUnit.CURRENCY.PER_MONTH.PER_FAM)
-    def schwelle_m_fam() -> float: ...
-
-    @policy_function(unit=TTSIMUnit.DIMENSIONLESS)
-    def below_threshold(income_m: float, schwelle_m_fam: float) -> bool:
-        return income_m < schwelle_m_fam
-
-    with pytest.raises(UnitConsistencyError, match="below_threshold"):
-        fail_if_environment_units_are_inconsistent(
-            env={
-                "income_m": income_m,
-                "schwelle_m_fam": schwelle_m_fam,
-                "below_threshold": below_threshold,
-            },
-            grouping_levels=GROUPING_LEVELS,
-            unit_system=UNIT_SYSTEM,
-        )
-
-
-def test_same_group_level_addition_in_a_body_passes():
-    """Control: combining two quantities at the *same* group level is fine.
-
-    Proves the cross-level checks above reject on the level mismatch, not on
-    merely seeing a group suffix — ``a_m_fam + b_m_fam`` is ``[fam] + [fam]``.
-    """
-
-    @policy_input(unit=TTSIMUnit.CURRENCY.PER_MONTH.PER_FAM)
-    def a_m_fam() -> float: ...
-
-    @policy_input(unit=TTSIMUnit.CURRENCY.PER_MONTH.PER_FAM)
-    def b_m_fam() -> float: ...
-
-    @policy_function(unit=TTSIMUnit.CURRENCY.PER_MONTH.PER_FAM)
-    def total_m_fam(a_m_fam: float, b_m_fam: float) -> float:
-        return a_m_fam + b_m_fam
-
-    fail_if_environment_units_are_inconsistent(
-        env={"a_m_fam": a_m_fam, "b_m_fam": b_m_fam, "total_m_fam": total_m_fam},
-        grouping_levels=GROUPING_LEVELS,
-        unit_system=UNIT_SYSTEM,
     )
 
 

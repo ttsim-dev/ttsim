@@ -25,7 +25,7 @@ from ttsim.typing import (
     OrderedQNames,
     SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
 )
-from ttsim.unit_validation import resolve_environment_units
+from ttsim.unit_resolution import resolve_environment_units
 
 
 @interface_function()

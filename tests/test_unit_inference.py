@@ -2,15 +2,12 @@
 
 from __future__ import annotations
 
-import datetime
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Annotated, Any
 
 import numpy
-import pint
 import pytest
 
-from tests.test_unit_system import TEST_UNIT_SYSTEM
 from ttsim.exceptions import (
     UnitConsistencyError,
     UnitDefinitionError,
@@ -18,11 +15,9 @@ from ttsim.exceptions import (
 from ttsim.time_converters import m_to_y, per_m_to_per_y, y_to_m
 from ttsim.tt import (
     UNSET_UNIT,
-    FKType,
     InputOutputUnits,
     TTSIMUnit,
     cast_ttsim_unit,
-    group_creation_function,
     join,
     param_function,
     piecewise_polynomial,
@@ -38,9 +33,6 @@ from ttsim.tt.param_objects import (
     RawParam,
     ScalarParam,
 )
-from ttsim.tt.units import (
-    ttsim_unit_from_yaml_value,
-)
 from ttsim.typing import (
     BoolColumn,
     DatetimeColumn,
@@ -48,8 +40,8 @@ from ttsim.typing import (
     IntColumn,
     RawParamValue,
 )
+from ttsim.unit_resolution import _resolved_return_structure
 from ttsim.unit_validation import (
-    _resolved_return_structure,
     fail_if_environment_units_are_inconsistent,
     fail_if_environment_units_are_missing,
 )
@@ -57,80 +49,25 @@ from ttsim.unit_validation import (
 if TYPE_CHECKING:
     from types import ModuleType
 
-UNIT_SYSTEM = TEST_UNIT_SYSTEM
-REGISTRY = UNIT_SYSTEM.registry
-
-GROUPING_LEVELS = ("fam", "kin")
-
-_START = datetime.date(2020, 1, 1)
-_END = datetime.date(2030, 12, 31)
-
-# Parameters must pin down the concrete currency their numbers are written in
-# (GEP 10); these are mettsim's concrete (castar) compositional spellings.
-CASTAR_PER_YEAR = ttsim_unit_from_yaml_value(
-    value="CASTAR_PER_YEAR", where="test setup"
+from tests.test_unit_fixtures import (
+    _END,
+    _START,
+    CASTAR,
+    CASTAR_PER_MONTH,
+    CASTAR_PER_YEAR,
+    GROUPING_LEVELS,
+    UNIT_SYSTEM,
+    amount_y,
+    bonus_y,
+    geburtsjahr,
+    income_m,
+    is_exempt,
+    make_flow_rate,
+    p_id,
+    p_id_recipient,
+    statutory_age,
+    wealth,
 )
-CASTAR_PER_MONTH = ttsim_unit_from_yaml_value(
-    value="CASTAR_PER_MONTH", where="test setup"
-)
-CASTAR = ttsim_unit_from_yaml_value(value="CASTAR", where="test setup")
-
-
-# Fixture objects
-
-
-@policy_input(unit=TTSIMUnit.DIMENSIONLESS)
-def p_id() -> int:
-    """Identifier; a dimensionless quantity (GEP 10)."""
-
-
-@policy_input(foreign_key_type=FKType.MAY_POINT_TO_SELF, unit=TTSIMUnit.DIMENSIONLESS)
-def p_id_recipient() -> int:
-    """Person pointer; a dimensionless quantity (GEP 10)."""
-
-
-@policy_input(unit=TTSIMUnit.CURRENCY)
-def wealth() -> float:
-    """A stock of currency."""
-
-
-@policy_input(unit=TTSIMUnit.DIMENSIONLESS)
-def is_exempt() -> bool:
-    """Boolean input; a dimensionless quantity (GEP 10)."""
-
-
-@policy_input(unit=UNSET_UNIT)
-def unannotated_income_y() -> float:
-    """Carries the UNSET sentinel; the missing-units check must report it."""
-
-
-@group_creation_function(unit=TTSIMUnit.DIMENSIONLESS)
-def fam_id(p_id: IntColumn, xnp: object) -> IntColumn:  # noqa: ARG001
-    """Group creation (a dimensionless id)."""
-    return p_id
-
-
-def _scalar_unit(resolved: dict[str, Any], qname: str) -> pint.Unit:
-    unit = resolved[qname]
-    assert isinstance(unit, pint.Unit)
-    return unit
-
-
-def _unit_tree(resolved: dict[str, Any], qname: str) -> dict[str | int, Any]:
-    unit = resolved[qname]
-    assert isinstance(unit, dict)
-    return unit
-
-
-def make_flow_rate() -> ScalarParam:
-    # A wealth-tax rate is a share per year: `DIMENSIONLESS_PER_YEAR`, used at the
-    # `tax_rate_y` name (the spelled period agrees with the suffix, GEP 10).
-    return ScalarParam(
-        value=0.01,
-        unit=TTSIMUnit.DIMENSIONLESS.PER_YEAR,
-        start_date=_START,
-        end_date=_END,
-    )
 
 
 def make_dimensionless_rate() -> ScalarParam:
@@ -152,15 +89,6 @@ def wealth_threshold() -> float:
 
 
 @policy_function(unit=TTSIMUnit.CURRENCY.PER_YEAR)
-def amount_y(wealth: float, tax_rate_y: float, is_exempt: bool) -> float:
-    """The wealth-tax pattern: stock times a per-year rate, guarded by an
-    exemption. ``tax_rate_y`` is a share per year, so the product is a flow."""
-    if is_exempt:
-        return 0.0
-    return wealth * tax_rate_y
-
-
-@policy_function(unit=TTSIMUnit.CURRENCY.PER_YEAR)
 def amount_buggy_y(wealth: float, tax_rate: float, is_exempt: bool) -> float:
     """The bug: ``tax_rate`` is a plain dimensionless share, so ``wealth *
     tax_rate`` is a stock, not the declared yearly flow."""
@@ -170,28 +98,8 @@ def amount_buggy_y(wealth: float, tax_rate: float, is_exempt: bool) -> float:
 
 
 @policy_input(unit=TTSIMUnit.CURRENCY.PER_MONTH)
-def income_m() -> float:
-    """A monthly flow of currency (CURRENCY / month)."""
-
-
-@policy_input(unit=TTSIMUnit.CURRENCY.PER_MONTH)
 def other_income_m() -> float:
     """A second monthly flow of currency (CURRENCY / month)."""
-
-
-@policy_input(unit=TTSIMUnit.CURRENCY.PER_YEAR)
-def bonus_y() -> float:
-    """A yearly flow of currency (CURRENCY / year)."""
-
-
-@policy_input(unit=TTSIMUnit.CALENDAR_YEAR)
-def geburtsjahr() -> int:
-    """A birth year: a point on the calendar, not a duration (GEP 10)."""
-
-
-@policy_input(unit=TTSIMUnit.YEARS)
-def statutory_age() -> int:
-    """A duration in years (an age threshold)."""
 
 
 @policy_input(unit=TTSIMUnit.DIMENSIONLESS)
@@ -2525,29 +2433,6 @@ def age() -> int:
     """A duration in years (a person's age)."""
 
 
-def test_missing_check_accepts_structured_param_function():
-    fail_if_environment_units_are_missing(
-        env={"raw_child_rate": make_raw_child_rate(), "child_rate": child_rate},
-        grouping_levels=GROUPING_LEVELS,
-    )
-
-
-def test_missing_check_reports_uncovered_require_converter_leaf():
-    raw = RawParam(
-        value={"amount_m": 100.0, "bounds": {"min_age": 0, "max_age": 18}},
-        unit={"amount_m": "CASTAR_PER_MONTH", "bounds": {"min_age": "YEARS"}},
-        start_date=_START,
-        end_date=_END,
-    )
-    with pytest.raises(
-        UnitDefinitionError, match=r"raw_child_rate\[bounds\]\[max_age\]"
-    ):
-        fail_if_environment_units_are_missing(
-            env={"raw_child_rate": raw},
-            grouping_levels=GROUPING_LEVELS,
-        )
-
-
 def test_structured_plucks_with_casts_are_verifiable():
     """Casting each pluck keeps the rest of the body checked (GEP 10)."""
 
@@ -3805,4 +3690,155 @@ def test_verify_units_false_still_checks_consumers_against_declared_unit():
             env={"wealth": wealth, "producer_y": producer_y, "consumer": consumer},
             grouping_levels=GROUPING_LEVELS,
             unit_system=UNIT_SYSTEM,
+        )
+
+
+def test_cast_unit_literal_clamp_floor_inside_max_is_checkable():
+    """A ``cast_ttsim_unit(0, …)`` clamp floor inside ``max()`` is checkable: the
+    tagged literal participates in the ordering screen like any quantity, so the
+    body infers its declared unit rather than reporting as un-evaluable
+    (GEP 10)."""
+
+    @policy_input(unit=TTSIMUnit.CURRENCY.PER_MONTH)
+    def wage_m() -> float: ...
+
+    @policy_function(unit=TTSIMUnit.CURRENCY.PER_MONTH)
+    def clamped_wage_m(wage_m: float) -> float:
+        return max(wage_m, cast_ttsim_unit(0, TTSIMUnit.CURRENCY.PER_MONTH))
+
+    fail_if_environment_units_are_inconsistent(
+        env={"wage_m": wage_m, "clamped_wage_m": clamped_wage_m},
+        grouping_levels=GROUPING_LEVELS,
+        unit_system=UNIT_SYSTEM,
+    )
+
+
+def test_cast_unit_literal_participates_in_every_screened_op():
+    """A cast literal is a first-class unit-check operand across the screened ops, not
+    only ``max``/``min``: arithmetic (``*``/``+``), an ordering comparison, and a
+    ``where`` (ternary) all check with a cast literal on one side (GEP 10)."""
+
+    @policy_input(unit=TTSIMUnit.CURRENCY.PER_MONTH)
+    def wage_m() -> float: ...
+
+    @policy_function(unit=TTSIMUnit.CURRENCY.PER_MONTH)
+    def floored_m(wage_m: float) -> float:
+        floor = cast_ttsim_unit(0, TTSIMUnit.CURRENCY.PER_MONTH)
+        bonus = cast_ttsim_unit(100, TTSIMUnit.CURRENCY.PER_MONTH) * cast_ttsim_unit(
+            1, TTSIMUnit.DIMENSIONLESS
+        )
+        return (wage_m + bonus) if wage_m > floor else floor
+
+    fail_if_environment_units_are_inconsistent(
+        env={"wage_m": wage_m, "floored_m": floored_m},
+        grouping_levels=GROUPING_LEVELS,
+        unit_system=UNIT_SYSTEM,
+    )
+
+
+def test_cross_group_level_subtraction_in_a_body_is_caught():
+    """Subtracting two different group levels is a level mismatch (GEP 10).
+
+    ``income_m_fam`` is ``CURRENCY/month/[fam]`` and ``income_m_kin``
+    ``CURRENCY/month/[kin]``. Broadcast replicates each onto persons but leaves
+    the *unit* level untouched, so the subtraction stays ``[fam] - [kin]`` — the
+    headline cross-level bug the unit check must reject.
+    """
+
+    @policy_input(unit=TTSIMUnit.CURRENCY.PER_MONTH.PER_FAM)
+    def income_m_fam() -> float: ...
+
+    @policy_input(unit=TTSIMUnit.CURRENCY.PER_MONTH.PER_KIN)
+    def income_m_kin() -> float: ...
+
+    @policy_function(unit=TTSIMUnit.CURRENCY.PER_MONTH.PER_FAM)
+    def difference_m_fam(income_m_fam: float, income_m_kin: float) -> float:
+        return income_m_fam - income_m_kin
+
+    with pytest.raises(UnitConsistencyError, match="difference_m_fam"):
+        fail_if_environment_units_are_inconsistent(
+            env={
+                "income_m_fam": income_m_fam,
+                "income_m_kin": income_m_kin,
+                "difference_m_fam": difference_m_fam,
+            },
+            grouping_levels=GROUPING_LEVELS,
+            unit_system=UNIT_SYSTEM,
+        )
+
+
+def test_person_versus_group_level_subtraction_in_a_body_is_caught():
+    """A bare (individual) quantity minus a group-level one is a mismatch (GEP 10).
+
+    ``income_m`` carries no group suffix, so it is bare ``CURRENCY/month``;
+    ``freibetrag_m_fam`` is ``CURRENCY/month/[fam]``. Combining them needs an
+    explicit per-capita reconciliation, so the bare subtraction is rejected.
+    """
+
+    @policy_input(unit=TTSIMUnit.CURRENCY.PER_MONTH)
+    def income_m() -> float: ...
+
+    @policy_input(unit=TTSIMUnit.CURRENCY.PER_MONTH.PER_FAM)
+    def freibetrag_m_fam() -> float: ...
+
+    @policy_function(unit=TTSIMUnit.CURRENCY.PER_MONTH)
+    def difference_m(income_m: float, freibetrag_m_fam: float) -> float:
+        return income_m - freibetrag_m_fam
+
+    with pytest.raises(UnitConsistencyError, match="difference_m"):
+        fail_if_environment_units_are_inconsistent(
+            env={
+                "income_m": income_m,
+                "freibetrag_m_fam": freibetrag_m_fam,
+                "difference_m": difference_m,
+            },
+            grouping_levels=GROUPING_LEVELS,
+            unit_system=UNIT_SYSTEM,
+        )
+
+
+def test_same_group_level_addition_in_a_body_passes():
+    """Control: combining two quantities at the *same* group level is fine.
+
+    Proves the cross-level checks above reject on the level mismatch, not on
+    merely seeing a group suffix — ``a_m_fam + b_m_fam`` is ``[fam] + [fam]``.
+    """
+
+    @policy_input(unit=TTSIMUnit.CURRENCY.PER_MONTH.PER_FAM)
+    def a_m_fam() -> float: ...
+
+    @policy_input(unit=TTSIMUnit.CURRENCY.PER_MONTH.PER_FAM)
+    def b_m_fam() -> float: ...
+
+    @policy_function(unit=TTSIMUnit.CURRENCY.PER_MONTH.PER_FAM)
+    def total_m_fam(a_m_fam: float, b_m_fam: float) -> float:
+        return a_m_fam + b_m_fam
+
+    fail_if_environment_units_are_inconsistent(
+        env={"a_m_fam": a_m_fam, "b_m_fam": b_m_fam, "total_m_fam": total_m_fam},
+        grouping_levels=GROUPING_LEVELS,
+        unit_system=UNIT_SYSTEM,
+    )
+
+
+def test_missing_check_accepts_structured_param_function():
+    fail_if_environment_units_are_missing(
+        env={"raw_child_rate": make_raw_child_rate(), "child_rate": child_rate},
+        grouping_levels=GROUPING_LEVELS,
+    )
+
+
+def test_missing_check_reports_uncovered_require_converter_leaf():
+    raw = RawParam(
+        value={"amount_m": 100.0, "bounds": {"min_age": 0, "max_age": 18}},
+        unit={"amount_m": "CASTAR_PER_MONTH", "bounds": {"min_age": "YEARS"}},
+        start_date=_START,
+        end_date=_END,
+    )
+    with pytest.raises(
+        UnitDefinitionError, match=r"raw_child_rate\[bounds\]\[max_age\]"
+    ):
+        fail_if_environment_units_are_missing(
+            env={"raw_child_rate": raw},
+            grouping_levels=GROUPING_LEVELS,
         )
