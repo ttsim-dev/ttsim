@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from ttsim.tt import TTSIMUnit, policy_input
+from ttsim.tt import policy_input
 
 
-@policy_input(unit=TTSIMUnit.CURRENCY.PER_YEAR)
+@policy_input()
 def gross_wage_y() -> float:
     """Annual gross wage."""

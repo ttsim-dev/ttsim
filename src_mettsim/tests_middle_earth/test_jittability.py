@@ -27,7 +27,6 @@ def get_orig_mettsim_column_functions() -> list[tuple[tuple[str, ...], ColumnFun
     orig = main(
         main_target=MainTarget.orig_policy_objects.column_objects_and_param_functions,
         orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
-        unit_system=middle_earth.UNIT_SYSTEM,
     )
     return [(tp, cf) for tp, cf in orig.items() if isinstance(cf, ColumnFunction)]
 
@@ -44,7 +43,6 @@ def cached_specialized_environment(
         ),
         policy_date=policy_date,
         orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
-        unit_system=middle_earth.UNIT_SYSTEM,
         backend=backend,
         include_fail_nodes=False,
         include_warn_nodes=False,

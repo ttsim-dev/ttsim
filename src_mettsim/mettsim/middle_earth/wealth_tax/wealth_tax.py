@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from ttsim.tt import TTSIMUnit, policy_function
+from ttsim.tt import policy_function
 
 
-@policy_function(unit=TTSIMUnit.CURRENCY.PER_YEAR)
+@policy_function()
 def amount_y(
     wealth: float,
     tax_rate: float,
@@ -12,7 +12,7 @@ def amount_y(
     return 0.0 if exempt_from_wealth_tax else wealth * tax_rate
 
 
-@policy_function(unit=TTSIMUnit.DIMENSIONLESS)
+@policy_function()
 def exempt_from_wealth_tax(
     wealth_kin: float,
     wealth_fam: float,

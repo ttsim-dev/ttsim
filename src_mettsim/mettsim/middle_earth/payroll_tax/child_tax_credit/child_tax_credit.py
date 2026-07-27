@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING
 
 from ttsim.tt import (
     AggType,
-    TTSIMUnit,
     agg_by_p_id_function,
     join,
     policy_function,
@@ -16,7 +15,7 @@ if TYPE_CHECKING:
     from ttsim.typing import BoolColumn, IntColumn
 
 
-@agg_by_p_id_function(agg_type=AggType.SUM, unit=TTSIMUnit.CURRENCY.PER_YEAR)
+@agg_by_p_id_function(agg_type=AggType.SUM)
 def amount_y(
     p_id: int,
     p_id_recipient: int,
@@ -25,7 +24,7 @@ def amount_y(
     """The amount of child tax credit at the recipient level."""
 
 
-@policy_function(unit=TTSIMUnit.CURRENCY.PER_YEAR)
+@policy_function()
 def claim_of_child_y(
     child_eligible: bool,
     schedule: dict[str, float],
@@ -33,7 +32,7 @@ def claim_of_child_y(
     return schedule["child_amount_y"] if child_eligible else 0
 
 
-@policy_function(unit=TTSIMUnit.DIMENSIONLESS)
+@policy_function()
 def child_eligible(
     age: int,
     schedule: dict[str, float],
@@ -42,7 +41,7 @@ def child_eligible(
     return age <= schedule["max_age"] and in_same_household_as_recipient
 
 
-@policy_function(vectorization_strategy="not_required", unit=TTSIMUnit.DIMENSIONLESS)
+@policy_function(vectorization_strategy="not_required")
 def in_same_household_as_recipient(
     p_id: IntColumn,
     kin_id: IntColumn,

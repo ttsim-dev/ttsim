@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from ttsim.tt import TTSIMUnit, group_creation_function
+from ttsim.tt import group_creation_function
 
 if TYPE_CHECKING:
     from types import ModuleType
@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from ttsim.typing import IntColumn
 
 
-@group_creation_function(unit=TTSIMUnit.DIMENSIONLESS)
+@group_creation_function()
 def sp_id(p_id: IntColumn, p_id_spouse: IntColumn, xnp: ModuleType) -> IntColumn:
     """
     Compute the spouse (sp) group ID for each person.
@@ -20,7 +20,7 @@ def sp_id(p_id: IntColumn, p_id_spouse: IntColumn, xnp: ModuleType) -> IntColumn
     return xnp.maximum(p_id, p_id_spouse) + xnp.minimum(p_id, p_id_spouse) * n
 
 
-@group_creation_function(unit=TTSIMUnit.DIMENSIONLESS)
+@group_creation_function()
 def fam_id(
     p_id_spouse: IntColumn,
     p_id: IntColumn,

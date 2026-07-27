@@ -13,23 +13,17 @@ from __future__ import annotations
 
 from ttsim.tt import (
     AggType,
-    TTSIMUnit,
     agg_by_group_function,
-    cast_ttsim_unit,
     policy_function,
 )
 
 
-@agg_by_group_function(
-    agg_type=AggType.SUM,
-    end_date="2019-12-31",
-    unit=TTSIMUnit.DIMENSIONLESS.PER_FAM,
-)
+@agg_by_group_function(agg_type=AggType.SUM, end_date="2019-12-31")
 def number_of_adults_fam(fam_id: int, adult: bool) -> int:
     """The number of adults in the family."""
 
 
-@agg_by_group_function(agg_type=AggType.COUNT, unit=TTSIMUnit.DIMENSIONLESS.PER_FAM)
+@agg_by_group_function(agg_type=AggType.COUNT)
 def number_of_individuals_fam(fam_id: int) -> int:
     """The number of individuals in the family."""
 
@@ -37,7 +31,6 @@ def number_of_individuals_fam(fam_id: int) -> int:
 @policy_function(
     end_date="2019-12-31",
     leaf_name="requirement_fulfilled_fam",
-    unit=TTSIMUnit.DIMENSIONLESS.PER_FAM,
 )
 def requirement_fulfilled_fam_not_considering_children(
     housing_benefits__income__amount_m_fam: float,
@@ -53,7 +46,6 @@ def requirement_fulfilled_fam_not_considering_children(
 @policy_function(
     start_date="2020-01-01",
     leaf_name="requirement_fulfilled_fam",
-    unit=TTSIMUnit.DIMENSIONLESS.PER_FAM,
 )
 def requirement_fulfilled_fam_considering_children(
     housing_benefits__income__amount_m_fam: float,
@@ -66,11 +58,7 @@ def requirement_fulfilled_fam_considering_children(
     )
 
 
-@policy_function(
-    start_date="2020-01-01",
-    vectorization_strategy="vectorize",
-    unit=TTSIMUnit.DIMENSIONLESS.PER_FAM,
-)
+@policy_function(start_date="2020-01-01", vectorization_strategy="vectorize")
 def number_of_family_members_considered_fam(
     number_of_individuals_fam: int,
     max_number_of_family_members: int,
@@ -78,7 +66,7 @@ def number_of_family_members_considered_fam(
     return min(number_of_individuals_fam, max_number_of_family_members)
 
 
-@policy_function(vectorization_strategy="vectorize", unit=TTSIMUnit.DIMENSIONLESS)
+@policy_function(vectorization_strategy="vectorize")
 def child(
     age: int,
     max_age_children: int,
@@ -86,7 +74,7 @@ def child(
     return age <= max_age_children
 
 
-@policy_function(vectorization_strategy="vectorize", unit=TTSIMUnit.DIMENSIONLESS)
+@policy_function(vectorization_strategy="vectorize")
 def adult(
     age: int,
     max_age_children: int,
@@ -94,12 +82,10 @@ def adult(
     return age > max_age_children
 
 
-@policy_function(vectorization_strategy="vectorize", unit=TTSIMUnit.DIMENSIONLESS)
+@policy_function(vectorization_strategy="vectorize")
 def young_adult(
     age: int,
     max_age_children: int,
 ) -> bool:
     """Whether the person is a young adult: past child age but not yet of age."""
-    return max_age_children < age and age < cast_ttsim_unit(
-        value=33, unit=TTSIMUnit.YEARS
-    )
+    return max_age_children < age and age < 33

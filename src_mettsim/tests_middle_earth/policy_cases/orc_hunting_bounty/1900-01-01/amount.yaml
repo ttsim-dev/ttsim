@@ -24,7 +24,7 @@ inputs:
       - false
       - true
     age:
-      - 25
+      - 0
       - 60
       - 100
 outputs:
