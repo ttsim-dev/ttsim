@@ -1,22 +1,22 @@
 """The pint-based unit framework.
 
-Establishes the closed unit vocabulary that checks the dimensional soundness of the
+Establishes the unit vocabulary that checks the dimensional soundness of the
 taxes-and-transfers DAG, plus the build-time machinery that runs the check.
 
-Two kinds of object are called a "unit" here, and every identifier in this package
-names which one it means:
+Two kinds of object are called a "unit" here, and every identifier in this package names
+which one it means:
 
 - a **TTSIM unit** (``ttsim_unit``) is a :class:`CompositeUnit`, the token a policy
   author *declares*. It is a plain frozen dataclass, needs no registry, and exists
   before any build starts.
-- a **pint unit** (``pint_unit``) is a :class:`pint.Unit`, what a TTSIM unit
-  *resolves to* against a :class:`pint.UnitRegistry`. It carries the dimensions the
-  check does arithmetic on and lives only at build/check time.
+- a **pint unit** (``pint_unit``) is a :class:`pint.Unit`, what a TTSIM unit *resolves
+  to* against a :class:`pint.UnitRegistry`. It carries the dimensions the check does
+  arithmetic on and lives only at build/check time.
 
 Every declaration is a fully-spelled :class:`CompositeUnit` — a base optionally divided
 by a physical denominator (an area or working hours), a period, and a grouping level, in
-that canonical order. It has two round-tripping spellings (via
-:func:`parse_ttsim_unit` / :func:`str`):
+that canonical order. It has two round-tripping spellings (via :func:`parse_ttsim_unit`
+/ :func:`str`):
 
 - fluent, off the :class:`TTSIMUnit` namespace
   (``TTSIMUnit.CURRENCY.PER_MONTH.PER_BG``);
@@ -88,8 +88,7 @@ _TTSIM_UNIT_BASE_TO_PINT: dict[str, str | None] = {
 
 #: The grouping levels the fluent builder offers a ``per_<level>`` attribute for
 #: (e.g. ``per_bg``). Populated per package by
-#: :func:`register_unit_builder_levels`; the generic :meth:`CompositeUnit.PER_LEVEL`
-#: works for any level regardless.
+#: :func:`register_unit_builder_levels`
 _unit_builder_levels: set[str] = set()
 
 
@@ -141,7 +140,7 @@ class CompositeUnit:
             raise UnitDefinitionError(
                 f"Cannot add the physical denominator '{area}' to '{self}': the "
                 f"canonical order is base _PER_ <area or hours> _PER_ <period> "
-                f"_PER_ <level>, with at most one physical denominator (GEP 10)."
+                f"_PER_ <level>, with at most one physical denominator    ."
             )
         return replace(self, area=area)
 
@@ -149,7 +148,7 @@ class CompositeUnit:
         if self.period is not None or self.level is not None:
             raise UnitDefinitionError(
                 f"Cannot add period '{period}' to '{self}': a period must precede "
-                f"the level and there is at most one period (GEP 10)."
+                f"the level and there is at most one period    ."
             )
         return replace(self, period=period)
 
@@ -157,7 +156,7 @@ class CompositeUnit:
         if self.level is not None:
             raise UnitDefinitionError(
                 f"Cannot add level '{level}' to '{self}': a unit carries at most "
-                f"one grouping level (GEP 10)."
+                f"one grouping level    ."
             )
         return replace(self, level=level.upper())
 
@@ -306,25 +305,11 @@ def resolve_ttsim_unit_for_column(
 ) -> pint.Unit:
     """Resolve a column/function's TTSIM unit, validating it against the name.
 
-    Two rules tie the unit to the name (GEP 10):
-
-    - the spelled period must match the name's time suffix;
-    - the grouping level is **declared, not read off the suffix** — a quantity
-      carries a group level iff it is a property of the group as a whole.
-
-    An omitted group level makes the unit **bare** — it carries no grouping level
-    at all. Bare is a single representation with two readings: a per-person amount
-    (an individual quantity that aggregates over a group) *and* a level-neutral
-    rate or share (that multiplies a leveled quantity without polluting its
-    level). So ``betrag_m`` declares ``CURRENCY_PER_MONTH`` (a per-person amount)
-    and ``betrag_m_hh`` declares ``CURRENCY_PER_MONTH_PER_HH`` (the household's
-    amount) or, if constant within the household, the bare ``CURRENCY_PER_MONTH``
-    — never ``…_PER_BG``. ``grouping_level`` is ``None`` for an unsuffixed name.
-
-    A concrete-currency base is rejected: a function does not care which
-    currency it computes in — its values are denominated in whatever the
-    statutory currency of the policy date is — so only parameters and rounding
-    specs pin down concrete currencies.
+    Two rules are enforced (GEP 10):
+    - a present name time suffix must agree with the spelled period;
+    - concrete currencies are rejected for columns/functions, only the agnostic
+        ``CURRENCY`` is allowed (only parameters and rounding specs pin down concrete
+        currencies).
 
     Raises:
         UnitDefinitionError: If the base pins a concrete currency, or the spelled
@@ -335,7 +320,7 @@ def resolve_ttsim_unit_for_column(
             f"{where}: a column/function pins the concrete currency {unit.base!r}. "
             f"A function runs in the statutory currency of the policy date, "
             f"whichever that is: declare the agnostic {CURRENCY_TOKEN} and leave "
-            f"concrete currencies to parameters and rounding specs (GEP 10)."
+            f"concrete currencies to parameters and rounding specs."
         )
     expected_period = (
         TIME_UNIT_ID_TO_PERIOD_TOKEN[time_unit_id] if time_unit_id is not None else None
@@ -343,7 +328,7 @@ def resolve_ttsim_unit_for_column(
     if unit.period != expected_period:
         raise UnitDefinitionError(
             f"{where}: the unit spells period {unit.period!r} but the name's time "
-            f"suffix implies {expected_period!r}; they must agree (GEP 10)."
+            f"suffix implies {expected_period!r}; they must agree."
         )
     expected_level = grouping_level.upper() if grouping_level is not None else None
     if unit.level is not None and unit.level != expected_level:
@@ -351,7 +336,7 @@ def resolve_ttsim_unit_for_column(
             f"{where}: the unit spells group level {unit.level!r} but the name's "
             f"aggregation suffix implies {expected_level or 'no level (bare)'}; a "
             f"spelled group level must match the suffix, or be omitted for a bare "
-            f"(per-person / level-neutral) quantity (GEP 10)."
+            f"(per-person / level-neutral) quantity."
         )
     return resolve_ttsim_unit(unit=unit, registry=registry, with_level=True)
 
@@ -391,7 +376,7 @@ def resolve_ttsim_unit_for_param(
         if unit.period != expected_period:
             raise UnitDefinitionError(
                 f"{where}: the unit spells period {unit.period!r} but the name's "
-                f"time suffix implies {expected_period!r}; they must agree (GEP 10)."
+                f"time suffix implies {expected_period!r}; they must agree."
             )
     return resolve_ttsim_unit(unit=unit, registry=registry, with_level=True)
 
@@ -404,15 +389,14 @@ def resolve_agnostic_ttsim_unit(
     Such a declaration hangs off code, not off a named DAG node: a
     :func:`cast_ttsim_unit` call in a body, or a field of a schedule's
     :class:`InputOutputUnits`. With no node name there is no GEP-1 name suffix to
-    cross-check the spelled period against, so the period is taken as declared.
-    A concrete currency is rejected — only parameters and rounding specs pin a
-    currency down; code-side declarations spell the agnostic ``CURRENCY``.
+    cross-check the spelled period against, so the period is taken as declared. A
+    concrete currency is rejected — only parameters and rounding specs pin a currency
+    down; code-side declarations spell the agnostic ``CURRENCY``.
 
     Args:
-        unit: The declared TTSIM unit.
-        registry: The pint registry to resolve against.
-        where: The location prefix of an error message (e.g. the qname).
-        what: How to name the declaration in an error message (e.g.
+        unit: The declared TTSIM unit. registry: The pint registry to resolve against.
+        where: The location prefix of an error message (e.g. the qname). what: How to
+        name the declaration in an error message (e.g.
             ``"a cast inside a body"``).
 
     Returns:
@@ -451,23 +435,17 @@ class TTSIMUnit(metaclass=_UnitNamespaceMeta):
     """The builder namespace of unit *bases*."""
 
     CURRENCY = CompositeUnit(base=CURRENCY_TOKEN)
-    """An amount of currency (agnostic): wages, claims, benefits, wealth. A
-    period denominator makes it a flow (``TTSIMUnit.CURRENCY.PER_MONTH``)."""
+    """An amount of currency (agnostic): wages, claims, benefits, wealth."""
 
     DIMENSIONLESS = CompositeUnit(base="DIMENSIONLESS")
-    """A plain dimensionless number: a share, a rate, a head count (a count is a
-    plain number, GEP 10). A boolean declares ``DIMENSIONLESS`` too. Bare for an
-    individual quantity, its group level spelled for a group one — so
-    ``TTSIMUnit.DIMENSIONLESS.PER_BG`` resolves to ``1 / [bg]``, whether that is
-    persons per Bedarfsgemeinschaft or a share belonging to one."""
+    """A plain dimensionless number: a share, a rate, a head count, a boolean."""
 
     HOURS = CompositeUnit(base="HOURS")
-    """Working hours (the isolated ``[hours]`` dimension). A period denominator
-    re-bases them (``TTSIMUnit.HOURS.PER_WEEK``)."""
+    """Working hours (the isolated ``[hours]`` dimension). Not a member of the [time]
+    dimension to allow for [hours] / [time] units."""
 
     SQUARE_METER = CompositeUnit(base="SQUARE_METER")
-    """An area in square meters; also the lone *area* denominator
-    (``TTSIMUnit.CURRENCY.PER_SQUARE_METER``)."""
+    """An area in square meters."""
 
     HECTARE = CompositeUnit(base="HECTARE")
     """An area in hectares: land."""
@@ -530,12 +508,7 @@ def cast_ttsim_unit(
 
     The expression-level escape hatch of the unit check. Like ``typing.cast``, it
     is the identity at run time — ``value`` comes back unchanged, scalar or
-    column, so the numeric path and JAX tracing are untouched. Only the unit check
-    gives the call meaning: the stand-in flowing through it is re-tagged with the
-    stated unit wholesale — dimension, flow period, and grouping level, resolved
-    like a declaration (currency-agnostic; an omitted level is bare, i.e. both
-    per-person and level-neutral). The rest of the body stays checked, and every
-    override is visible at the expression that needs it.
+    column, so the numeric path and JAX tracing are untouched.
 
     Use it where a single operation is dimensionally irregular but deliberate:
 
@@ -580,25 +553,25 @@ class InputOutputUnits:
     A ``@param_function`` whose body builds a schedule — a
     :class:`~ttsim.tt.param_objects.PiecewisePolynomialParamValue` or a
     :class:`~ttsim.tt.param_objects.ConsecutiveIntLookupTableParamValue` — is a
-    *function between quantities*, not a single quantity, so it declares the
-    domain and range of that function instead of one ``unit=``:
+    *function between quantities*, not a single quantity, so it declares the domain and
+    range of that function instead of one ``unit=``:
     ``unit=InputOutputUnits(input_unit=TTSIMUnit.CURRENCY,
-    output_unit=TTSIMUnit.CURRENCY.PER_YEAR)``. The framework screens each
-    ``look_up`` / ``piecewise_polynomial`` argument against ``input_unit`` and
-    hands the consumer the ``output_unit``. A schedule-typed field of a parameter
-    dataclass states the same pair in its ``Annotated[…]`` metadata.
+    output_unit=TTSIMUnit.CURRENCY.PER_YEAR)``. The framework screens each ``look_up`` /
+    ``piecewise_polynomial`` argument against ``input_unit`` and hands the consumer the
+    ``output_unit``. A schedule-typed field of a parameter dataclass states the same
+    pair in its ``Annotated[…]`` metadata.
 
-    A multi-dimensional :class:`ConsecutiveIntLookupTableParamValue` is keyed by
-    several axes at once — e.g. ``look_up(anzahl_personen_hh, mietstufe_hh)`` —
-    whose units may differ. Pass a **tuple** of :class:`CompositeUnit` as
-    ``input_unit`` to screen each ``look_up`` argument against the corresponding
-    axis positionally; the call must supply exactly as many arguments as declared
-    axes. A tuple is only for lookup tables — ``piecewise_polynomial`` takes one
-    domain argument, so a tuple on a piecewise builder is a contract error.
+    A multi-dimensional :class:`ConsecutiveIntLookupTableParamValue` is keyed by several
+    axes at once — e.g. ``look_up(anzahl_personen_hh, mietstufe_hh)`` — whose units may
+    differ. Pass a **tuple** of :class:`CompositeUnit` as ``input_unit`` to screen each
+    ``look_up`` argument against the corresponding axis positionally; the call must
+    supply exactly as many arguments as declared axes. A tuple is only for lookup tables
+    — ``piecewise_polynomial`` takes one domain argument, so a tuple on a piecewise
+    builder is a contract error.
 
-    Both axes are currency-agnostic TTSIM units, exactly like a
-    column/function declaration: a schedule builder runs in the statutory
-    currency of the policy date, whichever that is.
+    Both axes are currency-agnostic TTSIM units, exactly like a column/function
+    declaration: a schedule builder runs in the statutory currency of the policy date,
+    whichever that is.
     """
 
     input_unit: CompositeUnit | tuple[CompositeUnit, ...]
@@ -933,21 +906,6 @@ def is_calendar_point_unit(unit: pint.Unit, registry: pint.UnitRegistry) -> bool
     return False
 
 
-# The same four currency questions, asked once at each of the two layers: the
-# `ttsim_unit_*` functions read a declared `CompositeUnit`, the `pint_unit_*` ones
-# read a resolved `pint.Unit`. Same question, different layer — not duplicates.
-#
-# - which concrete currency, if any, does it pin down?
-# - does it carry a currency at all (agnostic or concrete)?
-# - is the currency it carries the agnostic `CURRENCY`?
-# - hand back the unit with its currency swapped.
-#
-# The fourth pair is deliberately asymmetric: a TTSIM unit is only ever rebased to
-# the agnostic currency (that is what deriving a node from a source does), whereas
-# a resolved pint unit is restated in an arbitrary target currency (the data or the
-# computation currency) when values cross the input/output boundary.
-
-
 def ttsim_unit_currency(ttsim_unit: CompositeUnit | None) -> str | None:
     """The concrete currency a TTSIM unit pins down, if any."""
     if not isinstance(ttsim_unit, CompositeUnit):
@@ -1091,7 +1049,7 @@ def input_target_unit_in_data_currency(
     whatever currency its declaration pins down: agnostic (an ordinary column)
     or concrete (a data override of a parameter, declared ``DM_PER_MONTH`` but
     holding the user's euro values). The label follows the value, so any
-    currency component is substituted with the data currency (GEP 10).
+    currency component is substituted with the data currency.
     """
     return _pint_unit_with_currency(
         units=units, currency=data_currency, registry=registry
@@ -1101,16 +1059,7 @@ def input_target_unit_in_data_currency(
 def output_unit_in_data_currency(
     units: pint.Unit, data_currency: str, registry: pint.UnitRegistry
 ) -> pint.Unit:
-    """Restate a computed result column's resolved unit in the data currency.
-
-    A computed column is converted to the data currency before being returned,
-    so its label swaps the agnostic ``CURRENCY`` component for it
-    (``CURRENCY / month`` → ``euro / month``) while period and area are left
-    untouched. A unit with no agnostic currency component — ``year``,
-    ``hectare``, dimensionless — is returned unchanged. Requested parameters do
-    not pass through here: their value is never converted, so they keep their
-    statutory currency (:func:`param_unit_in_computation_currency`).
-    """
+    """Restate a computed result column's resolved unit in the data currency."""
     if not pint_unit_has_agnostic_currency(units=units, registry=registry):
         return units
     return _pint_unit_with_currency(
@@ -1121,14 +1070,7 @@ def output_unit_in_data_currency(
 def param_unit_in_computation_currency(
     units: pint.Unit, computation_currency: str, registry: pint.UnitRegistry
 ) -> pint.Unit:
-    """Restate a requested parameter's resolved unit in its statutory currency.
-
-    A parameter keeps its statutory value — never converted to the data
-    currency — and that value is denominated in the computation currency (the
-    build guard pins every parameter's currency to it). So the resolved
-    agnostic ``CURRENCY`` component is spelled in the computation currency, not
-    the data currency; a non-currency unit is returned unchanged (GEP 10).
-    """
+    """Restate a requested parameter's resolved unit in its statutory currency."""
     return _pint_unit_with_currency(
         units=units, currency=computation_currency, registry=registry
     )
@@ -1148,21 +1090,17 @@ def ttsim_unit_from_pint_unit(
 ) -> CompositeUnit:
     """Reconstruct the TTSIM unit spelling of a resolved pint unit.
 
-    The output-side inverse of :func:`resolve_ttsim_unit`: it labels a
-    result-tree leaf with a :class:`CompositeUnit`, so the result tree is the
-    same shape as the input tree (GEP 10). A resolved unit obeys the grammar, so
-    each component maps back to one slot:
+    The output-side inverse of :func:`resolve_ttsim_unit`: it labels a result-tree leaf
+    with a :class:`CompositeUnit`, so the result tree is the same shape as the input
+    tree. A resolved unit obeys the grammar, so each component maps back to one slot:
 
     - the currency / area / duration numerator → the base;
     - the flow period → the period;
     - the spelled group level → the level.
 
-    A count and a share both resolve to the plain number, so the reconstructed
-    base is ``DIMENSIONLESS`` either way (GEP 10).
-
     Apply it to a unit already restated in the data currency
-    (:func:`output_unit_in_data_currency`) so the base is a concrete currency
-    (``EUR``), never the agnostic ``CURRENCY``.
+    (:func:`output_unit_in_data_currency`) so the base is a concrete currency (``EUR``),
+    never the agnostic ``CURRENCY``.
     """
     currency = _pint_unit_currency(units=units, registry=registry)
     period = _flow_period_of(units=units, registry=registry)
@@ -1195,14 +1133,7 @@ def ttsim_unit_from_pint_unit(
 
 
 def _flow_period_of(units: pint.Unit, registry: pint.UnitRegistry) -> pint.Unit | None:
-    """Return a unit's flow period — its time component in the *denominator*.
-
-    The ``month`` of ``CURRENCY / month``, the ``week`` of ``working_hour /
-    week``. A
-    *numerator* time unit (the ``year`` of an age, ``TTSIMUnit.YEARS``) is not a flow
-    period and is ignored, so an intrinsically-temporal column is not mistaken
-    for a flow. Returns ``None`` for a unit with no per-period part.
-    """
+    """Return a unit's flow period — its time component in the *denominator*."""
     for token, exponent in to_units_container(units).items():
         if isinstance(exponent, complex):  # pint exponents are real; narrow for ty
             continue
@@ -1217,15 +1148,11 @@ def _suffix_period_of(
 ) -> pint.Unit | None:
     """Return the flow period named by a column's GEP-1 time suffix.
 
-    ``…_m`` → ``month``, whether or not a grouping suffix follows it: GEP-1 puts
-    the time unit before the grouping level, so ``betrag_m_hh`` is a monthly
-    amount at household level. A name with no time suffix → ``None``.
-
-    Which trailing components count as a grouping level is
-    environment-dependent, so the candidates are the levels ``registry``
-    defines a dimension for. A trailing component that is not one of them
-    belongs to the base name, and the component before it is then not a time
-    suffix.
+    Example:
+        >>> _suffix_period_of(column_label="income_m", registry=ureg)
+        <Unit('month')>
+        >>> _suffix_period_of(column_label="wealth", registry=ureg)
+        None
     """
     if column_label is None:
         return None
@@ -1242,12 +1169,7 @@ def _fail_if_tag_period_disagrees_with_suffix(
     units: pint.Unit, *, column_label: str | None, registry: pint.UnitRegistry
 ) -> None:
     """Strict period guard: a pint tag's flow period must match the column's
-    GEP-1 time suffix exactly — including both absent.
-
-    A ``_m`` column needs a ``/month`` tag; an unsuffixed column needs a tag with
-    no period. This catches a contradictory period that would otherwise be
-    stripped silently (e.g. a ``_m`` column tagged ``DM / year`` — a 12-fold error).
-    """
+    GEP-1 time suffix exactly — including both absent."""
     tag_period = _flow_period_of(units=units, registry=registry)
     suffix_period = _suffix_period_of(column_label=column_label, registry=registry)
     matches = (
@@ -1316,7 +1238,7 @@ def strip_input_quantity_at_boundary(
     The bare magnitude is returned. The uniform crossing from the data currency
     into the computation currency happens right after, in
     ``input_data_in_computation_currency``, for tagged and untagged columns
-    alike (GEP 10).
+    alike.
 
     The period check is the only mismatch the boundary can catch on its own: the
     column's *declared* unit (its dimension, the numerator) is not threaded here,
@@ -1352,16 +1274,7 @@ def strip_input_quantity_at_boundary(
 def head_count_from_boolean_sum(
     agg_type: AggType, *, source_is_boolean: bool
 ) -> AggType:
-    """Normalise a ``SUM`` over a boolean to a ``COUNT`` for unit purposes.
-
-    Summing a boolean counts the persons its flag is true for, so its unit is a
-    head count's — the same dimensionless :attr:`TTSIMUnit.DIMENSIONLESS` a
-    ``COUNT`` mints. Every other aggregation keeps its own type. This is the
-    single source of truth used by both the declared-token minter
-    (:func:`unit_for_aggregation`) and the resolved-unit deriver
-    (:func:`ttsim.unit_validation._resolve_agg_by_group_unit`),
-    so the two cannot drift.
-    """
+    """Normalise a ``SUM`` over a boolean to a ``COUNT`` for unit purposes."""
     if agg_type is AggType.SUM and source_is_boolean:
         return AggType.COUNT
     return agg_type
@@ -1520,12 +1433,6 @@ def fail_if_units_are_missing(
 ) -> None:
     """Data-independent check that every node declares a unit.
 
-    A missing unit is a definition error. :attr:`TTSIMUnit.DIMENSIONLESS` is *not*
-    missing — it declares a dimensionless quantity; a node without any declaration
-    maps to :data:`UNSET_UNIT`. This is the leaf check that
-    :func:`ttsim.unit_validation.fail_if_environment_units_are_missing`
-    runs over the whole assembled environment (wired in as a ``fail_if``).
-
     Raises:
         UnitDefinitionError: If any qualified name maps to :data:`UNSET_UNIT`.
     """
@@ -1541,16 +1448,7 @@ def fail_if_units_are_missing(
 
 
 def register_unit_builder_levels(names: Iterable[str]) -> None:
-    """Give the fluent builder a ``per_<level>`` attribute for each level.
-
-    The level vocabulary is open — each policy environment brings its own levels
-    via its ``*_id`` columns — so the builder cannot hard-wire the level step the
-    way it does the closed area/period steps. Each package calls this at import,
-    before its declarations run, so they can spell ``.PER_HH``-style steps. This
-    is spelling vocabulary for the fluent DSL only; the level *dimensions* are
-    registered per build from the environment's ``*_id`` columns
-    (:func:`register_grouping_levels`). Idempotent.
-    """
+    """Give the fluent builder a ``per_<level>`` attribute for each level."""
     names = list(names)
     fail_if_grouping_level_names_are_invalid(names=names)
     for name in names:
@@ -1577,9 +1475,6 @@ def fail_if_grouping_level_names_are_invalid(names: Iterable[str]) -> None:
     - any name that is not lower-case, because a level is registered verbatim but
       resolved lower-cased (:func:`ttsim.tt.units.resolve_ttsim_unit`), so
       ``"HH"`` would register a level that ``.PER_HH`` cannot resolve.
-
-    Levels are derived from the policy environment's ``*_id`` columns — one per
-    group column — so a ``month_id`` column reaches this check.
 
     Raises:
         UnitDefinitionError: If any name is refused.
@@ -1633,16 +1528,15 @@ def define_grouping_level_dimensions(
 class UnitSystem:
     """The currencies, statutory-currency mapping, and registry of one policy system.
 
-    A package builds one system and exports it as a singleton, so a system is
-    identified by object identity: ``eq=False`` keeps the inherited
-    identity-based ``__hash__``, which lets a system key an ``lru_cache`` (its
-    ``statutory_currencies`` mapping is otherwise unhashable).
+    A package builds one system and exports it as a singleton, so a system is identified
+    by object identity: ``eq=False`` keeps the inherited identity-based ``__hash__``,
+    which lets a system key an ``lru_cache`` (its ``statutory_currencies`` mapping is
+    otherwise unhashable).
 
     A policy package declares its system once and exports it::
 
         UNIT_SYSTEM = UnitSystem(
-            base_currency="EUR",
-            other_currencies={"DM": "EUR / 1.95583"},
+            base_currency="EUR", other_currencies={"DM": "EUR / 1.95583"},
             statutory_currencies={"0001-01-01": "DM", "2002-01-01": "EUR"},
         )
 
@@ -1651,13 +1545,12 @@ class UnitSystem:
 
     Raises:
         UnitDefinitionError: If a currency name is unusable as a ``TTSIMUnit``
-            base — it claims the agnostic ``CURRENCY`` base, names a
-            non-currency base of the shared vocabulary, differs from another
-            registered currency only in case, or spells the ``_PER_``
-            denominator delimiter — if a definition does not resolve to the
-            ``[currency]`` dimension or does not reference exactly one of this
-            system's currencies, or if the statutory-currency mapping is empty,
-            is keyed by anything other than an ISO date, or names a currency the
+            base — it claims the agnostic ``CURRENCY`` base, names a non-currency base
+            of the shared vocabulary, differs from another registered currency only in
+            case, or spells the ``_PER_`` denominator delimiter — if a definition does
+            not resolve to the ``[currency]`` dimension or does not reference exactly
+            one of this system's currencies, or if the statutory-currency mapping is
+            empty, is keyed by anything other than an ISO date, or names a currency the
             system does not have.
     """
 
@@ -1721,12 +1614,6 @@ class UnitSystem:
     ) -> float:
         """The factor converting ``source_currency`` into ``target_currency``.
 
-        Used only where data enters and leaves the computation: input columns are
-        converted from the data currency to the computation currency, and
-        currency-denominated results are converted back (GEP 10). pint is the
-        single source of truth for the rate. Both currencies must belong to this
-        system; all of a system's currencies are interconvertible.
-
         Raises:
             UnitDefinitionError: If either currency is not one of this system's.
         """
@@ -1755,16 +1642,15 @@ class UnitSystem:
             f"The statutory-currency mapping starts at "
             f"{self.statutory_currency_by_start_date[0][0].isoformat()}, so the "
             f"statutory currency at {policy_date.isoformat()} is undefined. "
-            f"Extend the mapping this policy system declares (GEP 10)."
+            f"Extend the mapping this policy system declares."
         )
 
     def _define_currencies(self) -> None:
         """Define the base and every other currency in the system's registry.
 
-        The base is factor 1 against the abstract :data:`CURRENCY_TOKEN`
-        reference; every other currency is defined relative to an
-        already-defined one, so all of them chain back to the base and are
-        interconvertible.
+        The base is factor 1 against the abstract :data:`CURRENCY_TOKEN` reference;
+        every other currency is defined relative to an already-defined one, so all of
+        them chain back to the base and are interconvertible.
         """
         self._define_one_currency(name=self.base_currency, definition=CURRENCY_TOKEN)
         defined = {self.base_currency}
@@ -1780,12 +1666,7 @@ class UnitSystem:
             claimed.add(name)
 
     def _publish_currencies(self) -> None:
-        """Widen the process-global vocabulary by this system's currencies.
-
-        Runs only once every check has passed — including the statutory-mapping
-        one — so a system whose construction raises leaves the vocabulary as it
-        found it.
-        """
+        """Widen the process-global vocabulary by this system's currencies."""
         for name in self.currencies:
             _ALLOWED_UNIT_TOKENS.add(name)
             _registered_currencies.add(name)

@@ -1,25 +1,3 @@
-"""Abstract interpretation of a function body over pint units.
-
-Checking a body is an abstract interpretation: the real body runs, but on
-stand-in values carrying a pint unit and no meaningful magnitude. Each
-``Quantity(1.0, unit)`` is wrapped in a :class:`_UnitCheckQuantity` whose
-arithmetic propagates units while a :class:`_PathExplorer` drives its branch
-decisions, so a body is checked down every reachable path; a structured
-parameter becomes a :class:`_UnitCheckStructuredValue` and a schedule a
-:class:`_UnitCheckSchedule`. Module-level helpers a body calls
-(``piecewise_polynomial``, ``join``, ``cast_ttsim_unit``, the time converters)
-are swapped for unit-only stand-ins, and ``xnp`` for :class:`_UnitCheckXnp`.
-
-The representative values are built from the pint units
-:mod:`ttsim.unit_validation` resolved and the field/axis contracts
-:mod:`ttsim.unit_validation` read off the annotations.
-:mod:`ttsim.unit_validation` drives one body at a time through
-:func:`_verify_one_body` and collects the messages the builders at the bottom of
-this module produce.
-
-The unit check always runs in NumPy, regardless of the backend of the actual run.
-"""
-
 from __future__ import annotations
 
 import functools
@@ -673,21 +651,19 @@ class _UnitCheckQuantity:
     def _fail_if_additive_operand_is_invalid(self, other: Any, op: str) -> None:  # noqa: ANN401
         """Screen an operand of ``+``/``-``.
 
-        The rules are those of :meth:`_fail_if_other_unit_is_not_equivalent`,
-        with one dispensation: a calendar point (an affine offset unit). Its
-        valid ``point +/- duration`` is *not* equivalence (a point and a duration
-        differ), yet pint's offset algebra permits exactly it. Two *different*
-        offset units of the same ``[time]`` dimension are the trap: pint
-        subtracts ``calendar_year - calendar_month`` with a silent /12
-        (``0.917 delta_calendar_year``) while the run-time subtraction is raw
-        and unconverted, so a point - point across axes is rejected here rather
-        than delegated. A same-axis point +/- duration (or point - point) is left
-        to pint, which raises ``OffsetUnitCalculusError`` /
+        The rules are those of :meth:`_fail_if_other_unit_is_not_equivalent`, with one
+        dispensation: a calendar point (an affine offset unit). Its valid ``point +/-
+        duration`` is *not* equivalence (a point and a duration differ), yet pint's
+        offset algebra permits exactly it. Two *different* offset units of the same
+        ``[time]`` dimension are the trap: pint subtracts ``calendar_year -
+        calendar_month`` with a silent /12 (``0.917 delta_calendar_year``) while the
+        run-time subtraction is raw and unconverted, so a point - point across axes is
+        rejected here rather than delegated. A same-axis point +/- duration (or point -
+        point) is left to pint, which raises ``OffsetUnitCalculusError`` /
         ``DimensionalityError`` on the remaining misuses — caught in
-        :func:`_verify_one_body` and reported as a calendar misuse. Only
-        ``+``/``-`` get the dispensation: they alone run a forward pint
-        operation afterwards, so nothing would catch a point mixed into an
-        ordering or a ``where`` later.
+        :func:`_verify_one_body` and reported as a calendar misuse. Only ``+``/``-`` get
+        the dispensation: they alone run a forward pint operation afterwards, so nothing
+        would catch a point mixed into an ordering or a ``where`` later.
         """
         other_q = _unwrap(other)
         if isinstance(other_q, _UnitCheckStructuredValue):
@@ -719,20 +695,19 @@ class _UnitCheckQuantity:
     def _fail_if_other_unit_is_not_equivalent(self, other: Any, op: str) -> None:  # noqa: ANN401
         """Reject an invalid operand of an ordering comparison or ``where``.
 
-        At run time there is no pint, so these operations are unit-blind (raw
-        arrays are added or compared without conversion); two unit-carrying
-        operands must already be in equivalent units. Equivalence decides
-        calendar points by *identity* (:func:`units_are_equivalent`): ordering
-        two same-axis points (``geburtsjahr <= policy_year``) passes, while a
-        point against a duration — or any other unit — is rejected. A non-zero
-        *bare literal* next to a non-dimensionless quantity is rejected too: it
-        silently carries the quantity's unit (``betrag_m + 100.0`` hides a
-        monthly amount) — promote it to a parameter or tag it with
+        At run time there is no pint, so these operations are unit-blind (raw arrays are
+        added or compared without conversion); two unit-carrying operands must already
+        be in equivalent units. Equivalence decides calendar points by *identity*
+        (:func:`units_are_equivalent`): ordering two same-axis points (``geburtsjahr <=
+        policy_year``) passes, while a point against a duration — or any other unit — is
+        rejected. A non-zero *bare literal* next to a non-dimensionless quantity is
+        rejected too: it silently carries the quantity's unit (``betrag_m + 100.0``
+        hides a monthly amount) — promote it to a parameter or tag it with
         ``cast_ttsim_unit``. Only ``0`` (the ``x + 0.0`` guard, the floor at zero) is
-        allowed inline, and literals next to a dimensionless quantity stay
-        lenient. Unlike ``+``/``-``, an ordering comparison runs no forward pint
-        operation, so calendar points get no delegate-to-pint dispensation here
-        (equivalence decides them by identity: only same-axis points order).
+        allowed inline, and literals next to a dimensionless quantity stay lenient.
+        Unlike ``+``/``-``, an ordering comparison runs no forward pint operation, so
+        calendar points get no delegate-to-pint dispensation here (equivalence decides
+        them by identity: only same-axis points order).
         """
         other_q = _unwrap(other)
         if isinstance(other_q, _UnitCheckStructuredValue):
