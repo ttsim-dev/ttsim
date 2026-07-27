@@ -158,6 +158,31 @@ def test_flat_from_tree_with_unit_annotations_strips_to_bare_arrays():
     assert list(flat[("wage_m",)]) == [1.0, 2.0]
 
 
+@pytest.mark.parametrize(
+    ("qname", "unit", "values", "expected_dtype_kind"),
+    [
+        ("wage_m", TTSIMUnit.CURRENCY.PER_MONTH, [1.0, 2.0], "f"),
+        ("p_id", TTSIMUnit.DIMENSIONLESS, [0, 1], "i"),
+    ],
+)
+def test_flat_from_tree_with_unit_annotations_converts_list_leaves_to_arrays(
+    qname: str,
+    unit: CompositeUnit,
+    values: list[float] | list[int],
+    expected_dtype_kind: str,
+):
+    """List leaves come out as arrays, whether or not a currency is converted."""
+    flat = flat_from_tree_with_unit_annotations(
+        tree_with_unit_annotations={
+            qname: UnitAnnotatedColumn(values=values, unit=unit)
+        },
+        data_currency="CURRENCY",
+        unit_system=SYSTEM,
+        labels__grouping_levels=GROUPING_LEVELS,
+    )
+    assert flat[(qname,)].dtype.kind == expected_dtype_kind
+
+
 def test_fail_if_not_all_leaves_are_unit_annotated_columns_passes_when_all_tagged():
     flat: dict[tuple[str, ...], object] = {
         ("wage_m",): UnitAnnotatedColumn(

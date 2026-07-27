@@ -95,7 +95,7 @@ repos:
         # Keep the ty pin in sync with the `ty-pre-commit` rev above.
         language: python
         additional_dependencies:
-          - ty==0.0.52
+          - ty==0.0.63
         entry: ty check --python .pixi/envs/py314-jax
         pass_filenames: false
         always_run: true

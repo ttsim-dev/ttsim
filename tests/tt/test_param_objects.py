@@ -5,6 +5,7 @@ import numpy
 import pytest
 from beartype.roar import BeartypeCallHintViolation
 
+from ttsim.exceptions import UnitDefinitionError
 from ttsim.tt.param_objects import (
     ConsecutiveIntLookupTableParamValue,
     DictParam,
@@ -433,6 +434,12 @@ def test_scalar_param_with_note_and_reference():
     assert param.value == 100
     assert param.note == "A note"
     assert param.reference == "GEP-5"
+
+
+def test_scalar_param_rejects_mapping_unit():
+    """A scalar value has no leaves, so its unit is one token, not a per-leaf map."""
+    with pytest.raises(UnitDefinitionError, match="single token"):
+        ScalarParam(value=100, unit={"a": "CURRENCY_PER_MONTH"})
 
 
 def test_scalar_param_is_frozen():

@@ -1000,7 +1000,6 @@ def _param_with_active_periods(
 @fail_function()
 def tt_units_are_missing(
     specialized_environment__without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
-    labels__grouping_levels: OrderedQNames,
 ) -> None:
     """Fail if any active node lacks a mandatory unit declaration.
 

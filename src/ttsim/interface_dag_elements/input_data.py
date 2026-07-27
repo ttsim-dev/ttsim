@@ -5,6 +5,8 @@ from typing import TYPE_CHECKING, Literal
 import dags.tree as dt
 import numpy
 import pandas as pd
+import pint
+from jaxtyping import Shaped
 
 from ttsim.interface_dag_elements.data_converters import (
     df_with_mapped_columns_to_flat_data,
@@ -21,10 +23,11 @@ from ttsim.interface_dag_elements.processed_data import (
 )
 from ttsim.tt.units import (
     CompositeUnit,
+    UnitAnnotatedColumn,
     UnitSystem,
     input_column_in_data_currency,
 )
-from ttsim.typing import UserNestedUnitAnnotatedData
+from ttsim.typing import Array, OrderedQNames, UserNestedUnitAnnotatedData
 from ttsim.unit_validation import flatten_unit_annotated_input_tree
 
 if TYPE_CHECKING:
@@ -35,7 +38,6 @@ if TYPE_CHECKING:
         IntColumn,
         NestedData,
         NestedInputsMapper,
-        OrderedQNames,
         QNameData,
     )
 
@@ -209,9 +211,8 @@ def flat_from_tree_with_unit_annotations(
     registry = unit_system.registry
     flat = flatten_unit_annotated_input_tree(tree=tree_with_unit_annotations)
     return {
-        path: input_column_in_data_currency(
-            values=col.values,
-            unit=col.unit,
+        path: _canonicalized_input_column_in_data_currency(
+            column=col,
             data_currency=data_currency,
             registry=registry,
             grouping_levels=labels__grouping_levels,
@@ -219,6 +220,38 @@ def flat_from_tree_with_unit_annotations(
         )
         for path, col in flat.items()
     }
+
+
+def _canonicalized_input_column_in_data_currency(
+    column: UnitAnnotatedColumn,
+    *,
+    data_currency: str,
+    registry: pint.UnitRegistry,
+    grouping_levels: OrderedQNames,
+    column_label: str,
+) -> Shaped[Array | numpy.ndarray, " n_obs"]:
+    """Convert one tagged column to the data currency and canonicalize its dtype.
+
+    A tag already in the data currency, or with no currency at all, passes its
+    values through unconverted, so the same leaf types the ordinary input tree
+    accepts (a list, a `pd.Series`, a backend array) arrive here. They go through
+    the same canonicalization as in `flat_from_qname`: lists become numpy arrays
+    first, so `_canonicalize_input_dtype` sees the narrow input type its claw
+    enforces.
+    """
+    values = input_column_in_data_currency(
+        values=column.values,
+        unit=column.unit,
+        data_currency=data_currency,
+        registry=registry,
+        grouping_levels=grouping_levels,
+        column_label=column_label,
+    )
+    return _canonicalize_input_dtype(
+        arr=values if isinstance(values, pd.Series) else numpy.asarray(values),
+        xnp=numpy,
+        column_label=column_label,
+    )
 
 
 @input_dependent_interface_function(
