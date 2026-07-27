@@ -6,9 +6,11 @@ GEP 10 specifies the declaration rules the inferred units are checked against.
 from __future__ import annotations
 
 import functools
+import inspect
 from collections.abc import Callable, Mapping
 from typing import (
     Any,
+    NamedTuple,
     NoReturn,
     cast,
 )
@@ -23,8 +25,11 @@ from ttsim.exceptions import (
 from ttsim.interface_dag_elements.shared import (
     FRAMEWORK_PARTIAL_ARGUMENTS,
 )
+from ttsim.tt._function_rewriting import recompile_with_logical_ops_as_calls
 from ttsim.tt.column_objects_param_function import (
+    ColumnObject,
     ParamFunction,
+    PolicyFunction,
 )
 from ttsim.tt.param_objects import (
     DictParam,
@@ -32,6 +37,7 @@ from ttsim.tt.param_objects import (
     RawParam,
 )
 from ttsim.tt.units import (
+    _GROUPING_LEVEL_PREFIX,
     TIME_UNIT_ID_TO_PINT_NAME,
     CompositeUnit,
     InputOutputUnits,
@@ -48,10 +54,7 @@ from ttsim.tt.units import (
 from ttsim.typing import (
     SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
 )
-from ttsim.unit_validation import (
-    _as_boolean_level,
-    _boolean_quantity,
-    _combined_boolean_level,
+from ttsim.unit_resolution import (
     _dimensionless_unit,
     _resolve_input_axes,
     _resolve_schedule_input_unit,
@@ -59,7 +62,170 @@ from ttsim.unit_validation import (
     _returns_a_schedule,
     _ScheduleFieldKind,
     _structured_field_kinds,
+    node_is_boolean,
 )
+
+
+def body_verification_errors(
+    env: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
+    resolved_pint_units: Mapping[str, pint.Unit | dict[str | int, Any]],
+    unit_system: UnitSystem,
+) -> list[str]:
+    """Unit-check every human-written scalar body and collect its inference errors.
+
+    Only ``@policy_function`` / ``@param_function`` bodies are unit-checked; everything
+    else (aggregations, time-conversions, group ids) is unit-assigned by
+    construction. A body is skipped when it is an unimplemented-period stub, has
+    no resolved unit, opts out (``verify_units=False``), declares a structured
+    unit, or has an unannotated producer.
+    """
+    registry = unit_system.registry
+    representative_values = _representative_values_by_qname(
+        env=env, resolved_pint_units=resolved_pint_units, unit_system=unit_system
+    )
+    boolean_nodes = {
+        qname
+        for qname, obj in env.items()
+        if isinstance(obj, ColumnObject | ParamFunction)
+        and node_is_boolean(qname=qname, obj=obj)
+    }
+    # The helper stand-ins close over this run's registry, so they are built per run
+    # rather than once at import.
+    unit_check_helper_stand_ins, explorer_holder = _unit_check_helper_stand_ins(
+        unit_system=unit_system
+    )
+    _anchor_schedules_on_body_explorer(
+        representative_values=representative_values, explorer_holder=explorer_holder
+    )
+    errors: list[str] = []
+    for qname, obj in env.items():
+        if not isinstance(obj, PolicyFunction | ParamFunction):
+            continue
+        if getattr(obj, "fail_msg_if_included", None) is not None:
+            continue
+        if isinstance(obj, ParamFunction) and _returns_a_schedule(obj):
+            # Its body builds a lookup/piecewise table, not a scalar; the declared
+            # unit is the schedule's output contract (screened at the consumer's
+            # `look_up`/`piecewise_polynomial`), so there is no scalar body to infer.
+            continue
+        if qname not in resolved_pint_units or not obj.verify_units:
+            # Still UNSET (the mandatory-units check reports it), or the body
+            # opted out — its declared unit stays the edge contract either way.
+            continue
+        declared = resolved_pint_units[qname]
+        if isinstance(declared, dict):
+            continue
+        parameters = tuple(inspect.signature(obj.function).parameters)
+        boolean_parameters = tuple(p for p in parameters if p in boolean_nodes)
+        base_kwargs = _base_unit_check_kwargs(
+            parameters=parameters,
+            boolean_parameters=boolean_parameters,
+            representative_values=representative_values,
+        )
+        if base_kwargs is None:
+            continue
+        # Feed each boolean parameter its resolved (possibly leveled) value, so a
+        # leveled boolean carries its level into the body while only its truth value
+        # is explorer-controlled; an unresolved producer falls back to level-less.
+        boolean_values = {
+            name: representative_values.get(name, registry.Quantity(1.0, ""))
+            for name in boolean_parameters
+        }
+        error = _verify_one_body(
+            qname=qname,
+            function=recompile_with_logical_ops_as_calls(
+                func=obj.function,
+                module="xnp",
+                module_obj=_NON_UNIT_ARGUMENT_VALUES["xnp"],
+                extra_globals=unit_check_helper_stand_ins,
+            ),
+            declared=declared,
+            boolean_values=boolean_values,
+            base_kwargs=base_kwargs,
+            unit_system=unit_system,
+            explorer_holder=explorer_holder,
+        )
+        if error is not None:
+            errors.append(error)
+    return errors
+
+
+def _anchor_schedules_on_body_explorer(
+    representative_values: Mapping[str, Any],
+    explorer_holder: list[Any],
+) -> None:
+    """Hand every top-level schedule the body's live explorer cell.
+
+    A bare-literal ``look_up`` on such a schedule anchors on the current body's
+    branch path via this shared, per-body-updated cell (see
+    :meth:`_UnitCheckSchedule._produce`). A schedule plucked from a structured field
+    is anchored where it is rebuilt per run instead (:func:`_wrap_for_unit_check`).
+    """
+    for value in representative_values.values():
+        if isinstance(value, _UnitCheckSchedule):
+            value.explorer_holder = explorer_holder
+
+
+def _has_grouping_level_numerator(unit: pint.Unit) -> bool:
+    """Whether a unit carries a grouping level as a *numerator*."""
+    return any(exponent > 0 for _, exponent in _grouping_levels_with_exponent(unit))
+
+
+class BooleanLevel(NamedTuple):
+    """A unit's classification as a (possibly leveled) boolean."""
+
+    is_boolean: bool
+    """Whether the unit is a truth value at all."""
+    level: str | None
+    """The grouping level the truth value is measured per, `None` for a
+    level-less boolean. Meaningless when `is_boolean` is False."""
+
+
+def _as_boolean_level(unit: pint.Unit, registry: pint.UnitRegistry) -> BooleanLevel:
+    """Classify a unit as a (possibly leveled) boolean and read its level.
+
+    A boolean is a truth value: dimensionless apart from at most a single grouping
+    level it is measured *per* — ``1 / [fam]`` for a fam-level indicator, plain
+    dimensionless for a level-less share/flag. A unit with physical content
+    (currency, area, a duration) or a grouping-level *numerator* (``[hh]``) is
+    *not* a boolean. A head count is ``1 / [hh]``, so it is indistinguishable
+    from a leveled boolean here — both are the plain number over their group.
+
+    ``1 / [fam]`` → ``(True, "fam")``; a plain ``1`` → ``(True, None)``;
+    ``EUR_PER_MONTH`` or ``[hh]`` → ``(False, None)``.
+    """
+    if _has_grouping_level_numerator(unit):
+        return BooleanLevel(is_boolean=False, level=None)
+    if not registry.Quantity(
+        1.0, _unit_without_grouping_levels(unit=unit, registry=registry)
+    ).dimensionless:
+        return BooleanLevel(is_boolean=False, level=None)
+    return BooleanLevel(is_boolean=True, level=_unit_level_denominator(unit))
+
+
+def _boolean_quantity(level: str | None, registry: pint.UnitRegistry) -> pint.Quantity:
+    """A representative boolean ``Quantity`` at ``level`` — ``1 / [level]``.
+
+    ``_boolean_quantity("fam")`` is ``1 / [fam]`` (a fam-level indicator);
+    ``_boolean_quantity(None)`` is a plain dimensionless ``1`` (a level-less flag).
+    """
+    truth = registry.Quantity(1.0, "")
+    if level is None:
+        return truth
+    return truth / registry.Quantity(1.0, f"{_GROUPING_LEVEL_PREFIX}{level}")
+
+
+def _combined_boolean_level(left: str | None, right: str | None) -> str | None:
+    """Combine two boolean levels for a logical operator.
+
+    Equal levels are kept; any mismatch downcasts to the individual level, which
+    is **bare** (``None``).
+
+    Two fam-level indicators give ``"fam"``; the mixed
+    ``wealth_fam >= threshold_fam or wealth_kin >= threshold_kin`` combines a fam-
+    and a kin-level operand, so the result is bare (``None``).
+    """
+    return left if left == right else None
 
 
 def _verify_one_body(
