@@ -869,23 +869,7 @@ def _dataclass_or_none(obj: Any) -> type | None:  # noqa: ANN401
 
 
 def _resolvable_type_hints(cls: type) -> dict[str, Any]:
-    """The class's type hints, dropping only those that do not resolve.
-
-    ``get_type_hints`` is all-or-nothing: one name visible only under
-    ``TYPE_CHECKING`` makes it raise for the whole class. Falling back to a
-    per-field resolution keeps a single unresolvable annotation from disabling
-    the unit check on every other field.
-
-    Each class in the MRO is resolved against its *own* defining module, base
-    before derived, so an inherited field keeps the meaning it has where it was
-    declared and a derived class still shadows it. A field whose own annotation
-    does not resolve is dropped rather than left with an inherited stand-in.
-
-    Every field goes back through ``get_type_hints``, one at a time, so a nested
-    forward reference (``list["Foo"]``) resolves as fully as it would have in the
-    whole-class call — evaluating the annotation string alone would leave the
-    inner name a `ForwardRef` and the field wrongly opaque.
-    """
+    """The class's type hints, dropping only those that do not resolve."""
     try:
         return get_type_hints(cls, include_extras=True)
     except _UNRESOLVABLE_ANNOTATION_ERRORS:

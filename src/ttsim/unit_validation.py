@@ -1,12 +1,4 @@
-"""Check unit declarations against each other across an assembled environment.
-
-GEP 10 specifies the declaration rules this module enforces. The checks here need
-no body evaluation: every node declares a unit, an aggregation's declaration
-matches what its agg_type derives, a rounding spec matches its function, a
-schedule builder honours the `InputOutputUnits` contract, and a user's input tag
-matches the column it is attached to. Body verification lives in
-`_unit_inference`; unit resolution in `unit_resolution`.
-"""
+"""Check unit declarations against each other across an assembled environment."""
 
 from __future__ import annotations
 
@@ -72,7 +64,6 @@ from ttsim.unit_resolution import (
 
 def fail_if_environment_units_are_missing(
     env: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
-    grouping_levels: OrderedQNames,  # noqa: ARG001  (kept for symmetry of the two checks)
 ) -> None:
     """Mandatory-units check over a fully assembled environment.
 
@@ -127,10 +118,7 @@ def fail_if_environment_units_are_missing(
                 cast("Mapping[str, Any]", declared_unit)
             )
             for leaf_qname in dt.flatten_to_qnames(value_tree):
-                # A flat int-keyed dict (GEP 3 allows them, e.g. a Satz keyed by
-                # child count) leaves its key an int, which has no `.split`; the
-                # per-leaf unit mapping is keyed the same way, so look it up with
-                # the original key and stringify only for the display path.
+                # A flat int-keyed dict
                 leaf_path = dt.tree_path_from_qname(str(leaf_qname))
                 display = f"{qname}[{']['.join(leaf_path)}]"
                 # A leaf absent from the mapping defaults to :data:`UNSET_UNIT`,

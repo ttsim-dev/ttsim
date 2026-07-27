@@ -81,7 +81,7 @@ def test_boolean_nodes_are_detected():
 
 def test_missing_check_passes_for_declared_and_group_creation_nodes():
     fail_if_environment_units_are_missing(
-        env={
+        {
             # Identifiers and the boolean declare DIMENSIONLESS (GEP 10);
             # the group-creation `fam_id` is auto-assigned DIMENSIONLESS.
             "p_id": p_id,
@@ -91,16 +91,14 @@ def test_missing_check_passes_for_declared_and_group_creation_nodes():
             "wealth": wealth,
             "tax_rate_y": make_flow_rate(),
             "amount_y": amount_y,
-        },
-        grouping_levels=GROUPING_LEVELS,
+        }
     )
 
 
 def test_missing_check_reports_unannotated_node():
     with pytest.raises(UnitDefinitionError, match="unannotated_income_y"):
         fail_if_environment_units_are_missing(
-            env={"unannotated_income_y": unannotated_income_y},
-            grouping_levels=GROUPING_LEVELS,
+            {"unannotated_income_y": unannotated_income_y}
         )
 
 
@@ -117,8 +115,7 @@ def test_missing_check_reports_unannotated_identifier_and_boolean():
 
     with pytest.raises(UnitDefinitionError, match=r"(?s)some_flag.*some_id"):
         fail_if_environment_units_are_missing(
-            env={"some_id": some_id, "some_flag": some_flag},
-            grouping_levels=GROUPING_LEVELS,
+            {"some_id": some_id, "some_flag": some_flag}
         )
 
 
@@ -140,25 +137,23 @@ def test_missing_check_reports_currency_rounding_spec_without_unit():
         UnitDefinitionError, match=r"rounded_amount_y \(rounding_spec\)"
     ):
         fail_if_environment_units_are_missing(
-            env={
+            {
                 "rounded_amount_y": make_rounded_amount_y(
                     RoundingSpec(base=1, direction="down")
                 ),
                 "bonus_y": bonus_y,
-            },
-            grouping_levels=GROUPING_LEVELS,
+            }
         )
 
 
 def test_missing_check_passes_for_currency_rounding_spec_with_unit():
     fail_if_environment_units_are_missing(
-        env={
+        {
             "rounded_amount_y": make_rounded_amount_y(
                 RoundingSpec(base=1, direction="down", unit=CASTAR_PER_YEAR)
             ),
             "bonus_y": bonus_y,
-        },
-        grouping_levels=GROUPING_LEVELS,
+        }
     )
 
 
@@ -170,8 +165,7 @@ def test_missing_check_passes_for_non_currency_rounding_spec_without_unit():
         return statutory_age
 
     fail_if_environment_units_are_missing(
-        env={"rounded_age": rounded_age, "statutory_age": statutory_age},
-        grouping_levels=GROUPING_LEVELS,
+        {"rounded_age": rounded_age, "statutory_age": statutory_age}
     )
 
 
@@ -388,10 +382,7 @@ def test_dict_param_missing_leaf_unit_is_reported():
         end_date=_END,
     )
     with pytest.raises(UnitDefinitionError, match=r"schedule\[max_age\]"):
-        fail_if_environment_units_are_missing(
-            env={"schedule": schedule},
-            grouping_levels=GROUPING_LEVELS,
-        )
+        fail_if_environment_units_are_missing({"schedule": schedule})
 
 
 def test_scalar_flow_param_resolves_via_name_suffix():
@@ -678,10 +669,7 @@ def test_param_mapping_object_rejects_agnostic_currency_axis():
 
 def test_param_mapping_object_missing_axis_units_are_reported():
     with pytest.raises(UnitDefinitionError) as excinfo:
-        fail_if_environment_units_are_missing(
-            env={"schedule": _make_schedule_param()},
-            grouping_levels=GROUPING_LEVELS,
-        )
+        fail_if_environment_units_are_missing({"schedule": _make_schedule_param()})
     assert "schedule (input_unit)" in str(excinfo.value)
     assert "schedule (output_unit)" in str(excinfo.value)
 

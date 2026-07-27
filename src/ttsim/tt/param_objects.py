@@ -104,6 +104,14 @@ class ScalarParam(ParamObject):
     note: str | None = None
     reference: str | None = None
 
+    def __post_init__(self) -> None:
+        super().__post_init__()
+        if isinstance(self.unit, dict):
+            raise UnitDefinitionError(
+                f"{type(self).__name__} holds one value, so it declares a single "
+                f"token, not a per-leaf mapping (GEP 10); got unit={self.unit!r}."
+            )
+
 
 @dataclass(frozen=True)
 class DictParam(ParamObject):
