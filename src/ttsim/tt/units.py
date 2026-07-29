@@ -1045,10 +1045,13 @@ def build_registry() -> pint.UnitRegistry:
     ureg.define(
         "calendar_quarter_duration = [calendar_quarter_axis] = delta_calendar_quarter"
     )
-    ureg.define("calendar_quarter = calendar_quarter_duration; offset: 4")
-    ureg.define("calendar_year = year; offset: 1900")
-    ureg.define("calendar_month = month; offset: 22800")  # 1900 * 12
-    ureg.define("calendar_day = day; offset: 693975")  # 1900 * 365.25
+    # Pint needs a nonzero offset to distinguish calendar points, such as year 1999,
+    # from durations, such as 3 years. TTSIM never uses the offset's numeric value,
+    # so use 1 consistently for all calendar units.
+    ureg.define("calendar_quarter = calendar_quarter_duration; offset: 1")
+    ureg.define("calendar_year = year; offset: 1")
+    ureg.define("calendar_month = month; offset: 1")
+    ureg.define("calendar_day = day; offset: 1")
     return ureg
 
 
