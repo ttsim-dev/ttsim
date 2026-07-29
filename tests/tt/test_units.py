@@ -133,9 +133,11 @@ _BASE_SPELLINGS = [
     "SQUARE_METER",
     "HECTARE",
     "YEARS",
+    "QUARTERS",
     "MONTHS",
     "DAYS",
     "CALENDAR_YEAR",
+    "CALENDAR_QUARTER",
     "CALENDAR_MONTH",
     "CALENDAR_DAY",
 ]
@@ -380,6 +382,10 @@ def test_is_calendar_point_unit():
         registry=REGISTRY,
     )
     assert is_calendar_point_unit(
+        unit=pint_unit_from_string(unit_str="calendar_quarter", registry=REGISTRY),
+        registry=REGISTRY,
+    )
+    assert is_calendar_point_unit(
         unit=pint_unit_from_string(unit_str="calendar_month", registry=REGISTRY),
         registry=REGISTRY,
     )
@@ -454,9 +460,11 @@ def test_policy_function_explicit_dimensionless():
         ),
         (TTSIMUnit.CURRENCY, "CURRENCY"),  # stock
         (TTSIMUnit.YEARS, "year"),  # a duration, e.g. an age
+        (TTSIMUnit.QUARTERS, "calendar_quarter_duration"),
         (TTSIMUnit.MONTHS, "month"),  # a duration in months
         (TTSIMUnit.DAYS, "day"),  # a duration in days
         (TTSIMUnit.CALENDAR_YEAR, "calendar_year"),  # a point, e.g. a birth year
+        (TTSIMUnit.CALENDAR_QUARTER, "calendar_quarter"),
         (TTSIMUnit.CALENDAR_MONTH, "calendar_month"),
         (TTSIMUnit.CALENDAR_DAY, "calendar_day"),
         (TTSIMUnit.SQUARE_METER, "meter ** 2"),
@@ -501,6 +509,17 @@ def test_duration_conversion_year_to_month():
     """A duration of 2 years is 24 months — sourced from pint."""
     months = REGISTRY.Quantity(2.0, "year").to("month")
     assert months.magnitude == pytest.approx(24.0)
+
+
+def test_calendar_quarter_point_algebra():
+    quarter = REGISTRY.Quantity(2, "calendar_quarter")
+
+    assert quarter - REGISTRY.Quantity(1, "calendar_quarter") == REGISTRY.Quantity(
+        1, "delta_calendar_quarter"
+    )
+    assert quarter + REGISTRY.Quantity(
+        1, "delta_calendar_quarter"
+    ) == REGISTRY.Quantity(3, "calendar_quarter")
 
 
 def test_fail_if_units_are_missing_reports_unannotated_nodes():

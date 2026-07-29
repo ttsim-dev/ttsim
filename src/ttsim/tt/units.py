@@ -88,9 +88,11 @@ _TTSIM_UNIT_BASE_TO_PINT: dict[str, str | None] = {
     "SQUARE_METER": "meter ** 2",
     "HECTARE": "hectare",
     "YEARS": "delta_calendar_year",
+    "QUARTERS": "calendar_quarter_duration",
     "MONTHS": "delta_calendar_month",
     "DAYS": "delta_calendar_day",
     "CALENDAR_YEAR": "calendar_year",
+    "CALENDAR_QUARTER": "calendar_quarter",
     "CALENDAR_MONTH": "calendar_month",
     "CALENDAR_DAY": "calendar_day",
 }
@@ -107,7 +109,7 @@ _PINT_NAME_TO_BASE_TOKEN = {
 #: The affine calendar-point units :func:`build_registry` defines — the only
 #: offset units any TTSIM registry contains.
 _CALENDAR_POINT_UNIT_NAMES = frozenset(
-    {"calendar_year", "calendar_month", "calendar_day"}
+    {"calendar_year", "calendar_quarter", "calendar_month", "calendar_day"}
 )
 
 #: The dimension names :func:`build_registry` mints for currency and takes from
@@ -131,9 +133,12 @@ _ALLOWED_UNIT_TOKENS: set[str] = {
     "hectare",
     # Calendar-point (affine) units and their companion durations.
     "calendar_year",
+    "calendar_quarter",
     "calendar_month",
     "calendar_day",
     "delta_calendar_year",
+    "calendar_quarter_duration",
+    "delta_calendar_quarter",
     "delta_calendar_month",
     "delta_calendar_day",
 }
@@ -321,6 +326,10 @@ class TTSIMUnit(metaclass=_UnitNamespaceMeta):
     """A *duration* in years: an age, an age threshold. The calendar *point*
     counterpart is :attr:`CALENDAR_YEAR`."""
 
+    QUARTERS = CompositeUnit(base="QUARTERS")
+    """A *duration* in quarters. The point counterpart is
+    :attr:`CALENDAR_QUARTER`."""
+
     MONTHS = CompositeUnit(base="MONTHS")
     """A *duration* in months. The point counterpart is :attr:`CALENDAR_MONTH`."""
 
@@ -330,6 +339,9 @@ class TTSIMUnit(metaclass=_UnitNamespaceMeta):
     CALENDAR_YEAR = CompositeUnit(base="CALENDAR_YEAR")
     """A *point* on the calendar measured in years: a birth year, the policy
     year. Two calendar years subtract to a :attr:`YEARS` duration."""
+
+    CALENDAR_QUARTER = CompositeUnit(base="CALENDAR_QUARTER")
+    """A *point* on the calendar measured in quarters."""
 
     CALENDAR_MONTH = CompositeUnit(base="CALENDAR_MONTH")
     """A *point* on the calendar measured in months."""
@@ -1019,6 +1031,9 @@ def build_registry() -> pint.UnitRegistry:
       unit, which :attr:`TTSIMUnit.YEARS` / :attr:`TTSIMUnit.MONTHS` /
       :attr:`TTSIMUnit.DAYS` resolve to (each is ratio 1 against ``year`` / ``month`` /
       ``day``).
+    - ``calendar_quarter`` as an affine point unit on a separate quarter axis, with
+      ``delta_calendar_quarter`` as its companion duration. This axis is separate so
+      calendar quarters are not automatically converted to months or years.
 
     pint's remaining built-ins parse, but :func:`pint_unit_from_string` rejects every
     token outside :data:`_ALLOWED_UNIT_TOKENS`, so none can appear in a declaration.
@@ -1027,6 +1042,10 @@ def build_registry() -> pint.UnitRegistry:
     ureg.define(f"{CURRENCY_TOKEN} = [currency]")
     ureg.define("working_hour = [hours]")
     ureg.define("quarter_year = year / 4 = quarter_of_year")
+    ureg.define(
+        "calendar_quarter_duration = [calendar_quarter_axis] = delta_calendar_quarter"
+    )
+    ureg.define("calendar_quarter = calendar_quarter_duration; offset: 4")
     ureg.define("calendar_year = year; offset: 1900")
     ureg.define("calendar_month = month; offset: 22800")  # 1900 * 12
     ureg.define("calendar_day = day; offset: 693975")  # 1900 * 365.25
