@@ -67,7 +67,8 @@ def income_after_deduction_m_fam(
     # currency amount is a pure number by construction of the fit, not by unit
     # algebra, so it is the product alone that states its unit.
     remaining_share = deduction_coefficients["a"] - cast_ttsim_unit(
-        deduction_coefficients["b"] * income__amount_m_fam, TTSIMUnit.DIMENSIONLESS
+        deduction_coefficients["b"] * income__amount_m_fam,
+        unit=TTSIMUnit.DIMENSIONLESS,
     )
     return income__amount_m_fam * xnp.maximum(remaining_share, 0.0)
 
@@ -82,5 +83,5 @@ def benefit_share_m_fam(
     # at, so it is tagged back to the level it is consumed at.
     return cast_ttsim_unit(
         amount_m_fam / eligibility__number_of_individuals_fam,
-        TTSIMUnit.CURRENCY.PER_MONTH.PER_FAM,
+        unit=TTSIMUnit.CURRENCY.PER_MONTH.PER_FAM,
     )
