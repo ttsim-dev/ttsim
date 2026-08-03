@@ -38,8 +38,7 @@ class ParamObject:
     start_date: datetime.date | None = None
     end_date: datetime.date | None = None
     unit: (
-        None
-        | Literal[
+        Literal[
             "Euros",
             "DM",
             "Share",
@@ -50,9 +49,10 @@ class ParamObject:
             "Square Meters",
             "Euros / Square Meter",
         ]
+        | None
     ) = None
     reference_period: (
-        None | Literal["Year", "Quarter", "Month", "Week", "Day", "Hour"]
+        Literal["Year", "Quarter", "Month", "Week", "Day", "Hour"] | None
     ) = None
     name: dict[Literal["de", "en"], str] | None = None
     description: dict[Literal["de", "en"], str] | None = None
