@@ -38,8 +38,7 @@ class ParamObject:
     start_date: datetime.date | None = None
     end_date: datetime.date | None = None
     unit: (
-        None
-        | Literal[
+        Literal[
             "Euros",
             "DM",
             "Share",
@@ -50,9 +49,10 @@ class ParamObject:
             "Square Meters",
             "Euros / Square Meter",
         ]
+        | None
     ) = None
     reference_period: (
-        None | Literal["Year", "Quarter", "Month", "Week", "Day", "Hour"]
+        Literal["Year", "Quarter", "Month", "Week", "Day", "Hour"] | None
     ) = None
     name: dict[Literal["de", "en"], str] | None = None
     description: dict[Literal["de", "en"], str] | None = None
@@ -404,8 +404,8 @@ def get_year_based_phase_inout_of_age_thresholds_param_value(
     if not all(isinstance(k, int) for k in raw):
         raise ValueError("All keys must be integers")
     int_raw = cast("dict[int, Any]", raw)
-    first_year_phase_inout: int = sorted(int_raw)[0]
-    last_year_phase_inout: int = sorted(int_raw)[-1]
+    first_year_phase_inout: int = min(int_raw)
+    last_year_phase_inout: int = max(int_raw)
     if first_year_to_consider > first_year_phase_inout:
         raise ValueError(
             "`first_year_to_consider` must be less than or equal to "

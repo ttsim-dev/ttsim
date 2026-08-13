@@ -94,7 +94,7 @@ def _force_loop_vectorization_for_coverage(request):
 
     # Monkey-patch PolicyFunction.vectorize to force "loop" strategy when running with
     # coverage.
-    PolicyFunction.vectorize = _vectorize_with_loop  # ty: ignore[invalid-assignment]
+    PolicyFunction.vectorize = _vectorize_with_loop
     yield
     # Restore the original vectorization strategy.
     PolicyFunction.vectorize = _original_vectorize

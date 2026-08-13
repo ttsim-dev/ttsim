@@ -153,7 +153,7 @@ if TYPE_CHECKING:
         str, "FloatColumn | IntColumn | BoolColumn | NestedData"
     ]
     """Tree mapping TTSIM paths to 1d arrays."""
-    NestedStrings: TypeAlias = Mapping[str, "str | None | NestedStrings"]
+    NestedStrings: TypeAlias = Mapping[str, "str | NestedStrings | None"]
     """Tree mapping TTSIM paths to df column names, type hints, or `None`.
 
     A `None` leaf marks a target to compute (vs. a string that renames it);
@@ -164,7 +164,7 @@ else:
     # type is not a valid Python attribute name, so beartype cannot resolve
     # it. Widen to a one-level Mapping; the per-element type still narrows.
     NestedData = Mapping[str, FloatColumn | IntColumn | BoolColumn | Mapping]
-    NestedStrings = Mapping[str, str | None | Mapping]
+    NestedStrings = Mapping[str, str | Mapping | None]
 
 # `FlatData`: flattened tree mapping TTSIM tree paths (tuple) to 1-d arrays.
 # `QNameData`: mapping of qualified-name strings to 1-d arrays.
@@ -244,7 +244,7 @@ if TYPE_CHECKING:
         @overload
         def __getitem__(
             self, key: str
-        ) -> str | None | dict[Literal["de", "en"], str | None]: ...
+        ) -> str | dict[Literal["de", "en"], str | None] | None: ...
 
         @overload
         def __getitem__(
@@ -255,33 +255,33 @@ if TYPE_CHECKING:
             self, key: str | datetime.date
         ) -> (
             str
-            | None
             | dict[Literal["de", "en"], str | None]
             | dict[Literal["note", "reference"] | str | int, Any]
+            | None
         ): ...
 
         @overload
         def get(
             self, key: str, default: None = None
-        ) -> str | None | dict[Literal["de", "en"], str | None]: ...
+        ) -> str | dict[Literal["de", "en"], str | None] | None: ...
 
         @overload
         def get(
             self, key: str, default: str | bool | float
         ) -> (
-            str | None | dict[Literal["de", "en"], str | None] | bool | int | float
+            str | dict[Literal["de", "en"], str | None] | bool | int | float | None
         ): ...
 
         def get(
             self,
             key: str,
             default: str
-            | None
             | bool
             | float
-            | dict[Literal["de", "en"], str | None] = None,
+            | dict[Literal["de", "en"], str | None]
+            | None = None,
         ) -> (
-            str | None | dict[Literal["de", "en"], str | None] | bool | int | float
+            str | dict[Literal["de", "en"], str | None] | bool | int | float | None
         ): ...
 
         def __contains__(self, key: str | datetime.date) -> bool: ...

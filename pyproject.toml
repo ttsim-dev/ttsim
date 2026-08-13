@@ -52,11 +52,13 @@ dependencies = [
 [[project.authors]]
 name = "Hans-Martin von Gaudecker"
 email = "hmgaudecker@uni-bonn.de"
+
 [[project.authors]]
 name = "Marvin Immesberger"
 [[project.maintainers]]
 name = "Hans-Martin von Gaudecker"
 email = "hmgaudecker@uni-bonn.de"
+
 [[project.maintainers]]
 name = "Marvin Immesberger"
 [project.urls]
@@ -151,6 +153,7 @@ unsafe-fixes = false
 select = [ "ALL" ]
 extend-ignore = [
   "COM812",  # Conflicts with ruff-format
+  "CPY001",  # Copyright notice at top of file
   "EM101",   # Exception must not use a string literal
   "EM102",   # Exception must not use an f-string literal
   "FIX002",  # Line contains TODO
@@ -169,6 +172,7 @@ extend-ignore = [
   "PLC2401", # Non-ASCII variable name (German policy names)
   "PLC2403", # Non-ASCII import name (German policy names)
   "PLR0913", # Too many arguments
+  "PLR0917", # Too many positional arguments
   "PLR5501", # Collapsible else-if
   "UP040",   # Non-PEP 695 type alias (can't use inside TYPE_CHECKING)
   "UP046",   # Non-PEP 695 generic class (needs careful migration)
@@ -234,7 +238,6 @@ pydocstyle.convention = "google"
 column_width = 88
 max_supported_python = "3.14"
 table_format = "long"
-collapse_tables = [ "tool.hatch", "tool.pytest", "tool.pytask", "tool.ty" ]
 expand_tables = [
   "tool.pixi.dependencies",
   "tool.pixi.environments",
@@ -263,6 +266,7 @@ expand_tables = [
   "tool.pixi.pypi-dependencies.ttsim-backend",
   "tool.pixi.workspace",
 ]
+collapse_tables = [ "tool.hatch", "tool.pytask", "tool.pytest", "tool.ty" ]
 
 [tool.ty]
 # Resolve third-party imports from a pixi-managed environment. The official ty

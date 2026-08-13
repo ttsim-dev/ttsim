@@ -53,4 +53,4 @@ def _patched_meta_dtype_getitem(
     return _ORIGINAL_META_DTYPE_GETITEM(cls, item)  # ty: ignore[invalid-argument-type]
 
 
-_array_types._MetaAbstractDtype.__getitem__ = _patched_meta_dtype_getitem  # noqa: SLF001  # ty: ignore[invalid-assignment]
+_array_types._MetaAbstractDtype.__getitem__ = _patched_meta_dtype_getitem  # noqa: SLF001

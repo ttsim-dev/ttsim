@@ -514,7 +514,7 @@ def group_variables_are_not_constant_within_groups(
             target_name=name,
             grouping_levels=labels__grouping_levels,
         )
-        if group_by_id in processed_data:
+        if group_by_id is not None and group_by_id in processed_data:
             group_by_id_series = pd.Series(processed_data[group_by_id])
             leaf_series = pd.Series(processed_data[name])
             unique_counts = leaf_series.groupby(group_by_id_series).nunique(
