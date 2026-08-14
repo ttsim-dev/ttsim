@@ -194,13 +194,27 @@ def _as_boolean_level(unit: pint.Unit, registry: pint.UnitRegistry) -> BooleanLe
     ``1 / [fam]`` → ``(True, "fam")``; a plain ``1`` → ``(True, None)``;
     ``EUR_PER_MONTH`` or ``[hh]`` → ``(False, None)``.
     """
-    if _has_grouping_level_numerator(unit):
-        return BooleanLevel(is_boolean=False, level=None)
-    if not registry.Quantity(
-        1.0, _unit_without_grouping_levels(unit=unit, registry=registry)
-    ).dimensionless:
+    if not _is_dimensionless_up_to_grouping_level(unit=unit, registry=registry):
         return BooleanLevel(is_boolean=False, level=None)
     return BooleanLevel(is_boolean=True, level=_unit_level_denominator(unit))
+
+
+def _is_dimensionless_up_to_grouping_level(
+    unit: pint.Unit, registry: pint.UnitRegistry
+) -> bool:
+    """Whether ``unit`` is a plain number, apart from a grouping-level denominator.
+
+    ``1``, ``1 / [fam]`` → ``True``; ``EUR_PER_MONTH``, ``[hh]``, a calendar point
+    → ``False``. This is what the unit model can say about the values that carry no
+    physical content — truth values, identifiers, shares, counts. It cannot tell
+    them apart from one another (GEP 10 leaves semantic kinds to a later stage), so
+    a screen built on it rejects physical content rather than certifying a kind.
+    """
+    if _has_grouping_level_numerator(unit):
+        return False
+    return registry.Quantity(
+        1.0, _unit_without_grouping_levels(unit=unit, registry=registry)
+    ).dimensionless
 
 
 def _boolean_quantity(level: str | None, registry: pint.UnitRegistry) -> pint.Quantity:
@@ -325,6 +339,14 @@ def _run_one_path(
             qname=qname,
             reason=f"it makes more than {_MAX_DECISIONS_PER_RUN} branch decisions "
             "in one run — a data-driven loop?",
+        ), True
+    except _ReductionNotEvaluableError as err:
+        return _opt_out_required_error(
+            qname=qname,
+            reason=f"it reduces an array in the body (`xnp.{err.op}`) — a reduction "
+            "changes which rows the result belongs to, and the unit check has no "
+            "array-axis information to derive the result's grouping level from; an "
+            "aggregation node states that level instead",
         ), True
     except _LookupArityError as err:
         return (
@@ -599,6 +621,22 @@ class _ScheduleNotEvaluableError(_UnitCheckError):
     """
 
 
+class _ReductionNotEvaluableError(_UnitCheckError):
+    """An in-body array reduction the unit check cannot type.
+
+    A reduction over rows changes which entity the result belongs to — per-person
+    amounts summed over a group are the group's total — and the unit check sees no
+    array axes to read that from, so it can neither preserve nor derive the
+    result's grouping level. Caught by :func:`_run_one_path` and reported as
+    needing an explicit ``verify_units=False`` opt-out; an aggregation node, which
+    states its target level, is the checked alternative.
+    """
+
+    def __init__(self, op: str) -> None:
+        super().__init__()
+        self.op = op
+
+
 class _LookupArityError(_UnitCheckError):
     """A multi-dimensional ``look_up`` call supplies the wrong number of arguments.
 
@@ -711,9 +749,11 @@ class _UnitCheckQuantity:
     in a real run (the whole point of the check). Comparisons and truth tests
     instead return an explorer-controlled value, so the explorer — not the
     representative magnitude — decides which branch is taken; the magnitude is
-    always ``1.0`` and never matters. Anything the wrapper cannot model raises,
-    which the caller treats as "not evaluable on this path" and falls back to
-    the declaration — so the wrapper can never produce a false positive.
+    always ``1.0`` and never matters. A truth test is screened before it is
+    handed on: only a boolean may control a branch. Anything the wrapper cannot
+    model raises, which the caller treats as "not evaluable on this path" and
+    falls back to the declaration — so the wrapper can never produce a false
+    positive.
     """
 
     __slots__ = ("_explorer", "_label", "_unit_system", "q")
@@ -913,7 +953,28 @@ class _UnitCheckQuantity:
             )
 
     def __bool__(self) -> bool:
+        """Resolve a truth context — an ``if``, a conditional expression, ``and``,
+        ``or`` — on the explorer, once the value is established to be a truth value.
+
+        A branch condition is a demand that the operand have boolean semantics, not
+        merely that Python accept its numerical truthiness: a stock, a flow, a
+        calendar point or a duration controlling a branch is a bug (GEP 10). The
+        screen is the one the logical operators use, so ``if x`` and ``~x`` agree on
+        what a boolean is.
+        """
+        self._fail_if_not_a_truth_value(op=_TRUTH_VALUE_OP)
         return self._explorer.decide(self._label)
+
+    def _fail_if_not_a_truth_value(self, op: str) -> None:
+        """Reject a value with physical content where a boolean is required."""
+        if not _as_boolean_level(
+            unit=cast("pint.Unit", self.q.units), registry=self._registry
+        ).is_boolean:
+            raise _UnitMixError(
+                op=op,
+                left=cast("pint.Unit", self.q.units),
+                right=_dimensionless_unit(self._registry),
+            )
 
     # Ordering comparisons are unit-blind at run time, so a non-equivalent
     # unit-carrying operand is a bug; the explorer still forces which branch runs.
@@ -1479,7 +1540,10 @@ class _UnitCheckXnp:
     at full parity with a scalar one.
 
     An op not modelled here falls through to raw NumPy, raises, and is reported as
-    needing ``verify_units=False`` — never silently passed through.
+    needing ``verify_units=False`` — never silently passed through. The array
+    reductions are modelled only to refuse them: their result belongs to rows the
+    unit check cannot identify without array-axis metadata (see
+    :class:`_ReductionNotEvaluableError`).
     """
 
     @staticmethod
@@ -1503,7 +1567,8 @@ class _UnitCheckXnp:
         return _clamping_op(left=left, right=right, op="minimum")
 
     @staticmethod
-    def where(condition: Any, x: Any, y: Any) -> Any:  # noqa: ANN401, ARG004
+    def where(condition: Any, x: Any, y: Any) -> Any:  # noqa: ANN401
+        _fail_if_condition_is_not_a_truth_value(condition=condition)
         return _where_op(x=x, y=y)
 
     @staticmethod
@@ -1511,16 +1576,16 @@ class _UnitCheckXnp:
         return _clip_op(value=value, a_min=a_min, a_max=a_max)
 
     @staticmethod
-    def sum(value: Any, *args: Any, **kwargs: Any) -> Any:  # noqa: ANN401, ARG004
-        return _unit_preserving_op(value)
+    def sum(*args: Any, **kwargs: Any) -> Any:  # noqa: ANN401, ARG004
+        raise _ReductionNotEvaluableError(op="sum")
 
     @staticmethod
-    def amin(value: Any, *args: Any, **kwargs: Any) -> Any:  # noqa: ANN401, ARG004
-        return _unit_preserving_op(value)
+    def amin(*args: Any, **kwargs: Any) -> Any:  # noqa: ANN401, ARG004
+        raise _ReductionNotEvaluableError(op="amin")
 
     @staticmethod
-    def amax(value: Any, *args: Any, **kwargs: Any) -> Any:  # noqa: ANN401, ARG004
-        return _unit_preserving_op(value)
+    def amax(*args: Any, **kwargs: Any) -> Any:  # noqa: ANN401, ARG004
+        raise _ReductionNotEvaluableError(op="amax")
 
     @staticmethod
     def floor(value: Any) -> Any:  # noqa: ANN401
@@ -1570,20 +1635,70 @@ def _piecewise_polynomial_for_unit_check(x: Any, parameters: Any, xnp: Any) -> A
 
 
 def _join_for_unit_check(
-    foreign_key: Any,  # noqa: ANN401, ARG001
-    primary_key: Any,  # noqa: ANN401, ARG001
+    foreign_key: Any,  # noqa: ANN401
+    primary_key: Any,  # noqa: ANN401
     target: Any,  # noqa: ANN401
-    value_if_foreign_key_is_missing: Any,  # noqa: ANN401, ARG001
+    value_if_foreign_key_is_missing: Any,  # noqa: ANN401
     xnp: Any,  # noqa: ANN401, ARG001
 ) -> Any:  # noqa: ANN401
-    """Unit-check stand-in for ``join``.
+    """Unit-check stand-in for ``join``, screening every operand it can read.
 
-    A person-to-person gather preserves the ``target`` column's unit and level
-    (the keys are dimensionless ``p_id``s, the missing-value a sentinel literal).
+    A gather hands on the ``target`` column's unit and grouping level, but only if
+    the rest of the call is sound (GEP 10):
+
+    - both keys must be identifiers — values with no physical content. A currency,
+      a flow, or a calendar point never identifies a row, and the run-time gather
+      would take it as an index without complaint. (That two identifiers belong to
+      the *same* key domain is beyond what the unit model can say.)
+    - the missing-key fallback becomes part of the gathered column, so it is
+      screened against the target exactly as an arm of ``where`` is: a fallback in
+      another unit is a bug that only unmatched keys would ever expose, and a bare
+      sentinel next to a dimensionless target (``-1`` for a group id) stays
+      admissible.
     """
-    if isinstance(target, _UnitCheckQuantity):
-        return target._wrap(target.q)  # noqa: SLF001
-    raise _ScheduleNotEvaluableError
+    _fail_if_join_key_is_not_an_identifier(key=foreign_key, name="foreign_key")
+    _fail_if_join_key_is_not_an_identifier(key=primary_key, name="primary_key")
+    if not isinstance(target, _UnitCheckQuantity):
+        raise _ScheduleNotEvaluableError
+    target._fail_if_other_unit_is_not_equivalent(  # noqa: SLF001
+        other=value_if_foreign_key_is_missing, op=_JOIN_FALLBACK_OP
+    )
+    return target._wrap(target.q)  # noqa: SLF001
+
+
+def _fail_if_join_key_is_not_an_identifier(key: Any, name: str) -> None:  # noqa: ANN401
+    """Reject a ``join`` key carrying physical content.
+
+    A raw key (a literal, an array the check does not model) carries no unit to
+    screen and passes; a structured pluck is reported at the pluck, as anywhere.
+    """
+    if isinstance(key, _UnitCheckStructuredValue):
+        key._raise_used_as_quantity(f"join {name}")  # noqa: SLF001
+    if not isinstance(key, _UnitCheckQuantity):
+        return
+    if not _is_dimensionless_up_to_grouping_level(
+        unit=cast("pint.Unit", key.q.units),
+        registry=key._registry,  # noqa: SLF001
+    ):
+        raise _UnitMixError(
+            op=_JOIN_KEY_OP,
+            left=cast("pint.Unit", key.q.units),
+            right=_dimensionless_unit(key._registry),  # noqa: SLF001
+        )
+
+
+def _fail_if_condition_is_not_a_truth_value(condition: Any) -> None:  # noqa: ANN401
+    """Screen a selection primitive's condition as a truth value.
+
+    The vectorized selectors run the same screen as a scalar branch, so
+    ``xnp.where(wealth, …)`` is rejected exactly as ``… if wealth else …`` is
+    (GEP 10). A raw condition — a bare literal, an array the check does not model
+    — carries no unit to screen and passes.
+    """
+    if isinstance(condition, _UnitCheckStructuredValue):
+        condition._raise_used_as_quantity(_TRUTH_VALUE_OP)  # noqa: SLF001
+    if isinstance(condition, _UnitCheckQuantity):
+        condition._fail_if_not_a_truth_value(op=_TRUTH_VALUE_OP)  # noqa: SLF001
 
 
 def _cast_ttsim_unit_for_unit_check(
@@ -1734,7 +1849,7 @@ def _clip_op(value: Any, a_min: Any, a_max: Any) -> Any:  # noqa: ANN401
 
 
 def _unit_preserving_op(value: Any) -> Any:  # noqa: ANN401
-    """A unit-preserving reduction/unary op (``sum``/``floor``/``abs``/…)."""
+    """An elementwise unit-preserving op (``floor``/``ceil``/``round``/``abs``)."""
     if isinstance(value, _UnitCheckQuantity):
         return value._wrap(value.q)  # noqa: SLF001
     return value
@@ -1752,6 +1867,13 @@ def _is_scalar_literal(value: Any) -> bool:  # noqa: ANN401
 
 #: The logical operators the unit check screens for boolean (dimensionless) operands.
 _LOGICAL_OPS = frozenset({"&", "|", "^", "~"})
+
+#: Names the screens above report themselves under, where the offending construct is
+#: not an operator: a truth context (a branch, a selector's condition) and the two
+#: `join` operands beyond the target.
+_TRUTH_VALUE_OP = "truth value"
+_JOIN_KEY_OP = "join key"
+_JOIN_FALLBACK_OP = "missing-key fallback"
 
 
 def _inferred_result_error(
@@ -1930,11 +2052,15 @@ def _unit_mix_error_message(qname: str, mix: _UnitMixError, detail: str) -> str:
     """Message for a body that combined two units unsoundly.
 
     A logical operator (``&``/``|``/``^``/``~``) carrying a real quantity is
-    reported as a non-boolean operand; an ordering comparison against a bare
-    non-zero literal is reported as an untagged threshold; ``+``/``-``/an ordering
-    comparison of non-equivalent quantities is reported as a unit mix (no run-time
-    conversion).
+    reported as a non-boolean operand; a dimensioned branch condition or selector
+    as a non-boolean truth value; a ``join`` key or missing-key fallback against
+    the contract it broke; an ordering comparison against a bare non-zero literal
+    as an untagged threshold; ``+``/``-``/an ordering comparison of non-equivalent
+    quantities as a unit mix (no run-time conversion).
     """
+    named_screen = _named_screen_message(qname=qname, mix=mix, detail=detail)
+    if named_screen is not None:
+        return named_screen
     if mix.literal is not None:
         return (
             f"{qname}: combines '{mix.left}' {mix.op} the bare literal "
@@ -1957,6 +2083,52 @@ def _unit_mix_error_message(qname: str, mix: _UnitMixError, detail: str) -> str:
         f"{qname}: applies '{mix.op}' to non-boolean operands '{mix.left}' and "
         f"'{mix.right}'{detail} — logical operators expect boolean "
         f"(dimensionless) operands."
+    )
+
+
+def _named_screen_message(qname: str, mix: _UnitMixError, detail: str) -> str | None:
+    """Message for the screens that name themselves rather than an operator.
+
+    A truth context, a ``join`` key, and a ``join`` fallback each broke a contract
+    of their own, so each is reported in its own terms; ``None`` where the offence
+    is an operator's and :func:`_unit_mix_error_message` phrases it.
+    """
+    if mix.op == _TRUTH_VALUE_OP:
+        return (
+            f"{qname}: uses '{mix.left}' as a truth value{detail} — only a boolean "
+            f"may control a branch or select between two arms; compare it against "
+            f"a quantity in the same unit instead (GEP 10)."
+        )
+    if mix.op == _JOIN_KEY_OP:
+        return (
+            f"{qname}: gathers with '{mix.left}' as a `join` key{detail} — a key is "
+            f"an identifier and carries no physical content, so a dimensioned "
+            f"column cannot identify a row (GEP 10)."
+        )
+    if mix.op == _JOIN_FALLBACK_OP:
+        return _join_fallback_message(qname=qname, mix=mix, detail=detail)
+    return None
+
+
+def _join_fallback_message(qname: str, mix: _UnitMixError, detail: str) -> str:
+    """Message for a ``join`` whose missing-key fallback is not in the target's unit.
+
+    The fallback fills the rows whose key found no match, so it lands in the
+    gathered column next to the target's own values — a bare non-zero literal
+    carries the target's unit silently, another unit is not converted at run time.
+    """
+    if mix.literal is not None:
+        return (
+            f"{qname}: gathers with the bare literal {mix.literal} as the "
+            f"missing-key fallback for a '{mix.left}' target{detail} — the fallback "
+            f"lands in the gathered column and silently carries the target's unit; "
+            f"promote it to a parameter, tag it with `cast_ttsim_unit`, or use 0 "
+            f"(GEP 10)."
+        )
+    return (
+        f"{qname}: gathers a '{mix.left}' target with a '{mix.right}' missing-key "
+        f"fallback{detail} — the fallback fills the unmatched rows of the same "
+        f"column, and there is no unit conversion at run time (GEP 10)."
     )
 
 

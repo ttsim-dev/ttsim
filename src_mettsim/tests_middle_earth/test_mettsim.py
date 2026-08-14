@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from datetime import timedelta
 from typing import TYPE_CHECKING, Any, Literal
 
 import numpy
@@ -15,6 +14,7 @@ from ttsim.testing_utils import (
     check_env_completeness,
     check_policy_environment_units,
     execute_test,
+    get_policy_date_partition,
     load_policy_cases,
 )
 from ttsim.tt.units import TTSIMUnit, UnitAnnotatedColumn
@@ -51,16 +51,11 @@ def get_orig_mettsim_objects() -> dict[
 
 
 def dates_in_orig_mettsim_objects() -> list[datetime.date]:
-    orig_objects = get_orig_mettsim_objects()
-    start_dates = {
-        v.start_date  # ty: ignore[unresolved-attribute]
-        for v in orig_objects["column_objects_and_param_functions"].values()
-    }
-    end_dates = {
-        v.end_date + timedelta(days=1)  # ty: ignore[unresolved-attribute]
-        for v in orig_objects["column_objects_and_param_functions"].values()
-    }
-    return sorted(start_dates | end_dates)
+    """One date per structural regime of METTSIM, parameter-only changes included."""
+    return get_policy_date_partition(
+        orig_policy_objects=get_orig_mettsim_objects(),
+        unit_system=middle_earth.UNIT_SYSTEM,
+    )
 
 
 @pytest.fixture

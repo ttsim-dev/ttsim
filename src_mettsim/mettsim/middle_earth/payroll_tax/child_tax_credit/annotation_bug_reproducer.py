@@ -25,18 +25,17 @@ def child_in_household_for_bug_reproducer(p_id: int) -> bool:
 
 
 @policy_function(
-    leaf_name="net_income_parents_m",
+    leaf_name="net_wealth_parents",
     end_date="2019-12-31",
     rounding_spec=RoundingSpec(
         base=1,
         direction="down",
         reference="Python 3.14 bug reproducer",
-        unit=TTSIMUnit.SILVER_PENNY.PER_MONTH,
+        unit=TTSIMUnit.SILVER_PENNY,
     ),
-    unit=TTSIMUnit.CURRENCY.PER_MONTH,
-    verify_units=False,
+    unit=TTSIMUnit.CURRENCY,
 )
-def net_income_parents_m_before_currency_reform(
+def net_wealth_parents_before_currency_reform(
     wealth: float,  # Use an existing input
     # This annotation extraction fails in Python 3.14
     payroll_tax__child_tax_credit__child_in_household_for_bug_reproducer: bool,
@@ -50,18 +49,17 @@ def net_income_parents_m_before_currency_reform(
 
 
 @policy_function(
-    leaf_name="net_income_parents_m",
+    leaf_name="net_wealth_parents",
     start_date="2020-01-01",
     rounding_spec=RoundingSpec(
         base=0.25,
         direction="down",
         reference="Python 3.14 bug reproducer",
-        unit=TTSIMUnit.CASTAR.PER_MONTH,
+        unit=TTSIMUnit.CASTAR,
     ),
-    unit=TTSIMUnit.CURRENCY.PER_MONTH,
-    verify_units=False,
+    unit=TTSIMUnit.CURRENCY,
 )
-def net_income_parents_m_after_currency_reform(
+def net_wealth_parents_after_currency_reform(
     wealth: float,  # Use an existing input
     # This annotation extraction fails in Python 3.14
     payroll_tax__child_tax_credit__child_in_household_for_bug_reproducer: bool,

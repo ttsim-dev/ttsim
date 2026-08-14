@@ -993,6 +993,69 @@ def test_not_of_a_non_boolean_quantity_is_caught():
         )
 
 
+def test_dimensioned_value_as_a_branch_condition_is_caught():
+    """Only a boolean may control a branch: an `if` on a currency stock is a bug
+    the unit check reports, exactly as `not` on a currency is (GEP 10)."""
+
+    @policy_function(unit=TTSIMUnit.CURRENCY)
+    def remaining_wealth(wealth: float) -> float:
+        if wealth:  # bug: a stock is not a truth value
+            return wealth
+        return 0.0
+
+    with pytest.raises(UnitConsistencyError, match="truth value"):
+        fail_if_environment_units_are_inconsistent(
+            env={"wealth": wealth, "remaining_wealth": remaining_wealth},
+            grouping_levels=GROUPING_LEVELS,
+            unit_system=UNIT_SYSTEM,
+        )
+
+
+def test_dimensioned_value_as_a_conditional_expression_condition_is_caught():
+    """A conditional expression's condition is a truth context like any other, so
+    a dimensioned selector is caught there too (GEP 10)."""
+
+    @policy_function(unit=TTSIMUnit.CURRENCY.PER_MONTH)
+    def gated_income_m(income_m: float, wealth: float) -> float:
+        return income_m if wealth else 0.0  # bug: a stock is not a truth value
+
+    with pytest.raises(UnitConsistencyError, match="truth value"):
+        fail_if_environment_units_are_inconsistent(
+            env={
+                "income_m": income_m,
+                "wealth": wealth,
+                "gated_income_m": gated_income_m,
+            },
+            grouping_levels=GROUPING_LEVELS,
+            unit_system=UNIT_SYSTEM,
+        )
+
+
+def test_leveled_boolean_as_a_branch_condition_passes():
+    """A group-level indicator is a truth value, so it may control a branch — the
+    truth-context screen rejects physical content, not a grouping level (GEP 10)."""
+
+    @policy_input(unit=TTSIMUnit.DIMENSIONLESS.PER_FAM)
+    def is_exempt_fam() -> bool:
+        """A fam-level indicator."""
+
+    @policy_function(unit=TTSIMUnit.CURRENCY.PER_MONTH)
+    def gated_income_m(income_m: float, is_exempt_fam: bool) -> float:
+        if is_exempt_fam:
+            return 0.0
+        return income_m
+
+    fail_if_environment_units_are_inconsistent(
+        env={
+            "income_m": income_m,
+            "is_exempt_fam": is_exempt_fam,
+            "gated_income_m": gated_income_m,
+        },
+        grouping_levels=GROUPING_LEVELS,
+        unit_system=UNIT_SYSTEM,
+    )
+
+
 def test_boolean_body_at_correct_group_level_passes():
     """A fam-level predicate comparing fam-level quantities infers ``1 / [fam]``,
     matching its ``_fam`` name (GEP 10)."""
@@ -1970,6 +2033,36 @@ def test_where_arms_are_screened_for_equivalence():
         )
 
 
+def test_where_condition_must_be_a_boolean():
+    """`xnp.where` screens its condition before unifying its arms, so the
+    vectorized spelling rejects a dimensioned selector exactly as the scalar `if`
+    does (GEP 10)."""
+
+    @policy_function(
+        unit=TTSIMUnit.CURRENCY.PER_MONTH, vectorization_strategy="not_required"
+    )
+    def gated_m(
+        wealth: FloatColumn,
+        income_m: FloatColumn,
+        other_income_m: FloatColumn,
+        xnp: ModuleType,
+    ) -> FloatColumn:
+        # bug: a stock selects, the arms are fine
+        return xnp.where(wealth, income_m, other_income_m)
+
+    with pytest.raises(UnitConsistencyError, match="truth value"):
+        fail_if_environment_units_are_inconsistent(
+            env={
+                "wealth": wealth,
+                "income_m": income_m,
+                "other_income_m": other_income_m,
+                "gated_m": gated_m,
+            },
+            grouping_levels=GROUPING_LEVELS,
+            unit_system=UNIT_SYSTEM,
+        )
+
+
 def test_where_mixing_a_calendar_point_and_a_duration_is_caught():
     """``xnp.where`` runs no forward pint op, so a calendar-point arm gets no
     delegate-to-pint dispensation: an arm mix of a point and a duration is
@@ -2256,6 +2349,95 @@ def test_schedule_with_a_dimensionful_input_axis_rejects_a_bare_literal_index():
     with pytest.raises(UnitConsistencyError, match="verify_units=False"):
         fail_if_environment_units_are_inconsistent(
             env={"schedule": schedule, "levy_y": levy_y},
+            grouping_levels=GROUPING_LEVELS,
+            unit_system=UNIT_SYSTEM,
+        )
+
+
+def test_join_with_a_dimensioned_key_is_caught():
+    """A gather's keys are identifiers, so a dimensioned column used as a key is a
+    bug — a currency never identifies a row (GEP 10)."""
+
+    @policy_function(
+        unit=TTSIMUnit.CURRENCY.PER_MONTH, vectorization_strategy="not_required"
+    )
+    def recipient_income_m(
+        p_id: IntColumn,
+        wealth: FloatColumn,
+        income_m: FloatColumn,
+        xnp: ModuleType,
+    ) -> FloatColumn:
+        return join(
+            foreign_key=wealth,  # bug: a stock is not an identifier
+            primary_key=p_id,
+            target=income_m,
+            value_if_foreign_key_is_missing=0.0,
+            xnp=xnp,
+        )
+
+    with pytest.raises(UnitConsistencyError, match="identifier"):
+        fail_if_environment_units_are_inconsistent(
+            env={
+                "p_id": p_id,
+                "wealth": wealth,
+                "income_m": income_m,
+                "recipient_income_m": recipient_income_m,
+            },
+            grouping_levels=GROUPING_LEVELS,
+            unit_system=UNIT_SYSTEM,
+        )
+
+
+def test_join_fallback_not_in_the_targets_unit_is_caught():
+    """The missing-key fallback becomes part of the gathered column, so it must
+    carry the target's unit; a yearly fallback under a monthly target is a bug
+    that only unmatched keys would ever expose (GEP 10)."""
+
+    @policy_function(
+        unit=TTSIMUnit.CURRENCY.PER_MONTH, vectorization_strategy="not_required"
+    )
+    def recipient_income_m(
+        p_id: IntColumn,
+        p_id_recipient: IntColumn,
+        income_m: FloatColumn,
+        xnp: ModuleType,
+    ) -> FloatColumn:
+        return join(
+            foreign_key=p_id_recipient,
+            primary_key=p_id,
+            target=income_m,
+            # bug: a yearly amount fills the unmatched rows of a monthly column
+            value_if_foreign_key_is_missing=cast_ttsim_unit(
+                100.0, TTSIMUnit.CURRENCY.PER_YEAR
+            ),
+            xnp=xnp,
+        )
+
+    with pytest.raises(UnitConsistencyError, match="missing-key fallback"):
+        fail_if_environment_units_are_inconsistent(
+            env={
+                "p_id": p_id,
+                "p_id_recipient": p_id_recipient,
+                "income_m": income_m,
+                "recipient_income_m": recipient_income_m,
+            },
+            grouping_levels=GROUPING_LEVELS,
+            unit_system=UNIT_SYSTEM,
+        )
+
+
+def test_in_body_reduction_requires_an_opt_out():
+    """A reduction changes which rows a value belongs to, and the unit check has no
+    array-axis metadata to derive that from, so it demands an explicit opt-out
+    rather than passing the operand's unit through (GEP 10)."""
+
+    @policy_function(unit=TTSIMUnit.CURRENCY, vectorization_strategy="not_required")
+    def total_wealth(wealth: FloatColumn, xnp: ModuleType) -> FloatColumn:
+        return xnp.sum(wealth)
+
+    with pytest.raises(UnitConsistencyError, match="verify_units=False"):
+        fail_if_environment_units_are_inconsistent(
+            env={"wealth": wealth, "total_wealth": total_wealth},
             grouping_levels=GROUPING_LEVELS,
             unit_system=UNIT_SYSTEM,
         )

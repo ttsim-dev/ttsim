@@ -73,6 +73,72 @@ def isolated_unit_vocabulary() -> Iterator[None]:
             delattr(CompositeUnit, step)
 
 
+def get_policy_date_partition(
+    orig_policy_objects: dict[
+        str, FlatColumnObjectsParamFunctions | FlatOrigParamSpecs
+    ],
+    unit_system: UnitSystem | None = None,
+) -> list[datetime.date]:
+    """The dates a policy package must be validated at — one per structural regime.
+
+    The resolved environment changes not only where a function starts or stops, but
+    also where a parameter entry or the statutory currency does: a parameter-only
+    change opens a regime of its own even though every function stays active, and a
+    partition built from function dates alone never assembles it (GEP 10). Each
+    returned date is the left endpoint of one regime:
+
+    - every column object's and param function's start date, and the day after each
+      inclusive end date;
+    - every dated parameter entry — where a value, unit, currency, or leaf set may
+      change;
+    - every statutory-currency start date of ``unit_system``, where one is given.
+
+    Boundaries outside the package's own date domain — the span from its earliest
+    start date to the day after its latest end date — are dropped: no environment
+    exists there to validate. Rounding specifications carry the dates of the
+    function they sit on and so contribute no boundary of their own.
+
+    Args:
+        orig_policy_objects: The package's ``column_objects_and_param_functions``
+            and ``param_specs``, as returned by `main`.
+        unit_system: The package's unit system, whose statutory-currency
+            transitions are boundaries too.
+
+    Returns:
+        The regime start dates, sorted and deduplicated.
+
+    """
+    column_objects = orig_policy_objects["column_objects_and_param_functions"]
+    start_dates = {
+        obj.start_date  # ty: ignore[unresolved-attribute]
+        for obj in column_objects.values()
+    }
+    if not start_dates:
+        return []
+    end_dates = {
+        obj.end_date + datetime.timedelta(days=1)  # ty: ignore[unresolved-attribute]
+        for obj in column_objects.values()
+    }
+    param_dates = {
+        key
+        for spec in orig_policy_objects.get("param_specs", {}).values()
+        for key in spec
+        if isinstance(key, datetime.date)
+    }
+    currency_dates = (
+        {date for date, _ in unit_system.statutory_currency_by_start_date}
+        if unit_system is not None
+        else set()
+    )
+    domain_start = min(start_dates)
+    domain_end = max(end_dates)
+    return sorted(
+        date
+        for date in start_dates | end_dates | param_dates | currency_dates
+        if domain_start <= date <= domain_end
+    )
+
+
 @lru_cache(maxsize=100)
 def cached_policy_environment(
     policy_date: datetime.date,
