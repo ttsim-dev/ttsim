@@ -152,6 +152,81 @@ def test_stock_times_rate_without_time_component_is_caught():
         )
 
 
+def test_reflected_reciprocal_cannot_launder_a_group_marker():
+    @policy_input(unit=TTSIMUnit.CURRENCY.PER_MONTH.PER_FAM)
+    def costs_m_fam() -> float:
+        """The family's monthly costs."""
+
+    @policy_input(unit=TTSIMUnit.CURRENCY.PER_MONTH.PER_FAM)
+    def income_m_fam() -> float:
+        """The family's monthly income."""
+
+    @policy_function(unit=TTSIMUnit.DIMENSIONLESS)
+    def ratio(costs_m_fam: float, income_m_fam: float) -> float:
+        return (1 / costs_m_fam) * income_m_fam
+
+    with pytest.raises(UnitConsistencyError, match="unsupported group calculation"):
+        fail_if_environment_units_are_inconsistent(
+            env={
+                "costs_m_fam": costs_m_fam,
+                "income_m_fam": income_m_fam,
+                "ratio": ratio,
+            },
+            grouping_levels=GROUPING_LEVELS,
+            unit_system=UNIT_SYSTEM,
+        )
+
+
+def test_power_cannot_hide_group_marker_cancellation():
+    @policy_input(unit=TTSIMUnit.CURRENCY.PER_MONTH.PER_FAM)
+    def costs_m_fam() -> float:
+        """The family's monthly costs."""
+
+    @policy_input(unit=TTSIMUnit.CURRENCY.PER_MONTH.PER_FAM)
+    def income_m_fam() -> float:
+        """The family's monthly income."""
+
+    @policy_function(unit=TTSIMUnit.CURRENCY.PER_MONTH.PER_FAM)
+    def powered_income_m_fam(costs_m_fam: float, income_m_fam: float) -> float:
+        return (income_m_fam**2) * (1 / costs_m_fam)
+
+    with pytest.raises(UnitConsistencyError, match="unsupported group calculation"):
+        fail_if_environment_units_are_inconsistent(
+            env={
+                "costs_m_fam": costs_m_fam,
+                "income_m_fam": income_m_fam,
+                "powered_income_m_fam": powered_income_m_fam,
+            },
+            grouping_levels=GROUPING_LEVELS,
+            unit_system=UNIT_SYSTEM,
+        )
+
+
+def test_floor_division_is_not_a_group_level_ratio_bridge():
+    @policy_input(unit=TTSIMUnit.CURRENCY.PER_MONTH.PER_FAM)
+    def costs_m_fam() -> float:
+        """The family's monthly costs."""
+
+    @policy_input(unit=TTSIMUnit.CURRENCY.PER_MONTH.PER_FAM)
+    def income_m_fam() -> float:
+        """The family's monthly income."""
+
+    @policy_function(unit=TTSIMUnit.DIMENSIONLESS)
+    def floored_ratio(costs_m_fam: float, income_m_fam: float) -> float:
+        return income_m_fam // costs_m_fam
+
+    with pytest.raises(UnitConsistencyError, match="unsupported group calculation"):
+        fail_if_environment_units_are_inconsistent(
+            env={
+                "costs_m_fam": costs_m_fam,
+                "income_m_fam": income_m_fam,
+                "floored_ratio": floored_ratio,
+            },
+            grouping_levels=GROUPING_LEVELS,
+            unit_system=UNIT_SYSTEM,
+        )
+
+
 def test_multi_boolean_guard_bug_only_on_mixed_assignment_is_caught():
     """Branch exploration covers multi-boolean guards.
 

@@ -5,6 +5,7 @@ GEP 10 specifies the declaration rules the inferred units are checked against.
 
 from __future__ import annotations
 
+import ast
 import functools
 import inspect
 from collections.abc import Callable, Mapping
@@ -29,7 +30,10 @@ from ttsim.exceptions import (
 from ttsim.interface_dag_elements.shared import (
     FRAMEWORK_PARTIAL_ARGUMENTS,
 )
-from ttsim.tt._function_rewriting import recompile_with_logical_ops_as_calls
+from ttsim.tt._function_rewriting import (
+    func_to_ast,
+    recompile_with_logical_ops_as_calls,
+)
 from ttsim.tt.column_objects_param_function import (
     ColumnObject,
     ParamFunction,
@@ -50,6 +54,7 @@ from ttsim.tt.units import (
     _grouping_levels_with_exponent,
     _unit_level_denominator,
     _unit_without_grouping_levels,
+    cast_ttsim_unit,
     is_calendar_ordinal_unit,
     is_calendar_point_unit,
     pint_unit_from_ttsim_unit_for_column,
@@ -143,7 +148,10 @@ def body_verification_errors(
                 func=obj.function,
                 module="xnp",
                 module_obj=_NON_UNIT_ARGUMENT_VALUES["xnp"],
-                extra_globals=unit_check_helper_stand_ins,
+                extra_globals=_unit_check_scope_bindings(
+                    function=obj.function,
+                    stand_ins=unit_check_helper_stand_ins,
+                ),
             ),
             declared=declared,
             boolean_values=boolean_values,
@@ -155,6 +163,11 @@ def body_verification_errors(
         if error is not None:
             errors.append(error)
     return errors
+
+
+def body_error_is_unsupported(error: str) -> bool:
+    """Whether ``error`` means symbolic evaluation is unsupported, not invalid."""
+    return isinstance(error, _UnsupportedBodyError)
 
 
 def _anchor_schedules_on_body_explorer(
@@ -176,6 +189,11 @@ def _anchor_schedules_on_body_explorer(
 def _has_grouping_level_numerator(unit: pint.Unit) -> bool:
     """Whether a unit carries a grouping level as a *numerator*."""
     return any(exponent > 0 for _, exponent in _grouping_levels_with_exponent(unit))
+
+
+def _has_grouping_component(unit: pint.Unit) -> bool:
+    """Whether a unit carries any grouping level, in numerator or denominator."""
+    return bool(_grouping_levels_with_exponent(unit))
 
 
 class BooleanLevel(NamedTuple):
@@ -388,13 +406,14 @@ def _run_one_path(
             "lookup table, `join`, a raw `xnp` op) or a defect in the body itself, "
             "which this message reproduces verbatim so the two can be told apart",
         ), True
-    return _inferred_result_error(
+    error = _inferred_result_error(
         qname=qname,
         inferred=_unwrap(result),
         declared=declared,
         detail=explorer.branch_detail(),
         unit_system=unit_system,
-    ), False
+    )
+    return error, isinstance(error, _UnsupportedBodyError)
 
 
 def _representative_values_by_qname(
@@ -443,6 +462,7 @@ def _representative_values_by_qname(
                     where=f"Schedule param function {qname!r}",
                 ),
                 output_unit=cast("pint.Unit", unit),
+                output_kind=obj.unit.output_kind,
                 unit_system=unit_system,
             )
         elif isinstance(obj, DictParam | RawParam) and not isinstance(unit, dict):
@@ -565,6 +585,144 @@ def _unit_check_helper_stand_ins(
         **_time_conversion_stand_ins(unit_system.registry),
     }
     return stand_ins, explorer_holder
+
+
+class _ObjectWithCastStandIn:
+    """Delegate every attribute except the canonical unit cast to an object."""
+
+    def __init__(self, wrapped: Any, cast_stand_in: Any) -> None:  # noqa: ANN401
+        self._wrapped = wrapped
+        self.cast_ttsim_unit = cast_stand_in
+
+    def __getattr__(self, name: str) -> Any:  # noqa: ANN401
+        return getattr(self._wrapped, name)
+
+
+def _function_scope(function: Any) -> dict[str, Any]:  # noqa: ANN401
+    """Return the globals and dereferenced closure cells visible to a function."""
+    scope = dict(getattr(function, "__globals__", {}))
+    closure = getattr(function, "__closure__", None)
+    code = getattr(function, "__code__", None)
+    if closure and code is not None:
+        scope.update(
+            dict(
+                zip(
+                    code.co_freevars,
+                    (cell.cell_contents for cell in closure),
+                    strict=True,
+                )
+            )
+        )
+    return scope
+
+
+def _unit_check_scope_bindings(
+    function: Any,  # noqa: ANN401
+    stand_ins: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Add every true alias of ``cast_ttsim_unit`` to checker stand-ins.
+
+    Identity, not spelling, is authoritative. Import aliases and closure aliases
+    are rebound directly. A module alias is replaced by a delegating proxy whose
+    cast attribute is the stand-in, so its other helpers remain untouched.
+    """
+    cast_stand_in = stand_ins["cast_ttsim_unit"]
+    bindings = {
+        name: value for name, value in stand_ins.items() if name != "cast_ttsim_unit"
+    }
+    for name, value in _function_scope(function).items():
+        if value is cast_ttsim_unit:
+            bindings[name] = cast_stand_in
+        else:
+            try:
+                attribute = inspect.getattr_static(value, "cast_ttsim_unit")
+            except AttributeError:
+                continue
+            if attribute is cast_ttsim_unit:
+                bindings[name] = _ObjectWithCastStandIn(value, cast_stand_in)
+    return bindings
+
+
+def _cast_aliases_in_scope(scope: Mapping[str, Any]) -> tuple[set[str], set[str]]:
+    """Return direct and module aliases that resolve to the canonical cast."""
+    direct_aliases = {name for name, value in scope.items() if value is cast_ttsim_unit}
+    module_aliases: set[str] = set()
+    for name, value in scope.items():
+        try:
+            attribute = inspect.getattr_static(value, "cast_ttsim_unit")
+        except AttributeError:
+            continue
+        if attribute is cast_ttsim_unit:
+            module_aliases.add(name)
+    return direct_aliases, module_aliases
+
+
+def _assignment_rhs_is_cast(
+    node: ast.Assign,
+    aliases: set[str],
+    module_aliases: set[str],
+) -> bool:
+    """Whether an assignment copies a known canonical-cast alias."""
+    return (isinstance(node.value, ast.Name) and node.value.id in aliases) or (
+        isinstance(node.value, ast.Attribute)
+        and node.value.attr == "cast_ttsim_unit"
+        and isinstance(node.value.value, ast.Name)
+        and node.value.value.id in module_aliases
+    )
+
+
+def _local_cast_aliases(
+    tree: ast.Module,
+    direct_aliases: set[str],
+    module_aliases: set[str],
+) -> set[str]:
+    """Expand aliases through local ``alias = existing_alias`` assignments."""
+    aliases = set(direct_aliases)
+    changed = True
+    while changed:
+        changed = False
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Assign) or not _assignment_rhs_is_cast(
+                node=node, aliases=aliases, module_aliases=module_aliases
+            ):
+                continue
+            for target in node.targets:
+                if isinstance(target, ast.Name) and target.id not in aliases:
+                    aliases.add(target.id)
+                    changed = True
+    return aliases
+
+
+def function_uses_local_cast(function: Any) -> bool:  # noqa: ANN401
+    """Whether a body calls the canonical cast, directly or through a true alias."""
+    direct_aliases, module_aliases = _cast_aliases_in_scope(_function_scope(function))
+    try:
+        tree = func_to_ast(function)
+    except (OSError, TypeError, IndentationError, SyntaxError):
+        code = getattr(function, "__code__", None)
+        return code is not None and bool(
+            set(code.co_names).intersection(direct_aliases | module_aliases)
+            or set(code.co_freevars).intersection(direct_aliases)
+        )
+
+    aliases = _local_cast_aliases(
+        tree=tree,
+        direct_aliases=direct_aliases,
+        module_aliases=module_aliases,
+    )
+    return any(
+        isinstance(node, ast.Call)
+        and (
+            (isinstance(node.func, ast.Name) and node.func.id in aliases)
+            or (
+                isinstance(node.func, ast.Attribute)
+                and node.func.attr == "cast_ttsim_unit"
+                and isinstance(node.func.value, ast.Name)
+                and node.func.value.id in module_aliases
+            )
+        )
+        for node in ast.walk(tree)
+    )
 
 
 # Caps on the path-exploring unit check (see ``_PathExplorer``): only a pathological
@@ -980,7 +1138,26 @@ class _UnitCheckQuantity:
             other_q._raise_used_as_quantity(op)  # noqa: SLF001
         if not isinstance(other_q, pint.Quantity):
             left_q, right_q = (other_q, self.q) if reflected else (self.q, other_q)
-            result = left_q * right_q if op == "*" else left_q / right_q
+            if (
+                op == "/"
+                and reflected
+                and _has_grouping_component(cast("pint.Unit", self.q.units))
+            ):
+                # ``bare / group_quantity`` creates a grouping numerator. Reject it
+                # at the reciprocal rather than allowing a later multiplication to
+                # cancel the marker and hide the illegal route.
+                raise _UnsupportedGroupArithmeticError(
+                    op=op,
+                    left=_dimensionless_unit(self._registry),
+                    right=cast("pint.Unit", self.q.units),
+                )
+            if op == "*":
+                result = left_q * right_q
+            else:
+                try:
+                    result = left_q / right_q
+                except ZeroDivisionError:
+                    result = left_q / self._nonzero_like(right_q)
             # Arithmetic no longer carries independent evidence that a value is
             # exactly a head count or a yes/no indicator.
             return result, QuantityKind.GENERIC
@@ -1056,6 +1233,28 @@ class _UnitCheckQuantity:
             left=cast("pint.Unit", left_q.units),
             right=cast("pint.Unit", right_q.units),
         )
+
+    def _fail_if_grouping_operator_is_unsupported(
+        self,
+        other: object,
+        op: str,
+    ) -> None:
+        """Reject operators for which GEP 10 defines no group-level bridge."""
+        other_q = _unwrap(other)
+        self_has_group = _has_grouping_component(cast("pint.Unit", self.q.units))
+        other_has_group = isinstance(
+            other_q, pint.Quantity
+        ) and _has_grouping_component(cast("pint.Unit", other_q.units))
+        if self_has_group or other_has_group:
+            raise _UnsupportedGroupArithmeticError(
+                op=op,
+                left=cast("pint.Unit", self.q.units),
+                right=(
+                    cast("pint.Unit", other_q.units)
+                    if isinstance(other_q, pint.Quantity)
+                    else _dimensionless_unit(self._registry)
+                ),
+            )
 
     def _fail_if_other_unit_is_not_equivalent(self, other: Any, op: str) -> None:  # noqa: ANN401
         """Reject an invalid operand of an ordering comparison or ``where``.
@@ -1240,28 +1439,17 @@ class _UnitCheckQuantity:
 
     def __truediv__(self, other: Any) -> _UnitCheckQuantity:  # noqa: ANN401
         self._fail_if_calendar_ordinal_arithmetic(other=other, op="/")
-        if isinstance(_unwrap(other), pint.Quantity):
-            result, kind = self._group_arithmetic(other, op="/")
-            return self._wrap(result, kind=kind)
-        divisor = _unwrap(other)
-        try:
-            return self._wrap(self.q / divisor)
-        except ZeroDivisionError:
-            return self._wrap(self.q / self._nonzero_like(divisor))
+        result, kind = self._group_arithmetic(other, op="/")
+        return self._wrap(result, kind=kind)
 
     def __rtruediv__(self, other: Any) -> _UnitCheckQuantity:  # noqa: ANN401
         self._fail_if_calendar_ordinal_arithmetic(other=other, op="/")
-        if isinstance(_unwrap(other), pint.Quantity):
-            result, kind = self._group_arithmetic(other, op="/", reflected=True)
-            return self._wrap(result, kind=kind)
-        dividend = _unwrap(other)
-        try:
-            return self._wrap(dividend / self.q)
-        except ZeroDivisionError:
-            return self._wrap(dividend / self._nonzero_like(self.q))
+        result, kind = self._group_arithmetic(other, op="/", reflected=True)
+        return self._wrap(result, kind=kind)
 
     def __floordiv__(self, other: Any) -> _UnitCheckQuantity:  # noqa: ANN401
         self._fail_if_calendar_ordinal_arithmetic(other=other, op="//")
+        self._fail_if_grouping_operator_is_unsupported(other=other, op="//")
         divisor = _unwrap(other)
         try:
             return self._wrap(self.q // divisor)
@@ -1270,6 +1458,7 @@ class _UnitCheckQuantity:
 
     def __rfloordiv__(self, other: Any) -> _UnitCheckQuantity:  # noqa: ANN401
         self._fail_if_calendar_ordinal_arithmetic(other=other, op="//")
+        self._fail_if_grouping_operator_is_unsupported(other=other, op="//")
         dividend = _unwrap(other)
         try:
             return self._wrap(dividend // self.q)
@@ -1286,10 +1475,12 @@ class _UnitCheckQuantity:
 
     def __pow__(self, other: Any) -> _UnitCheckQuantity:  # noqa: ANN401
         self._fail_if_calendar_ordinal_arithmetic(other=other, op="**")
+        self._fail_if_grouping_operator_is_unsupported(other=other, op="**")
         return self._wrap(self.q ** _unwrap(other))
 
     def __rpow__(self, other: Any) -> _UnitCheckQuantity:  # noqa: ANN401
         self._fail_if_calendar_ordinal_arithmetic(other=other, op="**")
+        self._fail_if_grouping_operator_is_unsupported(other=other, op="**")
         return self._wrap(_unwrap(other) ** self.q)
 
     def __neg__(self) -> _UnitCheckQuantity:
@@ -1483,6 +1674,7 @@ class _UnitCheckStructuredValue:
             return _UnitCheckSchedule(
                 input_unit=resolved.input_unit,
                 output_unit=resolved.output_unit,
+                output_kind=resolved.output_kind,
                 unit_system=self._unit_system,
                 explorer_holder=self._explorer_holder,
             )
@@ -1597,17 +1789,25 @@ class _UnitCheckSchedule:
     - ``None`` — unscreened; a schedule parameter that left its input axis unset.
     """
 
-    __slots__ = ("explorer_holder", "input_unit", "output_unit", "unit_system")
+    __slots__ = (
+        "explorer_holder",
+        "input_unit",
+        "output_kind",
+        "output_unit",
+        "unit_system",
+    )
 
     def __init__(
         self,
         input_unit: pint.Unit | tuple[pint.Unit, ...] | None,
         output_unit: pint.Unit,
         unit_system: UnitSystem,
+        output_kind: QuantityKind = QuantityKind.GENERIC,
         explorer_holder: list[_PathExplorer | None] | None = None,
     ) -> None:
         self.input_unit = input_unit
         self.output_unit = output_unit
+        self.output_kind = output_kind
         self.unit_system = unit_system
         self.explorer_holder = explorer_holder
 
@@ -1663,6 +1863,7 @@ class _UnitCheckSchedule:
             q=self.unit_system.registry.Quantity(1.0, self.output_unit),
             explorer=explorer,
             unit_system=self.unit_system,
+            kind=self.output_kind,
         )
 
     def _axis_at(self, position: int) -> pint.Unit | None:
@@ -2336,7 +2537,13 @@ def _structured_pluck_message(
     )
 
 
-def _opt_out_required_error(qname: str, reason: str) -> str:
+class _UnsupportedBodyError(str):
+    """Diagnostic marker for a body the symbolic checker cannot evaluate."""
+
+    __slots__ = ()
+
+
+def _opt_out_required_error(qname: str, reason: str) -> _UnsupportedBodyError:
     """Message demanding an explicit opt-out for a body the unit check cannot evaluate.
 
     A body the unit check cannot evaluate is *not* waved through silently:
@@ -2345,7 +2552,7 @@ def _opt_out_required_error(qname: str, reason: str) -> str:
     stands and the body's edges are still checked — only its internal inference
     is skipped.
     """
-    return (
+    return _UnsupportedBodyError(
         f"{qname}: its body cannot be unit-checked ({reason}). "
         f"Set `verify_units=False` on its decorator to opt out of body inference "
         f"— its declared unit and its edges stay checked (GEP 10)."

@@ -32,6 +32,7 @@ import math
 import re
 from collections.abc import Iterable, Iterator, Mapping
 from dataclasses import dataclass, replace
+from enum import Enum, auto
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Any, TypeAlias, TypeVar
 
@@ -381,6 +382,19 @@ UNSET_UNIT = UnsetUnit()
 UnitDeclaration: TypeAlias = CompositeUnit | UnsetUnit
 
 
+class QuantityKind(Enum):
+    """Narrow semantic evidence used by grouping-level unit checks.
+
+    These labels do not add dimensions to Pint. They record only the two cases in
+    which a dimensionless group denominator is meaningful: a head count and a
+    yes/no indicator. Everything else deliberately remains generic.
+    """
+
+    GENERIC = auto()
+    COUNT = auto()
+    INDICATOR = auto()
+
+
 @dataclass(frozen=True)
 class InputOutputUnits:
     """The two axes of a schedule builder's output.
@@ -409,6 +423,25 @@ class InputOutputUnits:
     ``i``)."""
     output_unit: CompositeUnit
     """The unit the schedule produces at every call site."""
+    input_kind: QuantityKind | tuple[QuantityKind, ...] = QuantityKind.GENERIC
+    """Semantic evidence for each input axis.
+
+    A tuple must parallel a tuple-valued ``input_unit``. Authors need to set this
+    only for a dimensionless axis carrying a grouping level; ordinary schedule
+    axes stay :attr:`QuantityKind.GENERIC`.
+    """
+    output_kind: QuantityKind = QuantityKind.GENERIC
+    """Semantic evidence for the output axis, under the same narrow rule."""
+
+    def __post_init__(self) -> None:
+        if isinstance(self.input_kind, tuple) and (
+            not isinstance(self.input_unit, tuple)
+            or len(self.input_kind) != len(self.input_unit)
+        ):
+            raise UnitDefinitionError(
+                "InputOutputUnits: tuple-valued `input_kind` must have exactly one "
+                "entry for each tuple-valued `input_unit` axis (GEP 10)."
+            )
 
 
 def cast_ttsim_unit(

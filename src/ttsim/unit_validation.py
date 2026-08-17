@@ -2,22 +2,31 @@
 
 from __future__ import annotations
 
-import ast
+import dataclasses
 import datetime
 import inspect
-import textwrap
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from typing import (
     Any,
     cast,
+    get_args,
 )
 
 import dags.tree as dt
 import pint
 
-from ttsim._quantity_kinds import QuantityKind, quantity_kind
-from ttsim._unit_inference import body_verification_errors
+from ttsim._quantity_kinds import (
+    documented_quantity_kind,
+    quantity_kind,
+    quantity_kind_for_leaf,
+    quantity_kind_for_scalar_type,
+)
+from ttsim._unit_inference import (
+    body_error_is_unsupported,
+    body_verification_errors,
+    function_uses_local_cast,
+)
 from ttsim.exceptions import UnitConsistencyError
 from ttsim.interface_dag_elements.shared import FRAMEWORK_PARTIAL_ARGUMENTS
 from ttsim.tt.column_objects_param_function import (
@@ -39,6 +48,7 @@ from ttsim.tt.units import (
     UNSET_UNIT,
     CompositeUnit,
     InputOutputUnits,
+    QuantityKind,
     UnitAnnotatedColumn,
     UnitDeclaration,
     UnitSystem,
@@ -66,6 +76,8 @@ from ttsim.unit_resolution import (
     FRAMEWORK_DATE_NODE_UNITS,
     _composite_token_level,
     _fail_if_structured_field_annotations_are_invalid,
+    _resolvable_type_hints,
+    _resolved_return_structure,
     _return_annotation_name,
     _returns_a_schedule,
     _schedule_axis_errors,
@@ -190,11 +202,11 @@ def fail_if_environment_units_are_inconsistent(
         UnitDefinitionError: If an ``InputOutputUnits`` axis or a
             parameter-dataclass field annotation is invalid.
     """
-    _fail_if_structured_field_annotations_are_invalid(env=env, unit_system=unit_system)
     if resolved_pint_units is None:
         resolved_pint_units = resolve_environment_units(
             env=env, grouping_levels=grouping_levels, unit_system=unit_system
         )
+    _fail_if_structured_field_annotations_are_invalid(env=env, unit_system=unit_system)
     errors = _non_body_consistency_errors(
         env=env,
         resolved_pint_units=resolved_pint_units,
@@ -227,6 +239,7 @@ class UnitValidationReport:
 
     resolved_declarations: tuple[str, ...]
     checked_function_bodies: tuple[str, ...]
+    checked_aggregations: tuple[str, ...]
     generated_rules: tuple[str, ...]
     local_casts: tuple[str, ...]
     body_opt_outs: tuple[str, ...]
@@ -239,6 +252,7 @@ class UnitValidationReport:
         lines = [
             f"Declarations resolved: {len(self.resolved_declarations)}",
             f"Bodies checked: {len(self.checked_function_bodies)}",
+            f"Aggregations checked: {len(self.checked_aggregations)}",
             f"Generated rules: {len(self.generated_rules)}",
             f"Casts: {len(self.local_casts)}",
             f"Body opt-outs: {len(self.body_opt_outs)}",
@@ -279,6 +293,7 @@ def create_unit_validation_report(
     resolved = resolve_environment_units(
         env=env, grouping_levels=grouping_levels, unit_system=unit_system
     )
+    _fail_if_structured_field_annotations_are_invalid(env=env, unit_system=unit_system)
     declaration_errors = _non_body_consistency_errors(
         env=env,
         resolved_pint_units=resolved,
@@ -294,30 +309,42 @@ def create_unit_validation_report(
         resolved_pint_units=resolved,
         unit_system=unit_system,
     )
+    invalid_body_errors = [
+        error for error in body_errors if not body_error_is_unsupported(error)
+    ]
+    if invalid_body_errors:
+        raise UnitConsistencyError(
+            "Environment unit-consistency check failed:\n  "
+            + "\n  ".join(invalid_body_errors)
+        )
     unsupported = tuple(
-        UncheckedBody(*_split_body_error(error)) for error in body_errors
+        UncheckedBody(*_split_body_error(error))
+        for error in body_errors
+        if body_error_is_unsupported(error)
     )
     unsupported_qnames = {item.qname for item in unsupported}
 
-    generated_types = (
-        AggByGroupFunction,
-        AggByPIDFunction,
-        GroupCreationFunction,
-        TimeConversionFunction,
-    )
     generated_rules = tuple(
-        sorted(qname for qname, obj in env.items() if isinstance(obj, generated_types))
+        sorted(
+            qname
+            for qname, obj in env.items()
+            if isinstance(obj, GroupCreationFunction | TimeConversionFunction)
+            or (
+                isinstance(obj, AggByGroupFunction | AggByPIDFunction)
+                and obj.orig_location == "automatically generated"
+            )
+        )
     )
     casts = tuple(
         sorted(
             qname
             for qname, obj in env.items()
             if isinstance(obj, PolicyFunction | ParamFunction)
-            and _function_uses_local_cast(obj.function)
+            and function_uses_local_cast(obj.function)
         )
     )
 
-    checked, opt_outs, other = _classify_body_coverage(
+    checked, checked_aggregations, opt_outs, other = _classify_body_coverage(
         env=env,
         resolved=resolved,
         unsupported_qnames=unsupported_qnames,
@@ -326,6 +353,7 @@ def create_unit_validation_report(
     return UnitValidationReport(
         resolved_declarations=tuple(sorted(resolved)),
         checked_function_bodies=tuple(sorted(checked)),
+        checked_aggregations=tuple(sorted(checked_aggregations)),
         generated_rules=generated_rules,
         local_casts=casts,
         body_opt_outs=tuple(sorted(opt_outs)),
@@ -339,39 +367,72 @@ def _classify_body_coverage(
     env: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
     resolved: Mapping[str, pint.Unit | dict[str | int, Any]],
     unsupported_qnames: set[str],
-) -> tuple[list[str], list[str], list[UncheckedBody]]:
+) -> tuple[list[str], list[str], list[str], list[UncheckedBody]]:
     """Classify every human-written function body in the report."""
     checked: list[str] = []
+    checked_aggregations: list[str] = []
     opt_outs: list[str] = []
     other: list[UncheckedBody] = []
     for qname, obj in env.items():
+        if isinstance(obj, AggByGroupFunction | AggByPIDFunction):
+            if obj.orig_location != "automatically generated":
+                if obj.verify_units:
+                    checked_aggregations.append(qname)
+                else:
+                    opt_outs.append(qname)
+            continue
         if not isinstance(obj, PolicyFunction | ParamFunction):
             continue
-        if getattr(obj, "fail_msg_if_included", None) is not None:
-            other.append(UncheckedBody(qname, "unimplemented-period failure stub"))
-        elif isinstance(obj, ParamFunction) and _returns_a_schedule(obj):
-            other.append(
-                UncheckedBody(
-                    qname,
-                    "schedule-construction body; its declared input/output axes are "
-                    "checked at consumers",
-                )
-            )
-        elif not obj.verify_units:
-            opt_outs.append(qname)
-        elif qname not in resolved:
-            other.append(UncheckedBody(qname, "no resolved scalar declaration"))
-        elif isinstance(resolved[qname], dict):
-            other.append(UncheckedBody(qname, "structured return value"))
-        elif qname in unsupported_qnames:
-            continue
-        elif _body_has_unresolved_producer(obj=obj, resolved=resolved, env=env):
-            other.append(
-                UncheckedBody(qname, "at least one producer has no resolved unit")
-            )
-        else:
+        category, unchecked = _classify_policy_body(
+            qname=qname,
+            obj=obj,
+            resolved=resolved,
+            unsupported_qnames=unsupported_qnames,
+            env=env,
+        )
+        if category == "checked":
             checked.append(qname)
-    return checked, opt_outs, other
+        elif category == "opt-out":
+            opt_outs.append(qname)
+        elif unchecked is not None:
+            other.append(unchecked)
+    return checked, checked_aggregations, opt_outs, other
+
+
+def _classify_policy_body(
+    qname: str,
+    obj: PolicyFunction | ParamFunction,
+    resolved: Mapping[str, pint.Unit | dict[str | int, Any]],
+    unsupported_qnames: set[str],
+    env: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
+) -> tuple[str, UncheckedBody | None]:
+    """Return the report category for one ordinary policy or parameter body."""
+    if getattr(obj, "fail_msg_if_included", None) is not None:
+        category = "other"
+        unchecked = UncheckedBody(qname, "unimplemented-period failure stub")
+    elif not obj.verify_units:
+        category, unchecked = "opt-out", None
+    elif isinstance(obj, ParamFunction) and _returns_a_schedule(obj):
+        category = "other"
+        unchecked = UncheckedBody(
+            qname,
+            "schedule-construction body; its declared input/output axes are checked "
+            "at consumers",
+        )
+    elif qname not in resolved:
+        category = "other"
+        unchecked = UncheckedBody(qname, "no resolved scalar declaration")
+    elif isinstance(resolved[qname], dict):
+        category = "other"
+        unchecked = UncheckedBody(qname, "structured return value")
+    elif qname in unsupported_qnames:
+        category, unchecked = "unsupported", None
+    elif _body_has_unresolved_producer(obj=obj, resolved=resolved, env=env):
+        category = "other"
+        unchecked = UncheckedBody(qname, "at least one producer has no resolved unit")
+    else:
+        category, unchecked = "checked", None
+    return category, unchecked
 
 
 def merge_unit_validation_reports(
@@ -408,6 +469,7 @@ def merge_unit_validation_reports(
     return UnitValidationReport(
         resolved_declarations=merged_strings("resolved_declarations"),
         checked_function_bodies=merged_strings("checked_function_bodies"),
+        checked_aggregations=merged_strings("checked_aggregations"),
         generated_rules=merged_strings("generated_rules"),
         local_casts=merged_strings("local_casts"),
         body_opt_outs=merged_strings("body_opt_outs"),
@@ -448,26 +510,6 @@ def _non_body_consistency_errors(
     return errors
 
 
-def _function_uses_local_cast(function: Any) -> bool:  # noqa: ANN401
-    """Whether a body contains at least one ``cast_ttsim_unit`` call."""
-    try:
-        tree = ast.parse(textwrap.dedent(inspect.getsource(function)))
-    except (OSError, TypeError, IndentationError, SyntaxError):
-        code = getattr(function, "__code__", None)
-        return code is not None and "cast_ttsim_unit" in code.co_names
-    return any(
-        isinstance(node, ast.Call)
-        and (
-            (isinstance(node.func, ast.Name) and node.func.id == "cast_ttsim_unit")
-            or (
-                isinstance(node.func, ast.Attribute)
-                and node.func.attr == "cast_ttsim_unit"
-            )
-        )
-        for node in ast.walk(tree)
-    )
-
-
 def _body_has_unresolved_producer(
     obj: PolicyFunction | ParamFunction,
     resolved: Mapping[str, pint.Unit | dict[str | int, Any]],
@@ -501,37 +543,174 @@ def _dimensionless_group_declaration_errors(
         # so they are not direct assertions about a dimensionless quantity's kind.
         if isinstance(obj, AggByGroupFunction | TimeConversionFunction):
             continue
-        kind = quantity_kind(qname=qname, obj=obj, env=env)
         errors.extend(
-            f"{qname}: declares `{token}`, but a group marker on a "
+            f"{declaration.where}: declares `{declaration.token}`, but a group marker "
+            "on a "
             "dimensionless value is reserved for a known count or yes/no "
             "indicator. Shares, rates, identifiers, and categories stay "
             "bare `DIMENSIONLESS`; for an integer count, document that "
             "interpretation explicitly (GEP 10)."
-            for token in _declared_quantity_tokens(obj)
+            for declaration in _declared_quantities(qname=qname, obj=obj, env=env)
             if (
-                token.base == "DIMENSIONLESS"
-                and token.level is not None
-                and kind not in (QuantityKind.COUNT, QuantityKind.INDICATOR)
+                declaration.token.base == "DIMENSIONLESS"
+                and declaration.token.level is not None
+                and declaration.kind not in (QuantityKind.COUNT, QuantityKind.INDICATOR)
             )
         )
     return errors
 
 
-def _declared_quantity_tokens(obj: Any) -> list[CompositeUnit]:  # noqa: ANN401
-    """Flatten ordinary ``unit`` declarations, excluding schedule axes."""
+@dataclass(frozen=True)
+class _DeclaredQuantity:
+    """One declaration token and the evidence belonging to exactly that token."""
+
+    where: str
+    token: CompositeUnit
+    kind: QuantityKind
+
+
+def _declared_quantities(
+    qname: str,
+    obj: Any,  # noqa: ANN401
+    env: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
+) -> list[_DeclaredQuantity]:
+    """Return scalar, mapping-leaf, structured-field, and schedule-axis evidence."""
     declaration = getattr(obj, "unit", UNSET_UNIT)
+    if isinstance(declaration, InputOutputUnits):
+        return _schedule_axis_declarations(where=qname, declaration=declaration)
     if isinstance(declaration, CompositeUnit):
-        return [declaration]
-    if isinstance(declaration, Mapping):
         return [
-            token
-            for token in dt.flatten_to_qnames(
+            _DeclaredQuantity(
+                where=qname,
+                token=declaration,
+                kind=quantity_kind(qname=qname, obj=obj, env=env),
+            )
+        ]
+    if isinstance(declaration, Mapping):
+        values = dt.flatten_to_qnames(
+            cast("Mapping[str, Any]", getattr(obj, "value", {}))
+        )
+        return [
+            _DeclaredQuantity(
+                where=f"{qname}[{leaf}]",
+                token=token,
+                kind=quantity_kind_for_leaf(
+                    qname=f"{qname}__{leaf}", value=values.get(leaf)
+                ),
+            )
+            for leaf, token in dt.flatten_to_qnames(
                 cast("Mapping[str, Any]", declaration)
-            ).values()
+            ).items()
             if isinstance(token, CompositeUnit)
         ]
-    return []
+
+    out: list[_DeclaredQuantity] = []
+    if isinstance(obj, ParamMappingObject | RawParam):
+        axis_kind = documented_quantity_kind(qname=qname, obj=obj)
+        for axis_name in ("input_unit", "output_unit"):
+            token = getattr(obj, axis_name, UNSET_UNIT)
+            if isinstance(token, CompositeUnit):
+                out.append(
+                    _DeclaredQuantity(
+                        where=f"{qname} ({axis_name})",
+                        token=token,
+                        kind=axis_kind,
+                    )
+                )
+    if isinstance(obj, ParamFunction) and isinstance(declaration, UnsetUnit):
+        cls, item_cls = _resolved_return_structure(obj.function)
+        for structured_cls in (cls, item_cls):
+            if structured_cls is not None:
+                out.extend(
+                    _structured_declarations(
+                        qname=qname, cls=structured_cls, visited=set()
+                    )
+                )
+    return out
+
+
+def _schedule_axis_declarations(
+    where: str, declaration: InputOutputUnits
+) -> list[_DeclaredQuantity]:
+    """Return one evidence record per schedule input/output axis."""
+    input_units: tuple[CompositeUnit, ...] = (
+        cast("tuple[CompositeUnit, ...]", declaration.input_unit)
+        if isinstance(declaration.input_unit, tuple)
+        else (declaration.input_unit,)
+    )
+    input_kinds: tuple[QuantityKind, ...] = (
+        declaration.input_kind
+        if isinstance(declaration.input_kind, tuple)
+        else (declaration.input_kind,) * len(input_units)
+    )
+    if len(input_units) != len(input_kinds):
+        return [
+            _DeclaredQuantity(
+                where=f"{where} (input_kind arity mismatch)",
+                token=unit,
+                kind=QuantityKind.GENERIC,
+            )
+            for unit in input_units
+        ]
+    out = [
+        _DeclaredQuantity(
+            where=f"{where} (input axis {position})",
+            token=unit,
+            kind=kind,
+        )
+        for position, (unit, kind) in enumerate(
+            zip(input_units, input_kinds, strict=True), start=1
+        )
+    ]
+    out.append(
+        _DeclaredQuantity(
+            where=f"{where} (output axis)",
+            token=declaration.output_unit,
+            kind=declaration.output_kind,
+        )
+    )
+    return out
+
+
+def _structured_declarations(
+    qname: str,
+    cls: type,
+    visited: set[type],
+) -> list[_DeclaredQuantity]:
+    """Return exact evidence for every annotated scalar/schedule field."""
+    if cls in visited:
+        return []
+    visited.add(cls)
+    hints = _resolvable_type_hints(cls=cls)
+    out: list[_DeclaredQuantity] = []
+    for field in dataclasses.fields(cast("Any", cls)):
+        hint = hints.get(field.name, field.type)
+        metadata = getattr(hint, "__metadata__", ())
+        base = get_args(hint)[0] if hasattr(hint, "__metadata__") else hint
+        field_qname = f"{qname}__{field.name}"
+        out.extend(
+            _DeclaredQuantity(
+                where=f"Field '{cls.__name__}.{field.name}'",
+                token=token,
+                kind=quantity_kind_for_scalar_type(qname=field_qname, scalar_type=base),
+            )
+            for token in metadata
+            if isinstance(token, CompositeUnit)
+        )
+        for io_token in (
+            token for token in metadata if isinstance(token, InputOutputUnits)
+        ):
+            out.extend(
+                _schedule_axis_declarations(
+                    where=f"Field '{cls.__name__}.{field.name}'",
+                    declaration=io_token,
+                )
+            )
+        if isinstance(base, type) and dataclasses.is_dataclass(base):
+            out.extend(
+                _structured_declarations(qname=field_qname, cls=base, visited=visited)
+            )
+    return out
 
 
 def fail_if_input_units_are_inconsistent(

@@ -30,6 +30,7 @@ from tests.test_unit_fixtures import (
     unannotated_income_y,
     wealth,
 )
+from ttsim import tt
 from ttsim.exceptions import (
     AggregationDefinitionError,
     UnitConsistencyError,
@@ -41,6 +42,8 @@ from ttsim.interface_dag_elements.automatically_added_functions import (
 from ttsim.tt import (
     UNSET_UNIT,
     AggType,
+    InputOutputUnits,
+    QuantityKind,
     RoundingSpec,
     TTSIMUnit,
     agg_by_group_function,
@@ -50,6 +53,7 @@ from ttsim.tt import (
     policy_input,
 )
 from ttsim.tt.param_objects import (
+    ConsecutiveIntLookupTableParamValue,
     DictParam,
     PiecewisePolynomialParam,
     PiecewisePolynomialParamValue,
@@ -70,6 +74,12 @@ from ttsim.unit_validation import (
     fail_if_environment_units_are_inconsistent,
     fail_if_environment_units_are_missing,
 )
+
+
+@dataclass(frozen=True)
+class _BadGroupShareStructured:
+    housing_cost_share_fam: Annotated[float, TTSIMUnit.DIMENSIONLESS.PER_FAM]
+
 
 # Mandatory units, no exemptions: identifiers and booleans declare
 # DIMENSIONLESS; group-creation group ids are auto-assigned DIMENSIONLESS;
@@ -117,6 +127,124 @@ def test_documented_integer_count_may_carry_a_group_marker():
         grouping_levels=GROUPING_LEVELS,
         unit_system=UNIT_SYSTEM,
     )
+
+
+def test_german_documented_integer_count_may_carry_a_group_marker():
+    @policy_input(unit=TTSIMUnit.DIMENSIONLESS.PER_FAM)
+    def kinderzahl_fam() -> int:
+        """Zahl der Kinder in der Familie."""
+
+    fail_if_environment_units_are_inconsistent(
+        env={"kinderzahl_fam": kinderzahl_fam},
+        grouping_levels=GROUPING_LEVELS,
+        unit_system=UNIT_SYSTEM,
+    )
+
+
+def test_negated_count_wording_does_not_authorize_a_category():
+    @policy_input(unit=TTSIMUnit.DIMENSIONLESS.PER_FAM)
+    def category_for_number_of_children_fam() -> int:
+        """Category for the number of children, not a head count."""
+
+    with pytest.raises(UnitConsistencyError, match="category_for_number"):
+        fail_if_environment_units_are_inconsistent(
+            env={
+                "category_for_number_of_children_fam": (
+                    category_for_number_of_children_fam
+                )
+            },
+            grouping_levels=GROUPING_LEVELS,
+            unit_system=UNIT_SYSTEM,
+        )
+
+
+def test_count_evidence_is_local_to_one_mapping_leaf():
+    mixed = DictParam(
+        value={"number_of_children": 2, "rent_class": 3},
+        unit={
+            "number_of_children": TTSIMUnit.DIMENSIONLESS.PER_FAM,
+            "rent_class": TTSIMUnit.DIMENSIONLESS.PER_FAM,
+        },
+        name={"en": "Number of children and rent class", "de": "Kinder und Miete"},
+        description={
+            "en": "Number of children and the municipality rent category.",
+            "de": "Anzahl der Kinder und kommunale Mietstufe.",
+        },
+        start_date=_START,
+        end_date=_END,
+    )
+    with pytest.raises(UnitConsistencyError, match=r"rent_class.*group marker"):
+        fail_if_environment_units_are_inconsistent(
+            env={"number_of_children_and_rent_class": mixed},
+            grouping_levels=GROUPING_LEVELS,
+            unit_system=UNIT_SYSTEM,
+        )
+
+
+def test_group_marked_schedule_axis_requires_its_own_count_evidence():
+    @param_function(
+        unit=InputOutputUnits(
+            input_unit=TTSIMUnit.DIMENSIONLESS.PER_FAM,
+            output_unit=TTSIMUnit.CURRENCY.PER_MONTH,
+        ),
+        verify_units=False,
+    )
+    def rent_class_schedule() -> ConsecutiveIntLookupTableParamValue:
+        """A schedule indexed by a rent category, not a count."""
+        raise NotImplementedError
+
+    with pytest.raises(UnitConsistencyError, match="input axis"):
+        fail_if_environment_units_are_inconsistent(
+            env={"rent_class_schedule": rent_class_schedule},
+            grouping_levels=GROUPING_LEVELS,
+            unit_system=UNIT_SYSTEM,
+        )
+
+
+def test_group_marked_schedule_axis_accepts_explicit_count_evidence():
+    @param_function(
+        unit=InputOutputUnits(
+            input_unit=TTSIMUnit.DIMENSIONLESS.PER_FAM,
+            output_unit=TTSIMUnit.CURRENCY.PER_MONTH,
+            input_kind=QuantityKind.COUNT,
+        ),
+        verify_units=False,
+    )
+    def amount_by_number_of_children_m() -> ConsecutiveIntLookupTableParamValue:
+        """A schedule indexed by the number of children."""
+        raise NotImplementedError
+
+    fail_if_environment_units_are_inconsistent(
+        env={"amount_by_number_of_children_m": amount_by_number_of_children_m},
+        grouping_levels=GROUPING_LEVELS,
+        unit_system=UNIT_SYSTEM,
+    )
+
+
+def test_group_marked_structured_float_share_is_rejected():
+    @param_function(unit=UNSET_UNIT)
+    def bad_structured() -> _BadGroupShareStructured:
+        return _BadGroupShareStructured(housing_cost_share_fam=0.5)
+
+    with pytest.raises(UnitConsistencyError, match="housing_cost_share_fam"):
+        fail_if_environment_units_are_inconsistent(
+            env={"bad_structured": bad_structured},
+            grouping_levels=GROUPING_LEVELS,
+            unit_system=UNIT_SYSTEM,
+        )
+
+
+def test_validation_report_rejects_group_marked_structured_float_share():
+    @param_function(unit=UNSET_UNIT)
+    def bad_structured() -> _BadGroupShareStructured:
+        return _BadGroupShareStructured(housing_cost_share_fam=0.5)
+
+    with pytest.raises(UnitConsistencyError, match="housing_cost_share_fam"):
+        create_unit_validation_report(
+            env={"bad_structured": bad_structured},
+            grouping_levels=GROUPING_LEVELS,
+            unit_system=UNIT_SYSTEM,
+        )
 
 
 def test_boolean_may_carry_a_group_marker():
@@ -170,7 +298,8 @@ def test_validation_report_separates_evidence_and_exceptions():
         "checked_assets",
         "locally_asserted_assets",
     )
-    assert report.generated_rules == ("number_of_people_fam",)
+    assert report.checked_aggregations == ("number_of_people_fam",)
+    assert report.generated_rules == ()
     assert report.local_casts == ("locally_asserted_assets",)
     assert report.body_opt_outs == ("opted_out_assets",)
     assert report.unsupported_bodies == ()
@@ -178,7 +307,98 @@ def test_validation_report_separates_evidence_and_exceptions():
     assert report.policy_date_regimes == (_START,)
 
 
-def test_validation_report_names_a_body_rejected_by_inference():
+def test_validation_report_classifies_manual_aggregation_opt_out():
+    @policy_input(unit=TTSIMUnit.CURRENCY.PER_MONTH)
+    def source_m() -> float:
+        """A monthly amount."""
+
+    @agg_by_group_function(
+        agg_type=AggType.SUM,
+        unit=TTSIMUnit.YEARS,
+        verify_units=False,
+    )
+    def aggregate_fam(source_m: float, fam_id: int) -> float: ...
+
+    report = create_unit_validation_report(
+        env={"source_m": source_m, "aggregate_fam": aggregate_fam},
+        grouping_levels=GROUPING_LEVELS,
+        unit_system=UNIT_SYSTEM,
+    )
+    assert report.body_opt_outs == ("aggregate_fam",)
+    assert report.generated_rules == ()
+
+
+def test_validation_report_classifies_schedule_builder_opt_out():
+    @param_function(
+        unit=InputOutputUnits(
+            input_unit=TTSIMUnit.DIMENSIONLESS,
+            output_unit=TTSIMUnit.CURRENCY.PER_MONTH,
+        ),
+        verify_units=False,
+    )
+    def amount_by_category_m() -> ConsecutiveIntLookupTableParamValue:
+        raise NotImplementedError
+
+    report = create_unit_validation_report(
+        env={"amount_by_category_m": amount_by_category_m},
+        grouping_levels=GROUPING_LEVELS,
+        unit_system=UNIT_SYSTEM,
+    )
+    assert report.body_opt_outs == ("amount_by_category_m",)
+    assert report.other_unchecked_bodies == ()
+
+
+def test_validation_report_recognizes_cast_aliases_by_identity():
+    imported_alias = cast_ttsim_unit
+
+    @policy_function(unit=TTSIMUnit.CURRENCY.PER_MONTH)
+    def imported_alias_m() -> float:
+        return imported_alias(1.0, TTSIMUnit.CURRENCY.PER_MONTH)
+
+    @policy_function(unit=TTSIMUnit.CURRENCY.PER_MONTH)
+    def local_alias_m() -> float:
+        alias = cast_ttsim_unit
+        return alias(1.0, TTSIMUnit.CURRENCY.PER_MONTH)
+
+    @policy_function(unit=TTSIMUnit.CURRENCY.PER_MONTH)
+    def module_alias_m() -> float:
+        return tt.cast_ttsim_unit(1.0, TTSIMUnit.CURRENCY.PER_MONTH)
+
+    closure_alias = cast_ttsim_unit
+
+    @policy_function(unit=TTSIMUnit.CURRENCY.PER_MONTH)
+    def closure_alias_m() -> float:
+        return closure_alias(1.0, TTSIMUnit.CURRENCY.PER_MONTH)
+
+    env = {
+        "imported_alias_m": imported_alias_m,
+        "local_alias_m": local_alias_m,
+        "module_alias_m": module_alias_m,
+        "closure_alias_m": closure_alias_m,
+    }
+    report = create_unit_validation_report(
+        env=env, grouping_levels=GROUPING_LEVELS, unit_system=UNIT_SYSTEM
+    )
+    assert report.local_casts == tuple(sorted(env))
+
+
+def test_validation_report_does_not_treat_same_spelling_as_a_cast():
+    def cast_ttsim_unit(value: float, unit: Any) -> float:  # noqa: ARG001
+        return value
+
+    @policy_function(unit=TTSIMUnit.DIMENSIONLESS)
+    def coincidental_name() -> float:
+        return cast_ttsim_unit(1.0, TTSIMUnit.CURRENCY)
+
+    report = create_unit_validation_report(
+        env={"coincidental_name": coincidental_name},
+        grouping_levels=GROUPING_LEVELS,
+        unit_system=UNIT_SYSTEM,
+    )
+    assert report.local_casts == ()
+
+
+def test_validation_report_rejects_a_body_with_a_wrong_inferred_unit():
     @policy_input(unit=TTSIMUnit.CURRENCY)
     def assets() -> float:
         """Financial assets."""
@@ -187,16 +407,12 @@ def test_validation_report_names_a_body_rejected_by_inference():
     def wrong_unit(assets: float) -> float:
         return assets
 
-    report = create_unit_validation_report(
-        env={"assets": assets, "wrong_unit": wrong_unit},
-        grouping_levels=GROUPING_LEVELS,
-        unit_system=UNIT_SYSTEM,
-    )
-
-    assert report.checked_function_bodies == ()
-    assert len(report.unsupported_bodies) == 1
-    assert report.unsupported_bodies[0].qname == "wrong_unit"
-    assert "declares" in report.unsupported_bodies[0].reason
+    with pytest.raises(UnitConsistencyError, match=r"wrong_unit.*declares"):
+        create_unit_validation_report(
+            env={"assets": assets, "wrong_unit": wrong_unit},
+            grouping_levels=GROUPING_LEVELS,
+            unit_system=UNIT_SYSTEM,
+        )
 
 
 def test_missing_check_passes_for_declared_and_group_creation_nodes():

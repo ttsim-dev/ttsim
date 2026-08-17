@@ -10,7 +10,6 @@ from __future__ import annotations
 import inspect
 import re
 from collections.abc import Mapping
-from enum import Enum, auto
 from typing import Any
 
 from ttsim.interface_dag_elements.shared import FRAMEWORK_PARTIAL_ARGUMENTS
@@ -30,15 +29,7 @@ from ttsim.tt.type_resolution import (
     resolve_kind_of_annotation,
     resolve_kind_of_column_function,
 )
-
-
-class QuantityKind(Enum):
-    """Semantic evidence used only by the group-arithmetic checker."""
-
-    GENERIC = auto()
-    COUNT = auto()
-    INDICATOR = auto()
-
+from ttsim.tt.units import QuantityKind
 
 _INTEGER_KINDS = frozenset({ResolvedKind.INT_SCALAR, ResolvedKind.INT_COLUMN})
 
@@ -48,7 +39,15 @@ _INTEGER_KINDS = frozenset({ResolvedKind.INT_SCALAR, ResolvedKind.INT_COLUMN})
 _COUNT_MEANING = re.compile(
     r"(?:\bnumber of\b|\bmaximum number\b|\bcount\b|\bhead count\b|"
     r"\bhousehold size\b|\bfamily size\b|\bgroup size\b|\banzahl\b|"
-    r"\bhaushaltsgröße\b|\bmaximal(?:e|en|er|es)?\s+anzahl\b|\bmaximalzahl\b)",
+    r"\bhaushaltsgröße\b|\bzahl der\b|\bkinderzahl\b|"
+    r"\bmaximal(?:e|en|er|es)?\s+anzahl\b|\bmaximalzahl\b)",
+    flags=re.IGNORECASE,
+)
+
+_NOT_A_COUNT = re.compile(
+    r"(?:\bnot (?:a )?(?:head )?count\b|\bkein(?:e|en|er|es)?\s+anzahl\b|"
+    r"\bcategory\b|\bclassification\b|\bidentifier\b|\brent class\b|"
+    r"\bmietstufe\b)",
     flags=re.IGNORECASE,
 )
 
@@ -74,6 +73,43 @@ def quantity_kind(
     ) and _documents_count(qname=qname, obj=obj):
         return QuantityKind.COUNT
     return QuantityKind.GENERIC
+
+
+def quantity_kind_for_leaf(
+    qname: str,
+    value: Any,  # noqa: ANN401
+) -> QuantityKind:
+    """Return evidence for one parameter leaf, without consulting its siblings."""
+    if isinstance(value, bool):
+        return QuantityKind.INDICATOR
+    if (
+        isinstance(value, int)
+        and not isinstance(value, bool)
+        and _text_documents_count(qname.replace("_", " "))
+    ):
+        return QuantityKind.COUNT
+    return QuantityKind.GENERIC
+
+
+def quantity_kind_for_scalar_type(
+    qname: str,
+    scalar_type: Any,  # noqa: ANN401
+) -> QuantityKind:
+    """Return evidence for one annotated scalar field."""
+    if scalar_type is bool:
+        return QuantityKind.INDICATOR
+    if scalar_type is int and _text_documents_count(qname.replace("_", " ")):
+        return QuantityKind.COUNT
+    return QuantityKind.GENERIC
+
+
+def documented_quantity_kind(qname: str, obj: Any) -> QuantityKind:  # noqa: ANN401
+    """Return count evidence stated in this declaration's own documentation."""
+    return (
+        QuantityKind.COUNT
+        if _documents_count(qname=qname, obj=obj)
+        else QuantityKind.GENERIC
+    )
 
 
 def quantity_kinds_by_qname(
@@ -120,7 +156,12 @@ def _documents_count(qname: str, obj: Any) -> bool:  # noqa: ANN401
             pieces.append(value)
         elif isinstance(value, Mapping):
             pieces.extend(str(part) for part in value.values() if part is not None)
-    return _COUNT_MEANING.search(" ".join(pieces)) is not None
+    return _text_documents_count(" ".join(pieces))
+
+
+def _text_documents_count(text: str) -> bool:
+    """Recognize affirmative count wording and let explicit contrary prose win."""
+    return _NOT_A_COUNT.search(text) is None and _COUNT_MEANING.search(text) is not None
 
 
 def _parameter_values_are_booleans(obj: Any) -> bool:  # noqa: ANN401

@@ -16,7 +16,7 @@ import pandas as pd
 import yaml
 
 from ttsim import main, merge_trees
-from ttsim.exceptions import UnitConsistencyError
+from ttsim.exceptions import UnitConsistencyError, UnitDefinitionError
 from ttsim.interface_dag_elements.data_converters import (
     nested_data_to_df_with_nested_columns,
 )
@@ -473,4 +473,6 @@ def check_policy_environment_unit_history(
             )
         except UnitConsistencyError as error:
             raise UnitConsistencyError(f"Policy date {date}: {error}") from error
+        except UnitDefinitionError as error:
+            raise UnitDefinitionError(f"Policy date {date}: {error}") from error
     return merge_unit_validation_reports(reports)

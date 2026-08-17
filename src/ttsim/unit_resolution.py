@@ -56,6 +56,7 @@ from ttsim.tt.units import (
     UNSET_UNIT,
     CompositeUnit,
     InputOutputUnits,
+    QuantityKind,
     UnitDeclaration,
     UnitSystem,
     UnsetUnit,
@@ -675,6 +676,8 @@ class _ScheduleFieldKind:
     screened against."""
     output_unit: pint.Unit
     """The resolved unit the schedule produces."""
+    output_kind: QuantityKind
+    """Narrow semantic evidence carried by the produced quantity."""
 
 
 def _schedule_field_kind(
@@ -734,6 +737,7 @@ def _schedule_field_kind(
             where=where,
             registry=unit_system.registry,
         ),
+        output_kind=io_token.output_kind,
     )
 
 
