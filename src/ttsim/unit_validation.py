@@ -285,8 +285,9 @@ def create_unit_validation_report(
 
     The report deliberately keeps declarations, inferred bodies, generated rules,
     local assertions, and whole-body opt-outs separate. Invalid declarations still
-    raise immediately. A body rejected by inference is returned under
-    ``unsupported_bodies`` so diagnostic callers can inspect the report; ordinary
+    raise immediately. Concrete body inconsistencies also raise; only a body that the
+    symbolic evaluator genuinely cannot execute is returned under
+    ``unsupported_bodies`` so diagnostic callers can inspect the coverage gap. Ordinary
     environment assembly and :func:`check_policy_environment_units` remain fail closed.
     """
     fail_if_environment_units_are_missing(env)
