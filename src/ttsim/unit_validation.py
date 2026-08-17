@@ -2,7 +2,12 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+import ast
+import datetime
+import inspect
+import textwrap
+from collections.abc import Iterable, Mapping
+from dataclasses import dataclass
 from typing import (
     Any,
     cast,
@@ -11,13 +16,19 @@ from typing import (
 import dags.tree as dt
 import pint
 
+from ttsim._quantity_kinds import QuantityKind, quantity_kind
 from ttsim._unit_inference import body_verification_errors
 from ttsim.exceptions import UnitConsistencyError
+from ttsim.interface_dag_elements.shared import FRAMEWORK_PARTIAL_ARGUMENTS
 from ttsim.tt.column_objects_param_function import (
     AggByGroupFunction,
+    AggByPIDFunction,
     ColumnFunction,
     ColumnObject,
+    GroupCreationFunction,
     ParamFunction,
+    PolicyFunction,
+    TimeConversionFunction,
 )
 from ttsim.tt.param_objects import (
     ParamMappingObject,
@@ -56,6 +67,7 @@ from ttsim.unit_resolution import (
     _composite_token_level,
     _fail_if_structured_field_annotations_are_invalid,
     _return_annotation_name,
+    _returns_a_schedule,
     _schedule_axis_errors,
     _spell_ttsim_unit,
     resolve_environment_units,
@@ -183,13 +195,11 @@ def fail_if_environment_units_are_inconsistent(
         resolved_pint_units = resolve_environment_units(
             env=env, grouping_levels=grouping_levels, unit_system=unit_system
         )
-    errors: list[str] = _aggregation_declaration_errors(
+    errors = _non_body_consistency_errors(
         env=env,
         resolved_pint_units=resolved_pint_units,
         registry=unit_system.registry,
     )
-    errors.extend(_rounding_spec_declaration_errors(env=env))
-    errors.extend(_schedule_param_function_contract_errors(env=env))
     errors.extend(
         body_verification_errors(
             env=env,
@@ -201,6 +211,327 @@ def fail_if_environment_units_are_inconsistent(
         raise UnitConsistencyError(
             "Environment unit-consistency check failed:\n  " + "\n  ".join(errors)
         )
+
+
+@dataclass(frozen=True)
+class UncheckedBody:
+    """A function body omitted from inference, together with the exact reason."""
+
+    qname: str
+    reason: str
+
+
+@dataclass(frozen=True)
+class UnitValidationReport:
+    """Auditable coverage of one or more policy-environment unit checks."""
+
+    resolved_declarations: tuple[str, ...]
+    checked_function_bodies: tuple[str, ...]
+    generated_rules: tuple[str, ...]
+    local_casts: tuple[str, ...]
+    body_opt_outs: tuple[str, ...]
+    unsupported_bodies: tuple[UncheckedBody, ...]
+    other_unchecked_bodies: tuple[UncheckedBody, ...]
+    policy_date_regimes: tuple[datetime.date, ...]
+
+    def summary(self) -> str:
+        """Return a compact CI-oriented coverage summary with named exceptions."""
+        lines = [
+            f"Declarations resolved: {len(self.resolved_declarations)}",
+            f"Bodies checked: {len(self.checked_function_bodies)}",
+            f"Generated rules: {len(self.generated_rules)}",
+            f"Casts: {len(self.local_casts)}",
+            f"Body opt-outs: {len(self.body_opt_outs)}",
+            f"Unsupported bodies: {len(self.unsupported_bodies)}",
+            f"Other unchecked bodies: {len(self.other_unchecked_bodies)}",
+            f"Date regimes: {len(self.policy_date_regimes)}",
+        ]
+        if self.local_casts:
+            lines.append("Cast functions: " + ", ".join(self.local_casts))
+        if self.body_opt_outs:
+            lines.append("Body opt-outs: " + ", ".join(self.body_opt_outs))
+        lines.extend(
+            f"Unsupported body {item.qname}: {item.reason}"
+            for item in self.unsupported_bodies
+        )
+        lines.extend(
+            f"Unchecked body {item.qname}: {item.reason}"
+            for item in self.other_unchecked_bodies
+        )
+        return "\n".join(lines)
+
+
+def create_unit_validation_report(
+    env: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
+    grouping_levels: OrderedQNames,
+    unit_system: UnitSystem,
+    policy_dates: tuple[datetime.date, ...] = (),
+) -> UnitValidationReport:
+    """Validate an environment and report what provided each kind of evidence.
+
+    The report deliberately keeps declarations, inferred bodies, generated rules,
+    local assertions, and whole-body opt-outs separate. Invalid declarations still
+    raise immediately. A body rejected by inference is returned under
+    ``unsupported_bodies`` so diagnostic callers can inspect the report; ordinary
+    environment assembly and :func:`check_policy_environment_units` remain fail closed.
+    """
+    fail_if_environment_units_are_missing(env)
+    resolved = resolve_environment_units(
+        env=env, grouping_levels=grouping_levels, unit_system=unit_system
+    )
+    declaration_errors = _non_body_consistency_errors(
+        env=env,
+        resolved_pint_units=resolved,
+        registry=unit_system.registry,
+    )
+    if declaration_errors:
+        raise UnitConsistencyError(
+            "Environment unit-consistency check failed:\n  "
+            + "\n  ".join(declaration_errors)
+        )
+    body_errors = body_verification_errors(
+        env=env,
+        resolved_pint_units=resolved,
+        unit_system=unit_system,
+    )
+    unsupported = tuple(
+        UncheckedBody(*_split_body_error(error)) for error in body_errors
+    )
+    unsupported_qnames = {item.qname for item in unsupported}
+
+    generated_types = (
+        AggByGroupFunction,
+        AggByPIDFunction,
+        GroupCreationFunction,
+        TimeConversionFunction,
+    )
+    generated_rules = tuple(
+        sorted(qname for qname, obj in env.items() if isinstance(obj, generated_types))
+    )
+    casts = tuple(
+        sorted(
+            qname
+            for qname, obj in env.items()
+            if isinstance(obj, PolicyFunction | ParamFunction)
+            and _function_uses_local_cast(obj.function)
+        )
+    )
+
+    checked, opt_outs, other = _classify_body_coverage(
+        env=env,
+        resolved=resolved,
+        unsupported_qnames=unsupported_qnames,
+    )
+
+    return UnitValidationReport(
+        resolved_declarations=tuple(sorted(resolved)),
+        checked_function_bodies=tuple(sorted(checked)),
+        generated_rules=generated_rules,
+        local_casts=casts,
+        body_opt_outs=tuple(sorted(opt_outs)),
+        unsupported_bodies=unsupported,
+        other_unchecked_bodies=tuple(sorted(other, key=lambda item: item.qname)),
+        policy_date_regimes=tuple(sorted(set(policy_dates))),
+    )
+
+
+def _classify_body_coverage(
+    env: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
+    resolved: Mapping[str, pint.Unit | dict[str | int, Any]],
+    unsupported_qnames: set[str],
+) -> tuple[list[str], list[str], list[UncheckedBody]]:
+    """Classify every human-written function body in the report."""
+    checked: list[str] = []
+    opt_outs: list[str] = []
+    other: list[UncheckedBody] = []
+    for qname, obj in env.items():
+        if not isinstance(obj, PolicyFunction | ParamFunction):
+            continue
+        if getattr(obj, "fail_msg_if_included", None) is not None:
+            other.append(UncheckedBody(qname, "unimplemented-period failure stub"))
+        elif isinstance(obj, ParamFunction) and _returns_a_schedule(obj):
+            other.append(
+                UncheckedBody(
+                    qname,
+                    "schedule-construction body; its declared input/output axes are "
+                    "checked at consumers",
+                )
+            )
+        elif not obj.verify_units:
+            opt_outs.append(qname)
+        elif qname not in resolved:
+            other.append(UncheckedBody(qname, "no resolved scalar declaration"))
+        elif isinstance(resolved[qname], dict):
+            other.append(UncheckedBody(qname, "structured return value"))
+        elif qname in unsupported_qnames:
+            continue
+        elif _body_has_unresolved_producer(obj=obj, resolved=resolved, env=env):
+            other.append(
+                UncheckedBody(qname, "at least one producer has no resolved unit")
+            )
+        else:
+            checked.append(qname)
+    return checked, opt_outs, other
+
+
+def merge_unit_validation_reports(
+    reports: Iterable[UnitValidationReport],
+) -> UnitValidationReport:
+    """Combine per-regime reports into one policy-history coverage report."""
+    materialized = tuple(reports)
+
+    def merged_strings(attribute: str) -> tuple[str, ...]:
+        return tuple(
+            sorted(
+                {
+                    item
+                    for report in materialized
+                    for item in cast("tuple[str, ...]", getattr(report, attribute))
+                }
+            )
+        )
+
+    def merged_unchecked(attribute: str) -> tuple[UncheckedBody, ...]:
+        return tuple(
+            sorted(
+                {
+                    item
+                    for report in materialized
+                    for item in cast(
+                        "tuple[UncheckedBody, ...]", getattr(report, attribute)
+                    )
+                },
+                key=lambda item: (item.qname, item.reason),
+            )
+        )
+
+    return UnitValidationReport(
+        resolved_declarations=merged_strings("resolved_declarations"),
+        checked_function_bodies=merged_strings("checked_function_bodies"),
+        generated_rules=merged_strings("generated_rules"),
+        local_casts=merged_strings("local_casts"),
+        body_opt_outs=merged_strings("body_opt_outs"),
+        unsupported_bodies=merged_unchecked("unsupported_bodies"),
+        other_unchecked_bodies=merged_unchecked("other_unchecked_bodies"),
+        policy_date_regimes=tuple(
+            sorted(
+                {date for report in materialized for date in report.policy_date_regimes}
+            )
+        ),
+    )
+
+
+def _split_body_error(error: str) -> tuple[str, str]:
+    """Split the checker's stable ``<qname>: <reason>`` diagnostic shape."""
+    qname, separator, reason = error.partition(": ")
+    if not separator:
+        return "<unknown>", error
+    return qname, reason
+
+
+def _non_body_consistency_errors(
+    env: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
+    resolved_pint_units: dict[str, pint.Unit | dict[str | int, Any]],
+    registry: pint.UnitRegistry,
+) -> list[str]:
+    """Return declaration, aggregation, rounding, and schedule-contract errors."""
+    errors: list[str] = _dimensionless_group_declaration_errors(env=env)
+    errors.extend(
+        _aggregation_declaration_errors(
+            env=env,
+            resolved_pint_units=resolved_pint_units,
+            registry=registry,
+        )
+    )
+    errors.extend(_rounding_spec_declaration_errors(env=env))
+    errors.extend(_schedule_param_function_contract_errors(env=env))
+    return errors
+
+
+def _function_uses_local_cast(function: Any) -> bool:  # noqa: ANN401
+    """Whether a body contains at least one ``cast_ttsim_unit`` call."""
+    try:
+        tree = ast.parse(textwrap.dedent(inspect.getsource(function)))
+    except (OSError, TypeError, IndentationError, SyntaxError):
+        code = getattr(function, "__code__", None)
+        return code is not None and "cast_ttsim_unit" in code.co_names
+    return any(
+        isinstance(node, ast.Call)
+        and (
+            (isinstance(node.func, ast.Name) and node.func.id == "cast_ttsim_unit")
+            or (
+                isinstance(node.func, ast.Attribute)
+                and node.func.attr == "cast_ttsim_unit"
+            )
+        )
+        for node in ast.walk(tree)
+    )
+
+
+def _body_has_unresolved_producer(
+    obj: PolicyFunction | ParamFunction,
+    resolved: Mapping[str, pint.Unit | dict[str | int, Any]],
+    env: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
+) -> bool:
+    return any(
+        name not in FRAMEWORK_PARTIAL_ARGUMENTS
+        and name not in resolved
+        and not (
+            isinstance((producer := env.get(name)), ParamFunction)
+            and isinstance(producer.unit, UnsetUnit)
+        )
+        for name in inspect.signature(obj.function).parameters
+    )
+
+
+def _dimensionless_group_declaration_errors(
+    env: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
+) -> list[str]:
+    """Reject group markers on dimensionless shares, rates, ids, and categories.
+
+    A direct ``DIMENSIONLESS.PER_<LEVEL>`` declaration needs evidence outside
+    the unit itself that the value is a count or yes/no indicator. Generated
+    counts and indicators provide that evidence by rule; a direct integer must
+    document its count interpretation.
+    """
+    errors: list[str] = []
+    for qname, obj in env.items():
+        # Aggregations derive their grouping level from their operation and source.
+        # Their declarations are checked independently below against that derivation,
+        # so they are not direct assertions about a dimensionless quantity's kind.
+        if isinstance(obj, AggByGroupFunction | TimeConversionFunction):
+            continue
+        kind = quantity_kind(qname=qname, obj=obj, env=env)
+        errors.extend(
+            f"{qname}: declares `{token}`, but a group marker on a "
+            "dimensionless value is reserved for a known count or yes/no "
+            "indicator. Shares, rates, identifiers, and categories stay "
+            "bare `DIMENSIONLESS`; for an integer count, document that "
+            "interpretation explicitly (GEP 10)."
+            for token in _declared_quantity_tokens(obj)
+            if (
+                token.base == "DIMENSIONLESS"
+                and token.level is not None
+                and kind not in (QuantityKind.COUNT, QuantityKind.INDICATOR)
+            )
+        )
+    return errors
+
+
+def _declared_quantity_tokens(obj: Any) -> list[CompositeUnit]:  # noqa: ANN401
+    """Flatten ordinary ``unit`` declarations, excluding schedule axes."""
+    declaration = getattr(obj, "unit", UNSET_UNIT)
+    if isinstance(declaration, CompositeUnit):
+        return [declaration]
+    if isinstance(declaration, Mapping):
+        return [
+            token
+            for token in dt.flatten_to_qnames(
+                cast("Mapping[str, Any]", declaration)
+            ).values()
+            if isinstance(token, CompositeUnit)
+        ]
+    return []
 
 
 def fail_if_input_units_are_inconsistent(

@@ -44,6 +44,7 @@ from ttsim.tt import (
     RoundingSpec,
     TTSIMUnit,
     agg_by_group_function,
+    cast_ttsim_unit,
     param_function,
     policy_function,
     policy_input,
@@ -65,6 +66,7 @@ from ttsim.unit_resolution import (
     resolve_environment_units,
 )
 from ttsim.unit_validation import (
+    create_unit_validation_report,
     fail_if_environment_units_are_inconsistent,
     fail_if_environment_units_are_missing,
 )
@@ -77,6 +79,124 @@ from ttsim.unit_validation import (
 def test_boolean_nodes_are_detected():
     assert node_is_boolean(qname="is_exempt", obj=is_exempt)
     assert not node_is_boolean(qname="wealth", obj=wealth)
+
+
+def test_group_marker_on_a_float_share_is_rejected():
+    @policy_input(unit=TTSIMUnit.DIMENSIONLESS.PER_FAM)
+    def housing_cost_share_fam() -> float:
+        """The household's housing-cost share."""
+
+    with pytest.raises(UnitConsistencyError, match=r"share|count or yes/no"):
+        fail_if_environment_units_are_inconsistent(
+            env={"housing_cost_share_fam": housing_cost_share_fam},
+            grouping_levels=GROUPING_LEVELS,
+            unit_system=UNIT_SYSTEM,
+        )
+
+
+def test_group_marker_on_an_integer_category_is_rejected():
+    @policy_input(unit=TTSIMUnit.DIMENSIONLESS.PER_FAM)
+    def rent_class_fam() -> int:
+        """The municipality's rent classification."""
+
+    with pytest.raises(UnitConsistencyError, match="count or yes/no"):
+        fail_if_environment_units_are_inconsistent(
+            env={"rent_class_fam": rent_class_fam},
+            grouping_levels=GROUPING_LEVELS,
+            unit_system=UNIT_SYSTEM,
+        )
+
+
+def test_documented_integer_count_may_carry_a_group_marker():
+    @policy_input(unit=TTSIMUnit.DIMENSIONLESS.PER_FAM)
+    def number_of_children_fam() -> int:
+        """Number of children in the family."""
+
+    fail_if_environment_units_are_inconsistent(
+        env={"number_of_children_fam": number_of_children_fam},
+        grouping_levels=GROUPING_LEVELS,
+        unit_system=UNIT_SYSTEM,
+    )
+
+
+def test_boolean_may_carry_a_group_marker():
+    @policy_input(unit=TTSIMUnit.DIMENSIONLESS.PER_FAM)
+    def eligible_fam() -> bool:
+        """Whether the family is eligible."""
+
+    fail_if_environment_units_are_inconsistent(
+        env={"eligible_fam": eligible_fam},
+        grouping_levels=GROUPING_LEVELS,
+        unit_system=UNIT_SYSTEM,
+    )
+
+
+def test_validation_report_separates_evidence_and_exceptions():
+    @policy_input(unit=TTSIMUnit.CURRENCY)
+    def assets() -> float:
+        """Financial assets."""
+
+    @policy_function(unit=TTSIMUnit.CURRENCY)
+    def checked_assets(assets: float) -> float:
+        return assets
+
+    @policy_function(unit=TTSIMUnit.CURRENCY)
+    def locally_asserted_assets(assets: float) -> float:
+        return cast_ttsim_unit(assets, unit=TTSIMUnit.CURRENCY)
+
+    @policy_function(unit=TTSIMUnit.CURRENCY, verify_units=False)
+    def opted_out_assets(assets: float) -> float:
+        return assets
+
+    @agg_by_group_function(agg_type=AggType.COUNT, unit=TTSIMUnit.DIMENSIONLESS.PER_FAM)
+    def number_of_people_fam(fam_id: int) -> int: ...
+
+    env = {
+        "assets": assets,
+        "checked_assets": checked_assets,
+        "locally_asserted_assets": locally_asserted_assets,
+        "opted_out_assets": opted_out_assets,
+        "number_of_people_fam": number_of_people_fam,
+    }
+    report = create_unit_validation_report(
+        env=env,
+        grouping_levels=GROUPING_LEVELS,
+        unit_system=UNIT_SYSTEM,
+        policy_dates=(_START,),
+    )
+
+    assert report.resolved_declarations == tuple(sorted(env))
+    assert report.checked_function_bodies == (
+        "checked_assets",
+        "locally_asserted_assets",
+    )
+    assert report.generated_rules == ("number_of_people_fam",)
+    assert report.local_casts == ("locally_asserted_assets",)
+    assert report.body_opt_outs == ("opted_out_assets",)
+    assert report.unsupported_bodies == ()
+    assert report.other_unchecked_bodies == ()
+    assert report.policy_date_regimes == (_START,)
+
+
+def test_validation_report_names_a_body_rejected_by_inference():
+    @policy_input(unit=TTSIMUnit.CURRENCY)
+    def assets() -> float:
+        """Financial assets."""
+
+    @policy_function(unit=TTSIMUnit.YEARS)
+    def wrong_unit(assets: float) -> float:
+        return assets
+
+    report = create_unit_validation_report(
+        env={"assets": assets, "wrong_unit": wrong_unit},
+        grouping_levels=GROUPING_LEVELS,
+        unit_system=UNIT_SYSTEM,
+    )
+
+    assert report.checked_function_bodies == ()
+    assert len(report.unsupported_bodies) == 1
+    assert report.unsupported_bodies[0].qname == "wrong_unit"
+    assert "declares" in report.unsupported_bodies[0].reason
 
 
 def test_missing_check_passes_for_declared_and_group_creation_nodes():
@@ -699,17 +819,13 @@ def test_auto_generated_boolean_group_aggregate_passes_the_build():
     )
 
 
-def test_opted_out_aggregation_declares_its_own_level():
-    """``verify_units=False`` on an aggregation skips the declared-vs-derived check
-    and resolves the *declared* unit, so a MEAN can be stated ``PER_KIN`` (a kin
-    property) even though the algebra derives it as the person's (GEP 10)."""
+def test_group_mean_derives_the_target_level_without_an_opt_out():
+    """A group mean is a statistic of the target group (GEP 10)."""
 
     @policy_input(unit=TTSIMUnit.CURRENCY)
     def wealth() -> float: ...
 
-    @agg_by_group_function(
-        agg_type=AggType.MEAN, unit=TTSIMUnit.CURRENCY.PER_KIN, verify_units=False
-    )
+    @agg_by_group_function(agg_type=AggType.MEAN, unit=TTSIMUnit.CURRENCY.PER_KIN)
     def average_wealth_kin(kin_id: int, wealth: float) -> float: ...
 
     env = {"wealth": wealth, "average_wealth_kin": average_wealth_kin}
@@ -723,20 +839,37 @@ def test_opted_out_aggregation_declares_its_own_level():
         ),
         registry=REGISTRY,
     )
-    # No declared-vs-derived rejection: the MEAN derives the bare individual unit.
     fail_if_environment_units_are_inconsistent(
         env=env, grouping_levels=GROUPING_LEVELS, unit_system=UNIT_SYSTEM
     )
 
 
-def test_aggregation_without_opt_out_still_rejects_a_wrong_level():
-    """Without the opt-out, the same ``PER_KIN`` declaration on a MEAN is rejected —
-    the opt-out is the only way to override the derivation (GEP 10)."""
+def test_dimensionless_group_mean_is_validated_as_an_aggregation():
+    """A derived group statistic is not a direct group-quantity declaration."""
+
+    @policy_input(unit=TTSIMUnit.DIMENSIONLESS)
+    def share() -> float: ...
+
+    @agg_by_group_function(
+        agg_type=AggType.MEAN,
+        unit=TTSIMUnit.DIMENSIONLESS.PER_KIN,
+    )
+    def average_share_kin(kin_id: int, share: float) -> float: ...
+
+    fail_if_environment_units_are_inconsistent(
+        env={"share": share, "average_share_kin": average_share_kin},
+        grouping_levels=GROUPING_LEVELS,
+        unit_system=UNIT_SYSTEM,
+    )
+
+
+def test_group_mean_declared_bare_is_rejected():
+    """A group mean cannot be declared as a person-level result (GEP 10)."""
 
     @policy_input(unit=TTSIMUnit.CURRENCY)
     def wealth() -> float: ...
 
-    @agg_by_group_function(agg_type=AggType.MEAN, unit=TTSIMUnit.CURRENCY.PER_KIN)
+    @agg_by_group_function(agg_type=AggType.MEAN, unit=TTSIMUnit.CURRENCY)
     def average_wealth_kin(kin_id: int, wealth: float) -> float: ...
 
     with pytest.raises(UnitConsistencyError, match="average_wealth_kin"):

@@ -39,7 +39,7 @@ def birth_year() -> int:
     """Calendar year the person was born in."""
 
 
-@policy_input(unit=TTSIMUnit.DIMENSIONLESS)
+@policy_input(unit=TTSIMUnit.CALENDAR_MONTH)
 def birth_month() -> int:
     """Month of birth (1-12)."""
 

@@ -9,6 +9,7 @@ import pickle
 # makes the tracer-bullet policy function importable.
 import mettsim.middle_earth  # noqa: F401
 import numpy as np
+import pint
 import pytest
 from beartype.roar import BeartypeCallHintViolation
 
@@ -42,6 +43,7 @@ from ttsim.tt.units import (
     _name_suffixes,
     fail_if_units_are_missing,
     input_column_in_data_currency,
+    is_calendar_ordinal_unit,
     is_calendar_point_unit,
     pint_unit_from_string,
     pint_unit_from_ttsim_unit,
@@ -381,18 +383,6 @@ def test_is_calendar_point_unit():
         unit=pint_unit_from_string(unit_str="calendar_year", registry=REGISTRY),
         registry=REGISTRY,
     )
-    assert is_calendar_point_unit(
-        unit=pint_unit_from_string(unit_str="calendar_quarter", registry=REGISTRY),
-        registry=REGISTRY,
-    )
-    assert is_calendar_point_unit(
-        unit=pint_unit_from_string(unit_str="calendar_month", registry=REGISTRY),
-        registry=REGISTRY,
-    )
-    assert is_calendar_point_unit(
-        unit=pint_unit_from_string(unit_str="calendar_day", registry=REGISTRY),
-        registry=REGISTRY,
-    )
     # Durations and ordinary units are not points.
     assert not is_calendar_point_unit(
         unit=pint_unit_from_string(unit_str="delta_calendar_year", registry=REGISTRY),
@@ -406,6 +396,15 @@ def test_is_calendar_point_unit():
         unit=pint_unit_from_string(unit_str="CURRENCY / month", registry=REGISTRY),
         registry=REGISTRY,
     )
+
+
+@pytest.mark.parametrize(
+    "unit_name", ["calendar_quarter", "calendar_month", "calendar_day"]
+)
+def test_calendar_ordinals_are_not_affine_points(unit_name):
+    unit = pint_unit_from_string(unit_str=unit_name, registry=REGISTRY)
+    assert is_calendar_ordinal_unit(unit)
+    assert not is_calendar_point_unit(unit=unit, registry=REGISTRY)
 
 
 def test_policy_function_stores_unit():
@@ -511,15 +510,9 @@ def test_duration_conversion_year_to_month():
     assert months.magnitude == pytest.approx(24.0)
 
 
-def test_calendar_quarter_point_algebra():
-    quarter = REGISTRY.Quantity(2, "calendar_quarter")
-
-    assert quarter - REGISTRY.Quantity(1, "calendar_quarter") == REGISTRY.Quantity(
-        1, "delta_calendar_quarter"
-    )
-    assert quarter + REGISTRY.Quantity(
-        1, "delta_calendar_quarter"
-    ) == REGISTRY.Quantity(3, "calendar_quarter")
+def test_calendar_quarter_ordinal_is_not_a_duration():
+    with pytest.raises(pint.DimensionalityError):
+        REGISTRY.Quantity(2, "calendar_quarter").to("delta_calendar_quarter")
 
 
 def test_fail_if_units_are_missing_reports_unannotated_nodes():

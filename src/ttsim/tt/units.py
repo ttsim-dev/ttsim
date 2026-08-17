@@ -106,10 +106,13 @@ _PINT_NAME_TO_BASE_TOKEN = {
     if pint_name is not None
 }
 
-#: The affine calendar-point units :func:`build_registry` defines — the only
-#: offset units any TTSIM registry contains.
-_CALENDAR_POINT_UNIT_NAMES = frozenset(
-    {"calendar_year", "calendar_quarter", "calendar_month", "calendar_day"}
+#: The affine calendar-point unit :func:`build_registry` defines.
+_CALENDAR_POINT_UNIT_NAMES = frozenset({"calendar_year"})
+
+#: Calendar positions within a larger unit. They are separate dimensions so Pint
+#: cannot silently treat February as two months or day 31 as a 31-day duration.
+_CALENDAR_ORDINAL_UNIT_NAMES = frozenset(
+    {"calendar_quarter", "calendar_month", "calendar_day"}
 )
 
 #: The dimension names :func:`build_registry` mints for currency and takes from
@@ -934,17 +937,16 @@ def units_are_equivalent(
 def is_calendar_point_unit(unit: pint.Unit, registry: pint.UnitRegistry) -> bool:
     """Whether a resolved unit is an affine calendar *point*.
 
-    A calendar point (``calendar_year`` and its month/day siblings) is a pint
-    offset unit: it obeys affine algebra, not the magnitude algebra of a
-    duration. pint raises an :class:`pint.OffsetUnitCalculusError` on any illegal
-    operation, so:
+    A calendar year is a Pint offset unit: it obeys affine algebra, not the
+    magnitude algebra of a duration. Pint raises an
+    :class:`pint.OffsetUnitCalculusError` on an illegal operation, so:
 
     - two points *subtract* to a duration, and a duration *shifts* a point;
     - two points cannot be added, a point cannot be scaled, and points on
       different calendar axes cannot be combined.
 
     Detection is by the property that defines an offset unit: it cannot be divided
-    by itself. Only the three :data:`_CALENDAR_POINT_UNIT_NAMES` are offset units,
+    by itself. Only :data:`_CALENDAR_POINT_UNIT_NAMES` contains offset units,
     so a unit spelling none of them skips the pint probe.
     """
     if _CALENDAR_POINT_UNIT_NAMES.isdisjoint(to_units_container(unit)):
@@ -955,6 +957,11 @@ def is_calendar_point_unit(unit: pint.Unit, registry: pint.UnitRegistry) -> bool
     except pint.OffsetUnitCalculusError:
         return True
     return False
+
+
+def is_calendar_ordinal_unit(unit: pint.Unit) -> bool:
+    """Whether ``unit`` is a quarter-, month-, or day-within-period ordinal."""
+    return not _CALENDAR_ORDINAL_UNIT_NAMES.isdisjoint(to_units_container(unit))
 
 
 def input_column_in_data_currency(
@@ -1026,14 +1033,11 @@ def build_registry() -> pint.UnitRegistry:
       re-basing the *period* denominator.
     - ``quarter_year`` for the ``_q`` suffix (pint's built-in ``quarter`` is a unit of
       mass);
-    - ``calendar_year`` / ``calendar_month`` / ``calendar_day`` as affine *point* units.
-      Subtracting two points yields pint's companion ``delta_calendar_*`` *duration*
-      unit, which :attr:`TTSIMUnit.YEARS` / :attr:`TTSIMUnit.MONTHS` /
-      :attr:`TTSIMUnit.DAYS` resolve to (each is ratio 1 against ``year`` / ``month`` /
-      ``day``).
-    - ``calendar_quarter`` as an affine point unit on a separate quarter axis, with
-      ``delta_calendar_quarter`` as its companion duration. This axis is separate so
-      calendar quarters are not automatically converted to months or years.
+    - ``calendar_year`` as an affine *point* unit. Subtracting two years yields
+      the companion ``delta_calendar_year`` duration;
+    - ``calendar_quarter`` / ``calendar_month`` / ``calendar_day`` as independent
+      ordinal dimensions. They can be ordered on the same scale, but are not
+      durations and support no general arithmetic.
 
     pint's remaining built-ins parse, but :func:`pint_unit_from_string` rejects every
     token outside :data:`_ALLOWED_UNIT_TOKENS`, so none can appear in a declaration.
@@ -1042,16 +1046,16 @@ def build_registry() -> pint.UnitRegistry:
     ureg.define(f"{CURRENCY_TOKEN} = [currency]")
     ureg.define("working_hour = [hours]")
     ureg.define("quarter_year = year / 4 = quarter_of_year")
-    ureg.define(
-        "calendar_quarter_duration = [calendar_quarter_axis] = delta_calendar_quarter"
-    )
+    ureg.define("calendar_quarter_duration = year / 4 = delta_calendar_quarter")
+    ureg.define("delta_calendar_month = month")
+    ureg.define("delta_calendar_day = day")
     # Pint needs a nonzero offset to distinguish calendar points, such as year 1999,
     # from durations, such as 3 years. TTSIM never uses the offset's numeric value,
     # so use 1 consistently for all calendar units.
-    ureg.define("calendar_quarter = calendar_quarter_duration; offset: 1")
     ureg.define("calendar_year = year; offset: 1")
-    ureg.define("calendar_month = month; offset: 1")
-    ureg.define("calendar_day = day; offset: 1")
+    ureg.define("calendar_quarter = [calendar_quarter_ordinal]")
+    ureg.define("calendar_month = [calendar_month_ordinal]")
+    ureg.define("calendar_day = [calendar_day_ordinal]")
     return ureg
 
 
@@ -1165,9 +1169,7 @@ def unit_for_aggregation(
       source's physical token and take the target level — spelled for a group
       (``CURRENCY_PER_MONTH_PER_FAM``, ``MONTHS_PER_FG`` for an ``_fg`` extreme of
       a bare duration), and **bare** for an individual ``agg_by_p_id`` result;
-    - ``MEAN`` is a per-head average that belongs to the **individual**
-      (``MEAN = SUM / COUNT`` cancels the group), so its result is **bare** — the
-      source's group level, if any, is dropped;
+    - ``MEAN`` is a statistic of the **target group**, like ``MIN`` and ``MAX``;
     - ``ANY`` / ``ALL`` yield a boolean, a dimensionless quantity at the target
       level (``DIMENSIONLESS_PER_<target_level>``); bare at an individual target.
 
@@ -1187,8 +1189,8 @@ def unit_for_aggregation(
     Returns:
         The auto-assigned unit. ``DIMENSIONLESS`` (per target) for a ``COUNT``
         head count and for a boolean ``ANY`` / ``ALL`` result; otherwise the
-        source token at the target (``SUM`` / ``MIN`` / ``MAX``) or bare
-        (``MEAN``, and any individual ``agg_by_p_id``)
+        source token at the target (``SUM`` / ``MEAN`` / ``MIN`` / ``MAX``) or
+        bare for an individual ``agg_by_p_id``
         (:data:`UNSET_UNIT` when the source itself lacks a declaration, which the
         mandatory-units check then reports against the source).
     """
@@ -1200,9 +1202,8 @@ def unit_for_aggregation(
         return base if target_level is None else base.PER_LEVEL(target_level)
     if isinstance(source_unit, UnsetUnit):
         return source_unit
-    if agg_type is AggType.MEAN or target_level is None:
-        # A MEAN is a per-head average, and an agg_by_p_id result is an individual
-        # property: both are bare, so the source's group level is dropped.
+    if target_level is None:
+        # An agg_by_p_id result is an individual property and therefore bare.
         return replace(source_unit, level=None)
     return replace(source_unit, level=target_level.upper())
 
@@ -1230,10 +1231,7 @@ def resolved_unit_for_aggregation(
       for the target and a bare source *acquires* it — an ``_hh`` sum of a person
       income is ``CURRENCY/[hh]``, an ``_fg`` min of a bare age is ``MONTHS/[fg]``.
       At an individual target (an ``agg_by_p_id`` node) the result is **bare**.
-    - ``MEAN`` is a per-head average that belongs to the **individual**
-      (``MEAN = SUM / COUNT``, and leveling it to the target would break
-      ``mean · count = sum``), so the result is **bare** — the source level, if
-      any, is dropped.
+    - ``MEAN`` is a statistic of the **target group**, like ``MIN`` and ``MAX``.
     - ``COUNT`` mints a head count ``1 / [target]`` — persons per target group —
       independent of the source; bare at an individual target.
     - ``ANY`` / ``ALL`` yield a boolean *at the target level* — ``1 / [target]``
@@ -1280,9 +1278,8 @@ def resolved_unit_for_aggregation(
         if source_level is None
         else source_unit * _grouping_level_unit(name=source_level, registry=registry)
     )
-    # A MEAN is bare (individual), and an agg_by_p_id result (``target_level is
-    # None``) is bare too: the level-stripped source stands as-is.
-    if agg_type is AggType.MEAN or target_level is None:
+    # An agg_by_p_id result (``target_level is None``) is bare.
+    if target_level is None:
         return stripped
     return divide_by_grouping_level(
         unit=stripped, level=target_level, registry=registry

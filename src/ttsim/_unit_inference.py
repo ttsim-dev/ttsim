@@ -18,6 +18,10 @@ from typing import (
 import numpy
 import pint
 
+from ttsim._quantity_kinds import (
+    QuantityKind,
+    quantity_kinds_by_qname,
+)
 from ttsim.exceptions import (
     TTSIMError,
     UnitDefinitionError,
@@ -46,6 +50,7 @@ from ttsim.tt.units import (
     _grouping_levels_with_exponent,
     _unit_level_denominator,
     _unit_without_grouping_levels,
+    is_calendar_ordinal_unit,
     is_calendar_point_unit,
     pint_unit_from_ttsim_unit_for_column,
     ttsim_unit_from_yaml_value,
@@ -83,6 +88,7 @@ def body_verification_errors(
     representative_values = _representative_values_by_qname(
         env=env, resolved_pint_units=resolved_pint_units, unit_system=unit_system
     )
+    quantity_kinds = quantity_kinds_by_qname(env)
     boolean_nodes = {
         qname
         for qname, obj in env.items()
@@ -144,6 +150,7 @@ def body_verification_errors(
             base_kwargs=base_kwargs,
             unit_system=unit_system,
             explorer_holder=explorer_holder,
+            quantity_kinds=quantity_kinds,
         )
         if error is not None:
             errors.append(error)
@@ -250,6 +257,7 @@ def _verify_one_body(
     base_kwargs: dict[str, Any],
     unit_system: UnitSystem,
     explorer_holder: list[_PathExplorer | None],
+    quantity_kinds: Mapping[str, QuantityKind],
 ) -> str | None:
     """Unit-check one body on every reachable branch path; return an error or ``None``.
 
@@ -293,6 +301,7 @@ def _verify_one_body(
                 explorer=explorer,
                 unit_system=unit_system,
                 label=name,
+                kind=quantity_kinds.get(name, QuantityKind.GENERIC),
             )
             for name, value in {**base_kwargs, **boolean_values}.items()
         }
@@ -357,6 +366,8 @@ def _run_one_path(
             f"counts must match (GEP 10)."
         ), True
     except (
+        _CalendarOrdinalArithmeticError,
+        _UnsupportedGroupArithmeticError,
         _UnitMixError,
         _StructuredValueUsedAsQuantityError,
         pint.OffsetUnitCalculusError,
@@ -611,6 +622,24 @@ class _UnitMixError(_UnitCheckError):
         self.literal = literal
 
 
+class _CalendarOrdinalArithmeticError(_UnitCheckError):
+    """A quarter-, month-, or day-within-period value was used arithmetically."""
+
+    def __init__(self, op: str) -> None:
+        super().__init__()
+        self.op = op
+
+
+class _UnsupportedGroupArithmeticError(_UnitCheckError):
+    """A product or ratio lies outside GEP 10's restricted group rules."""
+
+    def __init__(self, op: str, left: pint.Unit, right: pint.Unit) -> None:
+        super().__init__()
+        self.op = op
+        self.left = left
+        self.right = right
+
+
 class _ScheduleNotEvaluableError(_UnitCheckError):
     """A schedule/lookup/join call the unit check cannot resolve to a unit.
 
@@ -756,7 +785,7 @@ class _UnitCheckQuantity:
     positive.
     """
 
-    __slots__ = ("_explorer", "_label", "_unit_system", "q")
+    __slots__ = ("_explorer", "_kind", "_label", "_unit_system", "q")
     # Keep NumPy from broadcasting over us: defer binary ops with a NumPy operand
     # to our reflected dunders instead.
     __array_ufunc__ = None
@@ -769,12 +798,14 @@ class _UnitCheckQuantity:
         explorer: _PathExplorer,
         unit_system: UnitSystem,
         label: str | None = None,
+        kind: QuantityKind = QuantityKind.GENERIC,
     ) -> None:
         self.q = q
         self._explorer = explorer
         # The system whose registry `q` lives in — every unit the wrapper mints
         # (a boolean's level, a dimensionless truth value) must land there too.
         self._unit_system = unit_system
+        self._kind = kind
         # How the body's author would name this value — the argument name for a
         # direct input, a composed description for a comparison or logical
         # combination, ``None`` once arithmetic has mixed it beyond naming. Used
@@ -785,9 +816,16 @@ class _UnitCheckQuantity:
     def _registry(self) -> pint.UnitRegistry:
         return self._unit_system.registry
 
-    def _wrap(self, q: Any) -> _UnitCheckQuantity:  # noqa: ANN401
+    def _wrap(
+        self,
+        q: Any,  # noqa: ANN401
+        kind: QuantityKind = QuantityKind.GENERIC,
+    ) -> _UnitCheckQuantity:
         return _UnitCheckQuantity(
-            q=q, explorer=self._explorer, unit_system=self._unit_system
+            q=q,
+            explorer=self._explorer,
+            unit_system=self._unit_system,
+            kind=kind,
         )
 
     def _controlled_bool_at(
@@ -798,6 +836,7 @@ class _UnitCheckQuantity:
             explorer=self._explorer,
             unit_system=self._unit_system,
             label=label,
+            kind=QuantityKind.INDICATOR,
         )
 
     def _composed_label(self, other: Any, op: str) -> str | None:  # noqa: ANN401
@@ -890,6 +929,7 @@ class _UnitCheckQuantity:
         other_q = _unwrap(other)
         if isinstance(other_q, _UnitCheckStructuredValue):
             other_q._raise_used_as_quantity(op)  # noqa: SLF001
+        self._fail_if_calendar_ordinal_arithmetic(other=other, op=op)
         self_is_point = is_calendar_point_unit(
             unit=cast("pint.Unit", self.q.units), registry=self._registry
         )
@@ -913,6 +953,109 @@ class _UnitCheckQuantity:
         if self_is_point or other_is_point:
             return
         self._fail_if_other_unit_is_not_equivalent(other=other, op=op)
+
+    def _fail_if_calendar_ordinal_arithmetic(self, other: Any, op: str) -> None:  # noqa: ANN401
+        """Reject arithmetic on month/day/quarter ordinals.
+
+        These values can be ordered on the same scale, but neither a difference
+        nor a shift has a calendar-independent meaning.
+        """
+        other_q = _unwrap(other)
+        if is_calendar_ordinal_unit(cast("pint.Unit", self.q.units)) or (
+            isinstance(other_q, pint.Quantity)
+            and is_calendar_ordinal_unit(cast("pint.Unit", other_q.units))
+        ):
+            raise _CalendarOrdinalArithmeticError(op=op)
+
+    def _group_arithmetic(
+        self,
+        other: Any,  # noqa: ANN401
+        *,
+        op: str,
+        reflected: bool = False,
+    ) -> tuple[Any, QuantityKind]:
+        """Apply multiplication/division under the restricted group rules."""
+        other_q = _unwrap(other)
+        if isinstance(other_q, _UnitCheckStructuredValue):
+            other_q._raise_used_as_quantity(op)  # noqa: SLF001
+        if not isinstance(other_q, pint.Quantity):
+            left_q, right_q = (other_q, self.q) if reflected else (self.q, other_q)
+            result = left_q * right_q if op == "*" else left_q / right_q
+            # Arithmetic no longer carries independent evidence that a value is
+            # exactly a head count or a yes/no indicator.
+            return result, QuantityKind.GENERIC
+
+        other_kind = (
+            other._kind  # noqa: SLF001
+            if isinstance(other, _UnitCheckQuantity)
+            else QuantityKind.GENERIC
+        )
+        left_q, right_q = (other_q, self.q) if reflected else (self.q, other_q)
+        left_kind, right_kind = (
+            (other_kind, self._kind) if reflected else (self._kind, other_kind)
+        )
+        left_level = _unit_level_denominator(cast("pint.Unit", left_q.units))
+        right_level = _unit_level_denominator(cast("pint.Unit", right_q.units))
+
+        if left_level is not None and right_level is not None:
+            return self._group_arithmetic_with_two_levels(
+                op=op,
+                left_q=left_q,
+                right_q=right_q,
+                left_kind=left_kind,
+                right_kind=right_kind,
+                levels_match=left_level == right_level,
+            )
+
+        if op == "/" and left_level is None and right_level is not None:
+            # This would create a grouping level in the numerator. GEP 10 only
+            # derives the reverse, group-total / matching-head-count bridge.
+            raise _UnsupportedGroupArithmeticError(
+                op=op,
+                left=cast("pint.Unit", left_q.units),
+                right=cast("pint.Unit", right_q.units),
+            )
+
+        if op == "*":
+            result = left_q * right_q
+        else:
+            try:
+                result = left_q / right_q
+            except ZeroDivisionError:
+                result = left_q / self._nonzero_like(right_q)
+        return result, QuantityKind.GENERIC
+
+    @staticmethod
+    def _group_arithmetic_with_two_levels(
+        *,
+        op: str,
+        left_q: pint.Quantity,
+        right_q: pint.Quantity,
+        left_kind: QuantityKind,
+        right_kind: QuantityKind,
+        levels_match: bool,
+    ) -> tuple[pint.Quantity, QuantityKind]:
+        """Apply the matching-count and same-level-indicator exceptions."""
+        if (
+            levels_match
+            and op == "*"
+            and QuantityKind.INDICATOR
+            in (
+                left_kind,
+                right_kind,
+            )
+        ):
+            # A known yes/no value masks rather than multiplies the group marker.
+            if left_kind is QuantityKind.INDICATOR:
+                return right_q * left_q.magnitude, right_kind
+            return left_q * right_q.magnitude, left_kind
+        if levels_match and op == "/" and right_kind is QuantityKind.COUNT:
+            return left_q / right_q, QuantityKind.GENERIC
+        raise _UnsupportedGroupArithmeticError(
+            op=op,
+            left=cast("pint.Unit", left_q.units),
+            right=cast("pint.Unit", right_q.units),
+        )
 
     def _fail_if_other_unit_is_not_equivalent(self, other: Any, op: str) -> None:  # noqa: ANN401
         """Reject an invalid operand of an ordering comparison or ``where``.
@@ -1072,10 +1215,14 @@ class _UnitCheckQuantity:
         return self._wrap(_unwrap(other) - self.q)
 
     def __mul__(self, other: Any) -> _UnitCheckQuantity:  # noqa: ANN401
-        return self._wrap(self.q * _unwrap(other))
+        self._fail_if_calendar_ordinal_arithmetic(other=other, op="*")
+        result, kind = self._group_arithmetic(other, op="*")
+        return self._wrap(result, kind=kind)
 
     def __rmul__(self, other: Any) -> _UnitCheckQuantity:  # noqa: ANN401
-        return self._wrap(_unwrap(other) * self.q)
+        self._fail_if_calendar_ordinal_arithmetic(other=other, op="*")
+        result, kind = self._group_arithmetic(other, op="*", reflected=True)
+        return self._wrap(result, kind=kind)
 
     def _nonzero_like(self, value: Any) -> Any:  # noqa: ANN401
         """A magnitude-1.0 stand-in for a division operand.
@@ -1092,6 +1239,10 @@ class _UnitCheckQuantity:
         return 1.0
 
     def __truediv__(self, other: Any) -> _UnitCheckQuantity:  # noqa: ANN401
+        self._fail_if_calendar_ordinal_arithmetic(other=other, op="/")
+        if isinstance(_unwrap(other), pint.Quantity):
+            result, kind = self._group_arithmetic(other, op="/")
+            return self._wrap(result, kind=kind)
         divisor = _unwrap(other)
         try:
             return self._wrap(self.q / divisor)
@@ -1099,6 +1250,10 @@ class _UnitCheckQuantity:
             return self._wrap(self.q / self._nonzero_like(divisor))
 
     def __rtruediv__(self, other: Any) -> _UnitCheckQuantity:  # noqa: ANN401
+        self._fail_if_calendar_ordinal_arithmetic(other=other, op="/")
+        if isinstance(_unwrap(other), pint.Quantity):
+            result, kind = self._group_arithmetic(other, op="/", reflected=True)
+            return self._wrap(result, kind=kind)
         dividend = _unwrap(other)
         try:
             return self._wrap(dividend / self.q)
@@ -1106,6 +1261,7 @@ class _UnitCheckQuantity:
             return self._wrap(dividend / self._nonzero_like(self.q))
 
     def __floordiv__(self, other: Any) -> _UnitCheckQuantity:  # noqa: ANN401
+        self._fail_if_calendar_ordinal_arithmetic(other=other, op="//")
         divisor = _unwrap(other)
         try:
             return self._wrap(self.q // divisor)
@@ -1113,6 +1269,7 @@ class _UnitCheckQuantity:
             return self._wrap(self.q // self._nonzero_like(divisor))
 
     def __rfloordiv__(self, other: Any) -> _UnitCheckQuantity:  # noqa: ANN401
+        self._fail_if_calendar_ordinal_arithmetic(other=other, op="//")
         dividend = _unwrap(other)
         try:
             return self._wrap(dividend // self.q)
@@ -1120,24 +1277,31 @@ class _UnitCheckQuantity:
             return self._wrap(dividend // self._nonzero_like(self.q))
 
     def __mod__(self, other: Any) -> _UnitCheckQuantity:  # noqa: ANN401
+        self._fail_if_calendar_ordinal_arithmetic(other=other, op="%")
         return self._wrap(self.q % _unwrap(other))
 
     def __rmod__(self, other: Any) -> _UnitCheckQuantity:  # noqa: ANN401
+        self._fail_if_calendar_ordinal_arithmetic(other=other, op="%")
         return self._wrap(_unwrap(other) % self.q)
 
     def __pow__(self, other: Any) -> _UnitCheckQuantity:  # noqa: ANN401
+        self._fail_if_calendar_ordinal_arithmetic(other=other, op="**")
         return self._wrap(self.q ** _unwrap(other))
 
     def __rpow__(self, other: Any) -> _UnitCheckQuantity:  # noqa: ANN401
+        self._fail_if_calendar_ordinal_arithmetic(other=other, op="**")
         return self._wrap(_unwrap(other) ** self.q)
 
     def __neg__(self) -> _UnitCheckQuantity:
+        self._fail_if_calendar_ordinal_arithmetic(other=1, op="unary -")
         return self._wrap(-self.q)
 
     def __pos__(self) -> _UnitCheckQuantity:
+        self._fail_if_calendar_ordinal_arithmetic(other=1, op="unary +")
         return self._wrap(+self.q)
 
     def __abs__(self) -> _UnitCheckQuantity:
+        self._fail_if_calendar_ordinal_arithmetic(other=1, op="abs")
         return self._wrap(abs(self.q))
 
     def __round__(self, ndigits: int | None = None) -> _UnitCheckQuantity:
@@ -1183,6 +1347,7 @@ def _wrap_for_unit_check(
     explorer: _PathExplorer,
     unit_system: UnitSystem,
     label: str | None = None,
+    kind: QuantityKind = QuantityKind.GENERIC,
 ) -> Any:  # noqa: ANN401
     """Wrap unit-carrying representative values; pass framework args through.
 
@@ -1197,7 +1362,11 @@ def _wrap_for_unit_check(
     """
     if isinstance(value, pint.Quantity):
         return _UnitCheckQuantity(
-            q=value, explorer=explorer, unit_system=unit_system, label=label
+            q=value,
+            explorer=explorer,
+            unit_system=unit_system,
+            label=label,
+            kind=kind,
         )
     if isinstance(value, _UnitCheckStructuredValue):
         return _UnitCheckStructuredValue(
@@ -1216,6 +1385,7 @@ def _wrap_for_unit_check(
                 explorer=explorer,
                 unit_system=unit_system,
                 label=f"{label}[{key!r}]" if label is not None else None,
+                kind=kind,
             )
             for key, leaf in value.items()
         }
@@ -2016,7 +2186,9 @@ def _summarize_branch_errors(
 
 def _arithmetic_misuse_message(
     qname: str,
-    error: _UnitMixError
+    error: _CalendarOrdinalArithmeticError
+    | _UnsupportedGroupArithmeticError
+    | _UnitMixError
     | _StructuredValueUsedAsQuantityError
     | pint.OffsetUnitCalculusError
     | pint.DimensionalityError,
@@ -2036,6 +2208,22 @@ def _arithmetic_misuse_message(
     bugs, not un-checkable bodies, so they report as misuse rather than
     demanding ``verify_units=False``.
     """
+    if isinstance(error, _CalendarOrdinalArithmeticError):
+        return (
+            f"{qname}: uses a calendar ordinal in `{error.op}`{detail} — a quarter "
+            "of year, month of year, or day of month may only be compared with the "
+            "same calendar scale; use an explicit local unit assertion for a "
+            "policy-specific conversion (GEP 10)."
+        )
+    if isinstance(error, _UnsupportedGroupArithmeticError):
+        return (
+            f"{qname}: uses an unsupported group calculation "
+            f"'{error.left}' {error.op} '{error.right}'{detail}. TTSIM only "
+            "derives ordinary scalar scaling, a group total divided by its "
+            "matching head count, the reverse head-count multiplication, and a "
+            "same-level yes/no mask; use an aggregation or a local unit assertion "
+            "for a deliberate exception (GEP 10)."
+        )
     if isinstance(error, _UnitMixError):
         return _unit_mix_error_message(qname=qname, mix=error, detail=detail)
     if isinstance(error, _StructuredValueUsedAsQuantityError):

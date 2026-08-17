@@ -240,11 +240,11 @@ def _schedule_axis_errors(
 
 FRAMEWORK_DATE_NODE_UNITS: Mapping[str, str] = {
     "policy_year": "calendar_year",
-    "policy_month": "dimensionless",
-    "policy_day": "dimensionless",
+    "policy_month": "calendar_month",
+    "policy_day": "calendar_day",
     "evaluation_year": "calendar_year",
-    "evaluation_month": "dimensionless",
-    "evaluation_day": "dimensionless",
+    "evaluation_month": "calendar_month",
+    "evaluation_day": "calendar_day",
 }
 
 
@@ -298,9 +298,8 @@ def _resolve_agg_by_group_unit(
 
     - a **head count** — ``COUNT``, or a ``SUM`` over a *boolean* source (counting
       the persons the indicator is true for) — mints ``1 / [target]``;
-    - ``SUM`` / ``MIN`` / ``MAX`` resolve to the **target** level whatever the
-      source (a bare source acquires it); ``MEAN`` resolves to **bare** — a
-      per-head average belongs to the individual;
+    - ``SUM`` / ``MEAN`` / ``MIN`` / ``MAX`` resolve to the **target** level
+      whatever the source (a bare source acquires it);
     - ``ANY`` / ``ALL`` yield a dimensionless boolean at the target level.
 
     The value source is the function's summed/averaged argument, read off the

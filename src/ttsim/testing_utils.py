@@ -16,6 +16,7 @@ import pandas as pd
 import yaml
 
 from ttsim import main, merge_trees
+from ttsim.exceptions import UnitConsistencyError
 from ttsim.interface_dag_elements.data_converters import (
     nested_data_to_df_with_nested_columns,
 )
@@ -41,8 +42,9 @@ from ttsim.typing import (
     PolicyEnvironment,
 )
 from ttsim.unit_validation import (
-    fail_if_environment_units_are_inconsistent,
-    fail_if_environment_units_are_missing,
+    UnitValidationReport,
+    create_unit_validation_report,
+    merge_unit_validation_reports,
 )
 
 # Set display options to show all columns without truncation
@@ -93,10 +95,11 @@ def get_policy_date_partition(
       change;
     - every statutory-currency start date of ``unit_system``, where one is given.
 
-    Boundaries outside the package's own date domain — the span from its earliest
-    start date to the day after its latest end date — are dropped: no environment
-    exists there to validate. Rounding specifications carry the dates of the
-    function they sit on and so contribute no boundary of their own.
+    Boundaries outside the package's own date domain — from its earliest start date
+    through its latest inclusive end date — are dropped: no environment exists there
+    to validate. In particular, the day after the final active function is not itself
+    a regime. Rounding specifications carry the dates of the function they sit on and
+    so contribute no boundary of their own.
 
     Args:
         orig_policy_objects: The package's ``column_objects_and_param_functions``
@@ -135,7 +138,7 @@ def get_policy_date_partition(
     return sorted(
         date
         for date in start_dates | end_dates | param_dates | currency_dates
-        if domain_start <= date <= domain_end
+        if domain_start <= date < domain_end
     )
 
 
@@ -406,7 +409,7 @@ def check_policy_environment_units(
         str, FlatColumnObjectsParamFunctions | FlatOrigParamSpecs
     ],
     unit_system: UnitSystem,
-) -> None:
+) -> UnitValidationReport:
     """Run the unit checks over the full environment at a policy date.
 
     Builds the data-independent specialized environment (all derivable nodes
@@ -433,7 +436,41 @@ def check_policy_environment_units(
         "without_tree_logic_and_with_derived_functions"
     ]
     grouping_levels = targets["labels"]["grouping_levels"]
-    fail_if_environment_units_are_missing(env)
-    fail_if_environment_units_are_inconsistent(
-        env=env, grouping_levels=grouping_levels, unit_system=unit_system
+    report = create_unit_validation_report(
+        env=env,
+        grouping_levels=grouping_levels,
+        unit_system=unit_system,
+        policy_dates=(policy_date,),
     )
+    if report.unsupported_bodies:
+        errors = [f"{item.qname}: {item.reason}" for item in report.unsupported_bodies]
+        raise UnitConsistencyError(
+            "Environment unit-consistency check failed:\n  " + "\n  ".join(errors)
+        )
+    return report
+
+
+def check_policy_environment_unit_history(
+    orig_policy_objects: dict[
+        str, FlatColumnObjectsParamFunctions | FlatOrigParamSpecs
+    ],
+    unit_system: UnitSystem,
+) -> UnitValidationReport:
+    """Validate and summarize every structurally distinct policy-date regime."""
+    dates = get_policy_date_partition(
+        orig_policy_objects=orig_policy_objects,
+        unit_system=unit_system,
+    )
+    reports: list[UnitValidationReport] = []
+    for date in dates:
+        try:
+            reports.append(
+                check_policy_environment_units(
+                    policy_date=date,
+                    orig_policy_objects=orig_policy_objects,
+                    unit_system=unit_system,
+                )
+            )
+        except UnitConsistencyError as error:
+            raise UnitConsistencyError(f"Policy date {date}: {error}") from error
+    return merge_unit_validation_reports(reports)

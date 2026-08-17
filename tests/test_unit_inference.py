@@ -102,9 +102,9 @@ def other_income_m() -> float:
     """A second monthly flow of currency (CURRENCY / month)."""
 
 
-@policy_input(unit=TTSIMUnit.DIMENSIONLESS)
+@policy_input(unit=TTSIMUnit.CALENDAR_MONTH)
 def geburtsmonat() -> int:
-    """A month-of-year (1-12): a cyclic ordinal, not a calendar point (GEP 10)."""
+    """A month-of-year (1-12): a calendar ordinal (GEP 10)."""
 
 
 @policy_input(unit=TTSIMUnit.MONTHS)
@@ -505,7 +505,7 @@ def _policy_year() -> ScalarParam:
 
 def _policy_month() -> ScalarParam:
     # A framework date node carrying a month-of-year (1-12): a cyclic ordinal,
-    # resolved to dimensionless via FRAMEWORK_DATE_NODE_UNITS (GEP 10).
+    # resolved to CALENDAR_MONTH via FRAMEWORK_DATE_NODE_UNITS (GEP 10).
     return ScalarParam(value=1, start_date=_START, end_date=_END)
 
 
@@ -681,7 +681,7 @@ def test_subtracting_calendar_points_of_different_axes_is_caught():
     def nonsense(some_calendar_month: int, geburtsjahr: int) -> int:
         return some_calendar_month - geburtsjahr  # bug: subtract points across axes
 
-    with pytest.raises(UnitConsistencyError, match="non-equivalent"):
+    with pytest.raises(UnitConsistencyError, match="calendar ordinal"):
         fail_if_environment_units_are_inconsistent(
             env={
                 "some_calendar_month": some_calendar_month,
@@ -782,9 +782,7 @@ def test_wrong_direction_time_converter_is_caught():
 
 
 def test_month_date_nodes_are_cyclic_ordinals():
-    """``policy_month`` carries a month-of-year (1-12): a cyclic ordinal, hence
-    ``DIMENSIONLESS`` (GEP 10), so comparing it to another ordinal is plain
-    dimensionless arithmetic."""
+    """Month ordinals may be ordered against the same calendar scale."""
 
     @policy_function(unit=TTSIMUnit.DIMENSIONLESS)
     def had_birthday(policy_month: int, geburtsmonat: int) -> bool:
@@ -804,9 +802,9 @@ def test_month_date_nodes_are_cyclic_ordinals():
 def test_month_date_node_shifted_by_a_duration_is_caught():
     """Shifting the cyclic ``policy_month`` by a months duration wraps at run
     time — the silent fold the ordinal/point split exists to catch. As a
-    dimensionless ordinal it does not add to a ``MONTHS`` duration (GEP 10)."""
+    calendar ordinal it does not add to a ``MONTHS`` duration (GEP 10)."""
 
-    @policy_function(unit=TTSIMUnit.DIMENSIONLESS)
+    @policy_function(unit=TTSIMUnit.CALENDAR_MONTH)
     def nonsense(policy_month: int, months_paid: int) -> int:
         return policy_month + months_paid  # bug: an ordinal shifted like a point
 
@@ -815,6 +813,25 @@ def test_month_date_node_shifted_by_a_duration_is_caught():
             env={
                 "policy_month": _policy_month(),
                 "months_paid": months_paid,
+                "nonsense": nonsense,
+            },
+            grouping_levels=GROUPING_LEVELS,
+            unit_system=UNIT_SYSTEM,
+        )
+
+
+def test_month_ordinals_do_not_support_general_subtraction():
+    """Subtracting two month-of-year values is not a defined duration."""
+
+    @policy_function(unit=TTSIMUnit.MONTHS)
+    def nonsense(policy_month: int, geburtsmonat: int) -> int:
+        return policy_month - geburtsmonat
+
+    with pytest.raises(UnitConsistencyError, match="calendar ordinal"):
+        fail_if_environment_units_are_inconsistent(
+            env={
+                "policy_month": _policy_month(),
+                "geburtsmonat": geburtsmonat,
                 "nonsense": nonsense,
             },
             grouping_levels=GROUPING_LEVELS,
@@ -1273,12 +1290,8 @@ def test_terminal_cross_level_division_passes_with_an_explicit_opt_out():
     )
 
 
-def test_bedarfsanteilsmethode_cross_level_share_consumed_by_multiplication_passes():
-    """The GETTSIM idiom: a person's share of a group claim,
-    ``(bedarf_m / bedarf_m_fam) * anspruch_m_fam``. The cross-level result
-    ``[fam]`` is consumed by the multiply, landing on a bare per-person flow that
-    matches the declaration — no exemption needed, and unchanged by the
-    cross-level rule (GEP 10)."""
+def test_bedarfsanteilsmethode_requires_a_local_assertion():
+    """A bare amount divided by a non-count group amount is not inferred."""
 
     @policy_input(unit=TTSIMUnit.CURRENCY.PER_MONTH)
     def bedarf_m() -> float:
@@ -1296,16 +1309,95 @@ def test_bedarfsanteilsmethode_cross_level_share_consumed_by_multiplication_pass
     def betrag_m(bedarf_m: float, bedarf_m_fam: float, anspruch_m_fam: float) -> float:
         return (bedarf_m / bedarf_m_fam) * anspruch_m_fam
 
+    with pytest.raises(UnitConsistencyError, match="group calculation"):
+        fail_if_environment_units_are_inconsistent(
+            env={
+                "bedarf_m": bedarf_m,
+                "bedarf_m_fam": bedarf_m_fam,
+                "anspruch_m_fam": anspruch_m_fam,
+                "betrag_m": betrag_m,
+            },
+            grouping_levels=GROUPING_LEVELS,
+            unit_system=UNIT_SYSTEM,
+        )
+
+
+def test_same_group_total_ratio_is_rejected():
+    @policy_input(unit=TTSIMUnit.CURRENCY.PER_MONTH.PER_FAM)
+    def housing_costs_m_fam() -> float:
+        """Monthly housing costs of the family."""
+
+    @policy_input(unit=TTSIMUnit.CURRENCY.PER_MONTH.PER_FAM)
+    def income_m_fam() -> float:
+        """Monthly income of the family."""
+
+    @policy_function(unit=TTSIMUnit.DIMENSIONLESS)
+    def housing_cost_share(housing_costs_m_fam: float, income_m_fam: float) -> float:
+        return housing_costs_m_fam / income_m_fam
+
+    with pytest.raises(UnitConsistencyError, match="group calculation"):
+        fail_if_environment_units_are_inconsistent(
+            env={
+                "housing_costs_m_fam": housing_costs_m_fam,
+                "income_m_fam": income_m_fam,
+                "housing_cost_share": housing_cost_share,
+            },
+            grouping_levels=GROUPING_LEVELS,
+            unit_system=UNIT_SYSTEM,
+        )
+
+
+def test_same_group_indicator_may_mask_a_group_total():
+    @policy_input(unit=TTSIMUnit.DIMENSIONLESS.PER_FAM)
+    def eligible_fam() -> bool:
+        """Whether the family is eligible."""
+
+    @policy_input(unit=TTSIMUnit.CURRENCY.PER_MONTH.PER_FAM)
+    def benefit_m_fam() -> float:
+        """Monthly benefit of the family."""
+
+    @policy_function(unit=TTSIMUnit.CURRENCY.PER_MONTH.PER_FAM)
+    def paid_benefit_m_fam(eligible_fam: bool, benefit_m_fam: float) -> float:
+        return eligible_fam * benefit_m_fam
+
     fail_if_environment_units_are_inconsistent(
         env={
-            "bedarf_m": bedarf_m,
-            "bedarf_m_fam": bedarf_m_fam,
-            "anspruch_m_fam": anspruch_m_fam,
-            "betrag_m": betrag_m,
+            "eligible_fam": eligible_fam,
+            "benefit_m_fam": benefit_m_fam,
+            "paid_benefit_m_fam": paid_benefit_m_fam,
         },
         grouping_levels=GROUPING_LEVELS,
         unit_system=UNIT_SYSTEM,
     )
+
+
+def test_arithmetic_on_a_head_count_does_not_keep_head_count_evidence():
+    """Only an independently known head count enables group-total allocation."""
+
+    @policy_input(unit=TTSIMUnit.DIMENSIONLESS.PER_FAM)
+    def number_of_people_fam() -> int:
+        """Number of people in the family."""
+
+    @policy_input(unit=TTSIMUnit.CURRENCY.PER_MONTH.PER_FAM)
+    def benefit_m_fam() -> float:
+        """Monthly benefit of the family."""
+
+    @policy_function(unit=TTSIMUnit.CURRENCY.PER_MONTH)
+    def wrongly_scaled_benefit_m(
+        number_of_people_fam: int, benefit_m_fam: float
+    ) -> float:
+        return benefit_m_fam / (2 * number_of_people_fam)
+
+    with pytest.raises(UnitConsistencyError, match="group calculation"):
+        fail_if_environment_units_are_inconsistent(
+            env={
+                "number_of_people_fam": number_of_people_fam,
+                "benefit_m_fam": benefit_m_fam,
+                "wrongly_scaled_benefit_m": wrongly_scaled_benefit_m,
+            },
+            grouping_levels=GROUPING_LEVELS,
+            unit_system=UNIT_SYSTEM,
+        )
 
 
 def test_cross_level_share_declared_with_concrete_content_is_caught():
@@ -1493,7 +1585,7 @@ def test_group_share_times_group_total_squares_the_level_and_is_caught():
     def parents_need_m_fam(parents_share_fam: float, need_m_fam: float) -> float:
         return parents_share_fam * need_m_fam
 
-    with pytest.raises(UnitConsistencyError, match="cast_ttsim_unit"):
+    with pytest.raises(UnitConsistencyError, match="count or yes/no"):
         fail_if_environment_units_are_inconsistent(
             env={
                 "parents_share_fam": parents_share_fam,
@@ -1505,11 +1597,10 @@ def test_group_share_times_group_total_squares_the_level_and_is_caught():
         )
 
 
-def test_group_share_times_group_total_passes_with_cast():
-    """Where the law mandates the group-share product, the cast states the
-    intended result at the site (GEP 10)."""
+def test_bare_share_times_group_total_passes():
+    """A share stays bare and scales a group total by ordinary arithmetic."""
 
-    @policy_input(unit=TTSIMUnit.DIMENSIONLESS.PER_FAM)
+    @policy_input(unit=TTSIMUnit.DIMENSIONLESS)
     def parents_share_fam() -> float:
         """The parents' share of the family's need — the family's property."""
 
@@ -1519,10 +1610,7 @@ def test_group_share_times_group_total_passes_with_cast():
 
     @policy_function(unit=TTSIMUnit.CURRENCY.PER_MONTH.PER_FAM)
     def parents_need_m_fam(parents_share_fam: float, need_m_fam: float) -> float:
-        return cast_ttsim_unit(
-            value=parents_share_fam * need_m_fam,
-            unit=TTSIMUnit.CURRENCY.PER_MONTH.PER_FAM,
-        )
+        return parents_share_fam * need_m_fam
 
     fail_if_environment_units_are_inconsistent(
         env={
@@ -3536,7 +3624,7 @@ def _two_axis_lookup(xnp: ModuleType) -> ConsecutiveIntLookupTableParamValue:
 
 @param_function(
     unit=InputOutputUnits(
-        input_unit=(TTSIMUnit.DIMENSIONLESS, TTSIMUnit.YEARS),
+        input_unit=(TTSIMUnit.CALENDAR_MONTH, TTSIMUnit.YEARS),
         output_unit=TTSIMUnit.CURRENCY.PER_MONTH,
     ),
     verify_units=False,
@@ -3700,7 +3788,7 @@ class _TwoAxisFieldRate:
     table: Annotated[
         ConsecutiveIntLookupTableParamValue,
         InputOutputUnits(
-            input_unit=(TTSIMUnit.DIMENSIONLESS, TTSIMUnit.YEARS),
+            input_unit=(TTSIMUnit.CALENDAR_MONTH, TTSIMUnit.YEARS),
             output_unit=TTSIMUnit.CURRENCY.PER_MONTH,
         ),
     ]
