@@ -1,0 +1,25 @@
+---
+info:
+  note: >-
+    A kinstead of three (one head, two dependent children) draws the levy rebate
+    keyed by its number of dependants: look_up(2) = 80 silver pennies per year,
+    the same kin-level value for every member.
+  precision_atol: 0.01
+  source: ''
+inputs:
+  assumed: {}
+  provided:
+    p_id:
+      - 0
+      - 1
+      - 2
+    kin_id:
+      - 0
+      - 0
+      - 0
+outputs:
+  kings_levy:
+    child_rebate_y_kin:
+      - 80.0
+      - 80.0
+      - 80.0

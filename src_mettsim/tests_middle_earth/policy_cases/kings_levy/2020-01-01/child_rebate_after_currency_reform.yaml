@@ -1,0 +1,24 @@
+---
+info:
+  note: >-
+    After the 2020 currency reform the levy rebate is denominated in castar
+    (1 castar = 4 silver pennies). A kinstead of two (one head, one dependent
+    child) draws look_up(1) = 10 castar per year; returned in the default
+    silver-penny data currency that is 10 * 4 = 40, the same value the
+    pre-reform silver-penny table encoded — the redenomination preserves value.
+  precision_atol: 0.01
+  source: ''
+inputs:
+  assumed: {}
+  provided:
+    p_id:
+      - 0
+      - 1
+    kin_id:
+      - 0
+      - 0
+outputs:
+  kings_levy:
+    child_rebate_y_kin:
+      - 40.0
+      - 40.0

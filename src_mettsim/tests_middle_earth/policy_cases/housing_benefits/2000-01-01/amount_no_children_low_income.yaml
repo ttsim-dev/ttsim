@@ -6,9 +6,9 @@ info:
 inputs:
   assumed: {}
   provided:
-    age:
-      - 30
-      - 30
+    birth_year:
+      - 1970
+      - 1970
     kin_id:
       - 0
       - 0

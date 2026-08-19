@@ -6,8 +6,25 @@ assistance_rate:
   description:
     de: In Mittelerde passiert immer noch nichts.
     en: Still nothing happens in Middle Earth.
-  unit: null
-  reference_period: null
+  unit: DIMENSIONLESS
   type: scalar
   1900-01-01:
     value: 0.5
+deduction_coefficients:
+  name:
+    de: Koeffizienten des Abzugs
+    en: Coefficients of the deduction
+  description:
+    de: >-
+      Empirisch angepasste Koeffizienten des Einkommensanteils `a - b *
+      Einkommen`, der nach dem Abzug verbleibt.
+    en: >-
+      Empirically fitted coefficients of the income share `a - b * income` that
+      remains after the deduction.
+  unit:
+    a: DIMENSIONLESS
+    b: DIMENSIONLESS
+  type: dict
+  1900-01-01:
+    a: 0.6
+    b: 0.0001

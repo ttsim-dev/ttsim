@@ -6,9 +6,19 @@ schedule:
   description:
     de: In Mittelerde passiert nichts.
     en: In Middle Earth nothing happens.
-  unit: Euros
-  reference_period: Year
+  unit:
+    child_amount_y: SILVER_PENNY_PER_YEAR
+    max_age: YEARS
   type: dict
   1900-01-01:
     child_amount_y: 100.0
+    max_age: 18
+  2020-01-01:
+    note: >-
+      Pure redenomination at the currency reform of 2020
+      (1 castar = 4 silver pennies); the age limit carries over.
+    unit:
+      child_amount_y: CASTAR_PER_YEAR
+      max_age: YEARS
+    child_amount_y: 25.0
     max_age: 18

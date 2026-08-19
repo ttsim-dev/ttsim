@@ -1,0 +1,32 @@
+---
+info:
+  note: >-
+    Group extremes take the target level whatever the source's base (GEP 10):
+    a MIN over the level-less duration `age` and a MIN over the calendar point
+    `birth_year` both become properties of the kinstead.
+  precision_atol: 0.01
+  source: ''
+inputs:
+  assumed: {}
+  provided:
+    p_id:
+      - 0
+      - 1
+      - 2
+    kin_id:
+      - 0
+      - 0
+      - 0
+    birth_year:
+      - 1995
+      - 1995
+      - 2015
+outputs:
+  age_of_youngest_member_kin:
+    - 10
+    - 10
+    - 10
+  birth_year_of_oldest_member_kin:
+    - 1995
+    - 1995
+    - 1995

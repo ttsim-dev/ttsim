@@ -1,18 +1,26 @@
 from __future__ import annotations
 
-from ttsim.tt import policy_function
+from ttsim.tt import AggType, TTSIMUnit, agg_by_group_function, policy_function
 
 
-@policy_function()
+@policy_function(unit=TTSIMUnit.CURRENCY.PER_YEAR)
 def amount_y(
     wealth: float,
-    tax_rate: float,
+    tax_rate_y: float,
     exempt_from_wealth_tax: bool,
 ) -> float:
-    return 0.0 if exempt_from_wealth_tax else wealth * tax_rate
+    return 0.0 if exempt_from_wealth_tax else wealth * tax_rate_y
 
 
-@policy_function()
+@agg_by_group_function(
+    agg_type=AggType.MEAN,
+    unit=TTSIMUnit.CURRENCY.PER_KIN,
+)
+def average_wealth_kin(kin_id: int, wealth: float) -> float:
+    """The average wealth of the kinstead."""
+
+
+@policy_function(unit=TTSIMUnit.DIMENSIONLESS)
 def exempt_from_wealth_tax(
     wealth_kin: float,
     wealth_fam: float,

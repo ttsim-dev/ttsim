@@ -882,20 +882,19 @@ def test_registered_currency_token_round_trips_through_the_parser():
 
 
 def test_annotated_results_label_a_declarationless_dimensionless_target_as_such():
-    """A dimensionless target with no declared token (a framework date node such as
-    ``policy_month``) is labelled ``DIMENSIONLESS`` (GEP 10)."""
+    """A framework month target is labelled as a calendar ordinal (GEP 10)."""
     system = _fresh_system()
     annotated = tree_with_unit_annotations(
         tree={"policy_month": np.array([6, 7])},
         raw_results__params={},
         unit_checks__resolved_pint_units={
-            "policy_month": system.registry.dimensionless
+            "policy_month": system.registry.parse_units("calendar_month")
         },
         data_currency="CASTAR",
         computation_currency="SILVER_PENNY",
         unit_system=system,
     )
-    assert annotated["policy_month"].unit == TTSIMUnit.DIMENSIONLESS
+    assert annotated["policy_month"].unit == TTSIMUnit.CALENDAR_MONTH
 
 
 def test_definition_referencing_no_system_currency_is_rejected():

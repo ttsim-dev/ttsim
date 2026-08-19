@@ -6,11 +6,18 @@ wealth_threshold_for_reduced_tax_rate:
   description:
     de: Umgekehrte Bennenung schiene sinnvoll.
     en: The reverse naming would seem more sensible.
-  unit: Euros
-  reference_period: null
+  unit: SILVER_PENNY_PER_FAM
   type: scalar
   1900-01-01:
+    unit: SILVER_PENNY_PER_FAM
     value: 50000
+  2020-01-01:
+    note: >-
+      Pure redenomination at the currency reform of 2020: the realm's unit of
+      account switches from the Shire's silver penny to Gondor's castar
+      (1 castar = 4 silver pennies).
+    unit: CASTAR_PER_FAM
+    value: 12500
 tax_schedule_standard:
   name:
     de: Standard Lohnsteuersatz
@@ -18,8 +25,8 @@ tax_schedule_standard:
   description:
     de: Für Angehörige von Familien mit niedrigem Vermögen
     en: For member of families with low wealth
-  unit: Euros
-  reference_period: Year
+  input_unit: SILVER_PENNY_PER_YEAR
+  output_unit: SILVER_PENNY_PER_YEAR
   type: piecewise_linear
   1900-01-01:
     intervals:
@@ -30,6 +37,17 @@ tax_schedule_standard:
         slope: 0.1
       - interval: '[100, inf)'
         slope: 0.3
+  2020-01-01:
+    input_unit: CASTAR_PER_YEAR
+    output_unit: CASTAR_PER_YEAR
+    intervals:
+      - interval: (-inf, 0)
+        slope: 0.0
+        intercept: 0
+      - interval: '[0, 25)'
+        slope: 0.1
+      - interval: '[25, inf)'
+        slope: 0.3
 tax_schedule_reduced:
   name:
     de: Lohnsteuersatz
@@ -37,8 +55,8 @@ tax_schedule_reduced:
   description:
     de: Für Angehörige von Familien mit hohem Vermögen
     en: For member of families with high wealth
-  unit: Euros
-  reference_period: Year
+  input_unit: SILVER_PENNY_PER_YEAR
+  output_unit: SILVER_PENNY_PER_YEAR
   type: piecewise_linear
   1900-01-01:
     intervals:
@@ -48,4 +66,15 @@ tax_schedule_reduced:
       - interval: '[0, 100)'
         slope: 0.1
       - interval: '[100, inf)'
+        slope: 0.15
+  2020-01-01:
+    input_unit: CASTAR_PER_YEAR
+    output_unit: CASTAR_PER_YEAR
+    intervals:
+      - interval: (-inf, 0)
+        slope: 0
+        intercept: 0
+      - interval: '[0, 25)'
+        slope: 0.1
+      - interval: '[25, inf)'
         slope: 0.15

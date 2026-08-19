@@ -201,6 +201,7 @@ class Templates(MainTargetABC):
 class UnitChecks(MainTargetABC):
     resolved_pint_units: str = "unit_checks__resolved_pint_units"
     declared_ttsim_units: str = "unit_checks__declared_ttsim_units"
+    validation_report: str = "unit_checks__validation_report"
 
 
 @dataclass(frozen=True)

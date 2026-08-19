@@ -785,15 +785,31 @@ def backend_has_changed(
                 # attributes (GETTSIM tests fail otherwise).
                 if jax is not None and isinstance(arg, jax.Array):
                     continue
-                if isinstance(arg, numpy.ndarray) or any(
-                    isinstance(getattr(arg, attr), numpy.ndarray) for attr in dir(arg)
-                ):
+                if isinstance(arg, numpy.ndarray) or _has_numpy_array_attribute(arg):
                     issues += f"    {dt.tree_path_from_qname(argname)}\n"
     if issues:
         raise ValueError(
             "Backend has changed from numpy to jax.\n\n"
             f"Found numpy arrays in:\n\n{issues}"
         )
+
+
+def _has_numpy_array_attribute(obj: Any) -> bool:  # noqa: ANN401
+    """Inspect direct attributes without assuming every name in ``dir`` is readable.
+
+    NumPy 2 scalar types retain removed methods such as ``itemset`` in ``dir(obj)``
+    but raise :class:`AttributeError` when the attribute is accessed. Those tombstone
+    names are irrelevant here; readable array-valued attributes still identify a
+    policy environment built for the NumPy backend.
+    """
+    for name in dir(obj):
+        try:
+            value = getattr(obj, name)
+        except AttributeError:
+            continue
+        if isinstance(value, numpy.ndarray):
+            return True
+    return False
 
 
 @fail_function()

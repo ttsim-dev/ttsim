@@ -6,10 +6,10 @@ info:
 inputs:
   assumed: {}
   provided:
-    age:
-      - 30
-      - 30
-      - 10
+    birth_year:
+      - 1995
+      - 1995
+      - 2015
     gross_wage_y:
       - 10000
       - 0

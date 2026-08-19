@@ -5,6 +5,7 @@ GEP 10 specifies the declaration rules the inferred units are checked against.
 
 from __future__ import annotations
 
+import ast
 import functools
 import inspect
 from collections.abc import Callable, Mapping
@@ -18,6 +19,11 @@ from typing import (
 import numpy
 import pint
 
+from ttsim._quantity_kinds import (
+    QuantityKind,
+    QuantityKindTree,
+    quantity_kinds_by_qname,
+)
 from ttsim.exceptions import (
     TTSIMError,
     UnitDefinitionError,
@@ -25,7 +31,10 @@ from ttsim.exceptions import (
 from ttsim.interface_dag_elements.shared import (
     FRAMEWORK_PARTIAL_ARGUMENTS,
 )
-from ttsim.tt._function_rewriting import recompile_with_logical_ops_as_calls
+from ttsim.tt._function_rewriting import (
+    func_to_ast,
+    recompile_with_logical_ops_as_calls,
+)
 from ttsim.tt.column_objects_param_function import (
     ColumnObject,
     ParamFunction,
@@ -46,6 +55,8 @@ from ttsim.tt.units import (
     _grouping_levels_with_exponent,
     _unit_level_denominator,
     _unit_without_grouping_levels,
+    cast_ttsim_unit,
+    is_calendar_ordinal_unit,
     is_calendar_point_unit,
     pint_unit_from_ttsim_unit_for_column,
     ttsim_unit_from_yaml_value,
@@ -60,6 +71,7 @@ from ttsim.unit_resolution import (
     _resolve_schedule_input_unit,
     _resolved_return_structure,
     _returns_a_schedule,
+    _ScalarFieldKind,
     _ScheduleFieldKind,
     _structured_field_kinds,
     node_is_boolean,
@@ -83,6 +95,7 @@ def body_verification_errors(
     representative_values = _representative_values_by_qname(
         env=env, resolved_pint_units=resolved_pint_units, unit_system=unit_system
     )
+    quantity_kinds = quantity_kinds_by_qname(env)
     boolean_nodes = {
         qname
         for qname, obj in env.items()
@@ -137,17 +150,26 @@ def body_verification_errors(
                 func=obj.function,
                 module="xnp",
                 module_obj=_NON_UNIT_ARGUMENT_VALUES["xnp"],
-                extra_globals=unit_check_helper_stand_ins,
+                extra_globals=_unit_check_scope_bindings(
+                    function=obj.function,
+                    stand_ins=unit_check_helper_stand_ins,
+                ),
             ),
             declared=declared,
             boolean_values=boolean_values,
             base_kwargs=base_kwargs,
             unit_system=unit_system,
             explorer_holder=explorer_holder,
+            quantity_kinds=quantity_kinds,
         )
         if error is not None:
             errors.append(error)
     return errors
+
+
+def body_error_is_unsupported(error: str) -> bool:
+    """Whether ``error`` means symbolic evaluation is unsupported, not invalid."""
+    return isinstance(error, _UnsupportedBodyError)
 
 
 def _anchor_schedules_on_body_explorer(
@@ -169,6 +191,11 @@ def _anchor_schedules_on_body_explorer(
 def _has_grouping_level_numerator(unit: pint.Unit) -> bool:
     """Whether a unit carries a grouping level as a *numerator*."""
     return any(exponent > 0 for _, exponent in _grouping_levels_with_exponent(unit))
+
+
+def _has_grouping_component(unit: pint.Unit) -> bool:
+    """Whether a unit carries any grouping level, in numerator or denominator."""
+    return bool(_grouping_levels_with_exponent(unit))
 
 
 class BooleanLevel(NamedTuple):
@@ -194,13 +221,27 @@ def _as_boolean_level(unit: pint.Unit, registry: pint.UnitRegistry) -> BooleanLe
     ``1 / [fam]`` → ``(True, "fam")``; a plain ``1`` → ``(True, None)``;
     ``EUR_PER_MONTH`` or ``[hh]`` → ``(False, None)``.
     """
-    if _has_grouping_level_numerator(unit):
-        return BooleanLevel(is_boolean=False, level=None)
-    if not registry.Quantity(
-        1.0, _unit_without_grouping_levels(unit=unit, registry=registry)
-    ).dimensionless:
+    if not _is_dimensionless_up_to_grouping_level(unit=unit, registry=registry):
         return BooleanLevel(is_boolean=False, level=None)
     return BooleanLevel(is_boolean=True, level=_unit_level_denominator(unit))
+
+
+def _is_dimensionless_up_to_grouping_level(
+    unit: pint.Unit, registry: pint.UnitRegistry
+) -> bool:
+    """Whether ``unit`` is a plain number, apart from a grouping-level denominator.
+
+    ``1``, ``1 / [fam]`` → ``True``; ``EUR_PER_MONTH``, ``[hh]``, a calendar point
+    → ``False``. This is what the unit model can say about the values that carry no
+    physical content — truth values, identifiers, shares, counts. It cannot tell
+    them apart from one another (GEP 10 leaves semantic kinds to a later stage), so
+    a screen built on it rejects physical content rather than certifying a kind.
+    """
+    if _has_grouping_level_numerator(unit):
+        return False
+    return registry.Quantity(
+        1.0, _unit_without_grouping_levels(unit=unit, registry=registry)
+    ).dimensionless
 
 
 def _boolean_quantity(level: str | None, registry: pint.UnitRegistry) -> pint.Quantity:
@@ -236,6 +277,7 @@ def _verify_one_body(
     base_kwargs: dict[str, Any],
     unit_system: UnitSystem,
     explorer_holder: list[_PathExplorer | None],
+    quantity_kinds: Mapping[str, QuantityKindTree],
 ) -> str | None:
     """Unit-check one body on every reachable branch path; return an error or ``None``.
 
@@ -279,6 +321,7 @@ def _verify_one_body(
                 explorer=explorer,
                 unit_system=unit_system,
                 label=name,
+                kind=quantity_kinds.get(name, QuantityKind.GENERIC),
             )
             for name, value in {**base_kwargs, **boolean_values}.items()
         }
@@ -326,6 +369,14 @@ def _run_one_path(
             reason=f"it makes more than {_MAX_DECISIONS_PER_RUN} branch decisions "
             "in one run — a data-driven loop?",
         ), True
+    except _ReductionNotEvaluableError as err:
+        return _opt_out_required_error(
+            qname=qname,
+            reason=f"it reduces an array in the body (`xnp.{err.op}`) — a reduction "
+            "changes which rows the result belongs to, and the unit check has no "
+            "array-axis information to derive the result's grouping level from; an "
+            "aggregation node states that level instead",
+        ), True
     except _LookupArityError as err:
         return (
             f"{qname}: calls a lookup declaring {err.declared} input "
@@ -335,6 +386,8 @@ def _run_one_path(
             f"counts must match (GEP 10)."
         ), True
     except (
+        _CalendarOrdinalArithmeticError,
+        _UnsupportedGroupArithmeticError,
         _UnitMixError,
         _StructuredValueUsedAsQuantityError,
         pint.OffsetUnitCalculusError,
@@ -355,13 +408,14 @@ def _run_one_path(
             "lookup table, `join`, a raw `xnp` op) or a defect in the body itself, "
             "which this message reproduces verbatim so the two can be told apart",
         ), True
-    return _inferred_result_error(
+    error = _inferred_result_error(
         qname=qname,
         inferred=_unwrap(result),
         declared=declared,
         detail=explorer.branch_detail(),
         unit_system=unit_system,
-    ), False
+    )
+    return error, isinstance(error, _UnsupportedBodyError)
 
 
 def _representative_values_by_qname(
@@ -391,6 +445,7 @@ def _representative_values_by_qname(
             out[qname] = _UnitCheckSchedule(
                 input_unit=_resolve_schedule_input_unit(obj=obj, registry=registry),
                 output_unit=cast("pint.Unit", unit),
+                output_kind=cast("CompositeUnit", obj.output_unit).kind,
                 unit_system=unit_system,
             )
         elif (
@@ -410,6 +465,7 @@ def _representative_values_by_qname(
                     where=f"Schedule param function {qname!r}",
                 ),
                 output_unit=cast("pint.Unit", unit),
+                output_kind=obj.unit.output_unit.kind,
                 unit_system=unit_system,
             )
         elif isinstance(obj, DictParam | RawParam) and not isinstance(unit, dict):
@@ -534,6 +590,144 @@ def _unit_check_helper_stand_ins(
     return stand_ins, explorer_holder
 
 
+class _ObjectWithCastStandIn:
+    """Delegate every attribute except the canonical unit cast to an object."""
+
+    def __init__(self, wrapped: Any, cast_stand_in: Any) -> None:  # noqa: ANN401
+        self._wrapped = wrapped
+        self.cast_ttsim_unit = cast_stand_in
+
+    def __getattr__(self, name: str) -> Any:  # noqa: ANN401
+        return getattr(self._wrapped, name)
+
+
+def _function_scope(function: Any) -> dict[str, Any]:  # noqa: ANN401
+    """Return the globals and dereferenced closure cells visible to a function."""
+    scope = dict(getattr(function, "__globals__", {}))
+    closure = getattr(function, "__closure__", None)
+    code = getattr(function, "__code__", None)
+    if closure and code is not None:
+        scope.update(
+            dict(
+                zip(
+                    code.co_freevars,
+                    (cell.cell_contents for cell in closure),
+                    strict=True,
+                )
+            )
+        )
+    return scope
+
+
+def _unit_check_scope_bindings(
+    function: Any,  # noqa: ANN401
+    stand_ins: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Add every true alias of ``cast_ttsim_unit`` to checker stand-ins.
+
+    Identity, not spelling, is authoritative. Import aliases and closure aliases
+    are rebound directly. A module alias is replaced by a delegating proxy whose
+    cast attribute is the stand-in, so its other helpers remain untouched.
+    """
+    cast_stand_in = stand_ins["cast_ttsim_unit"]
+    bindings = {
+        name: value for name, value in stand_ins.items() if name != "cast_ttsim_unit"
+    }
+    for name, value in _function_scope(function).items():
+        if value is cast_ttsim_unit:
+            bindings[name] = cast_stand_in
+        else:
+            try:
+                attribute = inspect.getattr_static(value, "cast_ttsim_unit")
+            except AttributeError:
+                continue
+            if attribute is cast_ttsim_unit:
+                bindings[name] = _ObjectWithCastStandIn(value, cast_stand_in)
+    return bindings
+
+
+def _cast_aliases_in_scope(scope: Mapping[str, Any]) -> tuple[set[str], set[str]]:
+    """Return direct and module aliases that resolve to the canonical cast."""
+    direct_aliases = {name for name, value in scope.items() if value is cast_ttsim_unit}
+    module_aliases: set[str] = set()
+    for name, value in scope.items():
+        try:
+            attribute = inspect.getattr_static(value, "cast_ttsim_unit")
+        except AttributeError:
+            continue
+        if attribute is cast_ttsim_unit:
+            module_aliases.add(name)
+    return direct_aliases, module_aliases
+
+
+def _assignment_rhs_is_cast(
+    node: ast.Assign,
+    aliases: set[str],
+    module_aliases: set[str],
+) -> bool:
+    """Whether an assignment copies a known canonical-cast alias."""
+    return (isinstance(node.value, ast.Name) and node.value.id in aliases) or (
+        isinstance(node.value, ast.Attribute)
+        and node.value.attr == "cast_ttsim_unit"
+        and isinstance(node.value.value, ast.Name)
+        and node.value.value.id in module_aliases
+    )
+
+
+def _local_cast_aliases(
+    tree: ast.Module,
+    direct_aliases: set[str],
+    module_aliases: set[str],
+) -> set[str]:
+    """Expand aliases through local ``alias = existing_alias`` assignments."""
+    aliases = set(direct_aliases)
+    changed = True
+    while changed:
+        changed = False
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Assign) or not _assignment_rhs_is_cast(
+                node=node, aliases=aliases, module_aliases=module_aliases
+            ):
+                continue
+            for target in node.targets:
+                if isinstance(target, ast.Name) and target.id not in aliases:
+                    aliases.add(target.id)
+                    changed = True
+    return aliases
+
+
+def function_uses_local_cast(function: Any) -> bool:  # noqa: ANN401
+    """Whether a body calls the canonical cast, directly or through a true alias."""
+    direct_aliases, module_aliases = _cast_aliases_in_scope(_function_scope(function))
+    try:
+        tree = func_to_ast(function)
+    except (OSError, TypeError, IndentationError, SyntaxError):
+        code = getattr(function, "__code__", None)
+        return code is not None and bool(
+            set(code.co_names).intersection(direct_aliases | module_aliases)
+            or set(code.co_freevars).intersection(direct_aliases)
+        )
+
+    aliases = _local_cast_aliases(
+        tree=tree,
+        direct_aliases=direct_aliases,
+        module_aliases=module_aliases,
+    )
+    return any(
+        isinstance(node, ast.Call)
+        and (
+            (isinstance(node.func, ast.Name) and node.func.id in aliases)
+            or (
+                isinstance(node.func, ast.Attribute)
+                and node.func.attr == "cast_ttsim_unit"
+                and isinstance(node.func.value, ast.Name)
+                and node.func.value.id in module_aliases
+            )
+        )
+        for node in ast.walk(tree)
+    )
+
+
 # Caps on the path-exploring unit check (see ``_PathExplorer``): only a pathological
 # body (deep independent branching, or a data-driven loop) hits them, so the build
 # check can never blow up.
@@ -589,6 +783,24 @@ class _UnitMixError(_UnitCheckError):
         self.literal = literal
 
 
+class _CalendarOrdinalArithmeticError(_UnitCheckError):
+    """A quarter-, month-, or day-within-period value was used arithmetically."""
+
+    def __init__(self, op: str) -> None:
+        super().__init__()
+        self.op = op
+
+
+class _UnsupportedGroupArithmeticError(_UnitCheckError):
+    """A product or ratio lies outside GEP 10's restricted group rules."""
+
+    def __init__(self, op: str, left: pint.Unit, right: pint.Unit) -> None:
+        super().__init__()
+        self.op = op
+        self.left = left
+        self.right = right
+
+
 class _ScheduleNotEvaluableError(_UnitCheckError):
     """A schedule/lookup/join call the unit check cannot resolve to a unit.
 
@@ -597,6 +809,22 @@ class _ScheduleNotEvaluableError(_UnitCheckError):
     :func:`_verify_one_body`'s generic handler and reported as needing an explicit
     ``verify_units=False`` opt-out, exactly like any other un-evaluable op.
     """
+
+
+class _ReductionNotEvaluableError(_UnitCheckError):
+    """An in-body array reduction the unit check cannot type.
+
+    A reduction over rows changes which entity the result belongs to — per-person
+    amounts summed over a group are the group's total — and the unit check sees no
+    array axes to read that from, so it can neither preserve nor derive the
+    result's grouping level. Caught by :func:`_run_one_path` and reported as
+    needing an explicit ``verify_units=False`` opt-out; an aggregation node, which
+    states its target level, is the checked alternative.
+    """
+
+    def __init__(self, op: str) -> None:
+        super().__init__()
+        self.op = op
 
 
 class _LookupArityError(_UnitCheckError):
@@ -711,12 +939,14 @@ class _UnitCheckQuantity:
     in a real run (the whole point of the check). Comparisons and truth tests
     instead return an explorer-controlled value, so the explorer — not the
     representative magnitude — decides which branch is taken; the magnitude is
-    always ``1.0`` and never matters. Anything the wrapper cannot model raises,
-    which the caller treats as "not evaluable on this path" and falls back to
-    the declaration — so the wrapper can never produce a false positive.
+    always ``1.0`` and never matters. A truth test is screened before it is
+    handed on: only a boolean may control a branch. Anything the wrapper cannot
+    model raises, which the caller treats as "not evaluable on this path" and
+    falls back to the declaration — so the wrapper can never produce a false
+    positive.
     """
 
-    __slots__ = ("_explorer", "_label", "_unit_system", "q")
+    __slots__ = ("_explorer", "_kind", "_label", "_unit_system", "q")
     # Keep NumPy from broadcasting over us: defer binary ops with a NumPy operand
     # to our reflected dunders instead.
     __array_ufunc__ = None
@@ -729,12 +959,14 @@ class _UnitCheckQuantity:
         explorer: _PathExplorer,
         unit_system: UnitSystem,
         label: str | None = None,
+        kind: QuantityKind = QuantityKind.GENERIC,
     ) -> None:
         self.q = q
         self._explorer = explorer
         # The system whose registry `q` lives in — every unit the wrapper mints
         # (a boolean's level, a dimensionless truth value) must land there too.
         self._unit_system = unit_system
+        self._kind = kind
         # How the body's author would name this value — the argument name for a
         # direct input, a composed description for a comparison or logical
         # combination, ``None`` once arithmetic has mixed it beyond naming. Used
@@ -745,9 +977,16 @@ class _UnitCheckQuantity:
     def _registry(self) -> pint.UnitRegistry:
         return self._unit_system.registry
 
-    def _wrap(self, q: Any) -> _UnitCheckQuantity:  # noqa: ANN401
+    def _wrap(
+        self,
+        q: Any,  # noqa: ANN401
+        kind: QuantityKind = QuantityKind.GENERIC,
+    ) -> _UnitCheckQuantity:
         return _UnitCheckQuantity(
-            q=q, explorer=self._explorer, unit_system=self._unit_system
+            q=q,
+            explorer=self._explorer,
+            unit_system=self._unit_system,
+            kind=kind,
         )
 
     def _controlled_bool_at(
@@ -758,6 +997,7 @@ class _UnitCheckQuantity:
             explorer=self._explorer,
             unit_system=self._unit_system,
             label=label,
+            kind=QuantityKind.INDICATOR,
         )
 
     def _composed_label(self, other: Any, op: str) -> str | None:  # noqa: ANN401
@@ -850,6 +1090,7 @@ class _UnitCheckQuantity:
         other_q = _unwrap(other)
         if isinstance(other_q, _UnitCheckStructuredValue):
             other_q._raise_used_as_quantity(op)  # noqa: SLF001
+        self._fail_if_calendar_ordinal_arithmetic(other=other, op=op)
         self_is_point = is_calendar_point_unit(
             unit=cast("pint.Unit", self.q.units), registry=self._registry
         )
@@ -873,6 +1114,150 @@ class _UnitCheckQuantity:
         if self_is_point or other_is_point:
             return
         self._fail_if_other_unit_is_not_equivalent(other=other, op=op)
+
+    def _fail_if_calendar_ordinal_arithmetic(self, other: Any, op: str) -> None:  # noqa: ANN401
+        """Reject arithmetic on month/day/quarter ordinals.
+
+        These values can be ordered on the same scale, but neither a difference
+        nor a shift has a calendar-independent meaning.
+        """
+        other_q = _unwrap(other)
+        if is_calendar_ordinal_unit(cast("pint.Unit", self.q.units)) or (
+            isinstance(other_q, pint.Quantity)
+            and is_calendar_ordinal_unit(cast("pint.Unit", other_q.units))
+        ):
+            raise _CalendarOrdinalArithmeticError(op=op)
+
+    def _group_arithmetic(
+        self,
+        other: Any,  # noqa: ANN401
+        *,
+        op: str,
+        reflected: bool = False,
+    ) -> tuple[Any, QuantityKind]:
+        """Apply multiplication/division under the restricted group rules."""
+        other_q = _unwrap(other)
+        if isinstance(other_q, _UnitCheckStructuredValue):
+            other_q._raise_used_as_quantity(op)  # noqa: SLF001
+        if not isinstance(other_q, pint.Quantity):
+            left_q, right_q = (other_q, self.q) if reflected else (self.q, other_q)
+            if (
+                op == "/"
+                and reflected
+                and _has_grouping_component(cast("pint.Unit", self.q.units))
+            ):
+                # ``bare / group_quantity`` creates a grouping numerator. Reject it
+                # at the reciprocal rather than allowing a later multiplication to
+                # cancel the marker and hide the illegal route.
+                raise _UnsupportedGroupArithmeticError(
+                    op=op,
+                    left=_dimensionless_unit(self._registry),
+                    right=cast("pint.Unit", self.q.units),
+                )
+            if op == "*":
+                result = left_q * right_q
+            else:
+                try:
+                    result = left_q / right_q
+                except ZeroDivisionError:
+                    result = left_q / self._nonzero_like(right_q)
+            # Arithmetic no longer carries independent evidence that a value is
+            # exactly a head count or a yes/no indicator.
+            return result, QuantityKind.GENERIC
+
+        other_kind = (
+            other._kind  # noqa: SLF001
+            if isinstance(other, _UnitCheckQuantity)
+            else QuantityKind.GENERIC
+        )
+        left_q, right_q = (other_q, self.q) if reflected else (self.q, other_q)
+        left_kind, right_kind = (
+            (other_kind, self._kind) if reflected else (self._kind, other_kind)
+        )
+        left_level = _unit_level_denominator(cast("pint.Unit", left_q.units))
+        right_level = _unit_level_denominator(cast("pint.Unit", right_q.units))
+
+        if left_level is not None and right_level is not None:
+            return self._group_arithmetic_with_two_levels(
+                op=op,
+                left_q=left_q,
+                right_q=right_q,
+                left_kind=left_kind,
+                right_kind=right_kind,
+                levels_match=left_level == right_level,
+            )
+
+        if op == "/" and left_level is None and right_level is not None:
+            # This would create a grouping level in the numerator. GEP 10 only
+            # derives the reverse, group-total / matching-head-count bridge.
+            raise _UnsupportedGroupArithmeticError(
+                op=op,
+                left=cast("pint.Unit", left_q.units),
+                right=cast("pint.Unit", right_q.units),
+            )
+
+        if op == "*":
+            result = left_q * right_q
+        else:
+            try:
+                result = left_q / right_q
+            except ZeroDivisionError:
+                result = left_q / self._nonzero_like(right_q)
+        return result, QuantityKind.GENERIC
+
+    @staticmethod
+    def _group_arithmetic_with_two_levels(
+        *,
+        op: str,
+        left_q: pint.Quantity,
+        right_q: pint.Quantity,
+        left_kind: QuantityKind,
+        right_kind: QuantityKind,
+        levels_match: bool,
+    ) -> tuple[pint.Quantity, QuantityKind]:
+        """Apply the matching-count and same-level-indicator exceptions."""
+        if (
+            levels_match
+            and op == "*"
+            and QuantityKind.INDICATOR
+            in (
+                left_kind,
+                right_kind,
+            )
+        ):
+            # A known yes/no value masks rather than multiplies the group marker.
+            if left_kind is QuantityKind.INDICATOR:
+                return right_q * left_q.magnitude, right_kind
+            return left_q * right_q.magnitude, left_kind
+        if levels_match and op == "/" and right_kind is QuantityKind.COUNT:
+            return left_q / right_q, QuantityKind.GENERIC
+        raise _UnsupportedGroupArithmeticError(
+            op=op,
+            left=cast("pint.Unit", left_q.units),
+            right=cast("pint.Unit", right_q.units),
+        )
+
+    def _fail_if_grouping_operator_is_unsupported(
+        self,
+        other: object,
+        op: str,
+    ) -> None:
+        """Reject operators for which GEP 10 defines no group-level bridge."""
+        other_q = _unwrap(other)
+        self_has_group = _has_grouping_component(cast("pint.Unit", self.q.units))
+        other_has_group = isinstance(
+            other_q, pint.Quantity
+        ) and _has_grouping_component(cast("pint.Unit", other_q.units))
+        if self_has_group or other_has_group:
+            raise _UnsupportedGroupArithmeticError(
+                op=op,
+                left=cast("pint.Unit", self.q.units),
+                right=(
+                    cast("pint.Unit", other_q.units)
+                    if isinstance(other_q, pint.Quantity)
+                    else _dimensionless_unit(self._registry)
+                ),
+            )
 
     def _fail_if_other_unit_is_not_equivalent(self, other: Any, op: str) -> None:  # noqa: ANN401
         """Reject an invalid operand of an ordering comparison or ``where``.
@@ -913,7 +1298,28 @@ class _UnitCheckQuantity:
             )
 
     def __bool__(self) -> bool:
+        """Resolve a truth context — an ``if``, a conditional expression, ``and``,
+        ``or`` — on the explorer, once the value is established to be a truth value.
+
+        A branch condition is a demand that the operand have boolean semantics, not
+        merely that Python accept its numerical truthiness: a stock, a flow, a
+        calendar point or a duration controlling a branch is a bug (GEP 10). The
+        screen is the one the logical operators use, so ``if x`` and ``~x`` agree on
+        what a boolean is.
+        """
+        self._fail_if_not_a_truth_value(op=_TRUTH_VALUE_OP)
         return self._explorer.decide(self._label)
+
+    def _fail_if_not_a_truth_value(self, op: str) -> None:
+        """Reject a value with physical content where a boolean is required."""
+        if not _as_boolean_level(
+            unit=cast("pint.Unit", self.q.units), registry=self._registry
+        ).is_boolean:
+            raise _UnitMixError(
+                op=op,
+                left=cast("pint.Unit", self.q.units),
+                right=_dimensionless_unit(self._registry),
+            )
 
     # Ordering comparisons are unit-blind at run time, so a non-equivalent
     # unit-carrying operand is a bug; the explorer still forces which branch runs.
@@ -1011,10 +1417,14 @@ class _UnitCheckQuantity:
         return self._wrap(_unwrap(other) - self.q)
 
     def __mul__(self, other: Any) -> _UnitCheckQuantity:  # noqa: ANN401
-        return self._wrap(self.q * _unwrap(other))
+        self._fail_if_calendar_ordinal_arithmetic(other=other, op="*")
+        result, kind = self._group_arithmetic(other, op="*")
+        return self._wrap(result, kind=kind)
 
     def __rmul__(self, other: Any) -> _UnitCheckQuantity:  # noqa: ANN401
-        return self._wrap(_unwrap(other) * self.q)
+        self._fail_if_calendar_ordinal_arithmetic(other=other, op="*")
+        result, kind = self._group_arithmetic(other, op="*", reflected=True)
+        return self._wrap(result, kind=kind)
 
     def _nonzero_like(self, value: Any) -> Any:  # noqa: ANN401
         """A magnitude-1.0 stand-in for a division operand.
@@ -1031,20 +1441,18 @@ class _UnitCheckQuantity:
         return 1.0
 
     def __truediv__(self, other: Any) -> _UnitCheckQuantity:  # noqa: ANN401
-        divisor = _unwrap(other)
-        try:
-            return self._wrap(self.q / divisor)
-        except ZeroDivisionError:
-            return self._wrap(self.q / self._nonzero_like(divisor))
+        self._fail_if_calendar_ordinal_arithmetic(other=other, op="/")
+        result, kind = self._group_arithmetic(other, op="/")
+        return self._wrap(result, kind=kind)
 
     def __rtruediv__(self, other: Any) -> _UnitCheckQuantity:  # noqa: ANN401
-        dividend = _unwrap(other)
-        try:
-            return self._wrap(dividend / self.q)
-        except ZeroDivisionError:
-            return self._wrap(dividend / self._nonzero_like(self.q))
+        self._fail_if_calendar_ordinal_arithmetic(other=other, op="/")
+        result, kind = self._group_arithmetic(other, op="/", reflected=True)
+        return self._wrap(result, kind=kind)
 
     def __floordiv__(self, other: Any) -> _UnitCheckQuantity:  # noqa: ANN401
+        self._fail_if_calendar_ordinal_arithmetic(other=other, op="//")
+        self._fail_if_grouping_operator_is_unsupported(other=other, op="//")
         divisor = _unwrap(other)
         try:
             return self._wrap(self.q // divisor)
@@ -1052,6 +1460,8 @@ class _UnitCheckQuantity:
             return self._wrap(self.q // self._nonzero_like(divisor))
 
     def __rfloordiv__(self, other: Any) -> _UnitCheckQuantity:  # noqa: ANN401
+        self._fail_if_calendar_ordinal_arithmetic(other=other, op="//")
+        self._fail_if_grouping_operator_is_unsupported(other=other, op="//")
         dividend = _unwrap(other)
         try:
             return self._wrap(dividend // self.q)
@@ -1059,24 +1469,33 @@ class _UnitCheckQuantity:
             return self._wrap(dividend // self._nonzero_like(self.q))
 
     def __mod__(self, other: Any) -> _UnitCheckQuantity:  # noqa: ANN401
+        self._fail_if_calendar_ordinal_arithmetic(other=other, op="%")
         return self._wrap(self.q % _unwrap(other))
 
     def __rmod__(self, other: Any) -> _UnitCheckQuantity:  # noqa: ANN401
+        self._fail_if_calendar_ordinal_arithmetic(other=other, op="%")
         return self._wrap(_unwrap(other) % self.q)
 
     def __pow__(self, other: Any) -> _UnitCheckQuantity:  # noqa: ANN401
+        self._fail_if_calendar_ordinal_arithmetic(other=other, op="**")
+        self._fail_if_grouping_operator_is_unsupported(other=other, op="**")
         return self._wrap(self.q ** _unwrap(other))
 
     def __rpow__(self, other: Any) -> _UnitCheckQuantity:  # noqa: ANN401
+        self._fail_if_calendar_ordinal_arithmetic(other=other, op="**")
+        self._fail_if_grouping_operator_is_unsupported(other=other, op="**")
         return self._wrap(_unwrap(other) ** self.q)
 
     def __neg__(self) -> _UnitCheckQuantity:
+        self._fail_if_calendar_ordinal_arithmetic(other=1, op="unary -")
         return self._wrap(-self.q)
 
     def __pos__(self) -> _UnitCheckQuantity:
+        self._fail_if_calendar_ordinal_arithmetic(other=1, op="unary +")
         return self._wrap(+self.q)
 
     def __abs__(self) -> _UnitCheckQuantity:
+        self._fail_if_calendar_ordinal_arithmetic(other=1, op="abs")
         return self._wrap(abs(self.q))
 
     def __round__(self, ndigits: int | None = None) -> _UnitCheckQuantity:
@@ -1122,6 +1541,7 @@ def _wrap_for_unit_check(
     explorer: _PathExplorer,
     unit_system: UnitSystem,
     label: str | None = None,
+    kind: QuantityKindTree = QuantityKind.GENERIC,
 ) -> Any:  # noqa: ANN401
     """Wrap unit-carrying representative values; pass framework args through.
 
@@ -1136,7 +1556,11 @@ def _wrap_for_unit_check(
     """
     if isinstance(value, pint.Quantity):
         return _UnitCheckQuantity(
-            q=value, explorer=explorer, unit_system=unit_system, label=label
+            q=value,
+            explorer=explorer,
+            unit_system=unit_system,
+            label=label,
+            kind=kind if isinstance(kind, QuantityKind) else QuantityKind.GENERIC,
         )
     if isinstance(value, _UnitCheckStructuredValue):
         return _UnitCheckStructuredValue(
@@ -1155,6 +1579,11 @@ def _wrap_for_unit_check(
                 explorer=explorer,
                 unit_system=unit_system,
                 label=f"{label}[{key!r}]" if label is not None else None,
+                kind=(
+                    kind.get(key, QuantityKind.GENERIC)
+                    if isinstance(kind, Mapping)
+                    else kind
+                ),
             )
             for key, leaf in value.items()
         }
@@ -1233,10 +1662,16 @@ class _UnitCheckStructuredValue:
         )
         resolved = (kinds or {}).get(name)
         label = f"{self._label}.{name}" if self._label is not None else None
-        if isinstance(resolved, pint.Unit):
+        if isinstance(resolved, pint.Unit | _ScalarFieldKind):
             # An annotated field's pluck is a known quantity; with the run's
             # explorer it screens and branches like any other operand.
-            quantity = self._unit_system.registry.Quantity(1.0, resolved)
+            unit = resolved.unit if isinstance(resolved, _ScalarFieldKind) else resolved
+            kind = (
+                resolved.kind
+                if isinstance(resolved, _ScalarFieldKind)
+                else QuantityKind.GENERIC
+            )
+            quantity = self._unit_system.registry.Quantity(1.0, unit)
             if self._explorer is None:
                 return quantity
             return _UnitCheckQuantity(
@@ -1244,6 +1679,7 @@ class _UnitCheckStructuredValue:
                 explorer=self._explorer,
                 unit_system=self._unit_system,
                 label=label,
+                kind=kind,
             )
         if isinstance(resolved, _ScheduleFieldKind):
             # A schedule-typed field declares both axes; the pluck yields a
@@ -1252,6 +1688,7 @@ class _UnitCheckStructuredValue:
             return _UnitCheckSchedule(
                 input_unit=resolved.input_unit,
                 output_unit=resolved.output_unit,
+                output_kind=resolved.output_kind,
                 unit_system=self._unit_system,
                 explorer_holder=self._explorer_holder,
             )
@@ -1366,17 +1803,25 @@ class _UnitCheckSchedule:
     - ``None`` — unscreened; a schedule parameter that left its input axis unset.
     """
 
-    __slots__ = ("explorer_holder", "input_unit", "output_unit", "unit_system")
+    __slots__ = (
+        "explorer_holder",
+        "input_unit",
+        "output_kind",
+        "output_unit",
+        "unit_system",
+    )
 
     def __init__(
         self,
         input_unit: pint.Unit | tuple[pint.Unit, ...] | None,
         output_unit: pint.Unit,
         unit_system: UnitSystem,
+        output_kind: QuantityKind = QuantityKind.GENERIC,
         explorer_holder: list[_PathExplorer | None] | None = None,
     ) -> None:
         self.input_unit = input_unit
         self.output_unit = output_unit
+        self.output_kind = output_kind
         self.unit_system = unit_system
         self.explorer_holder = explorer_holder
 
@@ -1432,6 +1877,7 @@ class _UnitCheckSchedule:
             q=self.unit_system.registry.Quantity(1.0, self.output_unit),
             explorer=explorer,
             unit_system=self.unit_system,
+            kind=self.output_kind,
         )
 
     def _axis_at(self, position: int) -> pint.Unit | None:
@@ -1479,7 +1925,10 @@ class _UnitCheckXnp:
     at full parity with a scalar one.
 
     An op not modelled here falls through to raw NumPy, raises, and is reported as
-    needing ``verify_units=False`` — never silently passed through.
+    needing ``verify_units=False`` — never silently passed through. The array
+    reductions are modelled only to refuse them: their result belongs to rows the
+    unit check cannot identify without array-axis metadata (see
+    :class:`_ReductionNotEvaluableError`).
     """
 
     @staticmethod
@@ -1503,7 +1952,8 @@ class _UnitCheckXnp:
         return _clamping_op(left=left, right=right, op="minimum")
 
     @staticmethod
-    def where(condition: Any, x: Any, y: Any) -> Any:  # noqa: ANN401, ARG004
+    def where(condition: Any, x: Any, y: Any) -> Any:  # noqa: ANN401
+        _fail_if_condition_is_not_a_truth_value(condition=condition)
         return _where_op(x=x, y=y)
 
     @staticmethod
@@ -1511,16 +1961,16 @@ class _UnitCheckXnp:
         return _clip_op(value=value, a_min=a_min, a_max=a_max)
 
     @staticmethod
-    def sum(value: Any, *args: Any, **kwargs: Any) -> Any:  # noqa: ANN401, ARG004
-        return _unit_preserving_op(value)
+    def sum(*args: Any, **kwargs: Any) -> Any:  # noqa: ANN401, ARG004
+        raise _ReductionNotEvaluableError(op="sum")
 
     @staticmethod
-    def amin(value: Any, *args: Any, **kwargs: Any) -> Any:  # noqa: ANN401, ARG004
-        return _unit_preserving_op(value)
+    def amin(*args: Any, **kwargs: Any) -> Any:  # noqa: ANN401, ARG004
+        raise _ReductionNotEvaluableError(op="amin")
 
     @staticmethod
-    def amax(value: Any, *args: Any, **kwargs: Any) -> Any:  # noqa: ANN401, ARG004
-        return _unit_preserving_op(value)
+    def amax(*args: Any, **kwargs: Any) -> Any:  # noqa: ANN401, ARG004
+        raise _ReductionNotEvaluableError(op="amax")
 
     @staticmethod
     def floor(value: Any) -> Any:  # noqa: ANN401
@@ -1570,20 +2020,70 @@ def _piecewise_polynomial_for_unit_check(x: Any, parameters: Any, xnp: Any) -> A
 
 
 def _join_for_unit_check(
-    foreign_key: Any,  # noqa: ANN401, ARG001
-    primary_key: Any,  # noqa: ANN401, ARG001
+    foreign_key: Any,  # noqa: ANN401
+    primary_key: Any,  # noqa: ANN401
     target: Any,  # noqa: ANN401
-    value_if_foreign_key_is_missing: Any,  # noqa: ANN401, ARG001
+    value_if_foreign_key_is_missing: Any,  # noqa: ANN401
     xnp: Any,  # noqa: ANN401, ARG001
 ) -> Any:  # noqa: ANN401
-    """Unit-check stand-in for ``join``.
+    """Unit-check stand-in for ``join``, screening every operand it can read.
 
-    A person-to-person gather preserves the ``target`` column's unit and level
-    (the keys are dimensionless ``p_id``s, the missing-value a sentinel literal).
+    A gather hands on the ``target`` column's unit and grouping level, but only if
+    the rest of the call is sound (GEP 10):
+
+    - both keys must be identifiers — values with no physical content. A currency,
+      a flow, or a calendar point never identifies a row, and the run-time gather
+      would take it as an index without complaint. (That two identifiers belong to
+      the *same* key domain is beyond what the unit model can say.)
+    - the missing-key fallback becomes part of the gathered column, so it is
+      screened against the target exactly as an arm of ``where`` is: a fallback in
+      another unit is a bug that only unmatched keys would ever expose, and a bare
+      sentinel next to a dimensionless target (``-1`` for a group id) stays
+      admissible.
     """
-    if isinstance(target, _UnitCheckQuantity):
-        return target._wrap(target.q)  # noqa: SLF001
-    raise _ScheduleNotEvaluableError
+    _fail_if_join_key_is_not_an_identifier(key=foreign_key, name="foreign_key")
+    _fail_if_join_key_is_not_an_identifier(key=primary_key, name="primary_key")
+    if not isinstance(target, _UnitCheckQuantity):
+        raise _ScheduleNotEvaluableError
+    target._fail_if_other_unit_is_not_equivalent(  # noqa: SLF001
+        other=value_if_foreign_key_is_missing, op=_JOIN_FALLBACK_OP
+    )
+    return target._wrap(target.q)  # noqa: SLF001
+
+
+def _fail_if_join_key_is_not_an_identifier(key: Any, name: str) -> None:  # noqa: ANN401
+    """Reject a ``join`` key carrying physical content.
+
+    A raw key (a literal, an array the check does not model) carries no unit to
+    screen and passes; a structured pluck is reported at the pluck, as anywhere.
+    """
+    if isinstance(key, _UnitCheckStructuredValue):
+        key._raise_used_as_quantity(f"join {name}")  # noqa: SLF001
+    if not isinstance(key, _UnitCheckQuantity):
+        return
+    if not _is_dimensionless_up_to_grouping_level(
+        unit=cast("pint.Unit", key.q.units),
+        registry=key._registry,  # noqa: SLF001
+    ):
+        raise _UnitMixError(
+            op=_JOIN_KEY_OP,
+            left=cast("pint.Unit", key.q.units),
+            right=_dimensionless_unit(key._registry),  # noqa: SLF001
+        )
+
+
+def _fail_if_condition_is_not_a_truth_value(condition: Any) -> None:  # noqa: ANN401
+    """Screen a selection primitive's condition as a truth value.
+
+    The vectorized selectors run the same screen as a scalar branch, so
+    ``xnp.where(wealth, …)`` is rejected exactly as ``… if wealth else …`` is
+    (GEP 10). A raw condition — a bare literal, an array the check does not model
+    — carries no unit to screen and passes.
+    """
+    if isinstance(condition, _UnitCheckStructuredValue):
+        condition._raise_used_as_quantity(_TRUTH_VALUE_OP)  # noqa: SLF001
+    if isinstance(condition, _UnitCheckQuantity):
+        condition._fail_if_not_a_truth_value(op=_TRUTH_VALUE_OP)  # noqa: SLF001
 
 
 def _cast_ttsim_unit_for_unit_check(
@@ -1616,11 +2116,13 @@ def _cast_ttsim_unit_for_unit_check(
     )
     quantity = unit_system.registry.Quantity(1.0, resolved)
     if isinstance(value, _UnitCheckQuantity):
-        return value._wrap(quantity)  # noqa: SLF001
+        return value._wrap(quantity, kind=token.kind)  # noqa: SLF001
     explorer = explorer_holder[0]
     if explorer is None:
         return quantity
-    return _UnitCheckQuantity(q=quantity, explorer=explorer, unit_system=unit_system)
+    return _UnitCheckQuantity(
+        q=quantity, explorer=explorer, unit_system=unit_system, kind=token.kind
+    )
 
 
 def _time_conversion_stand_ins(registry: pint.UnitRegistry) -> dict[str, Any]:
@@ -1734,7 +2236,7 @@ def _clip_op(value: Any, a_min: Any, a_max: Any) -> Any:  # noqa: ANN401
 
 
 def _unit_preserving_op(value: Any) -> Any:  # noqa: ANN401
-    """A unit-preserving reduction/unary op (``sum``/``floor``/``abs``/…)."""
+    """An elementwise unit-preserving op (``floor``/``ceil``/``round``/``abs``)."""
     if isinstance(value, _UnitCheckQuantity):
         return value._wrap(value.q)  # noqa: SLF001
     return value
@@ -1752,6 +2254,13 @@ def _is_scalar_literal(value: Any) -> bool:  # noqa: ANN401
 
 #: The logical operators the unit check screens for boolean (dimensionless) operands.
 _LOGICAL_OPS = frozenset({"&", "|", "^", "~"})
+
+#: Names the screens above report themselves under, where the offending construct is
+#: not an operator: a truth context (a branch, a selector's condition) and the two
+#: `join` operands beyond the target.
+_TRUTH_VALUE_OP = "truth value"
+_JOIN_KEY_OP = "join key"
+_JOIN_FALLBACK_OP = "missing-key fallback"
 
 
 def _inferred_result_error(
@@ -1894,7 +2403,9 @@ def _summarize_branch_errors(
 
 def _arithmetic_misuse_message(
     qname: str,
-    error: _UnitMixError
+    error: _CalendarOrdinalArithmeticError
+    | _UnsupportedGroupArithmeticError
+    | _UnitMixError
     | _StructuredValueUsedAsQuantityError
     | pint.OffsetUnitCalculusError
     | pint.DimensionalityError,
@@ -1914,6 +2425,22 @@ def _arithmetic_misuse_message(
     bugs, not un-checkable bodies, so they report as misuse rather than
     demanding ``verify_units=False``.
     """
+    if isinstance(error, _CalendarOrdinalArithmeticError):
+        return (
+            f"{qname}: uses a calendar ordinal in `{error.op}`{detail} — a quarter "
+            "of year, month of year, or day of month may only be compared with the "
+            "same calendar scale; use an explicit local unit assertion for a "
+            "policy-specific conversion (GEP 10)."
+        )
+    if isinstance(error, _UnsupportedGroupArithmeticError):
+        return (
+            f"{qname}: uses an unsupported group calculation "
+            f"'{error.left}' {error.op} '{error.right}'{detail}. TTSIM only "
+            "derives ordinary scalar scaling, a group total divided by its "
+            "matching head count, the reverse head-count multiplication, and a "
+            "same-level yes/no mask; use an aggregation or a local unit assertion "
+            "for a deliberate exception (GEP 10)."
+        )
     if isinstance(error, _UnitMixError):
         return _unit_mix_error_message(qname=qname, mix=error, detail=detail)
     if isinstance(error, _StructuredValueUsedAsQuantityError):
@@ -1930,11 +2457,15 @@ def _unit_mix_error_message(qname: str, mix: _UnitMixError, detail: str) -> str:
     """Message for a body that combined two units unsoundly.
 
     A logical operator (``&``/``|``/``^``/``~``) carrying a real quantity is
-    reported as a non-boolean operand; an ordering comparison against a bare
-    non-zero literal is reported as an untagged threshold; ``+``/``-``/an ordering
-    comparison of non-equivalent quantities is reported as a unit mix (no run-time
-    conversion).
+    reported as a non-boolean operand; a dimensioned branch condition or selector
+    as a non-boolean truth value; a ``join`` key or missing-key fallback against
+    the contract it broke; an ordering comparison against a bare non-zero literal
+    as an untagged threshold; ``+``/``-``/an ordering comparison of non-equivalent
+    quantities as a unit mix (no run-time conversion).
     """
+    named_screen = _named_screen_message(qname=qname, mix=mix, detail=detail)
+    if named_screen is not None:
+        return named_screen
     if mix.literal is not None:
         return (
             f"{qname}: combines '{mix.left}' {mix.op} the bare literal "
@@ -1960,6 +2491,52 @@ def _unit_mix_error_message(qname: str, mix: _UnitMixError, detail: str) -> str:
     )
 
 
+def _named_screen_message(qname: str, mix: _UnitMixError, detail: str) -> str | None:
+    """Message for the screens that name themselves rather than an operator.
+
+    A truth context, a ``join`` key, and a ``join`` fallback each broke a contract
+    of their own, so each is reported in its own terms; ``None`` where the offence
+    is an operator's and :func:`_unit_mix_error_message` phrases it.
+    """
+    if mix.op == _TRUTH_VALUE_OP:
+        return (
+            f"{qname}: uses '{mix.left}' as a truth value{detail} — only a boolean "
+            f"may control a branch or select between two arms; compare it against "
+            f"a quantity in the same unit instead (GEP 10)."
+        )
+    if mix.op == _JOIN_KEY_OP:
+        return (
+            f"{qname}: gathers with '{mix.left}' as a `join` key{detail} — a key is "
+            f"an identifier and carries no physical content, so a dimensioned "
+            f"column cannot identify a row (GEP 10)."
+        )
+    if mix.op == _JOIN_FALLBACK_OP:
+        return _join_fallback_message(qname=qname, mix=mix, detail=detail)
+    return None
+
+
+def _join_fallback_message(qname: str, mix: _UnitMixError, detail: str) -> str:
+    """Message for a ``join`` whose missing-key fallback is not in the target's unit.
+
+    The fallback fills the rows whose key found no match, so it lands in the
+    gathered column next to the target's own values — a bare non-zero literal
+    carries the target's unit silently, another unit is not converted at run time.
+    """
+    if mix.literal is not None:
+        return (
+            f"{qname}: gathers with the bare literal {mix.literal} as the "
+            f"missing-key fallback for a '{mix.left}' target{detail} — the fallback "
+            f"lands in the gathered column and silently carries the target's unit; "
+            f"promote it to a parameter, tag it with `cast_ttsim_unit`, or use 0 "
+            f"(GEP 10)."
+        )
+    return (
+        f"{qname}: gathers a '{mix.left}' target with a '{mix.right}' missing-key "
+        f"fallback{detail} — the fallback fills the unmatched rows of the same "
+        f"column, and there is no unit conversion at run time (GEP 10)."
+    )
+
+
 def _structured_pluck_message(
     qname: str,
     error: _StructuredValueUsedAsQuantityError,
@@ -1976,7 +2553,13 @@ def _structured_pluck_message(
     )
 
 
-def _opt_out_required_error(qname: str, reason: str) -> str:
+class _UnsupportedBodyError(str):
+    """Diagnostic marker for a body the symbolic checker cannot evaluate."""
+
+    __slots__ = ()
+
+
+def _opt_out_required_error(qname: str, reason: str) -> _UnsupportedBodyError:
     """Message demanding an explicit opt-out for a body the unit check cannot evaluate.
 
     A body the unit check cannot evaluate is *not* waved through silently:
@@ -1985,7 +2568,7 @@ def _opt_out_required_error(qname: str, reason: str) -> str:
     stands and the body's edges are still checked — only its internal inference
     is skipped.
     """
-    return (
+    return _UnsupportedBodyError(
         f"{qname}: its body cannot be unit-checked ({reason}). "
         f"Set `verify_units=False` on its decorator to opt out of body inference "
         f"— its declared unit and its edges stay checked (GEP 10)."

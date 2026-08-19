@@ -1,0 +1,59 @@
+---
+raw_kings_levy_schedule:
+  name:
+    de: Rohdaten für den Königszehnt
+    en: Raw data for the king's levy schedule
+  description:
+    de: >-
+      Obergrenze der progressiven Zone sowie Eingangs- und Spitzensatz des
+      Königszehnt.
+    en: >-
+      Ceiling of the progressive bracket along with the entry and top marginal
+      rates of the king's levy.
+  unit:
+    bracket_ceiling: SILVER_PENNY
+    entry_rate: DIMENSIONLESS
+    top_rate: DIMENSIONLESS
+  type: require_converter
+  1900-01-01:
+    bracket_ceiling: 1000
+    entry_rate: 0.0
+    top_rate: 0.2
+  2020-01-01:
+    note: >-
+      Pure redenomination at the currency reform of 2020: the bracket ceiling
+      is re-expressed in castar (1 castar = 4 silver pennies); the rates are
+      dimensionless and carry over.
+    unit:
+      bracket_ceiling: CASTAR
+      entry_rate: DIMENSIONLESS
+      top_rate: DIMENSIONLESS
+    bracket_ceiling: 250
+    entry_rate: 0.0
+    top_rate: 0.2
+raw_kings_levy_child_rebate:
+  name:
+    de: Rohdaten für den Kinderfreibetrag beim Königszehnt
+    en: Raw data for the king's levy child rebate
+  description:
+    de: >-
+      Jährlicher Freibetrag der Sippe nach Anzahl der unterhaltsberechtigten
+      Kinder.
+    en: >-
+      The kinstead's yearly rebate by its number of dependent children.
+  input_unit: DIMENSIONLESS
+  output_unit: SILVER_PENNY_PER_YEAR
+  type: require_converter
+  1900-01-01:
+    0: 0
+    1: 40
+    2: 80
+  2020-01-01:
+    note: >-
+      Pure redenomination at the currency reform of 2020 (1 castar = 4 silver
+      pennies); the integer keys are dimensionless and carry over.
+    input_unit: DIMENSIONLESS
+    output_unit: CASTAR_PER_YEAR
+    0: 0
+    1: 10
+    2: 20
