@@ -40,6 +40,7 @@ from ttsim.tt import (
 )
 from ttsim.tt.units import (
     CURRENCY_TOKEN,
+    QuantityKind,
     _name_suffixes,
     fail_if_units_are_missing,
     input_column_in_data_currency,
@@ -131,6 +132,8 @@ def test_hectare_is_an_area():
 _BASE_SPELLINGS = [
     "CURRENCY",
     "DIMENSIONLESS",
+    "COUNT",
+    "INDICATOR",
     "HOURS",
     "SQUARE_METER",
     "HECTARE",
@@ -151,6 +154,8 @@ _BASE_SPELLINGS = [
         *_BASE_SPELLINGS,
         "CURRENCY_PER_MONTH",
         "CURRENCY_PER_MONTH_PER_BG",
+        "COUNT_PER_BG",
+        "INDICATOR_PER_BG",
         "DIMENSIONLESS_PER_BG",
         "DIMENSIONLESS_PER_YEAR",
         "HOURS_PER_WEEK",
@@ -160,6 +165,33 @@ def test_ttsim_unit_from_yaml_value_round_trips_spellings(spelling):
     token = ttsim_unit_from_yaml_value(value=spelling, where="test")
     assert isinstance(token, CompositeUnit)
     assert str(token) == spelling
+
+
+@pytest.mark.parametrize(
+    ("declaration", "kind"),
+    [
+        (TTSIMUnit.COUNT.PER_LEVEL("bg"), QuantityKind.COUNT),
+        (TTSIMUnit.INDICATOR.PER_LEVEL("bg"), QuantityKind.INDICATOR),
+    ],
+)
+def test_semantic_declaration_normalizes_to_dimensionless_unit(declaration, kind):
+    assert declaration.base == "DIMENSIONLESS"
+    assert declaration.kind is kind
+
+
+@pytest.mark.parametrize(
+    "build_invalid_declaration",
+    [
+        lambda: TTSIMUnit.COUNT.PER_MONTH,
+        lambda: TTSIMUnit.COUNT.PER_HOURS,
+        lambda: TTSIMUnit.INDICATOR.PER_SQUARE_METER,
+    ],
+)
+def test_semantic_declaration_only_accepts_a_group_denominator(
+    build_invalid_declaration,
+):
+    with pytest.raises(UnitDefinitionError, match=r"COUNT|INDICATOR"):
+        build_invalid_declaration()
 
 
 def test_ttsim_unit_from_yaml_value_rejects_none():

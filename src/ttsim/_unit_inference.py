@@ -21,6 +21,7 @@ import pint
 
 from ttsim._quantity_kinds import (
     QuantityKind,
+    QuantityKindTree,
     quantity_kinds_by_qname,
 )
 from ttsim.exceptions import (
@@ -70,6 +71,7 @@ from ttsim.unit_resolution import (
     _resolve_schedule_input_unit,
     _resolved_return_structure,
     _returns_a_schedule,
+    _ScalarFieldKind,
     _ScheduleFieldKind,
     _structured_field_kinds,
     node_is_boolean,
@@ -275,7 +277,7 @@ def _verify_one_body(
     base_kwargs: dict[str, Any],
     unit_system: UnitSystem,
     explorer_holder: list[_PathExplorer | None],
-    quantity_kinds: Mapping[str, QuantityKind],
+    quantity_kinds: Mapping[str, QuantityKindTree],
 ) -> str | None:
     """Unit-check one body on every reachable branch path; return an error or ``None``.
 
@@ -443,6 +445,7 @@ def _representative_values_by_qname(
             out[qname] = _UnitCheckSchedule(
                 input_unit=_resolve_schedule_input_unit(obj=obj, registry=registry),
                 output_unit=cast("pint.Unit", unit),
+                output_kind=cast("CompositeUnit", obj.output_unit).kind,
                 unit_system=unit_system,
             )
         elif (
@@ -462,7 +465,7 @@ def _representative_values_by_qname(
                     where=f"Schedule param function {qname!r}",
                 ),
                 output_unit=cast("pint.Unit", unit),
-                output_kind=obj.unit.output_kind,
+                output_kind=obj.unit.output_unit.kind,
                 unit_system=unit_system,
             )
         elif isinstance(obj, DictParam | RawParam) and not isinstance(unit, dict):
@@ -1538,7 +1541,7 @@ def _wrap_for_unit_check(
     explorer: _PathExplorer,
     unit_system: UnitSystem,
     label: str | None = None,
-    kind: QuantityKind = QuantityKind.GENERIC,
+    kind: QuantityKindTree = QuantityKind.GENERIC,
 ) -> Any:  # noqa: ANN401
     """Wrap unit-carrying representative values; pass framework args through.
 
@@ -1557,7 +1560,7 @@ def _wrap_for_unit_check(
             explorer=explorer,
             unit_system=unit_system,
             label=label,
-            kind=kind,
+            kind=kind if isinstance(kind, QuantityKind) else QuantityKind.GENERIC,
         )
     if isinstance(value, _UnitCheckStructuredValue):
         return _UnitCheckStructuredValue(
@@ -1576,7 +1579,11 @@ def _wrap_for_unit_check(
                 explorer=explorer,
                 unit_system=unit_system,
                 label=f"{label}[{key!r}]" if label is not None else None,
-                kind=kind,
+                kind=(
+                    kind.get(key, QuantityKind.GENERIC)
+                    if isinstance(kind, Mapping)
+                    else kind
+                ),
             )
             for key, leaf in value.items()
         }
@@ -1655,10 +1662,16 @@ class _UnitCheckStructuredValue:
         )
         resolved = (kinds or {}).get(name)
         label = f"{self._label}.{name}" if self._label is not None else None
-        if isinstance(resolved, pint.Unit):
+        if isinstance(resolved, pint.Unit | _ScalarFieldKind):
             # An annotated field's pluck is a known quantity; with the run's
             # explorer it screens and branches like any other operand.
-            quantity = self._unit_system.registry.Quantity(1.0, resolved)
+            unit = resolved.unit if isinstance(resolved, _ScalarFieldKind) else resolved
+            kind = (
+                resolved.kind
+                if isinstance(resolved, _ScalarFieldKind)
+                else QuantityKind.GENERIC
+            )
+            quantity = self._unit_system.registry.Quantity(1.0, unit)
             if self._explorer is None:
                 return quantity
             return _UnitCheckQuantity(
@@ -1666,6 +1679,7 @@ class _UnitCheckStructuredValue:
                 explorer=self._explorer,
                 unit_system=self._unit_system,
                 label=label,
+                kind=kind,
             )
         if isinstance(resolved, _ScheduleFieldKind):
             # A schedule-typed field declares both axes; the pluck yields a
@@ -2102,11 +2116,13 @@ def _cast_ttsim_unit_for_unit_check(
     )
     quantity = unit_system.registry.Quantity(1.0, resolved)
     if isinstance(value, _UnitCheckQuantity):
-        return value._wrap(quantity)  # noqa: SLF001
+        return value._wrap(quantity, kind=token.kind)  # noqa: SLF001
     explorer = explorer_holder[0]
     if explorer is None:
         return quantity
-    return _UnitCheckQuantity(q=quantity, explorer=explorer, unit_system=unit_system)
+    return _UnitCheckQuantity(
+        q=quantity, explorer=explorer, unit_system=unit_system, kind=token.kind
+    )
 
 
 def _time_conversion_stand_ins(registry: pint.UnitRegistry) -> dict[str, Any]:

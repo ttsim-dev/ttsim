@@ -160,6 +160,18 @@ _REL_TOL = 1e-9
 _CastValueT = TypeVar("_CastValueT")
 
 
+class QuantityKind(Enum):
+    """Record the restricted meaning of a dimensionless declaration.
+
+    These labels do not add dimensions to Pint. They distinguish a head count
+    and a yes/no indicator where group arithmetic needs that information.
+    """
+
+    GENERIC = auto()
+    COUNT = auto()
+    INDICATOR = auto()
+
+
 @dataclass(frozen=True)
 class CompositeUnit:
     """A fully-spelled TTSIM unit — *the* declaration type.
@@ -183,6 +195,8 @@ class CompositeUnit:
     hours: str | None = None
     period: str | None = None
     level: str | None = None
+    kind: QuantityKind = QuantityKind.GENERIC
+    """Restricted semantic meaning carried alongside the normalized Pint unit."""
 
     if TYPE_CHECKING:
         # Per-level builder steps are added at runtime, so tell `ty` any builder
@@ -191,7 +205,10 @@ class CompositeUnit:
         def __getattr__(self, name: str) -> CompositeUnit: ...
 
     def __str__(self) -> str:
-        parts = [self.base, self.area, self.hours, self.period, self.level]
+        display_base = (
+            self.kind.name if self.kind is not QuantityKind.GENERIC else self.base
+        )
+        parts = [display_base, self.area, self.hours, self.period, self.level]
         return _PER.join(part for part in parts if part is not None)
 
     def __repr__(self) -> str:
@@ -202,7 +219,16 @@ class CompositeUnit:
         """Whether this unit is a flow — i.e. has a period denominator."""
         return self.period is not None
 
+    def _fail_if_semantic_denominator_is_invalid(self, denominator: str) -> None:
+        if self.kind is not QuantityKind.GENERIC:
+            raise UnitDefinitionError(
+                f"Cannot add {denominator} to '{self}': {self.kind.name} is a "
+                "dimensionless declaration with an optional group denominator, "
+                "not a physical unit or period."
+            )
+
     def _with_area(self, area: str) -> CompositeUnit:
+        self._fail_if_semantic_denominator_is_invalid(f"area '{area}'")
         if self.hours is not None:
             raise UnitDefinitionError(
                 f"Cannot add the area '{area}' to '{self}': a unit is denominated "
@@ -217,6 +243,7 @@ class CompositeUnit:
         return replace(self, area=area)
 
     def _with_hours(self, hours: str) -> CompositeUnit:
+        self._fail_if_semantic_denominator_is_invalid(f"working hours '{hours}'")
         if self.area is not None:
             raise UnitDefinitionError(
                 f"Cannot add working hours '{hours}' to '{self}': a unit is "
@@ -231,6 +258,7 @@ class CompositeUnit:
         return replace(self, hours=hours)
 
     def _with_period(self, period: str) -> CompositeUnit:
+        self._fail_if_semantic_denominator_is_invalid(f"period '{period}'")
         if self.period is not None or self.level is not None:
             raise UnitDefinitionError(
                 f"Cannot add period '{period}' to '{self}': a period must precede "
@@ -314,7 +342,13 @@ class TTSIMUnit(metaclass=_UnitNamespaceMeta):
     """An amount of currency (agnostic): wages, claims, benefits, wealth."""
 
     DIMENSIONLESS = CompositeUnit(base="DIMENSIONLESS")
-    """A plain dimensionless number: a share, a rate, a head count, a boolean."""
+    """A plain dimensionless number: a share, rate, identifier, or category."""
+
+    COUNT = CompositeUnit(base="DIMENSIONLESS", kind=QuantityKind.COUNT)
+    """A head count, normalized to a dimensionless unit plus count evidence."""
+
+    INDICATOR = CompositeUnit(base="DIMENSIONLESS", kind=QuantityKind.INDICATOR)
+    """A yes/no value, normalized to a dimensionless unit plus indicator evidence."""
 
     HOURS = CompositeUnit(base="HOURS")
     """Working hours (the isolated ``[hours]`` dimension). Not a member of the [time]
@@ -382,19 +416,6 @@ UNSET_UNIT = UnsetUnit()
 UnitDeclaration: TypeAlias = CompositeUnit | UnsetUnit
 
 
-class QuantityKind(Enum):
-    """Narrow semantic evidence used by grouping-level unit checks.
-
-    These labels do not add dimensions to Pint. They record only the two cases in
-    which a dimensionless group denominator is meaningful: a head count and a
-    yes/no indicator. Everything else deliberately remains generic.
-    """
-
-    GENERIC = auto()
-    COUNT = auto()
-    INDICATOR = auto()
-
-
 @dataclass(frozen=True)
 class InputOutputUnits:
     """The two axes of a schedule builder's output.
@@ -423,25 +444,6 @@ class InputOutputUnits:
     ``i``)."""
     output_unit: CompositeUnit
     """The unit the schedule produces at every call site."""
-    input_kind: QuantityKind | tuple[QuantityKind, ...] = QuantityKind.GENERIC
-    """Semantic evidence for each input axis.
-
-    A tuple must parallel a tuple-valued ``input_unit``. Authors need to set this
-    only for a dimensionless axis carrying a grouping level; ordinary schedule
-    axes stay :attr:`QuantityKind.GENERIC`.
-    """
-    output_kind: QuantityKind = QuantityKind.GENERIC
-    """Semantic evidence for the output axis, under the same narrow rule."""
-
-    def __post_init__(self) -> None:
-        if isinstance(self.input_kind, tuple) and (
-            not isinstance(self.input_unit, tuple)
-            or len(self.input_kind) != len(self.input_unit)
-        ):
-            raise UnitDefinitionError(
-                "InputOutputUnits: tuple-valued `input_kind` must have exactly one "
-                "entry for each tuple-valued `input_unit` axis (GEP 10)."
-            )
 
 
 def cast_ttsim_unit(
@@ -481,13 +483,20 @@ def ttsim_unit_from_string(spelling: str) -> CompositeUnit:
     if not spelling:
         raise UnitDefinitionError("Empty compositional unit spelling (GEP 10).")
     base, *denominators = spelling.split(_PER)
-    if base not in _TTSIM_UNIT_BASE_TO_PINT and not _is_currency_base(base):
-        raise UnitDefinitionError(
-            f"Unknown compositional base {base!r} in {spelling!r}. A base is the "
-            f"agnostic '{CURRENCY_TOKEN}', a registered currency, or one of "
-            f"{', '.join(sorted(_TTSIM_UNIT_BASE_TO_PINT))} (GEP 10)."
-        )
-    unit = CompositeUnit(base=base)
+    semantic_kind = {
+        "COUNT": QuantityKind.COUNT,
+        "INDICATOR": QuantityKind.INDICATOR,
+    }.get(base)
+    if semantic_kind is None:
+        if base not in _TTSIM_UNIT_BASE_TO_PINT and not _is_currency_base(base):
+            raise UnitDefinitionError(
+                f"Unknown compositional base {base!r} in {spelling!r}. A base is the "
+                f"agnostic '{CURRENCY_TOKEN}', a registered currency, or one of "
+                f"{', '.join(sorted(_TTSIM_UNIT_BASE_TO_PINT))} (GEP 10)."
+            )
+        unit = CompositeUnit(base=base)
+    else:
+        unit = CompositeUnit(base="DIMENSIONLESS", kind=semantic_kind)
     for token in denominators:
         kind = _classify_denominator(token)
         if kind == "area":

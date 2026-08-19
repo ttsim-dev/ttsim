@@ -8,9 +8,8 @@ the restricted group arithmetic needs that fact.
 from __future__ import annotations
 
 import inspect
-import re
 from collections.abc import Mapping
-from typing import Any
+from typing import Any, TypeAlias, cast
 
 from ttsim.interface_dag_elements.shared import FRAMEWORK_PARTIAL_ARGUMENTS
 from ttsim.tt.aggregation import AggType
@@ -29,27 +28,9 @@ from ttsim.tt.type_resolution import (
     resolve_kind_of_annotation,
     resolve_kind_of_column_function,
 )
-from ttsim.tt.units import QuantityKind
+from ttsim.tt.units import CompositeUnit, QuantityKind
 
-_INTEGER_KINDS = frozenset({ResolvedKind.INT_SCALAR, ResolvedKind.INT_COLUMN})
-
-# A direct integer only qualifies when its documentation actually says it is a
-# count. English and German terms cover the policy packages maintained here; the
-# integer annotation by itself is deliberately insufficient.
-_COUNT_MEANING = re.compile(
-    r"(?:\bnumber of\b|\bmaximum number\b|\bcount\b|\bhead count\b|"
-    r"\bhousehold size\b|\bfamily size\b|\bgroup size\b|\banzahl\b|"
-    r"\bhaushaltsgröße\b|\bzahl der\b|\bkinderzahl\b|"
-    r"\bmaximal(?:e|en|er|es)?\s+anzahl\b|\bmaximalzahl\b)",
-    flags=re.IGNORECASE,
-)
-
-_NOT_A_COUNT = re.compile(
-    r"(?:\bnot (?:a )?(?:head )?count\b|\bkein(?:e|en|er|es)?\s+anzahl\b|"
-    r"\bcategory\b|\bclassification\b|\bidentifier\b|\brent class\b|"
-    r"\bmietstufe\b)",
-    flags=re.IGNORECASE,
-)
+QuantityKindTree: TypeAlias = QuantityKind | Mapping[str | int, Any]
 
 
 def quantity_kind(
@@ -65,61 +46,73 @@ def quantity_kind(
             return QuantityKind.INDICATOR
         if obj.agg_type is AggType.SUM and _aggregation_source_is_boolean(obj, env):
             return QuantityKind.COUNT
+    declaration = getattr(obj, "unit", None)
+    if isinstance(declaration, CompositeUnit) and (
+        declaration.kind is not QuantityKind.GENERIC
+    ):
+        return declaration.kind
     kind = _resolved_kind(qname=qname, obj=obj)
     if kind in BOOL_KINDS or _parameter_values_are_booleans(obj):
         return QuantityKind.INDICATOR
-    if (
-        kind in _INTEGER_KINDS or _parameter_values_are_integers(obj)
-    ) and _documents_count(qname=qname, obj=obj):
-        return QuantityKind.COUNT
     return QuantityKind.GENERIC
 
 
 def quantity_kind_for_leaf(
-    qname: str,
+    declaration: CompositeUnit,
     value: Any,  # noqa: ANN401
 ) -> QuantityKind:
     """Return evidence for one parameter leaf, without consulting its siblings."""
+    if declaration.kind is not QuantityKind.GENERIC:
+        return declaration.kind
     if isinstance(value, bool):
         return QuantityKind.INDICATOR
-    if (
-        isinstance(value, int)
-        and not isinstance(value, bool)
-        and _text_documents_count(qname.replace("_", " "))
-    ):
-        return QuantityKind.COUNT
     return QuantityKind.GENERIC
 
 
 def quantity_kind_for_scalar_type(
-    qname: str,
+    declaration: CompositeUnit,
     scalar_type: Any,  # noqa: ANN401
 ) -> QuantityKind:
     """Return evidence for one annotated scalar field."""
+    if declaration.kind is not QuantityKind.GENERIC:
+        return declaration.kind
     if scalar_type is bool:
         return QuantityKind.INDICATOR
-    if scalar_type is int and _text_documents_count(qname.replace("_", " ")):
-        return QuantityKind.COUNT
     return QuantityKind.GENERIC
-
-
-def documented_quantity_kind(qname: str, obj: Any) -> QuantityKind:  # noqa: ANN401
-    """Return count evidence stated in this declaration's own documentation."""
-    return (
-        QuantityKind.COUNT
-        if _documents_count(qname=qname, obj=obj)
-        else QuantityKind.GENERIC
-    )
 
 
 def quantity_kinds_by_qname(
     env: Mapping[str, Any],
-) -> dict[str, QuantityKind]:
+) -> dict[str, QuantityKindTree]:
     """Collect the narrow evidence for every environment node."""
     return {
-        qname: quantity_kind(qname=qname, obj=obj, env=env)
+        qname: (
+            _quantity_kind_tree(
+                declaration=cast("Mapping[str | int, Any]", obj.unit),
+                value=getattr(obj, "value", None),
+            )
+            if isinstance(getattr(obj, "unit", None), Mapping)
+            else quantity_kind(qname=qname, obj=obj, env=env)
+        )
         for qname, obj in env.items()
     }
+
+
+def _quantity_kind_tree(
+    declaration: Mapping[str | int, Any] | CompositeUnit,
+    value: Any,  # noqa: ANN401
+) -> QuantityKindTree:
+    """Mirror a mapping declaration while retaining each leaf semantic."""
+    if isinstance(declaration, Mapping):
+        values = value if isinstance(value, Mapping) else {}
+        return {
+            key: _quantity_kind_tree(
+                declaration=token,
+                value=values.get(key),
+            )
+            for key, token in declaration.items()
+        }
+    return quantity_kind_for_leaf(declaration=declaration, value=value)
 
 
 def _aggregation_source_is_boolean(
@@ -148,32 +141,9 @@ def _resolved_kind(qname: str, obj: Any) -> ResolvedKind | None:  # noqa: ANN401
     return None
 
 
-def _documents_count(qname: str, obj: Any) -> bool:  # noqa: ANN401
-    pieces = [qname.replace("_", " ")]
-    for attribute in ("description", "docstring", "name"):
-        value = getattr(obj, attribute, None)
-        if isinstance(value, str):
-            pieces.append(value)
-        elif isinstance(value, Mapping):
-            pieces.extend(str(part) for part in value.values() if part is not None)
-    return _text_documents_count(" ".join(pieces))
-
-
-def _text_documents_count(text: str) -> bool:
-    """Recognize affirmative count wording and let explicit contrary prose win."""
-    return _NOT_A_COUNT.search(text) is None and _COUNT_MEANING.search(text) is not None
-
-
 def _parameter_values_are_booleans(obj: Any) -> bool:  # noqa: ANN401
     return isinstance(obj, ParamObject) and _all_leaves(
         getattr(obj, "value", None), predicate=lambda value: isinstance(value, bool)
-    )
-
-
-def _parameter_values_are_integers(obj: Any) -> bool:  # noqa: ANN401
-    return isinstance(obj, ParamObject) and _all_leaves(
-        getattr(obj, "value", None),
-        predicate=lambda value: isinstance(value, int) and not isinstance(value, bool),
     )
 
 

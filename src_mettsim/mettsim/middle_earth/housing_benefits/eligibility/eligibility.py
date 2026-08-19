@@ -63,7 +63,7 @@ def requirement_fulfilled_fam_considering_children(
 @policy_function(
     start_date="2020-01-01",
     vectorization_strategy="vectorize",
-    unit=TTSIMUnit.DIMENSIONLESS.PER_FAM,
+    unit=TTSIMUnit.COUNT.PER_FAM,
 )
 def number_of_family_members_considered_fam(
     number_of_individuals_fam: int,

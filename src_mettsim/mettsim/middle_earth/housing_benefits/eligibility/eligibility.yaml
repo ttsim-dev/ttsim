@@ -28,7 +28,7 @@ max_number_of_family_members:
   description:
     de: Erst nach Reform 2020 relevant.
     en: Only relevant after 2020 reform.
-  unit: DIMENSIONLESS_PER_FAM
+  unit: COUNT_PER_FAM
   type: scalar
   2020-01-01:
     value: 4

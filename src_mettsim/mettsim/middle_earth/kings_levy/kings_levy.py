@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING
 from ttsim.tt import (
     InputOutputUnits,
     PiecewisePolynomialParamValue,
-    QuantityKind,
     TTSIMUnit,
     get_consecutive_int_lookup_table_param_value,
     get_piecewise_parameters,
@@ -73,9 +72,8 @@ def amount_y(
 
 @param_function(
     unit=InputOutputUnits(
-        input_unit=TTSIMUnit.DIMENSIONLESS.PER_KIN,
+        input_unit=TTSIMUnit.COUNT.PER_KIN,
         output_unit=TTSIMUnit.CURRENCY.PER_YEAR.PER_KIN,
-        input_kind=QuantityKind.COUNT,
     ),
     # See `kings_levy_schedule` above.
     verify_units=False,

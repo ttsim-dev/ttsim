@@ -43,7 +43,6 @@ from ttsim.tt import (
     UNSET_UNIT,
     AggType,
     InputOutputUnits,
-    QuantityKind,
     RoundingSpec,
     TTSIMUnit,
     agg_by_group_function,
@@ -79,6 +78,11 @@ from ttsim.unit_validation import (
 @dataclass(frozen=True)
 class _BadGroupShareStructured:
     housing_cost_share_fam: Annotated[float, TTSIMUnit.DIMENSIONLESS.PER_FAM]
+
+
+@dataclass(frozen=True)
+class _CountStructured:
+    number_of_people_fam: Annotated[int, TTSIMUnit.COUNT.PER_FAM]
 
 
 # Mandatory units, no exemptions: identifiers and booleans declare
@@ -117,28 +121,40 @@ def test_group_marker_on_an_integer_category_is_rejected():
         )
 
 
-def test_documented_integer_count_may_carry_a_group_marker():
+def test_explicit_integer_count_may_carry_a_group_marker():
     @policy_input(unit=TTSIMUnit.DIMENSIONLESS.PER_FAM)
     def number_of_children_fam() -> int:
         """Number of children in the family."""
 
+    with pytest.raises(UnitConsistencyError, match="COUNT"):
+        fail_if_environment_units_are_inconsistent(
+            env={"number_of_children_fam": number_of_children_fam},
+            grouping_levels=GROUPING_LEVELS,
+            unit_system=UNIT_SYSTEM,
+        )
+
+    @policy_input(unit=TTSIMUnit.COUNT.PER_FAM)
+    def explicitly_declared_children_fam() -> int:
+        """Number of children in the family."""
+
     fail_if_environment_units_are_inconsistent(
-        env={"number_of_children_fam": number_of_children_fam},
+        env={"explicitly_declared_children_fam": explicitly_declared_children_fam},
         grouping_levels=GROUPING_LEVELS,
         unit_system=UNIT_SYSTEM,
     )
 
 
-def test_german_documented_integer_count_may_carry_a_group_marker():
+def test_german_documentation_does_not_replace_an_explicit_count_declaration():
     @policy_input(unit=TTSIMUnit.DIMENSIONLESS.PER_FAM)
     def kinderzahl_fam() -> int:
         """Zahl der Kinder in der Familie."""
 
-    fail_if_environment_units_are_inconsistent(
-        env={"kinderzahl_fam": kinderzahl_fam},
-        grouping_levels=GROUPING_LEVELS,
-        unit_system=UNIT_SYSTEM,
-    )
+    with pytest.raises(UnitConsistencyError, match="COUNT"):
+        fail_if_environment_units_are_inconsistent(
+            env={"kinderzahl_fam": kinderzahl_fam},
+            grouping_levels=GROUPING_LEVELS,
+            unit_system=UNIT_SYSTEM,
+        )
 
 
 def test_negated_count_wording_does_not_authorize_a_category():
@@ -162,7 +178,7 @@ def test_count_evidence_is_local_to_one_mapping_leaf():
     mixed = DictParam(
         value={"number_of_children": 2, "rent_class": 3},
         unit={
-            "number_of_children": TTSIMUnit.DIMENSIONLESS.PER_FAM,
+            "number_of_children": TTSIMUnit.COUNT.PER_FAM,
             "rent_class": TTSIMUnit.DIMENSIONLESS.PER_FAM,
         },
         name={"en": "Number of children and rent class", "de": "Kinder und Miete"},
@@ -204,9 +220,8 @@ def test_group_marked_schedule_axis_requires_its_own_count_evidence():
 def test_group_marked_schedule_axis_accepts_explicit_count_evidence():
     @param_function(
         unit=InputOutputUnits(
-            input_unit=TTSIMUnit.DIMENSIONLESS.PER_FAM,
+            input_unit=TTSIMUnit.COUNT.PER_FAM,
             output_unit=TTSIMUnit.CURRENCY.PER_MONTH,
-            input_kind=QuantityKind.COUNT,
         ),
         verify_units=False,
     )
@@ -232,6 +247,79 @@ def test_group_marked_structured_float_share_is_rejected():
             grouping_levels=GROUPING_LEVELS,
             unit_system=UNIT_SYSTEM,
         )
+
+
+def test_structured_count_field_allocates_a_group_total_per_person():
+    @param_function(unit=UNSET_UNIT)
+    def group_statistics() -> _CountStructured:
+        return _CountStructured(number_of_people_fam=2)
+
+    @policy_input(unit=TTSIMUnit.CURRENCY.PER_MONTH.PER_FAM)
+    def rent_m_fam() -> float:
+        """Monthly rent of the family."""
+
+    @policy_function(unit=TTSIMUnit.CURRENCY.PER_MONTH)
+    def rent_per_head_m(
+        rent_m_fam: float,
+        group_statistics: _CountStructured,
+    ) -> float:
+        return rent_m_fam / group_statistics.number_of_people_fam
+
+    fail_if_environment_units_are_inconsistent(
+        env={
+            "group_statistics": group_statistics,
+            "rent_m_fam": rent_m_fam,
+            "rent_per_head_m": rent_per_head_m,
+        },
+        grouping_levels=GROUPING_LEVELS,
+        unit_system=UNIT_SYSTEM,
+    )
+
+
+def test_mapping_count_leaf_allocates_a_group_total_per_person():
+    group_statistics = DictParam(
+        value={"number_of_people_fam": 2},
+        unit={"number_of_people_fam": TTSIMUnit.COUNT.PER_FAM},
+        start_date=_START,
+        end_date=_END,
+    )
+
+    @policy_input(unit=TTSIMUnit.CURRENCY.PER_MONTH.PER_FAM)
+    def rent_m_fam() -> float:
+        """Monthly rent of the family."""
+
+    @policy_function(unit=TTSIMUnit.CURRENCY.PER_MONTH)
+    def rent_per_head_m(
+        rent_m_fam: float,
+        group_statistics: dict[str, int],
+    ) -> float:
+        return rent_m_fam / group_statistics["number_of_people_fam"]
+
+    fail_if_environment_units_are_inconsistent(
+        env={
+            "group_statistics": group_statistics,
+            "rent_m_fam": rent_m_fam,
+            "rent_per_head_m": rent_per_head_m,
+        },
+        grouping_levels=GROUPING_LEVELS,
+        unit_system=UNIT_SYSTEM,
+    )
+
+
+def test_explicit_count_cast_allocates_a_group_total_per_person():
+    @policy_input(unit=TTSIMUnit.CURRENCY.PER_MONTH.PER_FAM)
+    def rent_m_fam() -> float:
+        """Monthly rent of the family."""
+
+    @policy_function(unit=TTSIMUnit.CURRENCY.PER_MONTH)
+    def rent_per_head_m(rent_m_fam: float) -> float:
+        return rent_m_fam / cast_ttsim_unit(2, unit=TTSIMUnit.COUNT.PER_FAM)
+
+    fail_if_environment_units_are_inconsistent(
+        env={"rent_m_fam": rent_m_fam, "rent_per_head_m": rent_per_head_m},
+        grouping_levels=GROUPING_LEVELS,
+        unit_system=UNIT_SYSTEM,
+    )
 
 
 def test_validation_report_rejects_group_marked_structured_float_share():

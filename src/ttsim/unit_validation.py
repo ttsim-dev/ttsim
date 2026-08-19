@@ -17,7 +17,6 @@ import dags.tree as dt
 import pint
 
 from ttsim._quantity_kinds import (
-    documented_quantity_kind,
     quantity_kind,
     quantity_kind_for_leaf,
     quantity_kind_for_scalar_type,
@@ -532,10 +531,9 @@ def _dimensionless_group_declaration_errors(
 ) -> list[str]:
     """Reject group markers on dimensionless shares, rates, ids, and categories.
 
-    A direct ``DIMENSIONLESS.PER_<LEVEL>`` declaration needs evidence outside
-    the unit itself that the value is a count or yes/no indicator. Generated
-    counts and indicators provide that evidence by rule; a direct integer must
-    document its count interpretation.
+    A direct ``DIMENSIONLESS.PER_<LEVEL>`` declaration must carry explicit
+    ``COUNT`` or ``INDICATOR`` evidence. Generated counts and indicators
+    provide that evidence by rule.
     """
     errors: list[str] = []
     for qname, obj in env.items():
@@ -549,8 +547,8 @@ def _dimensionless_group_declaration_errors(
             "on a "
             "dimensionless value is reserved for a known count or yes/no "
             "indicator. Shares, rates, identifiers, and categories stay "
-            "bare `DIMENSIONLESS`; for an integer count, document that "
-            "interpretation explicitly (GEP 10)."
+            "bare `DIMENSIONLESS`; declare a count as `COUNT.PER_<GROUP>` "
+            "(GEP 10)."
             for declaration in _declared_quantities(qname=qname, obj=obj, env=env)
             if (
                 declaration.token.base == "DIMENSIONLESS"
@@ -595,9 +593,7 @@ def _declared_quantities(
             _DeclaredQuantity(
                 where=f"{qname}[{leaf}]",
                 token=token,
-                kind=quantity_kind_for_leaf(
-                    qname=f"{qname}__{leaf}", value=values.get(leaf)
-                ),
+                kind=quantity_kind_for_leaf(declaration=token, value=values.get(leaf)),
             )
             for leaf, token in dt.flatten_to_qnames(
                 cast("Mapping[str, Any]", declaration)
@@ -607,7 +603,6 @@ def _declared_quantities(
 
     out: list[_DeclaredQuantity] = []
     if isinstance(obj, ParamMappingObject | RawParam):
-        axis_kind = documented_quantity_kind(qname=qname, obj=obj)
         for axis_name in ("input_unit", "output_unit"):
             token = getattr(obj, axis_name, UNSET_UNIT)
             if isinstance(token, CompositeUnit):
@@ -615,7 +610,7 @@ def _declared_quantities(
                     _DeclaredQuantity(
                         where=f"{qname} ({axis_name})",
                         token=token,
-                        kind=axis_kind,
+                        kind=token.kind,
                     )
                 )
     if isinstance(obj, ParamFunction) and isinstance(declaration, UnsetUnit):
@@ -639,35 +634,19 @@ def _schedule_axis_declarations(
         if isinstance(declaration.input_unit, tuple)
         else (declaration.input_unit,)
     )
-    input_kinds: tuple[QuantityKind, ...] = (
-        declaration.input_kind
-        if isinstance(declaration.input_kind, tuple)
-        else (declaration.input_kind,) * len(input_units)
-    )
-    if len(input_units) != len(input_kinds):
-        return [
-            _DeclaredQuantity(
-                where=f"{where} (input_kind arity mismatch)",
-                token=unit,
-                kind=QuantityKind.GENERIC,
-            )
-            for unit in input_units
-        ]
     out = [
         _DeclaredQuantity(
             where=f"{where} (input axis {position})",
             token=unit,
-            kind=kind,
+            kind=unit.kind,
         )
-        for position, (unit, kind) in enumerate(
-            zip(input_units, input_kinds, strict=True), start=1
-        )
+        for position, unit in enumerate(input_units, start=1)
     ]
     out.append(
         _DeclaredQuantity(
             where=f"{where} (output axis)",
             token=declaration.output_unit,
-            kind=declaration.output_kind,
+            kind=declaration.output_unit.kind,
         )
     )
     return out
@@ -693,7 +672,7 @@ def _structured_declarations(
             _DeclaredQuantity(
                 where=f"Field '{cls.__name__}.{field.name}'",
                 token=token,
-                kind=quantity_kind_for_scalar_type(qname=field_qname, scalar_type=base),
+                kind=quantity_kind_for_scalar_type(declaration=token, scalar_type=base),
             )
             for token in metadata
             if isinstance(token, CompositeUnit)

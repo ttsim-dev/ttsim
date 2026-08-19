@@ -50,13 +50,11 @@ def coming_of_age_celebration(age: int) -> bool:
     ) or age == cast_ttsim_unit(value=111, unit=TTSIMUnit.YEARS)
 
 
-@policy_function(
-    vectorization_strategy="vectorize", unit=TTSIMUnit.DIMENSIONLESS.PER_KIN
-)
+@policy_function(vectorization_strategy="vectorize", unit=TTSIMUnit.COUNT.PER_KIN)
 def number_of_dependants_kin(number_of_individuals_kin: int) -> int:
     """The kinstead's members other than its head."""
     # The one head subtracted here is a head count of the kinstead, like the
     # count it is subtracted from.
     return number_of_individuals_kin - cast_ttsim_unit(
-        value=1, unit=TTSIMUnit.DIMENSIONLESS.PER_KIN
+        value=1, unit=TTSIMUnit.COUNT.PER_KIN
     )

@@ -1449,7 +1449,7 @@ def test_same_group_indicator_may_mask_a_group_total():
 def test_arithmetic_on_a_head_count_does_not_keep_head_count_evidence():
     """Only an independently known head count enables group-total allocation."""
 
-    @policy_input(unit=TTSIMUnit.DIMENSIONLESS.PER_FAM)
+    @policy_input(unit=TTSIMUnit.COUNT.PER_FAM)
     def number_of_people_fam() -> int:
         """Number of people in the family."""
 
