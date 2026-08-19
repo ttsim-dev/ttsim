@@ -9,6 +9,7 @@ import pickle
 # makes the tracer-bullet policy function importable.
 import mettsim.middle_earth  # noqa: F401
 import numpy as np
+import pint
 import pytest
 from beartype.roar import BeartypeCallHintViolation
 
@@ -39,9 +40,11 @@ from ttsim.tt import (
 )
 from ttsim.tt.units import (
     CURRENCY_TOKEN,
+    QuantityKind,
     _name_suffixes,
     fail_if_units_are_missing,
     input_column_in_data_currency,
+    is_calendar_ordinal_unit,
     is_calendar_point_unit,
     pint_unit_from_string,
     pint_unit_from_ttsim_unit,
@@ -129,6 +132,8 @@ def test_hectare_is_an_area():
 _BASE_SPELLINGS = [
     "CURRENCY",
     "DIMENSIONLESS",
+    "COUNT",
+    "INDICATOR",
     "HOURS",
     "SQUARE_METER",
     "HECTARE",
@@ -149,6 +154,8 @@ _BASE_SPELLINGS = [
         *_BASE_SPELLINGS,
         "CURRENCY_PER_MONTH",
         "CURRENCY_PER_MONTH_PER_BG",
+        "COUNT_PER_BG",
+        "INDICATOR_PER_BG",
         "DIMENSIONLESS_PER_BG",
         "DIMENSIONLESS_PER_YEAR",
         "HOURS_PER_WEEK",
@@ -158,6 +165,33 @@ def test_ttsim_unit_from_yaml_value_round_trips_spellings(spelling):
     token = ttsim_unit_from_yaml_value(value=spelling, where="test")
     assert isinstance(token, CompositeUnit)
     assert str(token) == spelling
+
+
+@pytest.mark.parametrize(
+    ("declaration", "kind"),
+    [
+        (TTSIMUnit.COUNT.PER_LEVEL("bg"), QuantityKind.COUNT),
+        (TTSIMUnit.INDICATOR.PER_LEVEL("bg"), QuantityKind.INDICATOR),
+    ],
+)
+def test_semantic_declaration_normalizes_to_dimensionless_unit(declaration, kind):
+    assert declaration.base == "DIMENSIONLESS"
+    assert declaration.kind is kind
+
+
+@pytest.mark.parametrize(
+    "build_invalid_declaration",
+    [
+        lambda: TTSIMUnit.COUNT.PER_MONTH,
+        lambda: TTSIMUnit.COUNT.PER_HOURS,
+        lambda: TTSIMUnit.INDICATOR.PER_SQUARE_METER,
+    ],
+)
+def test_semantic_declaration_only_accepts_a_group_denominator(
+    build_invalid_declaration,
+):
+    with pytest.raises(UnitDefinitionError, match=r"COUNT|INDICATOR"):
+        build_invalid_declaration()
 
 
 def test_ttsim_unit_from_yaml_value_rejects_none():
@@ -381,18 +415,6 @@ def test_is_calendar_point_unit():
         unit=pint_unit_from_string(unit_str="calendar_year", registry=REGISTRY),
         registry=REGISTRY,
     )
-    assert is_calendar_point_unit(
-        unit=pint_unit_from_string(unit_str="calendar_quarter", registry=REGISTRY),
-        registry=REGISTRY,
-    )
-    assert is_calendar_point_unit(
-        unit=pint_unit_from_string(unit_str="calendar_month", registry=REGISTRY),
-        registry=REGISTRY,
-    )
-    assert is_calendar_point_unit(
-        unit=pint_unit_from_string(unit_str="calendar_day", registry=REGISTRY),
-        registry=REGISTRY,
-    )
     # Durations and ordinary units are not points.
     assert not is_calendar_point_unit(
         unit=pint_unit_from_string(unit_str="delta_calendar_year", registry=REGISTRY),
@@ -406,6 +428,15 @@ def test_is_calendar_point_unit():
         unit=pint_unit_from_string(unit_str="CURRENCY / month", registry=REGISTRY),
         registry=REGISTRY,
     )
+
+
+@pytest.mark.parametrize(
+    "unit_name", ["calendar_quarter", "calendar_month", "calendar_day"]
+)
+def test_calendar_ordinals_are_not_affine_points(unit_name):
+    unit = pint_unit_from_string(unit_str=unit_name, registry=REGISTRY)
+    assert is_calendar_ordinal_unit(unit)
+    assert not is_calendar_point_unit(unit=unit, registry=REGISTRY)
 
 
 def test_policy_function_stores_unit():
@@ -511,15 +542,9 @@ def test_duration_conversion_year_to_month():
     assert months.magnitude == pytest.approx(24.0)
 
 
-def test_calendar_quarter_point_algebra():
-    quarter = REGISTRY.Quantity(2, "calendar_quarter")
-
-    assert quarter - REGISTRY.Quantity(1, "calendar_quarter") == REGISTRY.Quantity(
-        1, "delta_calendar_quarter"
-    )
-    assert quarter + REGISTRY.Quantity(
-        1, "delta_calendar_quarter"
-    ) == REGISTRY.Quantity(3, "calendar_quarter")
+def test_calendar_quarter_ordinal_is_not_a_duration():
+    with pytest.raises(pint.DimensionalityError):
+        REGISTRY.Quantity(2, "calendar_quarter").to("delta_calendar_quarter")
 
 
 def test_fail_if_units_are_missing_reports_unannotated_nodes():

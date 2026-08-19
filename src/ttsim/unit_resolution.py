@@ -25,6 +25,7 @@ import dags.tree as dt
 import pint
 from dags import get_annotations
 
+from ttsim._quantity_kinds import quantity_kind_for_scalar_type
 from ttsim.exceptions import UnitDefinitionError
 from ttsim.interface_dag_elements.shared import (
     FRAMEWORK_PARTIAL_ARGUMENTS,
@@ -56,6 +57,7 @@ from ttsim.tt.units import (
     UNSET_UNIT,
     CompositeUnit,
     InputOutputUnits,
+    QuantityKind,
     UnitDeclaration,
     UnitSystem,
     UnsetUnit,
@@ -240,11 +242,11 @@ def _schedule_axis_errors(
 
 FRAMEWORK_DATE_NODE_UNITS: Mapping[str, str] = {
     "policy_year": "calendar_year",
-    "policy_month": "dimensionless",
-    "policy_day": "dimensionless",
+    "policy_month": "calendar_month",
+    "policy_day": "calendar_day",
     "evaluation_year": "calendar_year",
-    "evaluation_month": "dimensionless",
-    "evaluation_day": "dimensionless",
+    "evaluation_month": "calendar_month",
+    "evaluation_day": "calendar_day",
 }
 
 
@@ -298,9 +300,8 @@ def _resolve_agg_by_group_unit(
 
     - a **head count** — ``COUNT``, or a ``SUM`` over a *boolean* source (counting
       the persons the indicator is true for) — mints ``1 / [target]``;
-    - ``SUM`` / ``MIN`` / ``MAX`` resolve to the **target** level whatever the
-      source (a bare source acquires it); ``MEAN`` resolves to **bare** — a
-      per-head average belongs to the individual;
+    - ``SUM`` / ``MEAN`` / ``MIN`` / ``MAX`` resolve to the **target** level
+      whatever the source (a bare source acquires it);
     - ``ANY`` / ``ALL`` yield a dimensionless boolean at the target level.
 
     The value source is the function's summed/averaged argument, read off the
@@ -581,12 +582,13 @@ def _resolve_structured_field_annotations(
 
 def _structured_field_kinds(
     cls: type, unit_system: UnitSystem
-) -> dict[str, pint.Unit | type | _ScheduleFieldKind] | None:
+) -> dict[str, pint.Unit | type | _ScalarFieldKind | _ScheduleFieldKind] | None:
     """Resolve a parameter dataclass's field annotations for the unit check.
 
     Maps each field to what its pluck yields:
 
-    - an ``Annotated[<scalar>, TTSIMUnit…]`` field → the resolved unit;
+    - an ``Annotated[<scalar>, TTSIMUnit…]`` field → the resolved unit and any
+      explicit count/indicator evidence;
     - an ``Annotated[<schedule type>, InputOutputUnits(...)]`` field → a
       :class:`_ScheduleFieldKind` carrying the schedule's input and output axes;
     - a nested-dataclass field → its class (whose plucks resolve recursively);
@@ -607,7 +609,7 @@ def _structured_field_kinds(
     hints = _resolvable_type_hints(cls=cls)
     if not hints:
         return None
-    kinds: dict[str, pint.Unit | type | _ScheduleFieldKind] = {}
+    kinds: dict[str, pint.Unit | type | _ScalarFieldKind | _ScheduleFieldKind] = {}
     for field in dataclasses.fields(cast("Any", cls)):
         hint = hints.get(field.name, field.type)
         metadata = getattr(hint, "__metadata__", ())
@@ -647,7 +649,14 @@ def _structured_field_kinds(
                 registry=unit_system.registry,
             )
             if base in (int, float, bool):
-                kinds[field.name] = resolved
+                semantic_kind = quantity_kind_for_scalar_type(
+                    declaration=composite_tokens[0], scalar_type=base
+                )
+                kinds[field.name] = (
+                    _ScalarFieldKind(unit=resolved, kind=semantic_kind)
+                    if semantic_kind is not QuantityKind.GENERIC
+                    else resolved
+                )
             else:
                 raise UnitDefinitionError(
                     f"{where}: a single unit annotation must sit on a scalar field "
@@ -657,6 +666,14 @@ def _structured_field_kinds(
         elif isinstance(base, type) and dataclasses.is_dataclass(base):
             kinds[field.name] = base
     return kinds
+
+
+@dataclasses.dataclass(frozen=True)
+class _ScalarFieldKind:
+    """A structured scalar field physical unit and narrow semantic evidence."""
+
+    unit: pint.Unit
+    kind: QuantityKind
 
 
 @dataclasses.dataclass(frozen=True)
@@ -676,6 +693,8 @@ class _ScheduleFieldKind:
     screened against."""
     output_unit: pint.Unit
     """The resolved unit the schedule produces."""
+    output_kind: QuantityKind
+    """Narrow semantic evidence carried by the produced quantity."""
 
 
 def _schedule_field_kind(
@@ -735,6 +754,7 @@ def _schedule_field_kind(
             where=where,
             registry=unit_system.registry,
         ),
+        output_kind=io_token.output_unit.kind,
     )
 
 

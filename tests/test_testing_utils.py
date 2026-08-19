@@ -31,6 +31,17 @@ def early_amount_m(rate_m: float) -> float:
     return rate_m
 
 
+@policy_function(
+    leaf_name="short_amount_m",
+    start_date="2020-01-01",
+    end_date="2024-12-31",
+    unit=TTSIMUnit.CURRENCY.PER_MONTH,
+)
+def short_amount_m(rate_m: float) -> float:
+    """End while another policy function remains active."""
+    return rate_m
+
+
 def _orig_objects(
     param_spec: dict[Any, Any],
     function: Any = amount_m,
@@ -42,13 +53,16 @@ def _orig_objects(
 
 
 def test_policy_date_partition_covers_function_start_and_end():
-    """A function's start date and the day after its inclusive end date each begin a
-    regime the environment must be validated at."""
-    assert get_policy_date_partition(
-        orig_policy_objects=_orig_objects(
-            {"name": "Rate", datetime.date(2020, 1, 1): 1}
-        )
-    ) == [datetime.date(2020, 1, 1), datetime.date(2030, 1, 1)]
+    """An end boundary is included only while the package remains supported."""
+    orig_objects = _orig_objects({"name": "Rate", datetime.date(2020, 1, 1): 1})
+    orig_objects["column_objects_and_param_functions"][("short_amount_m",)] = (
+        short_amount_m
+    )
+
+    assert get_policy_date_partition(orig_policy_objects=orig_objects) == [
+        datetime.date(2020, 1, 1),
+        datetime.date(2025, 1, 1),
+    ]
 
 
 def test_policy_date_partition_includes_a_parameter_only_change():

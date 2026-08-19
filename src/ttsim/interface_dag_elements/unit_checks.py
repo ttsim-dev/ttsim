@@ -9,6 +9,7 @@ resolution — and the checks that consume it — lives in
 
 from __future__ import annotations
 
+import datetime
 from typing import (
     Any,
 )
@@ -26,6 +27,7 @@ from ttsim.typing import (
     SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
 )
 from ttsim.unit_resolution import resolve_environment_units
+from ttsim.unit_validation import UnitValidationReport, create_unit_validation_report
 
 
 @interface_function()
@@ -52,3 +54,19 @@ def declared_ttsim_units(
         for qname, obj in specialized_environment__without_tree_logic_and_with_derived_functions.items()  # noqa: E501
         if isinstance((token := getattr(obj, "unit", UNSET_UNIT)), CompositeUnit)
     }
+
+
+@interface_function()
+def validation_report(
+    specialized_environment__without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,  # noqa: E501
+    labels__grouping_levels: OrderedQNames,
+    unit_system: UnitSystem,
+    policy_date: datetime.date,
+) -> UnitValidationReport:
+    """Auditable declaration, body, rule, cast, and opt-out coverage."""
+    return create_unit_validation_report(
+        env=specialized_environment__without_tree_logic_and_with_derived_functions,
+        grouping_levels=labels__grouping_levels,
+        unit_system=unit_system,
+        policy_dates=(policy_date,),
+    )
