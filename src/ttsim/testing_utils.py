@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import datetime
 import inspect
+from collections.abc import Iterator
+from contextlib import contextmanager
 from functools import lru_cache
 from pathlib import Path
 from types import ModuleType
@@ -14,6 +16,7 @@ import pandas as pd
 import yaml
 
 from ttsim import main, merge_trees
+from ttsim.exceptions import UnitConsistencyError, UnitDefinitionError
 from ttsim.interface_dag_elements.data_converters import (
     nested_data_to_df_with_nested_columns,
 )
@@ -23,6 +26,14 @@ from ttsim.interface_dag_elements.specialized_environment_for_plotting_and_templ
     dummy_callable,
 )
 from ttsim.main_args import InputData, OrigPolicyObjects, TTTargets
+from ttsim.tt.units import (
+    _ALLOWED_UNIT_TOKENS,
+    CompositeUnit,
+    TTSIMUnit,
+    UnitSystem,
+    _registered_currencies,
+    _unit_builder_levels,
+)
 from ttsim.typing import (
     FlatColumnObjectsParamFunctions,
     FlatOrigParamSpecs,
@@ -30,10 +41,105 @@ from ttsim.typing import (
     NestedInputStructureDict,
     PolicyEnvironment,
 )
+from ttsim.unit_validation import (
+    UnitValidationReport,
+    create_unit_validation_report,
+    merge_unit_validation_reports,
+)
 
 # Set display options to show all columns without truncation
 pd.set_option("display.max_columns", None)
 pd.set_option("display.width", None)
+
+
+@contextmanager
+def isolated_unit_vocabulary() -> Iterator[None]:
+    """Restore unit registrations performed inside the context on exit."""
+    saved_currencies = set(_registered_currencies)
+    saved_tokens = set(_ALLOWED_UNIT_TOKENS)
+    saved_bases = set(vars(TTSIMUnit))
+    saved_levels = set(_unit_builder_levels)
+    saved_steps = set(vars(CompositeUnit))
+    try:
+        yield
+    finally:
+        _registered_currencies.clear()
+        _registered_currencies.update(saved_currencies)
+        _ALLOWED_UNIT_TOKENS.clear()
+        _ALLOWED_UNIT_TOKENS.update(saved_tokens)
+        _unit_builder_levels.clear()
+        _unit_builder_levels.update(saved_levels)
+        for base in set(vars(TTSIMUnit)) - saved_bases:
+            delattr(TTSIMUnit, base)
+        for step in set(vars(CompositeUnit)) - saved_steps:
+            delattr(CompositeUnit, step)
+
+
+def get_policy_date_partition(
+    orig_policy_objects: dict[
+        str, FlatColumnObjectsParamFunctions | FlatOrigParamSpecs
+    ],
+    unit_system: UnitSystem | None = None,
+) -> list[datetime.date]:
+    """The dates a policy package must be validated at — one per structural regime.
+
+    The resolved environment changes not only where a function starts or stops, but
+    also where a parameter entry or the statutory currency does: a parameter-only
+    change opens a regime of its own even though every function stays active, and a
+    partition built from function dates alone never assembles it (GEP 10). Each
+    returned date is the left endpoint of one regime:
+
+    - every column object's and param function's start date, and the day after each
+      inclusive end date;
+    - every dated parameter entry — where a value, unit, currency, or leaf set may
+      change;
+    - every statutory-currency start date of ``unit_system``, where one is given.
+
+    Boundaries outside the package's own date domain — from its earliest start date
+    through its latest inclusive end date — are dropped: no environment exists there
+    to validate. In particular, the day after the final active function is not itself
+    a regime. Rounding specifications carry the dates of the function they sit on and
+    so contribute no boundary of their own.
+
+    Args:
+        orig_policy_objects: The package's ``column_objects_and_param_functions``
+            and ``param_specs``, as returned by `main`.
+        unit_system: The package's unit system, whose statutory-currency
+            transitions are boundaries too.
+
+    Returns:
+        The regime start dates, sorted and deduplicated.
+
+    """
+    column_objects = orig_policy_objects["column_objects_and_param_functions"]
+    start_dates = {
+        obj.start_date  # ty: ignore[unresolved-attribute]
+        for obj in column_objects.values()
+    }
+    if not start_dates:
+        return []
+    end_dates = {
+        obj.end_date + datetime.timedelta(days=1)  # ty: ignore[unresolved-attribute]
+        for obj in column_objects.values()
+    }
+    param_dates = {
+        key
+        for spec in orig_policy_objects.get("param_specs", {}).values()
+        for key in spec
+        if isinstance(key, datetime.date)
+    }
+    currency_dates = (
+        {date for date, _ in unit_system.statutory_currency_by_start_date}
+        if unit_system is not None
+        else set()
+    )
+    domain_start = min(start_dates)
+    domain_end = max(end_dates)
+    return sorted(
+        date
+        for date in start_dates | end_dates | param_dates | currency_dates
+        if domain_start <= date < domain_end
+    )
 
 
 @lru_cache(maxsize=100)
@@ -41,11 +147,13 @@ def cached_policy_environment(
     policy_date: datetime.date,
     root: Path,
     backend: Literal["numpy", "jax"],
+    unit_system: UnitSystem,
 ) -> PolicyEnvironment:
     return main(
         main_target="policy_environment",
         policy_date=policy_date,
         orig_policy_objects=OrigPolicyObjects.root(root),
+        unit_system=unit_system,
         backend=backend,
         include_fail_nodes=True,
         include_warn_nodes=False,
@@ -99,9 +207,14 @@ def execute_test(
     test: PolicyTest,
     root: Path,
     backend: Literal["numpy", "jax"],
+    unit_system: UnitSystem,
+    default_data_currency: str | None = None,
 ) -> None:
     environment = cached_policy_environment(
-        policy_date=test.policy_date, root=root, backend=backend
+        policy_date=test.policy_date,
+        root=root,
+        backend=backend,
+        unit_system=unit_system,
     )
     if test.target_structure:
         result_df = main(
@@ -112,6 +225,8 @@ def execute_test(
             tt_targets=TTTargets.tree(test.target_structure),
             rounding=True,
             backend=backend,
+            unit_system=unit_system,
+            data_currency=test.info.get("data_currency", default_data_currency),
             include_fail_nodes=True,
             include_warn_nodes=False,
         )
@@ -247,11 +362,13 @@ def check_env_completeness(
     orig_policy_objects: dict[
         str, FlatColumnObjectsParamFunctions | FlatOrigParamSpecs
     ],
+    unit_system: UnitSystem,
 ) -> None:
     qname_env_with_derived_functions = main(
         main_target="specialized_environment_for_plotting_and_templates__without_tree_logic_and_with_derived_functions",
         policy_date=policy_date,
         orig_policy_objects=OrigPolicyObjects(**orig_policy_objects),
+        unit_system=unit_system,
         backend="numpy",
     )
     all_nodes = {
@@ -284,3 +401,78 @@ def check_env_completeness(
             "Please add corresponding elements. Typically, these will be "
             "`@policy_input()`s or parameters in the yaml files."
         )
+
+
+def check_policy_environment_units(
+    policy_date: datetime.date,
+    orig_policy_objects: dict[
+        str, FlatColumnObjectsParamFunctions | FlatOrigParamSpecs
+    ],
+    unit_system: UnitSystem,
+) -> UnitValidationReport:
+    """Run the unit checks over the full environment at a policy date.
+
+    Builds the data-independent specialized environment (all derivable nodes
+    included) and runs both environment-level unit checks: mandatory units and
+    the conservative body/edge verification. Intended to be parametrized over
+    all policy dates of a country package as a CI test.
+
+    Raises:
+        UnitDefinitionError: If any active node lacks a mandatory unit.
+        UnitConsistencyError: If any function body infers a concrete unit
+            that disagrees with its declaration.
+    """
+    targets = main(
+        main_targets=[
+            "specialized_environment_for_plotting_and_templates__without_tree_logic_and_with_derived_functions",
+            "labels__grouping_levels",
+        ],
+        policy_date=policy_date,
+        orig_policy_objects=OrigPolicyObjects(**orig_policy_objects),
+        unit_system=unit_system,
+        backend="numpy",
+    )
+    env = targets["specialized_environment_for_plotting_and_templates"][
+        "without_tree_logic_and_with_derived_functions"
+    ]
+    grouping_levels = targets["labels"]["grouping_levels"]
+    report = create_unit_validation_report(
+        env=env,
+        grouping_levels=grouping_levels,
+        unit_system=unit_system,
+        policy_dates=(policy_date,),
+    )
+    if report.unsupported_bodies:
+        errors = [f"{item.qname}: {item.reason}" for item in report.unsupported_bodies]
+        raise UnitConsistencyError(
+            "Environment unit-consistency check failed:\n  " + "\n  ".join(errors)
+        )
+    return report
+
+
+def check_policy_environment_unit_history(
+    orig_policy_objects: dict[
+        str, FlatColumnObjectsParamFunctions | FlatOrigParamSpecs
+    ],
+    unit_system: UnitSystem,
+) -> UnitValidationReport:
+    """Validate and summarize every structurally distinct policy-date regime."""
+    dates = get_policy_date_partition(
+        orig_policy_objects=orig_policy_objects,
+        unit_system=unit_system,
+    )
+    reports: list[UnitValidationReport] = []
+    for date in dates:
+        try:
+            reports.append(
+                check_policy_environment_units(
+                    policy_date=date,
+                    orig_policy_objects=orig_policy_objects,
+                    unit_system=unit_system,
+                )
+            )
+        except UnitConsistencyError as error:
+            raise UnitConsistencyError(f"Policy date {date}: {error}") from error
+        except UnitDefinitionError as error:
+            raise UnitDefinitionError(f"Policy date {date}: {error}") from error
+    return merge_unit_validation_reports(reports)

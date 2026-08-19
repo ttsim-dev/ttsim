@@ -60,6 +60,13 @@ from ttsim.tt.type_resolution import (
     synthesize_typed_aggregation_wrapper,
     vectorized_column_kind,
 )
+from ttsim.tt.units import (
+    UNSET_UNIT,
+    CompositeUnit,
+    InputOutputUnits,
+    UnitDeclaration,
+    UnsetUnit,
+)
 from ttsim.tt.vectorization import vectorize_function
 from ttsim.typing import DashedISOString, IntColumn, UnorderedQNames
 
@@ -136,13 +143,22 @@ class PolicyInput(ColumnObject):
     """
 
     data_type: Any
-    """Annotated as `Any` because callers pass the literal annotation from
-    `func.__annotations__["return"]`, which is a string form under
-    `from __future__ import annotations`, not the live type object."""
+    """The input's column type, as an annotation or an already-resolved kind.
+
+    Annotated as `Any` because it holds either of two things, and
+    `resolve_kind_of_annotation` accepts both:
+
+    - the literal annotation from `func.__annotations__["return"]`, which is a
+      string form under `from __future__ import annotations` rather than the
+      live type object — what a hand-declared `@policy_input` carries;
+    - a `ResolvedKind`, for a stub derived from an aggregation whose kind is
+      computed rather than written down.
+    """
     foreign_key_type: FKType = FKType.IRRELEVANT
     warn_msg_if_included: str | None = None
     fail_msg_if_included: str | None = None
     docstring: str | None = ""
+    unit: UnitDeclaration = UNSET_UNIT
 
     def remove_tree_logic(
         self,
@@ -160,6 +176,7 @@ def policy_input(
     foreign_key_type: FKType = FKType.IRRELEVANT,
     warn_msg_if_included: str | None = None,
     fail_msg_if_included: str | None = None,
+    unit: UnitDeclaration,
 ) -> Callable[[Callable[..., Any]], PolicyInput]:
     """Decorate a (dummy) function to make it a `PolicyInput`.
 
@@ -196,6 +213,7 @@ def policy_input(
             docstring=inspect.getdoc(func),
             warn_msg_if_included=warn_msg_if_included,
             fail_msg_if_included=fail_msg_if_included,
+            unit=unit,
         )
 
     return inner
@@ -249,6 +267,8 @@ class ColumnFunction(ColumnObject, Generic[FunArgTypes, ReturnType]):
     foreign_key_type: FKType = FKType.IRRELEVANT
     warn_msg_if_included: str | None = None
     fail_msg_if_included: str | None = None
+    unit: UnitDeclaration = UNSET_UNIT
+    verify_units: bool = True
 
     def __post_init__(self) -> None:
         _fail_if_rounding_has_wrong_type(self.rounding_spec)
@@ -339,6 +359,8 @@ class PolicyFunction(ColumnFunction):
             vectorization_strategy=self.vectorization_strategy,
             warn_msg_if_included=self.warn_msg_if_included,
             fail_msg_if_included=self.fail_msg_if_included,
+            unit=self.unit,
+            verify_units=self.verify_units,
         )
 
     def vectorize(
@@ -365,6 +387,8 @@ class PolicyFunction(ColumnFunction):
             vectorization_strategy="not_required",
             warn_msg_if_included=self.warn_msg_if_included,
             fail_msg_if_included=self.fail_msg_if_included,
+            unit=self.unit,
+            verify_units=self.verify_units,
         )
 
 
@@ -379,6 +403,8 @@ def policy_function(
     foreign_key_type: FKType = FKType.IRRELEVANT,
     warn_msg_if_included: str | None = None,
     fail_msg_if_included: str | None = None,
+    unit: CompositeUnit,
+    verify_units: bool = True,
 ) -> Callable[[Callable[..., Any]], PolicyFunction]:
     """Decorate a function to make it a `PolicyFunction`.
 
@@ -432,6 +458,8 @@ def policy_function(
             vectorization_strategy=vectorization_strategy,
             warn_msg_if_included=warn_msg_if_included,
             fail_msg_if_included=fail_msg_if_included,
+            unit=unit,
+            verify_units=verify_units,
         )
 
     return inner
@@ -595,6 +623,7 @@ class GroupCreationFunction(ColumnFunction):
             foreign_key_type=self.foreign_key_type,
             warn_msg_if_included=self.warn_msg_if_included,
             fail_msg_if_included=self.fail_msg_if_included,
+            unit=self.unit,
         )
 
 
@@ -607,6 +636,7 @@ def group_creation_function(
     reorder: bool = True,
     warn_msg_if_included: str | None = None,
     fail_msg_if_included: str | None = None,
+    unit: CompositeUnit,
 ) -> Callable[[Callable[..., Any]], GroupCreationFunction]:
     """Decorate a function to create a group_by function.
 
@@ -616,6 +646,8 @@ def group_creation_function(
         end_date: The date until which the function is active (inclusive).
         reorder: Whether the created Group ID's should be reordered to be
             consecutively numbered starting from 0.
+        unit: The group id's TTSIM unit. A group id is a dimensionless
+            identifier, so this is ``TTSIMUnit.DIMENSIONLESS``.
 
     """
     start_date, end_date = _convert_and_validate_dates(
@@ -643,6 +675,7 @@ def group_creation_function(
             description=str(inspect.getdoc(func)),
             warn_msg_if_included=warn_msg_if_included,
             fail_msg_if_included=fail_msg_if_included,
+            unit=unit,
         )
 
     return decorator
@@ -667,6 +700,9 @@ class AggByGroupFunction(ColumnFunction):
 
     # Default value is necessary because we have defaults in the superclass.
     orig_location: str = "automatically generated"
+    agg_type: AggType = AggType.SUM
+    """The aggregation kind. Always set by `agg_by_group_function`; the default is
+    a dataclass placeholder."""
 
     def remove_tree_logic(
         self,
@@ -689,6 +725,9 @@ class AggByGroupFunction(ColumnFunction):
             orig_location=self.orig_location,
             warn_msg_if_included=self.warn_msg_if_included,
             fail_msg_if_included=self.fail_msg_if_included,
+            unit=self.unit,
+            verify_units=self.verify_units,
+            agg_type=self.agg_type,
         )
 
 
@@ -701,6 +740,8 @@ def agg_by_group_function(
     agg_type: AggType,
     warn_msg_if_included: str | None = None,
     fail_msg_if_included: str | None = None,
+    unit: UnitDeclaration = UNSET_UNIT,
+    verify_units: bool = True,
 ) -> Callable[[Callable[..., Any]], AggByGroupFunction]:
     start_date, end_date = _convert_and_validate_dates(
         start_date=start_date, end_date=end_date
@@ -741,6 +782,11 @@ def agg_by_group_function(
             )
             column_name = other_args.pop()
             mapper = {"group_id": group_id, "column": column_name}
+        _fail_if_unit_is_unset(
+            unit=unit,
+            decorator_name="@agg_by_group_function",
+            orig_location=orig_location,
+        )
         agg_func = _make_typed_aggregation_function(
             primitive=agg_registry[agg_type],
             mapper=mapper,
@@ -759,9 +805,26 @@ def agg_by_group_function(
             orig_location=f"{func.__module__}.{func.__name__}",  # ty: ignore[unresolved-attribute]
             warn_msg_if_included=warn_msg_if_included,
             fail_msg_if_included=fail_msg_if_included,
+            unit=unit,
+            verify_units=verify_units,
+            agg_type=agg_type,
         )
 
     return inner
+
+
+def _fail_if_unit_is_unset(
+    unit: UnitDeclaration,
+    decorator_name: str,
+    orig_location: str,
+) -> None:
+    """Fail if an aggregation does not declare a unit."""
+    if isinstance(unit, UnsetUnit):
+        msg = (
+            f"{decorator_name} at {orig_location} must declare a `unit=` (GEP 10). "
+            f"Every aggregation states its unit explicitly, whatever the operation."
+        )
+        raise AggregationDefinitionError(msg)
 
 
 def _fail_if_group_id_is_invalid(
@@ -905,7 +968,13 @@ class AggByPIDFunction(ColumnFunction):
             orig_location=self.orig_location,
             warn_msg_if_included=self.warn_msg_if_included,
             fail_msg_if_included=self.fail_msg_if_included,
+            unit=self.unit,
         )
+
+
+def qname_is_person_pointer(qname: str) -> bool:
+    """Whether a qualified name is a ``p_id_*`` person pointer."""
+    return any(e.startswith("p_id_") for e in dt.tree_path_from_qname(qname))
 
 
 @beartype(conf=AGGREGATION_CONF)
@@ -917,6 +986,7 @@ def agg_by_p_id_function(
     agg_type: AggType,
     warn_msg_if_included: str | None = None,
     fail_msg_if_included: str | None = None,
+    unit: UnitDeclaration = UNSET_UNIT,
 ) -> Callable[[Callable[..., Any]], AggByPIDFunction]:
     start_date, end_date = _convert_and_validate_dates(
         start_date=start_date, end_date=end_date
@@ -940,11 +1010,7 @@ def agg_by_p_id_function(
         )
         orig_location = f"{func.__module__}.{func.__name__}"  # ty: ignore[unresolved-attribute]
         args = set(inspect.signature(func).parameters)
-        other_p_ids = {
-            p
-            for p in args
-            if any(e.startswith("p_id_") for e in dt.tree_path_from_qname(p))
-        }
+        other_p_ids = {p for p in args if qname_is_person_pointer(p)}
         other_args = args - {*other_p_ids, "p_id", "num_segments", "backend"}
         _fail_if_p_id_is_not_present(args=args, orig_location=orig_location)
         _fail_if_other_p_id_is_invalid(
@@ -974,6 +1040,11 @@ def agg_by_p_id_function(
                 "num_segments": "num_segments",
                 "backend": "backend",
             }
+        _fail_if_unit_is_unset(
+            unit=unit,
+            decorator_name="@agg_by_p_id_function",
+            orig_location=orig_location,
+        )
         agg_func = _make_typed_aggregation_function(
             primitive=agg_registry[agg_type],
             mapper=mapper,
@@ -992,6 +1063,7 @@ def agg_by_p_id_function(
             orig_location=f"{func.__module__}.{func.__name__}",  # ty: ignore[unresolved-attribute]
             warn_msg_if_included=warn_msg_if_included,
             fail_msg_if_included=fail_msg_if_included,
+            unit=unit,
         )
 
     return inner
@@ -1058,6 +1130,7 @@ class TimeConversionFunction(ColumnFunction):
             foreign_key_type=self.foreign_key_type,
             warn_msg_if_included=self.warn_msg_if_included,
             fail_msg_if_included=self.fail_msg_if_included,
+            unit=self.unit,
         )
 
 
@@ -1109,6 +1182,8 @@ class ParamFunction(Generic[FunArgTypes, ReturnType]):
     description: str
     warn_msg_if_included: str | None = None
     fail_msg_if_included: str | None = None
+    unit: UnitDeclaration | InputOutputUnits = UNSET_UNIT
+    verify_units: bool = True
 
     def __post_init__(self) -> None:
         # Expose the signature of the wrapped function for dependency resolution
@@ -1154,6 +1229,8 @@ class ParamFunction(Generic[FunArgTypes, ReturnType]):
             description=self.description,
             warn_msg_if_included=self.warn_msg_if_included,
             fail_msg_if_included=self.fail_msg_if_included,
+            unit=self.unit,
+            verify_units=self.verify_units,
         )
 
 
@@ -1165,6 +1242,8 @@ def param_function(
     end_date: str | datetime.date = DEFAULT_END_DATE,
     warn_msg_if_included: str | None = None,
     fail_msg_if_included: str | None = None,
+    unit: UnitDeclaration | InputOutputUnits,
+    verify_units: bool = True,
 ) -> Callable[[Callable[..., Any]], ParamFunction[..., Any]]:
     """Decorate a function to make it a `ParamFunction`.
 
@@ -1208,6 +1287,8 @@ def param_function(
             description=str(inspect.getdoc(func)),
             warn_msg_if_included=warn_msg_if_included,
             fail_msg_if_included=fail_msg_if_included,
+            unit=unit,
+            verify_units=verify_units,
         )
 
     return inner

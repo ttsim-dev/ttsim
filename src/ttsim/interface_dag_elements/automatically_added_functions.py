@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import datetime
 import inspect
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
+from dataclasses import dataclass
+from types import MappingProxyType
 from typing import TYPE_CHECKING, cast, overload
 
 import dags.tree as dt
@@ -14,34 +16,7 @@ from ttsim.interface_dag_elements.shared import (
     get_re_pattern_for_specific_time_units_and_groupings,
     group_pattern,
 )
-from ttsim.tt.aggregation import AggType, grouped_sum
-from ttsim.tt.column_objects_param_function import (
-    DEFAULT_END_DATE,
-    DEFAULT_START_DATE,
-    AggByGroupFunction,
-    ColumnFunction,
-    ColumnObject,
-    ParamFunction,
-    PolicyInput,
-    TimeConversionFunction,
-)
-from ttsim.tt.param_objects import ScalarParam
-from ttsim.tt.type_resolution import (
-    ResolvedKind,
-    TypeResolutionError,
-    resolve_kind_of_annotation,
-    resolve_kind_of_column_function,
-    synthesize_typed_aggregation_wrapper,
-    vectorized_column_kind,
-)
-from ttsim.typing import (
-    OrderedQNames,
-    PolicyEnvironment,
-    QNameColumnObjects,
-    QNameStrings,
-    UnorderedQNames,
-)
-from ttsim.unit_converters import (
+from ttsim.time_converters import (
     TIME_UNIT_IDS_TO_LABELS,
     per_d_to_per_m,
     per_d_to_per_q,
@@ -64,6 +39,43 @@ from ttsim.unit_converters import (
     per_y_to_per_q,
     per_y_to_per_w,
 )
+from ttsim.tt.aggregation import AggType, grouped_sum
+from ttsim.tt.column_objects_param_function import (
+    DEFAULT_END_DATE,
+    DEFAULT_START_DATE,
+    AggByGroupFunction,
+    ColumnFunction,
+    ColumnObject,
+    ParamFunction,
+    PolicyInput,
+    TimeConversionFunction,
+)
+from ttsim.tt.param_objects import ScalarParam
+from ttsim.tt.type_resolution import (
+    BOOL_KINDS,
+    ResolvedKind,
+    TypeResolutionError,
+    resolve_agg_output_kind,
+    resolve_kind_of_annotation,
+    resolve_kind_of_column_function,
+    synthesize_typed_aggregation_wrapper,
+    vectorized_column_kind,
+)
+from ttsim.tt.units import (
+    UNSET_UNIT,
+    CompositeUnit,
+    UnitDeclaration,
+    UnsetUnit,
+    replace_time_unit,
+    ttsim_unit_with_agnostic_currency,
+    unit_for_aggregation,
+)
+from ttsim.typing import (
+    OrderedQNames,
+    PolicyEnvironment,
+    QNameStrings,
+    UnorderedQNames,
+)
 
 if TYPE_CHECKING:
     import re
@@ -75,9 +87,30 @@ if TYPE_CHECKING:
         IntColumn,
         OrderedQNames,
         PolicyEnvironment,
-        QNameColumnObjects,
         UnorderedQNames,
     )
+
+
+@dataclass(frozen=True)
+class DerivedColumnObjects:
+    """Container for column objects created by derivation rules.
+
+    A derivation rule (time conversion, aggregation by group) turns a declared
+    column into further columns at derived names. Where the input data supplies
+    such a name, no function is created — the data would override it — and the
+    name gets a `PolicyInput` stub carrying the unit and dtype the rule implies
+    instead, so that every input column has a unit declaration.
+    """
+
+    functions: MappingProxyType[str, ColumnObject]
+    """The column objects created at derived names, by qualified name."""
+    input_stubs: MappingProxyType[str, PolicyInput]
+    """Stubs for derived names the input data supplies, by qualified name."""
+
+    @property
+    def all_objects(self) -> dict[str, ColumnObject]:
+        """Functions and stubs together, as they enter the environment."""
+        return {**self.functions, **self.input_stubs}
 
 
 def fail_if_multiple_time_units_for_same_base_name_and_group(
@@ -130,9 +163,9 @@ def _convertibles(
 
 def create_time_conversion_functions(
     qname_policy_environment: PolicyEnvironment,
-    input_columns: UnorderedQNames,
+    data_qnames: UnorderedQNames,
     grouping_levels: OrderedQNames,
-) -> QNameColumnObjects:
+) -> DerivedColumnObjects:
     """
     Create functions converting elements of the policy environment to other time units.
 
@@ -163,11 +196,12 @@ def create_time_conversion_functions(
 
     Args:
         qname_policy_environment: The policy environment with qualified names as keys.
-        input_columns: The names of the input columns, represented by qualified names.
+        data_qnames: The names of the input columns, represented by qualified names.
         grouping_levels: The grouping levels.
 
     Returns:
-        The functions dict with the new time conversion functions.
+        The time conversion functions, plus a `PolicyInput` stub for each time
+        variant the input data supplies.
 
     """
     time_units = tuple(TIME_UNIT_IDS_TO_LABELS)
@@ -199,31 +233,77 @@ def create_time_conversion_functions(
     fail_if_multiple_time_units_for_same_base_name_and_group(bngs_to_variations)
 
     converted_elements: dict[str, ColumnObject] = {}
+    input_stubs: dict[str, PolicyInput] = {}
     for bngs, inputs in bngs_to_time_conversion_inputs.items():
-        for col_name in input_columns:
-            # If base_name is in provided data, base time conversions on that.
-            if pattern_specific := get_re_pattern_for_specific_time_units_and_groupings(
+        for col_name in data_qnames:
+            # If a time variant of this base name and grouping level is provided
+            # in the data, base the time conversions on that.
+            pattern_specific = get_re_pattern_for_specific_time_units_and_groupings(
                 base_name=bngs[0],
                 all_time_units=time_units,
                 grouping_levels=grouping_levels,
-            ).fullmatch(col_name):
+            ).fullmatch(col_name)
+            if (
+                pattern_specific
+                and pattern_specific.group("time_unit")
+                and get_base_name_and_grouping_suffix(pattern_specific)[1] == bngs[1]
+            ):
                 inputs["qname_source"] = col_name
                 inputs["time_unit"] = pattern_specific.group("time_unit")
                 break
 
+        element = cast("ColumnObject | ParamFunction | ScalarParam", inputs["element"])
+        grouping_suffix = cast("str", inputs["grouping_suffix"])
         variations = _create_one_set_of_time_conversion_functions(
             base_name=cast("str", inputs["base_name"]),
             qname_source=cast("str", inputs["qname_source"]),
-            element=cast(
-                "ColumnObject | ParamFunction | ScalarParam", inputs["element"]
-            ),
+            element=element,
             time_unit=cast("str", inputs["time_unit"]),
-            grouping_suffix=cast("str", inputs["grouping_suffix"]),
+            grouping_suffix=grouping_suffix,
             time_units=cast("OrderedQNames", inputs["time_units"]),
         )
         converted_elements = {**converted_elements, **variations}
 
-    return converted_elements
+        # Create input stubs to obtain unit and type declarations for input data that
+        # is a time conversion of a policy input
+        for time_unit_id in time_units:
+            qname = f"{bngs[0]}_{time_unit_id}{grouping_suffix}"
+            if (
+                qname in data_qnames
+                and qname not in variations
+                and qname not in qname_policy_environment
+            ):
+                stub = _time_converted_input_stub(
+                    qname=qname, element=element, time_unit_id=time_unit_id
+                )
+                if stub is not None:
+                    input_stubs[qname] = stub
+
+    return DerivedColumnObjects(
+        functions=MappingProxyType(converted_elements),
+        input_stubs=MappingProxyType(input_stubs),
+    )
+
+
+def _time_converted_input_stub(
+    qname: str,
+    element: ColumnObject | ParamFunction | ScalarParam,
+    time_unit_id: str,
+) -> PolicyInput | None:
+    """A `PolicyInput` stub for data supplied at a time-converted name."""
+    declared = getattr(element, "unit", UNSET_UNIT)
+    if isinstance(declared, UnsetUnit):
+        return None
+    return _input_column_stub(
+        qname=qname,
+        unit=replace_time_unit(
+            unit=ttsim_unit_with_agnostic_currency(declared),
+            time_unit_id=time_unit_id,
+        ),
+        # The synthesized time converters return floats, so a column supplied at
+        # a converted name is a float column.
+        data_type="FloatColumn",
+    )
 
 
 def _create_one_set_of_time_conversion_functions(
@@ -235,6 +315,9 @@ def _create_one_set_of_time_conversion_functions(
     time_units: OrderedQNames,
 ) -> dict[str, TimeConversionFunction]:
     result: dict[str, TimeConversionFunction] = {}
+    declared = getattr(element, "unit", UNSET_UNIT)
+    if isinstance(declared, UnsetUnit):
+        return result
     dependencies = (
         set(inspect.signature(element).parameters)
         if isinstance(element, ColumnFunction)
@@ -278,6 +361,10 @@ def _create_one_set_of_time_conversion_functions(
                 f"Time conversion of {dt.tree_path_from_qname(qname_source)} "
                 f"from per {time_unit} to per {target_time_unit}"
             ),
+            unit=replace_time_unit(
+                unit=ttsim_unit_with_agnostic_currency(declared),
+                time_unit_id=target_time_unit,
+            ),
         )
 
     return result
@@ -309,10 +396,11 @@ def _create_function_for_time_unit(
 def create_agg_by_group_functions(
     column_functions: dict[str, ColumnFunction],
     qname_policy_environment: PolicyEnvironment,
-    input_columns: UnorderedQNames,
+    time_converted_input_stubs: Mapping[str, PolicyInput],
+    data_qnames: UnorderedQNames,
     tt_targets: QNameStrings,
     grouping_levels: OrderedQNames,
-) -> QNameColumnObjects:
+) -> DerivedColumnObjects:
     """Create auto-aggregation functions, each with a concrete return annotation.
 
     Auto-aggregations are sum aggregations of an individual-level source
@@ -328,17 +416,20 @@ def create_agg_by_group_functions(
         qname_policy_environment: The flat policy environment, used to look
             up `PolicyInput` declarations of pure input-column sources so
             their dtype can be resolved.
-        input_columns: The qualified names of the input data columns.
+        time_converted_input_stubs: Stubs for time variants the input data
+            supplies.
+        data_qnames: The qualified names of the input data columns.
         tt_targets: The requested targets.
         grouping_levels: The grouping levels.
 
     Returns:
-        Qualified-name to `AggByGroupFunction` mapping.
+        The `AggByGroupFunction`s, plus a `PolicyInput` stub for each group
+        aggregate the input data supplies.
     """
     gp = group_pattern(grouping_levels)
     all_functions_and_data = {
         **column_functions,
-        **dict.fromkeys(input_columns),
+        **dict.fromkeys(data_qnames),
     }
     potential_agg_by_group_function_names = {
         # Targets that end with a grouping suffix are potential aggregation targets.
@@ -353,17 +444,36 @@ def create_agg_by_group_functions(
         qn: o for qn, o in all_functions_and_data.items() if not gp.match(qn)
     }
     # Exclude objects that have been explicitly provided.
-
     agg_by_group_function_names = {
         t
         for t in potential_agg_by_group_function_names
         if t not in all_functions_and_data
     }
-    out = {}
-    for abgfn in agg_by_group_function_names:
+    agg_by_group_input_names = {
+        c
+        for c in data_qnames
+        if gp.match(c)
+        and c not in column_functions
+        and c not in qname_policy_environment
+        and c not in time_converted_input_stubs
+    }
+    functions: dict[str, ColumnObject] = {}
+    input_stubs: dict[str, PolicyInput] = {}
+    for abgfn in sorted(agg_by_group_function_names | agg_by_group_input_names):
+        supplied_by_data = abgfn in agg_by_group_input_names
+        # A stub's source may itself be data supplied at a time-converted name,
+        # which has a stub rather than a node of its own.
+        source_environment = (
+            {**qname_policy_environment, **time_converted_input_stubs}
+            if supplied_by_data
+            else qname_policy_environment
+        )
         match = cast("re.Match[str]", gp.match(abgfn))
         base_name_with_time_unit = match.group("base_name_with_time_unit")
-        if base_name_with_time_unit in potential_agg_by_group_sources:
+
+        if base_name_with_time_unit in potential_agg_by_group_sources or (
+            supplied_by_data and not gp.match(base_name_with_time_unit)
+        ):
             # Check if the aggregation target is already a dependency of the source
             # function to avoid creating cycles in the DAG. Consider a function `x` that
             # takes `x_hh` as an input, assuming it to be provided in the input data. If
@@ -374,17 +484,50 @@ def create_agg_by_group_functions(
             # `x_hh` was detected. This hides the actual problem, which is that `x_hh`
             # is not provided as an input.
             source_function = column_functions.get(base_name_with_time_unit)
-            if source_function and abgfn in get_free_arguments(source_function):
+            if (
+                not supplied_by_data
+                and source_function
+                and abgfn in get_free_arguments(source_function)
+            ):
                 continue
 
             group_id = match.group("group")
-            group_id_name = f"{group_id}_id"
-            mapper = {"group_id": group_id_name, "column": base_name_with_time_unit}
+            source_unit = _resolve_source_unit(
+                source_name=base_name_with_time_unit,
+                column_functions=column_functions,
+                qname_policy_environment=source_environment,
+            )
+            if supplied_by_data and isinstance(source_unit, UnsetUnit):
+                # Nothing to derive the stub's unit from, cannot create a stub,
+                # unit validation will fail downstream
+                continue
             source_kind = _resolve_source_column_kind(
                 source_name=base_name_with_time_unit,
                 column_functions=column_functions,
-                qname_policy_environment=qname_policy_environment,
+                qname_policy_environment=source_environment,
             )
+            unit = unit_for_aggregation(
+                source_unit=source_unit,
+                agg_type=AggType.SUM,
+                target_level=group_id,
+                source_is_boolean=source_kind in BOOL_KINDS,
+            )
+            if isinstance(unit, UnsetUnit):
+                continue
+            output_kind = resolve_agg_output_kind(
+                agg_type=AggType.SUM, input_kind=source_kind, node_name=abgfn
+            )
+            if supplied_by_data:
+                # Add policy input stubs for already aggregated input data to ensure
+                # fully specified DAG unit annotations.
+                input_stubs[abgfn] = _input_column_stub(
+                    qname=abgfn,
+                    unit=unit,
+                    data_type=output_kind,
+                )
+                continue
+            group_id_name = f"{group_id}_id"
+            mapper = {"group_id": group_id_name, "column": base_name_with_time_unit}
             # Stamp concrete column-type annotations onto the `grouped_sum`
             # wrapper. Its runtime implementation signature widens to
             # `FloatColumn | IntColumn`; left untouched, that union becomes
@@ -397,7 +540,7 @@ def create_agg_by_group_functions(
                 column_param_name=base_name_with_time_unit,
                 node_name=abgfn,
             )
-            out[abgfn] = AggByGroupFunction(
+            functions[abgfn] = AggByGroupFunction(
                 leaf_name=dt.tree_path_from_qname(abgfn)[-1],
                 function=agg_func,
                 start_date=DEFAULT_START_DATE,
@@ -407,8 +550,46 @@ def create_agg_by_group_functions(
                     f"{dt.tree_path_from_qname(base_name_with_time_unit)} by "
                     f"{group_id} ID."
                 ),
+                unit=unit,
             )
-    return out
+    return DerivedColumnObjects(
+        functions=MappingProxyType(functions),
+        input_stubs=MappingProxyType(input_stubs),
+    )
+
+
+def _resolve_source_unit(
+    source_name: str,
+    column_functions: dict[str, ColumnFunction],
+    qname_policy_environment: PolicyEnvironment,
+) -> UnitDeclaration:
+    """Resolve the unit of an auto-aggregation source column.
+
+    The source is a column function, a `PolicyInput` declared at `source_name`, or a
+    user-supplied input at a different time unit than its declared `PolicyInput` sibling
+    (e.g. caller passes `bonus_y` against a `bonus_m` declaration; the sibling's unit is
+    re-based to the source's period).
+    """
+    source = column_functions.get(source_name) or qname_policy_environment.get(
+        source_name
+    )
+    if source is not None:
+        declared = getattr(source, "unit", UNSET_UNIT)
+        if isinstance(declared, UnsetUnit):
+            return UNSET_UNIT
+        # A derived function computes on already-converted values, so a
+        # concrete currency token passes its agnostic counterpart on.
+        return ttsim_unit_with_agnostic_currency(declared)
+    sibling = _find_sibling_policy_input_at_other_time_unit(
+        source_name=source_name,
+        qname_policy_environment=qname_policy_environment,
+    )
+    if sibling is None or isinstance(sibling.unit, UnsetUnit):
+        return UNSET_UNIT
+    return replace_time_unit(
+        unit=ttsim_unit_with_agnostic_currency(sibling.unit),
+        time_unit_id=source_name.rpartition("_")[2],
+    )
 
 
 def _resolve_source_column_kind(
@@ -481,6 +662,26 @@ def _resolve_source_column_kind(
         f"dtype is required to synthesize a typed aggregation wrapper."
     )
     raise TypeResolutionError(msg)
+
+
+def _input_column_stub(
+    qname: str,
+    unit: CompositeUnit,
+    data_type: str | ResolvedKind,
+) -> PolicyInput:
+    """A `PolicyInput` standing in for input data supplied at a derived name.
+
+    `data_type` is either a column-type alias name or an already-resolved
+    `ResolvedKind`; `resolve_kind_of_annotation` accepts both.
+    """
+    return PolicyInput(
+        leaf_name=dt.tree_path_from_qname(qname)[-1],
+        data_type=data_type,
+        start_date=DEFAULT_START_DATE,
+        end_date=DEFAULT_END_DATE,
+        description=f"Input data supplied at the derived name {qname!r}.",
+        unit=unit,
+    )
 
 
 def _find_sibling_policy_input_at_other_time_unit(

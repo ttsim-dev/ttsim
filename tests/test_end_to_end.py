@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from types import ModuleType
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import dags.tree as dt
 import numpy
@@ -9,9 +9,11 @@ import pandas as pd
 import pytest
 from mettsim import middle_earth
 
+from tests.test_unit_system import TEST_UNIT_SYSTEM
 from ttsim import InputData, MainTarget, OrigPolicyObjects, TTTargets, main
-from ttsim.tt import AggType, agg_by_group_function
+from ttsim.tt import AggType, TTSIMUnit, agg_by_group_function
 from ttsim.tt.column_objects_param_function import policy_function, policy_input
+from ttsim.tt.units import UnitAnnotatedColumn
 from ttsim.typing import FloatColumn
 
 if TYPE_CHECKING:
@@ -20,7 +22,7 @@ if TYPE_CHECKING:
 
 DF_WITH_NESTED_COLUMNS = pd.DataFrame(
     {
-        ("age",): [10, 30, 30],
+        ("birth_year",): [2015, 1995, 1995],
         ("kin_id",): [0, 0, 0],
         ("p_id",): [2, 0, 1],
         ("p_id_parent_1",): [0, -1, -1],
@@ -36,7 +38,7 @@ DF_WITH_NESTED_COLUMNS = pd.DataFrame(
 
 DF_WITH_QNAME_COLUMNS = pd.DataFrame(
     {
-        "age": [10, 30, 30],
+        "birth_year": [2015, 1995, 1995],
         "kin_id": [0, 0, 0],
         "p_id": [2, 0, 1],
         "p_id_parent_1": [0, -1, -1],
@@ -52,7 +54,7 @@ DF_WITH_QNAME_COLUMNS = pd.DataFrame(
 
 DF_FOR_MAPPER = pd.DataFrame(
     {
-        "age": [10, 30, 30],
+        "birth_year": [2015, 1995, 1995],
         "kin_id": [0, 0, 0],
         "p_id": [2, 0, 1],
         "parent_1": [0, -1, -1],
@@ -67,7 +69,7 @@ DF_FOR_MAPPER = pd.DataFrame(
 
 
 INPUT_QNAME_DATA = {
-    "age": numpy.array([10, 30, 30]),
+    "birth_year": numpy.array([2015, 1995, 1995]),
     "kin_id": numpy.array([0, 0, 0]),
     "p_id": numpy.array([2, 0, 1]),
     "p_id_parent_1": numpy.array([0, -1, -1]),
@@ -81,7 +83,7 @@ INPUT_QNAME_DATA = {
 
 
 INPUT_DF_MAPPER = {
-    "age": "age",
+    "birth_year": "birth_year",
     "kin_id": "kin_id",
     "p_id": "p_id",
     "p_id_parent_1": "parent_1",
@@ -101,7 +103,7 @@ INPUT_DF_MAPPER = {
 
 
 INPUT_TREE_DATA = {
-    "age": numpy.array([10, 30, 30]),
+    "birth_year": numpy.array([2015, 1995, 1995]),
     "kin_id": numpy.array([0, 0, 0]),
     "p_id": numpy.array([2, 0, 1]),
     "p_id_parent_1": numpy.array([0, -1, -1]),
@@ -117,7 +119,7 @@ INPUT_TREE_DATA = {
 
 
 INPUT_FLAT_DATA = {
-    ("age",): numpy.array([10, 30, 30]),
+    ("birth_year",): numpy.array([2015, 1995, 1995]),
     ("kin_id",): numpy.array([0, 0, 0]),
     ("p_id",): numpy.array([2, 0, 1]),
     ("p_id_parent_1",): numpy.array([0, -1, -1]),
@@ -150,25 +152,25 @@ TARGETS_TREE_NO_RENAME = {
 
 EXPECTED_TT_RESULTS = pd.DataFrame(
     {
-        "payroll_tax_amount_y": [0.0, 2920.0, 0.0],
-        "payroll_tax_child_tax_credit_amount_m": [0.0, 8.333333, 0.0],
+        "payroll_tax_amount_y": [0.0, 2980.0, 0.0],
+        "payroll_tax_child_tax_credit_amount_m": [0.0, 2.083333, 0.0],
     },
     index=pd.Index([2, 0, 1], name="p_id"),
 )
 
 
-@policy_input()
+@policy_input(unit=TTSIMUnit.DIMENSIONLESS)
 def p_id() -> int:
     pass
 
 
-@policy_input()
+@policy_input(unit=TTSIMUnit.CURRENCY.PER_MONTH)
 def income_m() -> float:
     pass
 
 
-@policy_function(vectorization_strategy="vectorize")
-def benefit(income_m: float) -> float:
+@policy_function(vectorization_strategy="vectorize", unit=TTSIMUnit.CURRENCY.PER_MONTH)
+def benefit_m(income_m: float) -> float:
     return income_m * 0.5
 
 
@@ -200,6 +202,7 @@ def test_end_to_end(input_data_arg, backend: Literal["numpy", "jax"]):
         policy_date_str="2025-01-01",
         rounding=False,
         orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+        unit_system=TEST_UNIT_SYSTEM,
         backend=backend,
     )
     pd.testing.assert_frame_equal(
@@ -210,8 +213,8 @@ def test_end_to_end(input_data_arg, backend: Literal["numpy", "jax"]):
     )
 
 
-_EXPECTED_AMOUNTS_IN_USER_ORDER = numpy.array([0.0, 2920.0, 0.0])
-_EXPECTED_CHILD_TAX_CREDIT_IN_USER_ORDER = numpy.array([0.0, 8.333333, 0.0])
+_EXPECTED_AMOUNTS_IN_USER_ORDER = numpy.array([0.0, 2980.0, 0.0])
+_EXPECTED_CHILD_TAX_CREDIT_IN_USER_ORDER = numpy.array([0.0, 2.083333, 0.0])
 _USER_P_IDS_IN_ORDER = numpy.array([2, 0, 1])
 
 
@@ -239,6 +242,7 @@ def test_results_shapes_render_payroll_tax_amount_y(
         policy_date_str="2025-01-01",
         rounding=False,
         orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+        unit_system=TEST_UNIT_SYSTEM,
         backend=backend,
     )
 
@@ -283,6 +287,7 @@ def test_uint_wage_input_does_not_underflow(
         policy_date_str="2025-01-01",
         rounding=False,
         orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+        unit_system=TEST_UNIT_SYSTEM,
         backend=backend,
     )
     amount_y = result["payroll_tax"]["amount_y"]
@@ -312,6 +317,7 @@ def test_df_with_qname_columns_has_qname_string_columns(
         policy_date_str="2025-01-01",
         rounding=False,
         orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+        unit_system=TEST_UNIT_SYSTEM,
         backend=backend,
     )
     assert list(result.columns) == [
@@ -348,7 +354,7 @@ def _run_cloudpickle_subprocess(tmp_path, script_body: str) -> None:
     import textwrap  # noqa: PLC0415
 
     script = tmp_path / "repro.py"
-    script.write_text(textwrap.dedent(script_body))
+    script.write_text(textwrap.dedent(script_body), encoding="utf-8")
     result = subprocess.run(  # noqa: S603
         [sys.executable, str(script)],
         capture_output=True,
@@ -374,9 +380,19 @@ def test_cloudpickle_round_trip_preserves_tt_function_output(tmp_path):
         from mettsim import middle_earth
 
         from ttsim import InputData, OrigPolicyObjects, TTTargets, main
+        from ttsim.tt import Currency, UnitSystem
+
+        TEST_UNIT_SYSTEM = UnitSystem(
+            currencies={
+                "CASTAR": Currency(statutory_from="2020-01-01"),
+                "SILVER_PENNY": Currency(
+                    value="CASTAR / 4", statutory_from="0001-01-01"
+                ),
+            },
+        )
 
         data = {
-            ("age",): np.array([30, 30]),
+            ("birth_year",): np.array([1995, 1995]),
             ("kin_id",): np.array([0, 0]),
             ("p_id",): np.array([0, 1]),
             ("p_id_parent_1",): np.array([-1, -1]),
@@ -393,6 +409,7 @@ def test_cloudpickle_round_trip_preserves_tt_function_output(tmp_path):
             policy_date_str="2025-01-01",
             input_data=InputData.flat(data),
             orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+            unit_system=TEST_UNIT_SYSTEM,
             tt_targets=TTTargets.tree({"payroll_tax": {"amount_y": None}}),
             backend="numpy",
         )
@@ -421,18 +438,32 @@ def test_cloudpickle_round_trip_with_inline_policy_environment(tmp_path):
         import numpy as np
 
         from ttsim import InputData, TTTargets, main
-        from ttsim.tt import policy_function, policy_input
+        from ttsim.tt import (
+            Currency,
+            TTSIMUnit,
+            UnitSystem,
+            policy_function,
+            policy_input,
+        )
+
+        # A bare-ttsim run ships no policy package, so it declares its own unit
+        # system — one currency, statutory from the beginning (GEP 10).
+        UNIT_SYSTEM = UnitSystem(
+            currencies={"euro": Currency(statutory_from="0001-01-01")},
+        )
 
 
-        @policy_input()
+        @policy_input(unit=TTSIMUnit.DIMENSIONLESS)
         def p_id() -> int: ...
 
 
-        @policy_input()
+        @policy_input(unit=TTSIMUnit.CURRENCY.PER_MONTH)
         def income_m() -> float: ...
 
 
-        @policy_function(vectorization_strategy="vectorize")
+        @policy_function(
+            vectorization_strategy="vectorize", unit=TTSIMUnit.CURRENCY.PER_MONTH
+        )
         def benefit_m(income_m: float) -> float:
             return income_m * 0.5
 
@@ -440,11 +471,13 @@ def test_cloudpickle_round_trip_with_inline_policy_environment(tmp_path):
         env = {"p_id": p_id, "income_m": income_m, "benefit_m": benefit_m}
         kwargs = dict(
             policy_environment=env,
+            unit_system=UNIT_SYSTEM,
             input_data=InputData.tree({
                 "p_id": np.array([0, 1, 2]),
                 "income_m": np.array([1000.0, 2000.0, 3000.0]),
             }),
             tt_targets=TTTargets.tree({"benefit_m": None}),
+            policy_date=datetime.date(2025, 1, 1),
             evaluation_date=datetime.date(2025, 1, 1),
             rounding=False,
             backend="numpy",
@@ -469,6 +502,7 @@ def test_can_create_input_template(backend: Literal["numpy", "jax"]):
         main_target=MainTarget.templates.input_data_dtypes.tree,
         policy_date_str="2025-01-01",
         orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+        unit_system=TEST_UNIT_SYSTEM,
         backend=backend,
         tt_targets=TTTargets.tree(TARGETS_TREE),
     )
@@ -485,30 +519,36 @@ def test_modify_evaluation_date_after_creating_policy_environment(
         main_target=MainTarget.policy_environment,
         policy_date_str="2000-01-01",
         orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+        unit_system=TEST_UNIT_SYSTEM,
         backend=backend,
     )
     input_data = InputData.tree(
         tree={
             "p_id": xnp.array([2, 0, 1]),
             "property_tax": {
-                "acre_size_in_hectares": xnp.array([200, 5, 20]),
+                "acre_size": xnp.array([200, 5, 20]),
             },
         }
     )
     result = main(
         main_target=MainTarget.results.df_with_mapper,
         policy_environment=policy_environment,
-        # acre_size_in_hectares capped starting in 2020
+        policy_date_str="2000-01-01",
+        # acre_size capped starting in 2020
         evaluation_date_str="2020-01-01",
         input_data=input_data,
         tt_targets=TTTargets.tree(
             {"property_tax": {"amount_y": "property_tax_amount_y"}}
         ),
         backend=backend,
+        unit_system=TEST_UNIT_SYSTEM,
     )
     expected = pd.DataFrame(
         {
-            "property_tax_amount_y": [1000.0, 0.0, 1000.0],
+            # The 2000 policy computes in silver pennies (1000 for the largest
+            # acreage); the boundary converts the result to the default data
+            # currency: 1000 pennies = 250 castar.
+            "property_tax_amount_y": [250.0, 0.0, 250.0],
         },
         index=pd.Index([2, 0, 1], name="p_id"),
     )
@@ -520,7 +560,7 @@ def test_modify_evaluation_date_after_creating_policy_environment(
 def test_different_evaluation_dates_across_data_rows(
     backend: Literal["numpy", "jax"], xnp: ModuleType
 ):
-    @policy_function()
+    @policy_function(unit=TTSIMUnit.YEARS)
     def f(evaluation_year: int) -> int:
         return evaluation_year
 
@@ -529,6 +569,7 @@ def test_different_evaluation_dates_across_data_rows(
         policy_environment={
             "f": f,
         },
+        policy_date_str="2025-01-01",
         input_data=InputData.tree(
             tree={
                 "p_id": xnp.array([3, 1, 2]),
@@ -537,6 +578,7 @@ def test_different_evaluation_dates_across_data_rows(
         ),
         tt_targets=TTTargets.tree({"f": None}),
         backend=backend,
+        unit_system=TEST_UNIT_SYSTEM,
     )
 
     expected = pd.DataFrame(
@@ -565,6 +607,7 @@ def test_input_data_as_targets(xnp: ModuleType, backend: Literal["numpy", "jax"]
         ),
         tt_targets=TTTargets.tree({"kin_id": None, "payroll_tax": {"amount_y": None}}),
         orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+        unit_system=TEST_UNIT_SYSTEM,
         backend=backend,
         include_warn_nodes=False,
     )
@@ -599,6 +642,7 @@ def test_input_data_reordering_with_distinct_values(
         # Request input columns as outputs to see if they maintain correct order
         tt_targets=TTTargets.tree({"age": None, "wealth": None}),
         orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+        unit_system=TEST_UNIT_SYSTEM,
         backend=backend,
         include_warn_nodes=False,
     )
@@ -625,7 +669,7 @@ def test_derived_time_converted_scalar_can_partialled(xnp, backend):
     policy_environment = {
         "p_id": p_id,
         "income_m": income_m,
-        "benefit": benefit,
+        "benefit_m": benefit_m,
     }
     input_data = {
         "p_id": xnp.array([1, 2, 3]),
@@ -635,21 +679,26 @@ def test_derived_time_converted_scalar_can_partialled(xnp, backend):
         main_target=MainTarget.labels.root_nodes,
         policy_environment=policy_environment,
         input_data=InputData.tree(input_data),
-        tt_targets=TTTargets.tree({"benefit": None}),
+        tt_targets=TTTargets.tree({"benefit_m": None}),
         policy_date_str="2024-01-01",
         evaluation_date_str="2024-01-01",
         backend=backend,
         include_warn_nodes=False,
+        unit_system=TEST_UNIT_SYSTEM,
     )
     assert root_nodes == set()
 
 
-@policy_input()
+@policy_input(unit=TTSIMUnit.DIMENSIONLESS)
 def broadcast_x() -> float:
     pass
 
 
-@policy_function(vectorization_strategy="not_required")
+@policy_function(
+    vectorization_strategy="not_required",
+    unit=TTSIMUnit.DIMENSIONLESS,
+    verify_units=False,  # not_required body returns a column, not a scalar
+)
 def cumulative_broadcast_x(broadcast_x: FloatColumn, xnp: ModuleType) -> FloatColumn:
     """Declared with vectorization_strategy='not_required'; it operates on the whole
     array and cannot run on a bare scalar.
@@ -657,12 +706,12 @@ def cumulative_broadcast_x(broadcast_x: FloatColumn, xnp: ModuleType) -> FloatCo
     return xnp.cumsum(broadcast_x)
 
 
-@agg_by_group_function(agg_type=AggType.SUM)
+@agg_by_group_function(agg_type=AggType.SUM, unit=TTSIMUnit.DIMENSIONLESS)
 def broadcast_x_fam(broadcast_x: float, fam_id: int) -> float:
     pass
 
 
-@policy_input()
+@policy_input(unit=TTSIMUnit.DIMENSIONLESS)
 def fam_id() -> int:
     pass
 
@@ -687,6 +736,7 @@ def test_scalar_input_to_not_required_function_is_broadcast(xnp, backend):
         evaluation_date_str="2024-01-01",
         backend=backend,
         include_warn_nodes=False,
+        unit_system=TEST_UNIT_SYSTEM,
     )
     numpy.testing.assert_array_equal(
         results["cumulative_broadcast_x"],
@@ -714,17 +764,20 @@ def test_scalar_input_to_not_required_function_is_baked_in(xnp, backend):
         evaluation_date_str="2024-01-01",
         backend=backend,
         include_warn_nodes=False,
+        unit_system=TEST_UNIT_SYSTEM,
     )
     assert "broadcast_x" not in root_nodes
     assert root_nodes == set()
 
 
-@policy_input()
+@policy_input(unit=TTSIMUnit.CURRENCY.PER_MONTH)
 def bonus_m() -> float:
     pass
 
 
-@policy_function(vectorization_strategy="vectorize")
+@policy_function(
+    vectorization_strategy="vectorize", unit=TTSIMUnit.CURRENCY.PER_YEAR.PER_FAM
+)
 def doubled_y_fam(bonus_y_fam: float) -> float:
     return 2.0 * bonus_y_fam
 
@@ -738,8 +791,9 @@ def test_auto_aggregation_resolves_dtype_from_sibling_time_unit(
 
     `bonus_m` is declared as a `PolicyInput`; the caller supplies `bonus_y`
     in input data; `doubled_y_fam` consumes the `bonus_y_fam` auto-aggregation.
-    The resolver walks to `bonus_m` for the dtype, the SUM-by-`fam` wrapper is
-    synthesised, and `doubled_y_fam` returns twice the per-`fam` yearly sum.
+    The resolver walks to `bonus_m` for the dtype (and, GEP 10, for the
+    non-time unit), the SUM-by-`fam` wrapper is synthesised, and
+    `doubled_y_fam` returns twice the per-`fam` yearly sum.
     """
     result = main(
         main_target=MainTarget.results.df_with_nested_columns,
@@ -761,6 +815,7 @@ def test_auto_aggregation_resolves_dtype_from_sibling_time_unit(
         rounding=False,
         backend=backend,
         include_warn_nodes=False,
+        unit_system=TEST_UNIT_SYSTEM,
     )
     expected = pd.DataFrame(
         {("doubled_y_fam",): [3600.0, 3600.0, 4800.0]},
@@ -768,4 +823,142 @@ def test_auto_aggregation_resolves_dtype_from_sibling_time_unit(
     )
     pd.testing.assert_frame_equal(
         expected, result, check_dtype=False, check_index_type=False
+    )
+
+
+def _bare_payroll_tree(factor: float = 1.0) -> dict[str, Any]:
+    """A two-person payroll-tax input tree of plain arrays."""
+    return {
+        "p_id": numpy.array([0, 1]),
+        "kin_id": numpy.array([0, 0]),
+        "p_id_spouse": numpy.array([1, 0]),
+        "p_id_parent_1": numpy.array([-1, -1]),
+        "p_id_parent_2": numpy.array([-1, -1]),
+        "birth_year": numpy.array([1995, 1995]),  # age 30 in 2025
+        "parent_is_noble": numpy.array([False, False]),
+        "wealth": numpy.array([100.0, 200.0]) * factor,
+        "payroll_tax": {
+            "child_tax_credit": {"p_id_recipient": numpy.array([-1, -1])},
+            "income": {"gross_wage_y": numpy.array([10000.0, 0.0]) * factor},
+        },
+    }
+
+
+def _annotated_payroll_tree(currency: str, factor: float = 1.0) -> dict[str, Any]:
+    """`_bare_payroll_tree` with every leaf a `UnitAnnotatedColumn` (GEP 10).
+
+    Ids and the person-level boolean are ``TTSIMUnit.DIMENSIONLESS`` (the person leaf
+    is implied, never spelled); the birth year is a calendar year; wealth is a
+    concrete-currency stock; the wage a concrete-currency flow per year. The
+    concrete currency is reached off the `TTSIMUnit` builder (``TTSIMUnit.CASTAR``,
+    ``TTSIMUnit.SILVER_PENNY``), injected when the policy system registered it.
+    """
+    money = getattr(TTSIMUnit, currency)
+
+    def col(values: Any, unit: Any) -> UnitAnnotatedColumn:
+        return UnitAnnotatedColumn(values=values, unit=unit)
+
+    return {
+        "p_id": col(values=numpy.array([0, 1]), unit=TTSIMUnit.DIMENSIONLESS),
+        "kin_id": col(values=numpy.array([0, 0]), unit=TTSIMUnit.DIMENSIONLESS),
+        "p_id_spouse": col(values=numpy.array([1, 0]), unit=TTSIMUnit.DIMENSIONLESS),
+        "p_id_parent_1": col(
+            values=numpy.array([-1, -1]), unit=TTSIMUnit.DIMENSIONLESS
+        ),
+        "p_id_parent_2": col(
+            values=numpy.array([-1, -1]), unit=TTSIMUnit.DIMENSIONLESS
+        ),
+        "birth_year": col(
+            values=numpy.array([1995, 1995]), unit=TTSIMUnit.CALENDAR_YEAR
+        ),  # age 30
+        "parent_is_noble": col(
+            values=numpy.array([False, False]), unit=TTSIMUnit.DIMENSIONLESS
+        ),
+        "wealth": col(values=numpy.array([100.0, 200.0]) * factor, unit=money),
+        "payroll_tax": {
+            "child_tax_credit": {
+                "p_id_recipient": col(
+                    values=numpy.array([-1, -1]), unit=TTSIMUnit.DIMENSIONLESS
+                )
+            },
+            "income": {
+                "gross_wage_y": col(
+                    values=numpy.array([10000.0, 0.0]) * factor, unit=money.PER_YEAR
+                )
+            },
+        },
+    }
+
+
+def test_unit_annotated_input_and_output_round_trip(
+    backend: Literal["numpy", "jax"],
+):
+    """A pint-tagged input tree in and a pint-tagged output tree out, end to end.
+
+    Feeds silver-penny-tagged input (x4) into a run with castar data currency
+    and requests the annotated results tree: the boundary converts the input
+    and the output leaf carries the precise data-currency unit, with a
+    magnitude equal to the bare castar run.
+    """
+    bare = main(
+        main_target=MainTarget.results.tree,
+        policy_date_str="2025-01-01",
+        input_data=InputData.tree(_bare_payroll_tree()),
+        orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+        tt_targets=TTTargets.tree({"payroll_tax": {"amount_y": None}}),
+        rounding=False,
+        data_currency="CASTAR",
+        backend=backend,
+        unit_system=TEST_UNIT_SYSTEM,
+    )
+    tagged = main(
+        main_target=MainTarget.results.tree_with_unit_annotations,
+        policy_date_str="2025-01-01",
+        input_data=InputData.tree_with_unit_annotations(
+            _annotated_payroll_tree(currency="SILVER_PENNY", factor=4.0)
+        ),
+        orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+        tt_targets=TTTargets.tree({"payroll_tax": {"amount_y": None}}),
+        rounding=False,
+        data_currency="CASTAR",
+        backend=backend,
+        unit_system=TEST_UNIT_SYSTEM,
+    )
+    amount = tagged["payroll_tax"]["amount_y"]
+    assert isinstance(amount, UnitAnnotatedColumn)
+    assert amount.unit == TTSIMUnit.CASTAR.PER_YEAR
+    assert str(amount.unit) == "CASTAR_PER_YEAR"
+    numpy.testing.assert_allclose(
+        numpy.asarray(amount.values),
+        numpy.asarray(bare["payroll_tax"]["amount_y"]),
+    )
+
+
+def test_currency_conversion_of_scalar_input_matches_column_input(
+    backend: Literal["numpy", "jax"],
+):
+    """A currency-denominated scalar input is converted like a column input."""
+    scalar_tree = _bare_payroll_tree()
+    scalar_tree["wealth"] = 13_000.0
+    column_tree = _bare_payroll_tree()
+    column_tree["wealth"] = numpy.array([13_000.0, 13_000.0])
+
+    def run(tree: dict[str, Any]) -> dict[str, Any]:
+        return main(
+            main_target=MainTarget.results.tree,
+            policy_date_str="2019-01-01",
+            input_data=InputData.tree(tree),
+            orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+            tt_targets=TTTargets.tree({"payroll_tax": {"amount_y": None}}),
+            rounding=False,
+            data_currency="CASTAR",
+            backend=backend,
+            unit_system=TEST_UNIT_SYSTEM,
+        )
+
+    scalar_result = run(scalar_tree)
+    column_result = run(column_tree)
+    numpy.testing.assert_allclose(
+        numpy.asarray(scalar_result["payroll_tax"]["amount_y"]),
+        numpy.asarray(column_result["payroll_tax"]["amount_y"]),
     )

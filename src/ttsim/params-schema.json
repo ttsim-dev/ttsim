@@ -1,6 +1,25 @@
 {
   "$comment": "If you change this file, always change it in both locations:  1. ttsim/src/ttsim/params-schema.json  2. gettsim/docs/geps/params-schema.json",
   "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "unitToken": {
+      "$comment": "A fully-spelled compositional unit (GEP 10): a base optionally divided by an area, a period, and a grouping level, joined by `_PER_` (e.g. DIMENSIONLESS, CURRENCY_PER_MONTH_PER_BG, SILVER_PENNY_PER_FAM, DIMENSIONLESS_PER_HH). Bases and grouping levels are open (per-package currencies, per-build levels), so this is a coarse pattern; `ttsim_unit_from_string` validates the grammar at load time.",
+      "type": "string",
+      "pattern": "^[A-Z][A-Z0-9_]*$"
+    },
+    "unitDeclaration": {
+      "oneOf": [
+        { "$ref": "#/definitions/unitToken" },
+        {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/definitions/unitDeclaration" }
+        }
+      ]
+    },
+    "axisUnitDeclaration": {
+      "$ref": "#/definitions/unitToken"
+    }
+  },
   "type": "object",
   "patternProperties": {
     "^[a-zA-Z0-9äöüßÄÖÜ_]+$": {
@@ -25,19 +44,13 @@
           "additionalProperties": false
         },
         "unit": {
-          "type": ["string", "null"],
-          "enum": [
-            "Euros",
-            "DM",
-            "Share",
-            "Percent",
-            "Years",
-            "Months",
-            "Hours",
-            "Square Meters",
-            "Euros / Square Meter",
-            null
-          ]
+          "$ref": "#/definitions/unitDeclaration"
+        },
+        "input_unit": {
+          "$ref": "#/definitions/axisUnitDeclaration"
+        },
+        "output_unit": {
+          "$ref": "#/definitions/axisUnitDeclaration"
         },
         "type": {
           "type": "string",
@@ -54,10 +67,6 @@
             "year_based_phase_inout_of_age_thresholds",
             "require_converter"
           ]
-        },
-        "reference_period": {
-          "type": ["string", "null"],
-          "enum": ["Year", "Quarter", "Month", "Week", "Day", "Hour", null]
         },
         "add_jahresanfang": {"type": "boolean"}
       },
@@ -82,6 +91,15 @@
                 "additionalProperties": true
               }
             },
+            "unit": {
+              "$ref": "#/definitions/unitDeclaration"
+            },
+            "input_unit": {
+              "$ref": "#/definitions/axisUnitDeclaration"
+            },
+            "output_unit": {
+              "$ref": "#/definitions/axisUnitDeclaration"
+            },
             "reference": { "type": "string" },
             "note": { "type": "string" },
             "deviation_from": { "type": "string" },
@@ -95,11 +113,97 @@
         { "required": [
           "name",
           "description",
-          "unit",
-          "reference_period",
           "type"
         ]
       },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "enum": [
+                  "piecewise_constant",
+                  "piecewise_linear",
+                  "piecewise_quadratic",
+                  "piecewise_cubic",
+                  "consecutive_int_lookup_table",
+                  "sparse_to_consecutive_int_lookup_table",
+                  "month_based_phase_inout_of_age_thresholds",
+                  "year_based_phase_inout_of_age_thresholds"
+                ]
+              }
+            }
+          },
+          "then": {
+            "$comment": "A piecewise / lookup / phase-inout parameter declares its input and output units either as a top-level `input_unit:`/`output_unit:` pair, or — for a parameter re-denominated over time (e.g. DM before the 2002 euro reform, EUR after) — as one `input_unit:`/`output_unit:` pair inside each date-specific key (GEP 10). The latter carries no top-level unit declaration; the build-time mandatory-units check (`fail_if_environment_units_are_missing`) guarantees every active leaf still resolves to a unit.",
+            "oneOf": [
+              {
+                "required": ["input_unit", "output_unit"],
+                "not": { "required": ["unit"] }
+              },
+              {
+                "allOf": [
+                  { "not": { "required": ["unit"] } },
+                  { "not": { "required": ["input_unit"] } },
+                  { "not": { "required": ["output_unit"] } }
+                ]
+              }
+            ]
+          },
+          "else": {
+            "if": {
+              "properties": { "type": { "const": "require_converter" } }
+            },
+            "then": {
+              "$comment": "A require_converter parameter declares its unit(s) in one of three ways: a single top-level `unit:`; a top-level `input_unit:`/`output_unit:` pair; or, for a parameter re-denominated over time, one `unit:` inside each date-specific key (GEP 10). The third case carries no top-level unit declaration; the build-time mandatory-units check (`fail_if_environment_units_are_missing`) guarantees every active leaf still resolves to a unit.",
+              "oneOf": [
+                {
+                  "required": ["unit"],
+                  "allOf": [
+                    { "not": { "required": ["input_unit"] } },
+                    { "not": { "required": ["output_unit"] } }
+                  ]
+                },
+                {
+                  "required": ["input_unit", "output_unit"],
+                  "not": { "required": ["unit"] }
+                },
+                {
+                  "allOf": [
+                    { "not": { "required": ["unit"] } },
+                    { "not": { "required": ["input_unit"] } },
+                    { "not": { "required": ["output_unit"] } }
+                  ]
+                }
+              ]
+            },
+            "else": {
+              "$comment": "Scalar/dict parameter: `unit:` may sit at the top level (shared by every date) or one level lower, inside each date-specific key, so a parameter re-denominated over time can spell its unit symmetrically per date. The schema therefore does not require `unit:` here; the build-time mandatory-units check (`fail_if_environment_units_are_missing`) is the guarantee that every active leaf resolves to a unit (GEP 10).",
+              "allOf": [
+                { "not": { "required": ["input_unit"] } },
+                { "not": { "required": ["output_unit"] } }
+              ]
+            }
+          }
+        },
+        {
+          "$comment": "A scalar parameter takes its period from a time suffix on its name and declares a single fully-spelled `unit:` token, not a per-leaf mapping (which only a dict or require_converter parameter may use). The restriction covers the date-specific `unit:` as well as the top-level one, because a scalar has no leaves for a mapping to address at any date.",
+          "if": {
+            "properties": { "type": { "const": "scalar" } },
+            "required": ["type"]
+          },
+          "then": {
+            "properties": {
+              "unit": { "$ref": "#/definitions/unitToken" }
+            },
+            "patternProperties": {
+              "^(19|20)[0-9]{2}-(0[1-9]|1[0-2])-[0-3][0-9]$": {
+                "properties": {
+                  "unit": { "$ref": "#/definitions/unitToken" }
+                }
+              }
+            }
+          }
+        },
         {
           "minProperties": 1,
           "patternProperties": {

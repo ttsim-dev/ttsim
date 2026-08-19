@@ -5,6 +5,8 @@ from typing import TYPE_CHECKING, Literal
 import dags.tree as dt
 import numpy
 import pandas as pd
+import pint
+from jaxtyping import Shaped
 
 from ttsim.interface_dag_elements.data_converters import (
     df_with_mapped_columns_to_flat_data,
@@ -19,6 +21,14 @@ from ttsim.interface_dag_elements.interface_node_objects import (
 from ttsim.interface_dag_elements.processed_data import (
     _canonicalize_input_dtype,
 )
+from ttsim.tt.units import (
+    CompositeUnit,
+    UnitAnnotatedColumn,
+    UnitSystem,
+    input_column_in_data_currency,
+)
+from ttsim.typing import Array, OrderedQNames, UserNestedUnitAnnotatedData
+from ttsim.unit_validation import flatten_unit_annotated_input_tree
 
 if TYPE_CHECKING:
     from types import ModuleType
@@ -62,6 +72,25 @@ def tree() -> NestedData:
 @interface_input()
 def qname() -> QNameData:
     """The input data as a flat dictionary keyed by qualified names."""
+
+
+@interface_input()
+def tree_with_unit_annotations() -> UserNestedUnitAnnotatedData:
+    """The input data as a nested dict of :class:`UnitAnnotatedColumn` leaves.
+
+    Like :func:`tree`, but each leaf tags its column with a concrete unit, opting into
+    boundary unit validation against the DAG. Use bare :func:`tree` for untagged data.
+
+    Example::
+
+        {
+            "wage_m": UnitAnnotatedColumn(values, unit=TTSIMUnit.EUR.PER_MONTH),
+            "rent_m_bg": UnitAnnotatedColumn(
+                values, unit=TTSIMUnit.EUR.PER_MONTH.PER_BG
+            ),
+            "p_id": UnitAnnotatedColumn(values, unit=TTSIMUnit.DIMENSIONLESS),
+        }
+    """
 
 
 @input_dependent_interface_function(
@@ -166,6 +195,82 @@ def flat_from_qname(
         )
         for q, value in qname.items()
     }
+
+
+@input_dependent_interface_function(
+    include_if_all_inputs_present=["input_data__tree_with_unit_annotations"],
+    leaf_name="flat",
+)
+def flat_from_tree_with_unit_annotations(
+    tree_with_unit_annotations: UserNestedUnitAnnotatedData,
+    data_currency: str,
+    unit_system: UnitSystem,
+    labels__grouping_levels: OrderedQNames,
+) -> FlatData:
+    """The input data as a flat dictionary of arrays."""
+    registry = unit_system.registry
+    flat = flatten_unit_annotated_input_tree(tree=tree_with_unit_annotations)
+    return {
+        path: _canonicalized_input_column_in_data_currency(
+            column=col,
+            data_currency=data_currency,
+            registry=registry,
+            grouping_levels=labels__grouping_levels,
+            column_label=dt.qname_from_tree_path(path),
+        )
+        for path, col in flat.items()
+    }
+
+
+def _canonicalized_input_column_in_data_currency(
+    column: UnitAnnotatedColumn,
+    *,
+    data_currency: str,
+    registry: pint.UnitRegistry,
+    grouping_levels: OrderedQNames,
+    column_label: str,
+) -> Shaped[Array | numpy.ndarray, " n_obs"]:
+    """Convert one tagged column to the data currency and canonicalize its dtype.
+
+    A tag already in the data currency, or with no currency at all, passes its
+    values through unconverted, so the same leaf types the ordinary input tree
+    accepts (a list, a `pd.Series`, a backend array) arrive here. They go through
+    the same canonicalization as in `flat_from_qname`: lists become numpy arrays
+    first, so `_canonicalize_input_dtype` sees the narrow input type its claw
+    enforces.
+    """
+    values = input_column_in_data_currency(
+        values=column.values,
+        unit=column.unit,
+        data_currency=data_currency,
+        registry=registry,
+        grouping_levels=grouping_levels,
+        column_label=column_label,
+    )
+    return _canonicalize_input_dtype(
+        arr=values if isinstance(values, pd.Series) else numpy.asarray(values),
+        xnp=numpy,
+        column_label=column_label,
+    )
+
+
+@input_dependent_interface_function(
+    include_if_all_inputs_present=["input_data__tree_with_unit_annotations"],
+    leaf_name="ttsim_units",
+)
+def ttsim_units_from_tree_with_unit_annotations(
+    tree_with_unit_annotations: UserNestedUnitAnnotatedData,
+) -> dict[str, CompositeUnit]:
+    """Each input column's tag as a TTSIM unit, by qname.
+
+    The :class:`CompositeUnit` the user tagged the column with, which spells a
+    grouping level directly where a resolved unit only carries its denominator
+    (GEP 10). ``fail_if__input_units_are_inconsistent`` compares it against the
+    column's declared unit and resolves it against the registry itself where it
+    needs a pint unit.
+    """
+    flat = flatten_unit_annotated_input_tree(tree=tree_with_unit_annotations)
+    return {dt.qname_from_tree_path(path): col.unit for path, col in flat.items()}
 
 
 @interface_function()

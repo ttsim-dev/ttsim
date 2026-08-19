@@ -4,7 +4,9 @@ import datetime
 import re
 from collections.abc import Mapping
 from copy import copy
-from typing import Any, TypeAlias, overload
+from functools import lru_cache
+from types import ModuleType
+from typing import Any, Literal, TypeAlias, overload
 
 import optree
 
@@ -29,6 +31,35 @@ _DASHED_ISO_DATE_REGEX = re.compile(r"\d{4}-\d{2}-\d{2}")
 
 _PARAM_METADATA_KEYS = frozenset({"note", "reference"})
 
+#: The keys a dated parameter entry may restate its unit under (GEP 10)
+UNIT_DECLARATION_KEYS = ("unit", "input_unit", "output_unit")
+
+
+def framework_partial_arguments(
+    *,
+    len_p_id: int | None,
+    backend: Literal["numpy", "jax"] | None,
+    xnp: ModuleType | None,
+    dnp: ModuleType | None,
+) -> dict[str, Any]:
+    """The arguments the framework partials into every column/param function."""
+    return {
+        "len_p_id": len_p_id,
+        # Aggregations take a jax `num_segments`; distinct groups are at most
+        # `len_p_id`, so feed that safe upper bound.
+        "num_segments": len_p_id,
+        "backend": backend,
+        "xnp": xnp,
+        "dnp": dnp,
+    }
+
+
+#: Names of the arguments the framework partials into every column/param function
+#: (the backend handles, the population size, the segment count)
+FRAMEWORK_PARTIAL_ARGUMENTS = frozenset(
+    framework_partial_arguments(len_p_id=None, backend=None, xnp=None, dnp=None)
+)
+
 
 def param_has_substantive_content(
     entry: dict[str, Any] | dict[str | int, Any] | list,
@@ -41,7 +72,8 @@ def param_has_substantive_content(
     """
     if isinstance(entry, list):
         return bool(entry)
-    return any(k not in _PARAM_METADATA_KEYS for k in entry)
+    ignored = _PARAM_METADATA_KEYS.union(UNIT_DECLARATION_KEYS)
+    return any(k not in ignored for k in entry)
 
 
 def to_datetime(date: datetime.date | DashedISOString) -> datetime.date:
@@ -51,6 +83,21 @@ def to_datetime(date: datetime.date | DashedISOString) -> datetime.date:
         return datetime.date.fromisoformat(date)
     raise ValueError(
         f"Date {date} neither matches the format YYYY-MM-DD nor is a datetime.date.",
+    )
+
+
+@lru_cache
+def _compiled_time_unit_and_grouping_pattern(
+    time_units: tuple[str, ...],
+    grouping_levels: tuple[str, ...],
+) -> re.Pattern[str]:
+    re_units = "".join(time_units)
+    re_groupings = "|".join(grouping_levels)
+    return re.compile(
+        f"(?P<base_name>.*?)"
+        f"(?:_(?P<time_unit>[{re_units}]))?"
+        f"(?:_(?P<grouping>{re_groupings}))?"
+        f"$",
     )
 
 
@@ -74,13 +121,8 @@ def get_re_pattern_for_all_time_units_and_groupings(
         The regex pattern.
 
     """
-    re_units = "".join(time_units)
-    re_groupings = "|".join(grouping_levels)
-    return re.compile(
-        f"(?P<base_name>.*?)"
-        f"(?:_(?P<time_unit>[{re_units}]))?"
-        f"(?:_(?P<grouping>{re_groupings}))?"
-        f"$",
+    return _compiled_time_unit_and_grouping_pattern(
+        time_units=tuple(time_units), grouping_levels=tuple(grouping_levels)
     )
 
 

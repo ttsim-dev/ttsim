@@ -23,6 +23,9 @@ class WarnIf(MainTargetABC):
     functions_and_data_columns_overlap: str = (
         "warn_if__functions_and_data_columns_overlap"
     )
+    statutory_currency_and_default_data_currency_differ: str = (
+        "warn_if__statutory_currency_and_default_data_currency_differ"
+    )
     evaluation_date_set_in_multiple_places: str = (
         "warn_if__evaluation_date_set_in_multiple_places"
     )
@@ -50,11 +53,16 @@ class FailIf(MainTargetABC):
     input_data_has_int_or_bool_missing_values: str = (
         "fail_if__input_data_has_int_or_bool_missing_values"
     )
+    input_data_has_object_dtype_columns: str = (
+        "fail_if__input_data_has_object_dtype_columns"
+    )
     input_data_is_invalid: str = "fail_if__input_data_is_invalid"
     input_data_tree_is_invalid: str = "fail_if__input_data_tree_is_invalid"
     input_data_uint64_values_overflow_int64: str = (
         "fail_if__input_data_uint64_values_overflow_int64"
     )
+    input_currency_is_not_concrete: str = "fail_if__input_currency_is_not_concrete"
+    input_units_are_inconsistent: str = "fail_if__input_units_are_inconsistent"
     input_df_has_bool_or_numeric_column_names: str = (
         "fail_if__input_df_has_bool_or_numeric_column_names"
     )
@@ -82,6 +90,8 @@ class FailIf(MainTargetABC):
     tt_dag_includes_function_with_fail_msg_if_included_set: str = (
         "fail_if__tt_dag_includes_function_with_fail_msg_if_included_set"
     )
+    tt_units_are_inconsistent: str = "fail_if__tt_units_are_inconsistent"
+    tt_units_are_missing: str = "fail_if__tt_units_are_missing"
 
 
 @dataclass(frozen=True)
@@ -92,6 +102,7 @@ class Results(MainTargetABC):
     flat: str = "results__flat"
     qname: str = "results__qname"
     tree: str = "results__tree"
+    tree_with_unit_annotations: str = "results__tree_with_unit_annotations"
 
 
 @dataclass(frozen=True)
@@ -136,7 +147,7 @@ class Targets(MainTargetABC):
 
 @dataclass(frozen=True)
 class Labels(MainTargetABC):
-    input_columns: str = "labels__input_columns"
+    data_qnames: str = "labels__data_qnames"
     column_targets: str = "labels__column_targets"
     input_data_targets: str = "labels__input_data_targets"
     param_targets: str = "labels__param_targets"
@@ -162,6 +173,8 @@ class InputData(MainTargetABC):
     qname: str = "input_data__qname"
     sort_indices: str = "input_data__sort_indices"
     tree: str = "input_data__tree"
+    tree_with_unit_annotations: str = "input_data__tree_with_unit_annotations"
+    ttsim_units: str = "input_data__ttsim_units"
 
 
 @dataclass(frozen=True)
@@ -185,6 +198,13 @@ class Templates(MainTargetABC):
 
 
 @dataclass(frozen=True)
+class UnitChecks(MainTargetABC):
+    resolved_pint_units: str = "unit_checks__resolved_pint_units"
+    declared_ttsim_units: str = "unit_checks__declared_ttsim_units"
+    validation_report: str = "unit_checks__validation_report"
+
+
+@dataclass(frozen=True)
 class MainTarget(MainTargetABC):
     results: type[Results] = field(default=Results)
     templates: type[Templates] = field(default=Templates)
@@ -198,13 +218,18 @@ class MainTarget(MainTargetABC):
         default=SpecializedEnvrionmentForPlottingAndTemplates,
     )
     orig_policy_objects: type[OrigPolicyObjects] = field(default=OrigPolicyObjects)
+    input_data_in_computation_currency: str = "input_data_in_computation_currency"
     processed_data: str = "processed_data"
     raw_results: type[RawResults] = field(default=RawResults)
     labels: type[Labels] = field(default=Labels)
+    unit_checks: type[UnitChecks] = field(default=UnitChecks)
     input_data: type[InputData] = field(default=InputData)
     tt_targets: type[Targets] = field(default=Targets)
     len_p_id: str = "len_p_id"
     backend: str = "backend"
+    unit_system: str = "unit_system"
+    data_currency: str = "data_currency"
+    computation_currency: str = "computation_currency"
     evaluation_date_str: str = "evaluation_date_str"
     evaluation_date: str = "evaluation_date"
     policy_date_str: str = "policy_date_str"

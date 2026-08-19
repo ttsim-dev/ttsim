@@ -10,7 +10,10 @@ from jaxtyping import Shaped
 
 from ttsim.interface_dag_elements.interface_node_objects import interface_function
 from ttsim.tt.column_objects_param_function import reorder_ids
-from ttsim.typing import Array, IntColumn
+from ttsim.typing import (
+    Array,
+    IntColumn,
+)
 
 if TYPE_CHECKING:
     from ttsim.typing import FlatData, QNameData
@@ -47,7 +50,7 @@ def _canonicalize_input_dtype(
     if isinstance(arr, pd.Series):
         return _canonicalize_series(arr=arr, xnp=xnp, column_label=column_label)
     if pd.api.types.is_unsigned_integer_dtype(arr):
-        _fail_if_uint_overflows_int64(arr, column_label=column_label)
+        _fail_if_uint_overflows_int64(arr=arr, column_label=column_label)
         return xnp.asarray(arr, dtype=xnp.int64)
     return xnp.asarray(arr)
 
@@ -73,7 +76,7 @@ def _canonicalize_series(
         if arr.isna().any():
             return arr.to_numpy(dtype=object)
         if pd.api.types.is_unsigned_integer_dtype(dtype):
-            _fail_if_uint_overflows_int64(arr, column_label=column_label)
+            _fail_if_uint_overflows_int64(arr=arr, column_label=column_label)
         return xnp.asarray(arr.astype("int64"))
     return xnp.asarray(arr)
 
@@ -106,24 +109,28 @@ def _fail_if_uint_overflows_int64(
 
 @interface_function(in_top_level_namespace=True)
 def processed_data(
-    input_data__flat: FlatData, input_data__sort_indices: IntColumn, xnp: ModuleType
+    input_data_in_computation_currency: FlatData,
+    input_data__sort_indices: IntColumn,
+    xnp: ModuleType,
 ) -> QNameData:
     """The internal processed data for use in the taxes and transfers function.
 
     We replace identifiers by consecutive integers starting at zero and sort the data
-    according to the original `p_id`.
+    according to the original `p_id`. Values arrive already denominated in the
+    computation currency.
 
     The transformations will be undone when going from raw results to results.
     """
-
     orig_p_ids = _canonicalize_input_dtype(
-        arr=input_data__flat[("p_id",)], xnp=xnp, column_label="p_id"
+        arr=input_data_in_computation_currency[("p_id",)],
+        xnp=xnp,
+        column_label="p_id",
     )
     sorted_orig_p_ids = orig_p_ids[input_data__sort_indices]
     internal_p_ids = xnp.arange(len(orig_p_ids))
 
     processed_input_data = {"p_id": internal_p_ids}
-    for path, data in input_data__flat.items():
+    for path, data in input_data_in_computation_currency.items():
         qname = dt.qname_from_tree_path(path)
         if path == ("p_id",):
             continue
@@ -133,7 +140,9 @@ def processed_data(
             continue
 
         sorted_data = _canonicalize_input_dtype(
-            arr=data[input_data__sort_indices], xnp=xnp, column_label=qname
+            arr=data[input_data__sort_indices],
+            xnp=xnp,
+            column_label=qname,
         )
 
         if path[-1].endswith("_id"):

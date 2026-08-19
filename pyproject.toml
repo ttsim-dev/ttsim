@@ -42,6 +42,7 @@ dependencies = [
   "openpyxl",
   "optree>=0.16",
   "pandas>=3",
+  "pint>=0.25",
   "plotly>=6.5",
   "portion",
   "pygments",
@@ -52,11 +53,13 @@ dependencies = [
 [[project.authors]]
 name = "Hans-Martin von Gaudecker"
 email = "hmgaudecker@uni-bonn.de"
+
 [[project.authors]]
 name = "Marvin Immesberger"
 [[project.maintainers]]
 name = "Hans-Martin von Gaudecker"
 email = "hmgaudecker@uni-bonn.de"
+
 [[project.maintainers]]
 name = "Marvin Immesberger"
 [project.urls]
@@ -83,6 +86,7 @@ numpy_groupies = "*"
 numpydoc = "*"
 openpyxl = "*"
 pandas = ">=3"
+pint = "~=0.25.0"
 portion = "*"
 prek = "*"
 pygments = "*"
@@ -151,6 +155,7 @@ unsafe-fixes = false
 select = [ "ALL" ]
 extend-ignore = [
   "COM812",  # Conflicts with ruff-format
+  "CPY001",  # Missing copyright notice (the project uses none)
   "EM101",   # Exception must not use a string literal
   "EM102",   # Exception must not use an f-string literal
   "FIX002",  # Line contains TODO
@@ -169,6 +174,7 @@ extend-ignore = [
   "PLC2401", # Non-ASCII variable name (German policy names)
   "PLC2403", # Non-ASCII import name (German policy names)
   "PLR0913", # Too many arguments
+  "PLR0917", # Too many positional arguments (calls pass by keyword anyway)
   "PLR5501", # Collapsible else-if
   "UP040",   # Non-PEP 695 type alias (can't use inside TYPE_CHECKING)
   "UP046",   # Non-PEP 695 generic class (needs careful migration)
@@ -291,6 +297,13 @@ analysis.allowed-unresolved-imports = [
   "jax.numpy",
   "jax.ops",
 ]
+# The two monkey-patch assignments below need `ty: ignore[invalid-assignment]`
+# under the jax backend, where the patched attribute resolves to a typed
+# signature; the numpy backend then reports the same suppression as unused.
+# Scope the unused-suppression rule off for those two files only.
+[[tool.ty.overrides]]
+include = [ "conftest.py", "src/ttsim/_jaxtyping_patch.py" ]
+rules.unused-ignore-comment = "ignore"
 
 [tool.pytest]
 ini_options.testpaths = [ "src_mettsim/tests_middle_earth", "tests" ]

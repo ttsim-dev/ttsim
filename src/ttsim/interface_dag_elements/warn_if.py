@@ -11,6 +11,8 @@ from ttsim.interface_dag_elements.fail_if import (
 )
 from ttsim.interface_dag_elements.interface_node_objects import warn_function
 from ttsim.tt.column_objects_param_function import PolicyInput
+from ttsim.tt.units import UnitSystem
+from ttsim.warnings import PotentialCurrencyMismatchWarning
 
 if TYPE_CHECKING:
     import datetime
@@ -25,17 +27,43 @@ if TYPE_CHECKING:
     )
 
 
+@warn_function(
+    include_if_all_elements_present=[
+        "computation_currency",
+        "data_currency",
+        "policy_date",
+        "unit_system",
+    ]
+)
+def statutory_currency_and_default_data_currency_differ(
+    computation_currency: str,
+    data_currency: str,
+    policy_date: datetime.date,
+    unit_system: UnitSystem,
+) -> None:
+    """Warn when statutory currency differs and data uses the default currency."""
+    base_currency = unit_system.base_currency
+    if computation_currency != base_currency and data_currency == base_currency:
+        msg = (
+            f"The statutory currency for {policy_date} is {computation_currency}, "
+            f"but the currency of the input and output data is {data_currency}. Make "
+            f"sure your input data is denominated in {data_currency}. If you want "
+            "to pass data in a different currency, set `data_currency` in `main`."
+        )
+        warnings.warn(PotentialCurrencyMismatchWarning(msg), stacklevel=2)
+
+
 @warn_function()
 def functions_and_data_columns_overlap(
     policy_environment: PolicyEnvironment,
-    labels__input_columns: UnorderedQNames,
+    labels__data_qnames: UnorderedQNames,
 ) -> None:
     """Warn if functions are overridden by data."""
     flat_policy_environment = dt.flatten_to_qnames(policy_environment)
     overridden_elements = sorted(
         {
             col
-            for col in labels__input_columns
+            for col in labels__data_qnames
             if col in flat_policy_environment
             and not isinstance(flat_policy_environment.get(col), PolicyInput)
         },
@@ -123,7 +151,7 @@ and `evaluation_day`, never set them anywhere without also setting
 def tt_dag_includes_function_with_warn_msg_if_included_set(
     specialized_environment__without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,  # noqa: E501
     specialized_environment__tt_dag: nx.DiGraph,
-    labels__input_columns: UnorderedQNames,
+    labels__data_qnames: UnorderedQNames,
 ) -> None:
     """Warn if the TT DAG includes functions with `warn_msg_if_included` set."""
 
@@ -135,7 +163,7 @@ def tt_dag_includes_function_with_warn_msg_if_included_set(
             node not in env
             or
             # ColumnObjects overridden by data are fine
-            (not isinstance(env[node], PolicyInput) and node in labels__input_columns)
+            (not isinstance(env[node], PolicyInput) and node in labels__data_qnames)
         ):
             continue
         # Check for attribute existence because ParamObjects can be overridden by

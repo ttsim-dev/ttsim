@@ -31,6 +31,7 @@ from ttsim.interface_dag_elements.specialized_environment import (
     _add_derived_functions,
     _remove_tree_logic_from_policy_environment,
 )
+from ttsim.time_converters import TIME_UNIT_IDS_TO_LABELS
 from ttsim.tt.column_objects_param_function import (
     ParamFunction,
     PolicyFunction,
@@ -39,6 +40,7 @@ from ttsim.tt.column_objects_param_function import (
     policy_function,
 )
 from ttsim.tt.param_objects import ParamObject
+from ttsim.tt.units import TTSIMUnit, UnsetUnit
 from ttsim.typing import (
     OrderedQNames,
     PolicyEnvironment,
@@ -48,7 +50,6 @@ from ttsim.typing import (
     SpecEnvWithProcessedParamsAndScalars,
     UnorderedQNames,
 )
-from ttsim.unit_converters import TIME_UNIT_IDS_TO_LABELS
 
 if TYPE_CHECKING:
     import re
@@ -56,7 +57,7 @@ if TYPE_CHECKING:
 
 @interface_function()
 def qnames_to_derive_functions_from(
-    labels__input_columns: UnorderedQNames,
+    labels__data_qnames: UnorderedQNames,
     labels__policy_inputs: UnorderedQNames,
     labels__grouping_levels: OrderedQNames,
 ) -> UnorderedQNames:
@@ -71,15 +72,15 @@ def qnames_to_derive_functions_from(
     )
     fullmatches = cast(
         "list[re.Match[str]]",
-        [pattern_all.fullmatch(qn) for qn in labels__input_columns],
+        [pattern_all.fullmatch(qn) for qn in labels__data_qnames],
     )
-    base_names_input_columns = {f.group("base_name") for f in fullmatches}
+    base_names_data_qnames = {f.group("base_name") for f in fullmatches}
 
-    out = set(labels__input_columns)
+    out = set(labels__data_qnames)
     for pi in labels__policy_inputs:
         match = cast("re.Match[str]", pattern_all.fullmatch(pi))
         base_name = match.group("base_name")
-        if base_name in base_names_input_columns:
+        if base_name in base_names_data_qnames:
             continue
         out.add(pi)
     return out
@@ -90,7 +91,7 @@ def without_tree_logic_and_with_derived_functions(
     policy_environment: PolicyEnvironment,
     qnames_to_derive_functions_from: UnorderedQNames,
     tt_targets__qname: QNameTTTargets,
-    labels__input_columns: UnorderedQNames,
+    labels__data_qnames: UnorderedQNames,
     labels__all_qnames_in_policy_environment: UnorderedQNames,
     labels__top_level_namespace: UnorderedQNames,
     labels__grouping_levels: OrderedQNames,
@@ -108,9 +109,9 @@ def without_tree_logic_and_with_derived_functions(
         qname_env_without_tree_logic=qname_env_without_tree_logic,
         tt_targets=list(
             (labels__all_qnames_in_policy_environment | set(tt_targets__qname))
-            - set(labels__input_columns)
+            - set(labels__data_qnames)
         ),
-        input_columns=qnames_to_derive_functions_from,
+        data_qnames=qnames_to_derive_functions_from,
         grouping_levels=labels__grouping_levels,
     )
 
@@ -118,7 +119,7 @@ def without_tree_logic_and_with_derived_functions(
 @interface_function()
 def without_input_data_nodes_with_dummy_callables(
     without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,  # noqa: E501
-    labels__input_columns: UnorderedQNames,
+    labels__data_qnames: UnorderedQNames,
 ) -> SpecEnvWithoutTreeLogicAndWithDerivedFunctions:
     """An environment where non-callable are transformed into callables so we can use
     dags to set up the DAG for plotting and templates.
@@ -128,7 +129,7 @@ def without_input_data_nodes_with_dummy_callables(
         if not callable(n)
         else n
         for qn, n in without_tree_logic_and_with_derived_functions.items()
-        if qn not in labels__input_columns
+        if qn not in labels__data_qnames
     }
 
 
@@ -137,7 +138,7 @@ def complete_tt_dag(
     without_input_data_nodes_with_dummy_callables: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,  # noqa: E501
     tt_targets__qname: QNameTTTargets,
     labels__all_qnames_in_policy_environment: UnorderedQNames,
-    labels__input_columns: UnorderedQNames,
+    labels__data_qnames: UnorderedQNames,
 ) -> nx.DiGraph:
     """The complete DAG, which includes parameters and param_functions.
 
@@ -152,12 +153,12 @@ def complete_tt_dag(
         # point (neighbors).
         targets=list(
             (labels__all_qnames_in_policy_environment | set(tt_targets__qname))
-            - set(labels__input_columns)
+            - set(labels__data_qnames)
         ),
     )
 
     # If no input columns are specified, return the entire DAG
-    if not labels__input_columns:
+    if not labels__data_qnames:
         return dag
 
     # Keep only nodes that are ancestors or descendants of the tt_targets. This is
@@ -183,7 +184,7 @@ def complete_tt_dag(
 @interface_function()
 def with_processed_params_and_scalars(
     without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,  # noqa: E501
-    labels__input_columns: UnorderedQNames,
+    labels__data_qnames: UnorderedQNames,
     backend: Literal["numpy", "jax"],
     xnp: ModuleType,
     dnp: ModuleType,
@@ -199,7 +200,7 @@ def with_processed_params_and_scalars(
     """
     return specialized_environment.with_processed_params_and_scalars(
         without_tree_logic_and_with_derived_functions=without_tree_logic_and_with_derived_functions,
-        processed_data=dict.fromkeys(labels__input_columns),
+        processed_data=dict.fromkeys(labels__data_qnames),
         backend=backend,
         xnp=xnp,
         dnp=dnp,
@@ -256,11 +257,13 @@ def dummy_callable(
         original_docstring = obj.docstring
         if original_docstring:
             dummy.__doc__ = original_docstring
+        unit = TTSIMUnit.DIMENSIONLESS if isinstance(obj.unit, UnsetUnit) else obj.unit
         return policy_function(
             leaf_name=leaf_name,
             start_date=obj.start_date,
             end_date=obj.end_date,
             foreign_key_type=obj.foreign_key_type,
+            unit=unit,
         )(dummy)
     if isinstance(obj, ParamObject):
         # Use description["en"] for ParamObjects
@@ -279,6 +282,9 @@ def dummy_callable(
             leaf_name=leaf_name,
             start_date=obj.start_date,
             end_date=obj.end_date,
+            # Placeholder: a ParamObject's unit may be a per-leaf mapping the
+            # decorator would reject, and this dummy node's unit is never checked.
+            unit=TTSIMUnit.DIMENSIONLESS,
         )(dummy)
     if isinstance(obj, InterfaceInput):
         original_docstring = obj.docstring

@@ -6,6 +6,9 @@ releases are available on [Anaconda.org](https://anaconda.org/conda-forge/ttsim)
 
 ## Unreleased
 
+- {gh}`138` Implement GEP 10: Mandatory unit annotations for functions and parameters.
+  Automatic checks of unit arithmetic and DAG unit consistency. ({ghuser}`MImmesberger`,
+  {ghuser}`hmgaudecker`)
 - {gh}`130` Split `raw_results.columns` into `raw_results.columns_with_internal_p_ids`
   (computable from `processed_data` alone) and `raw_results.columns_with_original_p_ids`
   (the reverse-translation of endogenous `p_id_*` columns from {gh}`108`).

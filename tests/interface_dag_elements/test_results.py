@@ -3,7 +3,32 @@ from __future__ import annotations
 import numpy
 import pytest
 
+from tests.test_unit_system import TEST_UNIT_SYSTEM
 from ttsim.interface_dag_elements.results import tree
+from ttsim.tt import TTSIMUnit, policy_input
+
+
+def test_identity_result_currency_conversion_preserves_integer_dtype():
+    @policy_input(unit=TTSIMUnit.CURRENCY)
+    def result_col() -> int:
+        pass
+
+    result = tree(
+        raw_results__columns_with_original_p_ids={
+            "result_col": numpy.array([1, 2], dtype=numpy.int32)
+        },
+        raw_results__params={},
+        raw_results__from_input_data={},
+        input_data__sort_indices=numpy.array([0, 1]),
+        specialized_environment__without_tree_logic_and_with_derived_functions={
+            "result_col": result_col
+        },
+        data_currency="CASTAR",
+        computation_currency="CASTAR",
+        unit_system=TEST_UNIT_SYSTEM,
+    )
+
+    assert result["result_col"].dtype == numpy.dtype("int32")
 
 
 @pytest.mark.parametrize(
@@ -145,6 +170,10 @@ def test_restore_original_row_order(
         raw_results__params=raw_results_params,
         raw_results__from_input_data=raw_results_from_input_data,
         input_data__sort_indices=input_data__sort_indices,
+        specialized_environment__without_tree_logic_and_with_derived_functions={},
+        data_currency="CASTAR",
+        computation_currency="CASTAR",
+        unit_system=TEST_UNIT_SYSTEM,
     )
 
     # Check the structure and values recursively

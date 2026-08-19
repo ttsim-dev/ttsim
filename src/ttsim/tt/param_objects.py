@@ -7,6 +7,15 @@ from typing import TYPE_CHECKING, Any, Literal, cast
 import numpy as np
 from jaxtyping import Bool, Float, Int
 
+from ttsim.exceptions import UnitDefinitionError
+from ttsim.tt.units import (
+    UNSET_UNIT,
+    CompositeUnit,
+    UnitDeclaration,
+    UnsetUnit,
+    ttsim_unit_from_yaml_value,
+    ttsim_unit_has_currency,
+)
 from ttsim.typing import DictParamValue, NestedLookupDict
 
 # Backend-agnostic array type: union the (optional) JAX `Array` with
@@ -37,23 +46,7 @@ class ParamObject:
 
     start_date: datetime.date | None = None
     end_date: datetime.date | None = None
-    unit: (
-        None
-        | Literal[
-            "Euros",
-            "DM",
-            "Share",
-            "Percent",
-            "Years",
-            "Months",
-            "Hours",
-            "Square Meters",
-            "Euros / Square Meter",
-        ]
-    ) = None
-    reference_period: (
-        None | Literal["Year", "Quarter", "Month", "Week", "Day", "Hour"]
-    ) = None
+    unit: UnitDeclaration | str | dict[str | int, Any] = UNSET_UNIT
     name: dict[Literal["de", "en"], str] | None = None
     description: dict[Literal["de", "en"], str] | None = None
 
@@ -62,6 +55,43 @@ class ParamObject:
             raise ValueError(
                 "'value' field must be specified for any type of 'ParamObject'"
             )
+        # object.__setattr__ because the dataclass is frozen.
+        object.__setattr__(
+            self, "unit", _coerce_unit_declaration(declared=self.unit, obj=self)
+        )
+
+
+def _coerce_unit_declaration(
+    declared: Any,  # noqa: ANN401 (raw YAML value)
+    obj: ParamObject,
+) -> UnitDeclaration | dict[str | int, Any]:
+    """Coerce a raw ``unit:`` declaration to a CompositeUnit, recursing into
+    mappings."""
+    name_en = (obj.name or {}).get("en")
+    where = f"Parameter {name_en}" if name_en else "Parameter"
+    if isinstance(declared, UnsetUnit):
+        return UNSET_UNIT
+    if isinstance(declared, dict):
+        return {
+            key: _coerce_unit_declaration(declared=sub, obj=obj)
+            if isinstance(sub, dict)
+            # Present leaves are tokens (``DIMENSIONLESS`` for a dimensionless leaf).
+            else ttsim_unit_from_yaml_value(
+                value=sub, where=f"{where} (unit of leaf {key!r})"
+            )
+            for key, sub in declared.items()
+        }
+    return ttsim_unit_from_yaml_value(value=declared, where=where)
+
+
+def _coerce_axis_unit_declarations(obj: ParamObject) -> None:
+    """Coerce a frozen object's ``input_unit`` / ``output_unit`` axes in place."""
+    for axis in ("input_unit", "output_unit"):
+        object.__setattr__(
+            obj,
+            axis,
+            _coerce_unit_declaration(declared=getattr(obj, axis), obj=obj),
+        )
 
 
 @dataclass(frozen=True)
@@ -73,6 +103,14 @@ class ScalarParam(ParamObject):
     value: bool | int | float = PLACEHOLDER_FIELD
     note: str | None = None
     reference: str | None = None
+
+    def __post_init__(self) -> None:
+        super().__post_init__()
+        if isinstance(self.unit, dict):
+            raise UnitDefinitionError(
+                f"{type(self).__name__} holds one value, so it declares a single "
+                f"token, not a per-leaf mapping (GEP 10); got unit={self.unit!r}."
+            )
 
 
 @dataclass(frozen=True)
@@ -95,7 +133,40 @@ class DictParam(ParamObject):
 
 
 @dataclass(frozen=True)
-class PiecewisePolynomialParam(ParamObject):
+class ParamMappingObject(ParamObject):
+    """Base class for parameters that are functions between quantities.
+
+    A schedule or lookup table has a domain and a codomain, so it declares
+    ``input_unit:`` and ``output_unit:`` (one token per axis) instead of
+    ``unit:``. The tokens give the unit of each axis — interval bounds on the
+    input, intercepts on the output — and describe the typed output its
+    consumers' call sites are screened against. Parameter values are never
+    currency-converted (GEP 10).
+    """
+
+    input_unit: UnitDeclaration | str = UNSET_UNIT
+    output_unit: UnitDeclaration | str = UNSET_UNIT
+
+    def __post_init__(self) -> None:
+        super().__post_init__()
+        if not isinstance(self.unit, UnsetUnit):
+            raise UnitDefinitionError(
+                f"{type(self).__name__} is a function between quantities and "
+                f"declares `input_unit:` / `output_unit:` instead of `unit:` "
+                f"(GEP 10); got unit={self.unit!r}."
+            )
+        for axis in ("input_unit", "output_unit"):
+            raw = getattr(self, axis)
+            if isinstance(raw, dict):
+                raise UnitDefinitionError(
+                    f"{type(self).__name__}: per-axis declarations are single "
+                    f"tokens, not mappings (GEP 10); got {axis}={raw!r}."
+                )
+        _coerce_axis_unit_declarations(self)
+
+
+@dataclass(frozen=True)
+class PiecewisePolynomialParam(ParamMappingObject):
     """A parameter with its contents read and converted from a YAML file.
 
     Its value is a PiecewisePolynomialParamValue object, i.e., it contains the
@@ -108,7 +179,7 @@ class PiecewisePolynomialParam(ParamObject):
 
 
 @dataclass(frozen=True)
-class ConsecutiveIntLookupTableParam(ParamObject):
+class ConsecutiveIntLookupTableParam(ParamMappingObject):
     """A parameter with its contents read and converted from a YAML file.
 
     Its value is a ConsecutiveIntLookupTableParamValue object, i.e., it contains the
@@ -118,6 +189,18 @@ class ConsecutiveIntLookupTableParam(ParamObject):
     value: ConsecutiveIntLookupTableParamValue = PLACEHOLDER_FIELD
     note: str | None = None
     reference: str | None = None
+
+    def __post_init__(self) -> None:
+        super().__post_init__()
+        input_unit = cast("CompositeUnit", self.input_unit)
+        if not isinstance(input_unit, UnsetUnit) and ttsim_unit_has_currency(
+            input_unit
+        ):
+            raise UnitDefinitionError(
+                f"A lookup table is keyed by consecutive integers, so its "
+                f"`input_unit:` cannot be a currency (got {input_unit}); the "
+                f"integer keys are never rescaled between currencies (GEP 10)."
+            )
 
 
 class ConsecutiveIntLookupTableParamValue:
@@ -200,6 +283,8 @@ class RawParam(ParamObject):
     value: dict[str | int, Any] = PLACEHOLDER_FIELD
     note: str | None = None
     reference: str | None = None
+    input_unit: UnitDeclaration | str = UNSET_UNIT
+    output_unit: UnitDeclaration | str = UNSET_UNIT
 
     def __post_init__(self) -> None:
         super().__post_init__()
@@ -207,6 +292,18 @@ class RawParam(ParamObject):
             raise ValueError(
                 "'note' and 'reference' cannot be keys in the value dictionary"
             )
+        declares_axes = not isinstance(self.input_unit, UnsetUnit) or not isinstance(
+            self.output_unit, UnsetUnit
+        )
+        if declares_axes and not isinstance(self.unit, UnsetUnit):
+            raise UnitDefinitionError(
+                "A require_converter declares either `unit:` (a single token or "
+                "a per-leaf mapping, one token per leaf) or `input_unit:` / "
+                "`output_unit:` axes (a function-like output, one token per "
+                f"axis), not both (GEP 10); got unit={self.unit!r}, "
+                f"input_unit={self.input_unit!r}, output_unit={self.output_unit!r}."
+            )
+        _coerce_axis_unit_declarations(self)
 
 
 @dataclass(frozen=True)
@@ -404,8 +501,8 @@ def get_year_based_phase_inout_of_age_thresholds_param_value(
     if not all(isinstance(k, int) for k in raw):
         raise ValueError("All keys must be integers")
     int_raw = cast("dict[int, Any]", raw)
-    first_year_phase_inout: int = sorted(int_raw)[0]
-    last_year_phase_inout: int = sorted(int_raw)[-1]
+    first_year_phase_inout: int = min(int_raw)
+    last_year_phase_inout: int = max(int_raw)
     if first_year_to_consider > first_year_phase_inout:
         raise ValueError(
             "`first_year_to_consider` must be less than or equal to "

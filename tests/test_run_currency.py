@@ -1,0 +1,978 @@
+"""The statutory computation currency and the input/output conversion (GEP 10).
+
+Parameters are never converted: computation runs in the policy date's statutory
+currency, every parameter must be declared in it (the statutory guard), and
+only currency-denominated input columns and scalar input values convert on the
+way in, while currency-denominated results convert on the way out. mettsim
+registers CASTAR (base), SILVER_PENNY, and the statutory mapping (silver pennies
+through 2019, castar from 2020) on the import below.
+
+The conversion of actual *data* amounts is covered elsewhere: at the
+``processed_data`` seam in ``tests/interface_dag_elements/test_processed_data.py``
+and through ``main()`` in ``tests/test_end_to_end.py``. This module covers the
+parameter side (loading, guards, and the unit-system registration seams).
+"""
+
+from __future__ import annotations
+
+import datetime
+import warnings
+from typing import Any
+
+import numpy as np
+import pytest
+from mettsim import middle_earth
+
+from tests.test_unit_system import TEST_UNIT_SYSTEM
+from ttsim import MainTarget, OrigPolicyObjects, main
+from ttsim.exceptions import UnitDefinitionError
+from ttsim.interface_dag_elements.policy_environment import (
+    _active_param_objects,
+)
+from ttsim.interface_dag_elements.results import tree_with_unit_annotations
+from ttsim.interface_dag_elements.warn_if import (
+    statutory_currency_and_default_data_currency_differ,
+)
+from ttsim.testing_utils import isolated_unit_vocabulary
+from ttsim.tt.param_objects import RawParam
+from ttsim.tt.units import (
+    _ALLOWED_UNIT_TOKENS,
+    Currency,
+    TTSIMUnit,
+    UnitSystem,
+    UnsetUnit,
+    _registered_currencies,
+    ttsim_unit_currency,
+    ttsim_unit_from_string,
+)
+from ttsim.warnings import PotentialCurrencyMismatchWarning
+
+POLICY_DATE = datetime.date(2020, 1, 1)
+
+_HEADER = {
+    "name": {"de": "foo", "en": "foo"},
+    "description": {"de": "foo", "en": "foo"},
+}
+
+
+def _policy_environment(backend, policy_date=POLICY_DATE):
+    return main(
+        main_target=MainTarget.policy_environment,
+        orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+        unit_system=TEST_UNIT_SYSTEM,
+        policy_date=policy_date,
+        backend=backend,
+    )
+
+
+def test_data_currency_defaults_to_registered_base(backend):
+    assert (
+        main(
+            main_target=MainTarget.data_currency,
+            orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+            unit_system=TEST_UNIT_SYSTEM,
+            policy_date=POLICY_DATE,
+            backend=backend,
+        )
+        == "CASTAR"
+    )
+
+
+@pytest.mark.parametrize(
+    ("policy_date", "expected"),
+    [
+        (datetime.date(2019, 12, 31), "SILVER_PENNY"),
+        (datetime.date(2020, 1, 1), "CASTAR"),
+    ],
+)
+def test_computation_currency_is_the_statutory_currency_at_the_policy_date(
+    policy_date, expected, backend
+):
+    assert (
+        main(
+            main_target=MainTarget.computation_currency,
+            orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+            unit_system=TEST_UNIT_SYSTEM,
+            policy_date=policy_date,
+            backend=backend,
+        )
+        == expected
+    )
+
+
+def test_parameters_keep_their_statutory_values(backend):
+    """No scaling at build: each era's threshold is exactly the statute's number.
+
+    The two values are also a pure redenomination of each other (50,000 silver
+    pennies = 12,500 castar at silver_penny = castar / 4): the real value is
+    continuous across the changeover.
+    """
+    castar_era = _policy_environment(backend)["payroll_tax"][
+        "wealth_threshold_for_reduced_tax_rate"
+    ]
+    penny_era = _policy_environment(backend, policy_date=datetime.date(2019, 12, 31))[
+        "payroll_tax"
+    ]["wealth_threshold_for_reduced_tax_rate"]
+    assert castar_era.value == pytest.approx(12500)
+    assert penny_era.value == pytest.approx(50000)
+
+
+def _load(
+    leaf_name: str,
+    spec: Any,
+    policy_date: datetime.date,
+    computation_currency: str,
+) -> Any:
+    """The single parameter `spec` builds at `policy_date`."""
+    params = _load_many(
+        specs={leaf_name: spec},
+        policy_date=policy_date,
+        computation_currency=computation_currency,
+    )
+    param = params["module"][leaf_name]
+    assert param is not None
+    return param
+
+
+def _load_many(
+    specs: dict[str, Any],
+    policy_date: datetime.date,
+    computation_currency: str,
+) -> Any:
+    """All parameters `specs` builds at `policy_date`, in one namespace."""
+    return _active_param_objects(
+        orig={
+            ("module", "params", leaf_name): spec for leaf_name, spec in specs.items()
+        },
+        policy_date=policy_date,
+        xnp=np,
+        computation_currency=computation_currency,
+    )
+
+
+def _scalar_spec(**header):
+    return {
+        **_HEADER,
+        "unit": "SILVER_PENNY",
+        "type": "scalar",
+        datetime.date(1900, 1, 1): {"value": 100.0},
+        **header,
+    }
+
+
+def test_statutory_currency_declaration_passes_untouched():
+    param = _load(
+        leaf_name="threshold",
+        spec=_scalar_spec(),
+        policy_date=datetime.date(1950, 1, 1),
+        computation_currency="SILVER_PENNY",
+    )
+    assert param.value == pytest.approx(100.0)
+
+
+def test_non_statutory_currency_declaration_is_rejected():
+    """A silver-penny value surviving past the changeover fails the guard:
+    parameters are never converted, so the author must add a dated entry
+    restating the value in the statutory currency."""
+    with pytest.raises(UnitDefinitionError, match="never converted"):
+        _load(
+            leaf_name="threshold",
+            spec=_scalar_spec(),
+            policy_date=POLICY_DATE,
+            computation_currency="CASTAR",
+        )
+
+
+def test_every_non_statutory_parameter_is_named_in_one_error():
+    """All parameters in a wrong currency are reported together, not one per run."""
+    with pytest.raises(UnitDefinitionError) as excinfo:
+        _load_many(
+            specs={"threshold": _scalar_spec(), "allowance": _scalar_spec()},
+            policy_date=POLICY_DATE,
+            computation_currency="CASTAR",
+        )
+    message = str(excinfo.value)
+    assert all(name in message for name in ("module__threshold", "module__allowance"))
+
+
+def test_entry_level_override_writes_a_changeover():
+    """Old entries in silver pennies, entries from the reform date in castar —
+    each era loads in its own statutory currency, values untouched."""
+    spec = {
+        **_HEADER,
+        "unit": "SILVER_PENNY",
+        "type": "scalar",
+        datetime.date(1900, 1, 1): {"value": 100.0},
+        datetime.date(2020, 1, 1): {"value": 25.0, "unit": "CASTAR"},
+    }
+    before = _load(
+        leaf_name="threshold",
+        spec=spec,
+        policy_date=datetime.date(2019, 12, 31),
+        computation_currency="SILVER_PENNY",
+    )
+    after = _load(
+        leaf_name="threshold",
+        spec=spec,
+        policy_date=datetime.date(2020, 1, 1),
+        computation_currency="CASTAR",
+    )
+    assert before.value == pytest.approx(100.0)
+    assert after.value == pytest.approx(25.0)
+
+
+def test_unit_forward_fills_across_a_gap():
+    """A dated entry without ``unit:`` inherits the most recent earlier unit.
+
+    The 1990 entry omits ``unit:`` and there is no top-level fallback, yet it
+    resolves — to the silver penny declared at 1900, forward-filled. The
+    statutory guard proves which currency it inherited: the entry passes in a
+    silver-penny era and fails against castar.
+    """
+    spec = {
+        **_HEADER,
+        "type": "scalar",
+        datetime.date(1900, 1, 1): {"value": 100.0, "unit": "SILVER_PENNY"},
+        datetime.date(1990, 1, 1): {"value": 130.0},
+        datetime.date(2000, 1, 1): {"value": 25.0, "unit": "CASTAR"},
+    }
+    param = _load(
+        leaf_name="threshold",
+        spec=spec,
+        policy_date=datetime.date(1995, 6, 1),
+        computation_currency="SILVER_PENNY",
+    )
+    assert param.value == pytest.approx(130.0)
+    with pytest.raises(UnitDefinitionError, match="never converted"):
+        _load(
+            leaf_name="threshold",
+            spec=spec,
+            policy_date=datetime.date(1995, 6, 1),
+            computation_currency="CASTAR",
+        )
+
+
+def test_unit_forward_fill_carries_a_changeover_onward():
+    """A date-specific unit becomes the new seed: later unit-less entries inherit
+    it, not the top-level/original declaration."""
+    spec = {
+        **_HEADER,
+        "unit": "SILVER_PENNY",
+        "type": "scalar",
+        datetime.date(1900, 1, 1): {"value": 100.0},
+        datetime.date(2000, 1, 1): {"value": 25.0, "unit": "CASTAR"},
+        datetime.date(2010, 1, 1): {"value": 30.0},
+    }
+    # Active at 2015 is the 2010 entry; it inherits castar (from 2000), not the
+    # top-level silver penny — so it passes against castar and fails against
+    # the silver penny.
+    param = _load(
+        leaf_name="threshold",
+        spec=spec,
+        policy_date=datetime.date(2015, 1, 1),
+        computation_currency="CASTAR",
+    )
+    assert param.value == pytest.approx(30.0)
+    with pytest.raises(UnitDefinitionError, match="never converted"):
+        _load(
+            leaf_name="threshold",
+            spec=spec,
+            policy_date=datetime.date(2015, 1, 1),
+            computation_currency="SILVER_PENNY",
+        )
+
+
+def test_unit_resolution_never_backfills_from_a_later_entry():
+    """Resolution only ever looks backward. A gap with no earlier declaration and
+    no top-level stays unset (the mandatory-unit gate fires downstream); it does
+    not borrow a unit from a future entry."""
+    spec = {
+        **_HEADER,
+        "type": "scalar",
+        datetime.date(1900, 1, 1): {"value": 100.0},
+        datetime.date(2000, 1, 1): {"value": 25.0, "unit": "CASTAR"},
+    }
+    param = _load(
+        leaf_name="threshold",
+        spec=spec,
+        policy_date=datetime.date(1950, 1, 1),
+        computation_currency="CASTAR",
+    )
+    assert isinstance(param.unit, UnsetUnit)
+
+
+def test_updates_previous_combined_with_a_unit_restatement_is_rejected():
+    """A dated entry cannot both merge values (``updates_previous``) and restate
+    the unit. The merge would carry un-restated leaves (``b`` here) forward from
+    the silver-penny era under the new castar label — a silent mis-scaling by the
+    conversion factor, invisible to the statutory-currency guard. A unit change
+    must restate the value in full."""
+    spec = {
+        **_HEADER,
+        "unit": "SILVER_PENNY",
+        "type": "dict",
+        datetime.date(1900, 1, 1): {"a": 100.0, "b": 8.0},
+        datetime.date(2020, 1, 1): {
+            "a": 25.0,
+            "unit": "CASTAR",
+            "updates_previous": True,
+        },
+    }
+    with pytest.raises(UnitDefinitionError, match="carry un-restated leaves"):
+        _load(
+            leaf_name="amounts",
+            spec=spec,
+            policy_date=POLICY_DATE,
+            computation_currency="CASTAR",
+        )
+
+
+def test_mapping_unit_restatement_must_be_complete():
+    """A dated restatement of a per-leaf ``unit:`` mapping must cover every leaf:
+    ttsim replaces the mapping wholesale rather than merging, so a partial
+    restatement would silently leave some leaves on the old currency."""
+    spec = {
+        **_HEADER,
+        "type": "dict",
+        datetime.date(1900, 1, 1): {
+            "child_amount_y": 100.0,
+            "max_age": 18,
+            "unit": {"child_amount_y": "SILVER_PENNY_PER_YEAR", "max_age": "YEARS"},
+        },
+        datetime.date(2000, 1, 1): {
+            "child_amount_y": 25.0,
+            "max_age": 18,
+            "unit": {"child_amount_y": "CASTAR_PER_YEAR"},
+        },
+    }
+    with pytest.raises(UnitDefinitionError, match="every leaf"):
+        _load(
+            leaf_name="schedule",
+            spec=spec,
+            policy_date=POLICY_DATE,
+            computation_currency="CASTAR",
+        )
+
+
+def test_guard_checks_piecewise_axes():
+    spec = {
+        **_HEADER,
+        "input_unit": "SILVER_PENNY_PER_YEAR",
+        "output_unit": "SILVER_PENNY_PER_YEAR",
+        "type": "piecewise_linear",
+        datetime.date(1900, 1, 1): {
+            "intervals": [
+                {"interval": "(-inf, 0)", "slope": 0.0, "intercept": 0},
+                {"interval": "[0, 100)", "slope": 0.1},
+                {"interval": "[100, inf)", "slope": 0.3},
+            ]
+        },
+    }
+    param = _load(
+        leaf_name="tax_schedule",
+        spec=spec,
+        policy_date=datetime.date(1950, 1, 1),
+        computation_currency="SILVER_PENNY",
+    )
+    # The statute's numbers, exactly as written.
+    assert param.value.thresholds[2] == pytest.approx(100.0)
+    assert param.value.coefficients[1, 0] == pytest.approx(0.1)
+    with pytest.raises(UnitDefinitionError, match="never converted"):
+        _load(
+            leaf_name="tax_schedule",
+            spec=spec,
+            policy_date=POLICY_DATE,
+            computation_currency="CASTAR",
+        )
+
+
+def test_guard_checks_dict_param_leaves():
+    spec = {
+        **_HEADER,
+        "unit": {"child_amount_y": "SILVER_PENNY_PER_YEAR", "max_age": "YEARS"},
+        "type": "dict",
+        datetime.date(1900, 1, 1): {"child_amount_y": 100.0, "max_age": 18},
+    }
+    param = _load(
+        leaf_name="schedule",
+        spec=spec,
+        policy_date=datetime.date(1950, 1, 1),
+        computation_currency="SILVER_PENNY",
+    )
+    assert param.value["child_amount_y"] == pytest.approx(100.0)
+    assert param.value["max_age"] == 18
+    assert isinstance(param.value["max_age"], int)
+    with pytest.raises(UnitDefinitionError, match="never converted"):
+        _load(
+            leaf_name="schedule",
+            spec=spec,
+            policy_date=POLICY_DATE,
+            computation_currency="CASTAR",
+        )
+
+
+def test_guard_walks_int_keyed_per_leaf_mappings():
+    # GEP-3 allows int dict keys (e.g. satz_nach_kindanzahl), so the per-leaf unit
+    # walk accepts an int in the path (GEP 10).
+    spec = {
+        **_HEADER,
+        "unit": {1: "SILVER_PENNY_PER_MONTH", 2: "SILVER_PENNY_PER_MONTH"},
+        "type": "dict",
+        datetime.date(1900, 1, 1): {1: 100.0, 2: 200.0},
+    }
+    param = _load(
+        leaf_name="satz_nach_kindanzahl",
+        spec=spec,
+        policy_date=datetime.date(1950, 1, 1),
+        computation_currency="SILVER_PENNY",
+    )
+    assert param.value[1] == pytest.approx(100.0)
+    with pytest.raises(UnitDefinitionError, match="never converted"):
+        _load(
+            leaf_name="satz_nach_kindanzahl",
+            spec=spec,
+            policy_date=POLICY_DATE,
+            computation_currency="CASTAR",
+        )
+
+
+def test_guard_walks_nested_require_converter_mappings():
+    """Per-leaf tokens are checked at any nesting depth (GEP 10)."""
+    spec = {
+        **_HEADER,
+        "unit": {
+            "amounts": {
+                "base_m": "SILVER_PENNY_PER_MONTH",
+                "supplement_m": "SILVER_PENNY_PER_MONTH",
+            },
+            "bounds": {"min_age": "YEARS", "max_age": "YEARS"},
+        },
+        "type": "require_converter",
+        datetime.date(1900, 1, 1): {
+            "amounts": {"base_m": 100.0, "supplement_m": 40.0},
+            "bounds": {"min_age": 0, "max_age": 18},
+        },
+    }
+    param = _load(
+        leaf_name="raw_child_rate",
+        spec=spec,
+        policy_date=datetime.date(1950, 1, 1),
+        computation_currency="SILVER_PENNY",
+    )
+    assert param.value["amounts"]["base_m"] == pytest.approx(100.0)
+    assert param.value["bounds"]["max_age"] == 18
+    with pytest.raises(UnitDefinitionError, match="never converted"):
+        _load(
+            leaf_name="raw_child_rate",
+            spec=spec,
+            policy_date=POLICY_DATE,
+            computation_currency="CASTAR",
+        )
+
+
+def test_require_converter_with_axes_is_left_raw_for_its_converter():
+    """An axes-declaring require_converter passes its raw value through; the
+    declared axes describe the built schedule for checking, never conversion."""
+    spec = {
+        **_HEADER,
+        "input_unit": "SILVER_PENNY",
+        "output_unit": "SILVER_PENNY_PER_YEAR",
+        "type": "require_converter",
+        datetime.date(1900, 1, 1): {"top_rate": 0.2, "ceiling": 100},
+    }
+    param = _load(
+        leaf_name="raw_schedule",
+        spec=spec,
+        policy_date=datetime.date(1950, 1, 1),
+        computation_currency="SILVER_PENNY",
+    )
+    assert param.value["ceiling"] == 100
+    assert str(param.input_unit) == "SILVER_PENNY"
+    assert str(param.output_unit) == "SILVER_PENNY_PER_YEAR"
+
+
+def test_lookup_table_rejects_currency_input_axis():
+    spec = {
+        **_HEADER,
+        "input_unit": "SILVER_PENNY",
+        "output_unit": "SILVER_PENNY_PER_MONTH",
+        "type": "sparse_to_consecutive_int_lookup_table",
+        datetime.date(1900, 1, 1): {
+            0: 1.0,
+            "min_int_in_table": 0,
+            "max_int_in_table": 10,
+        },
+    }
+    with pytest.raises(UnitDefinitionError, match="cannot be a currency"):
+        _load(
+            leaf_name="table",
+            spec=spec,
+            policy_date=datetime.date(1950, 1, 1),
+            computation_currency="SILVER_PENNY",
+        )
+
+
+def test_require_converter_unit_and_axes_are_mutually_exclusive():
+    """A require_converter declares `unit:` xor axes, not both (GEP 10)."""
+    with pytest.raises(UnitDefinitionError, match="not both"):
+        RawParam(
+            value={"a": 1.0},
+            unit="SILVER_PENNY",
+            input_unit="SILVER_PENNY",
+        )
+
+
+def test_unknown_annotation_is_rejected_at_load():
+    # An annotation the vocabulary does not know fails loudly at load time —
+    # nothing is ever silently mis-declared.
+    spec = _scalar_spec(unit="Euros")
+    with pytest.raises(UnitDefinitionError, match="invalid unit declaration"):
+        _load(
+            leaf_name="threshold",
+            spec=spec,
+            policy_date=datetime.date(1950, 1, 1),
+            computation_currency="SILVER_PENNY",
+        )
+
+
+def _fresh_system(currencies: dict[str, Currency] | None = None) -> UnitSystem:
+    """A Middle-Earth-shaped system, with its currencies overridable per test."""
+    return UnitSystem(
+        currencies=currencies
+        if currencies is not None
+        else {
+            "CASTAR": Currency(statutory_from="2020-01-01"),
+            "SILVER_PENNY": Currency(value="CASTAR / 4", statutory_from="0001-01-01"),
+        }
+    )
+
+
+def test_system_without_a_base_currency_is_rejected():
+    """Exactly one currency is the base — the one that states no `value`."""
+    with (
+        isolated_unit_vocabulary(),
+        pytest.raises(UnitDefinitionError, match="exactly one currency"),
+    ):
+        UnitSystem(
+            currencies={
+                "CASTAR": Currency(value="CURRENCY", statutory_from="0001-01-01"),
+                "SILVER_PENNY": Currency(value="CASTAR / 4"),
+            }
+        )
+
+
+def test_system_with_two_base_currencies_is_rejected():
+    """Two currencies stating no `value` leave the base ambiguous."""
+    with (
+        isolated_unit_vocabulary(),
+        pytest.raises(UnitDefinitionError, match="exactly one currency"),
+    ):
+        UnitSystem(
+            currencies={
+                "CASTAR": Currency(statutory_from="0001-01-01"),
+                "MITHRIL": Currency(),
+            }
+        )
+
+
+def test_forward_reference_in_a_currency_value_is_rejected():
+    """A `value` may only reference a currency defined earlier in the mapping."""
+    with (
+        isolated_unit_vocabulary(),
+        pytest.raises(UnitDefinitionError, match="declared further down"),
+    ):
+        UnitSystem(
+            currencies={
+                "SILVER_PENNY": Currency(value="CASTAR / 4"),
+                "CASTAR": Currency(statutory_from="0001-01-01"),
+            }
+        )
+
+
+def test_value_referencing_a_currency_whose_name_contains_a_later_one_is_accepted():
+    """A backward reference stays valid when a later currency's name is a substring.
+
+    `"CASTAR / 4"` references `CASTAR`, defined earlier; the later `STAR` merely
+    occurs inside that spelling and does not make it a forward reference.
+    """
+    with isolated_unit_vocabulary():
+        system = UnitSystem(
+            currencies={
+                "CASTAR": Currency(statutory_from="0001-01-01"),
+                "SILVER_PENNY": Currency(value="CASTAR / 4"),
+                "STAR": Currency(value="CASTAR / 8"),
+            }
+        )
+    assert system.base_currency == "CASTAR"
+
+
+def test_unknown_currency_in_a_value_is_rejected():
+    """A `value` naming a unit the system does not define is refused."""
+    with (
+        isolated_unit_vocabulary(),
+        pytest.raises(UnitDefinitionError, match="does not define"),
+    ):
+        UnitSystem(
+            currencies={
+                "CASTAR": Currency(statutory_from="0001-01-01"),
+                "SILVER_PENNY": Currency(value="GOLD_DRAGON / 4"),
+            }
+        )
+
+
+def test_base_currency_is_the_declared_base():
+    assert TEST_UNIT_SYSTEM.base_currency == "CASTAR"
+
+
+def test_system_currencies_are_interconvertible():
+    # silver_penny = castar / 4, so the factors are reciprocal.
+    assert TEST_UNIT_SYSTEM.currency_conversion_factor(
+        source_currency="SILVER_PENNY", target_currency="CASTAR"
+    ) == pytest.approx(0.25)
+    assert TEST_UNIT_SYSTEM.currency_conversion_factor(
+        source_currency="CASTAR", target_currency="SILVER_PENNY"
+    ) == pytest.approx(4.0)
+
+
+def test_currency_conversion_rejects_the_abstract_currency_token():
+    # The agnostic CURRENCY token is a pint unit but not one of the system's
+    # currencies; conversion (and hence `data_currency=`) requires a concrete one.
+    with pytest.raises(UnitDefinitionError, match="not a registered currency"):
+        TEST_UNIT_SYSTEM.currency_conversion_factor(
+            source_currency="CURRENCY", target_currency="CASTAR"
+        )
+
+
+def test_annotated_results_label_a_parameter_in_the_statutory_currency():
+    """`tree_with_unit_annotations` labels a requested parameter in the
+    computation (statutory) currency and a computed column in the data currency,
+    even when the two differ (CASTAR data over a silver-penny computation). A
+    parameter and a column both resolve to the agnostic CURRENCY, so the label
+    must follow the result category, not the resolved unit: the parameter's value
+    is never converted, the column's is (GEP 10)."""
+    system = _fresh_system()
+    agnostic = system.registry.parse_units("CURRENCY / month")
+    annotated = tree_with_unit_annotations(
+        tree={"a_param_m": 25.0, "a_column_m": np.array([1.0, 2.0])},
+        raw_results__params={"a_param_m": 25.0},
+        unit_checks__resolved_pint_units={
+            "a_param_m": agnostic,
+            "a_column_m": agnostic,
+        },
+        data_currency="CASTAR",
+        computation_currency="SILVER_PENNY",
+        unit_system=system,
+    )
+    labels = {qname: leaf.unit.base for qname, leaf in annotated.items()}
+    assert labels == {"a_param_m": "SILVER_PENNY", "a_column_m": "CASTAR"}
+
+
+def test_annotated_results_label_each_leaf_of_a_dict_parameter():
+    """A requested `dict` parameter is annotated leaf by leaf, each leaf carrying
+    the unit its per-leaf mapping resolved to, in the computation currency."""
+    system = _fresh_system()
+    registry = system.registry
+    annotated = tree_with_unit_annotations(
+        tree={"rates": {"low": 25.0, "high": 50.0}},
+        raw_results__params={"rates": {"low": 25.0, "high": 50.0}},
+        unit_checks__resolved_pint_units={
+            "rates": {
+                "low": registry.parse_units("CURRENCY / month"),
+                "high": registry.parse_units("CURRENCY / year"),
+            }
+        },
+        data_currency="CASTAR",
+        computation_currency="SILVER_PENNY",
+        unit_system=system,
+    )
+    assert {key: str(leaf.unit) for key, leaf in annotated["rates"].items()} == {
+        "low": "SILVER_PENNY_PER_MONTH",
+        "high": "SILVER_PENNY_PER_YEAR",
+    }
+
+
+def test_annotated_results_spread_one_unit_over_a_uniform_dict_parameter():
+    """A `dict` parameter declaring a single unit for the whole structure has that
+    unit applied to each of its leaves."""
+    system = _fresh_system()
+    annotated = tree_with_unit_annotations(
+        tree={"rates": {"low": 25.0, "high": 50.0}},
+        raw_results__params={"rates": {"low": 25.0, "high": 50.0}},
+        unit_checks__resolved_pint_units={
+            "rates": system.registry.parse_units("CURRENCY / month")
+        },
+        data_currency="CASTAR",
+        computation_currency="SILVER_PENNY",
+        unit_system=system,
+    )
+    assert {key: str(leaf.unit) for key, leaf in annotated["rates"].items()} == {
+        "low": "SILVER_PENNY_PER_MONTH",
+        "high": "SILVER_PENNY_PER_MONTH",
+    }
+
+
+def test_annotated_results_leave_an_unresolved_dict_parameter_leaf_bare():
+    """A `dict` parameter leaf its resolved unit mapping does not cover stays a
+    plain value rather than silently borrowing a sibling's unit."""
+    system = _fresh_system()
+    annotated = tree_with_unit_annotations(
+        tree={"rates": {"low": 25.0, "high": 50.0}},
+        raw_results__params={"rates": {"low": 25.0, "high": 50.0}},
+        unit_checks__resolved_pint_units={
+            "rates": {"low": system.registry.parse_units("CURRENCY / month")}
+        },
+        data_currency="CASTAR",
+        computation_currency="SILVER_PENNY",
+        unit_system=system,
+    )
+    assert annotated["rates"]["high"] == 50.0
+
+
+def test_currency_named_after_a_non_currency_base_is_rejected():
+    """A currency whose name projects onto a non-currency unit base is rejected: it
+    would shadow that base for every policy package in the process."""
+    with (
+        isolated_unit_vocabulary(),
+        pytest.raises(UnitDefinitionError, match="non-currency unit base"),
+    ):
+        _fresh_system(
+            {
+                "CASTAR": Currency(statutory_from="0001-01-01"),
+                "SILVER_PENNY": Currency(value="CASTAR / 4"),
+                "HECTARE": Currency(value="CASTAR / 8"),
+            }
+        )
+
+
+def test_currencies_differing_only_in_case_are_rejected():
+    """Two currency names projecting to the same `TTSIMUnit` base are rejected — one
+    would silently shadow the other on the builder namespace, and a conversion could
+    pick either one's exchange rate."""
+    with (
+        isolated_unit_vocabulary(),
+        pytest.raises(UnitDefinitionError, match="'CASTAR' already claims the unit"),
+    ):
+        _fresh_system(
+            {
+                "CASTAR": Currency(statutory_from="0001-01-01"),
+                "SILVER_PENNY": Currency(value="CASTAR / 4"),
+                "castar": Currency(value="CASTAR / 8"),
+            }
+        )
+
+
+def test_currency_name_spelling_the_denominator_delimiter_is_rejected():
+    """A currency name containing `_PER_` is refused: its base would parse back as a
+    base plus a denominator, so the token would not round-trip."""
+    with (
+        isolated_unit_vocabulary(),
+        pytest.raises(UnitDefinitionError, match="would parse back as 'GOLD'"),
+    ):
+        _fresh_system(
+            {
+                "CASTAR": Currency(statutory_from="0001-01-01"),
+                "SILVER_PENNY": Currency(value="CASTAR / 4"),
+                "GOLD_PER_OUNCE": Currency(value="CASTAR / 8"),
+            }
+        )
+
+
+def test_rejected_currency_name_leaves_the_shared_vocabulary_untouched():
+    """A `UnitSystem` rejected for a colliding currency name publishes nothing: the
+    registered currencies, the allowed unit tokens and the `TTSIMUnit` builder are all
+    exactly as they were."""
+    before = (
+        set(_registered_currencies),
+        set(_ALLOWED_UNIT_TOKENS),
+        set(vars(TTSIMUnit)),
+    )
+    with pytest.raises(UnitDefinitionError):
+        _fresh_system(
+            {
+                "MITHRIL": Currency(statutory_from="0001-01-01"),
+                "MITHRIL_BIT": Currency(value="MITHRIL / 4"),
+                "HECTARE": Currency(value="MITHRIL / 8"),
+            }
+        )
+    assert (
+        set(_registered_currencies),
+        set(_ALLOWED_UNIT_TOKENS),
+        set(vars(TTSIMUnit)),
+    ) == before
+
+
+def test_failed_construction_publishes_nothing():
+    """A `UnitSystem` whose construction raises — here on a malformed
+    statutory-currency date — leaves the process-global currency vocabulary and
+    the `TTSIMUnit` builder exactly as it found them."""
+    before = set(_registered_currencies), set(vars(TTSIMUnit))
+    with pytest.raises(UnitDefinitionError):
+        _fresh_system(
+            {
+                "MITHRIL": Currency(statutory_from="not-a-date"),
+                "MITHRIL_BIT": Currency(value="MITHRIL / 4"),
+            }
+        )
+    assert (set(_registered_currencies), set(vars(TTSIMUnit))) == before
+
+
+def test_non_iso_statutory_from_names_the_offending_date():
+    """A `statutory_from` that is not an ISO date raises the unit-system error
+    naming the date, not a bare `ValueError`."""
+    with pytest.raises(UnitDefinitionError, match="'01-01-0001'"):
+        _fresh_system({"CASTAR": Currency(statutory_from="01-01-0001")})
+
+
+@pytest.mark.parametrize("start_date", ["00010101", "2021-W01-1"])
+def test_undashed_statutory_currency_key_is_rejected(start_date):
+    """Only the dashed `YYYY-MM-DD` spelling is accepted, though
+    `date.fromisoformat` would also parse the basic and week-date forms."""
+    with pytest.raises(UnitDefinitionError, match="dashed ISO date"):
+        _fresh_system({"CASTAR": Currency(statutory_from=start_date)})
+
+
+def test_two_currencies_claiming_the_same_statutory_from_are_rejected():
+    """Two currencies becoming statutory on the same date is not resolvable.
+
+    The statutory currency at a policy date must be unambiguous, so the error
+    names the contested date and every currency claiming it.
+    """
+    with (
+        isolated_unit_vocabulary(),
+        pytest.raises(UnitDefinitionError, match=r"0001-01-01.*MITHRIL.*MITHRIL_BIT"),
+    ):
+        _fresh_system(
+            {
+                "MITHRIL": Currency(statutory_from="0001-01-01"),
+                "MITHRIL_BIT": Currency(
+                    value="MITHRIL / 4", statutory_from="0001-01-01"
+                ),
+            }
+        )
+
+
+def test_currency_claiming_the_agnostic_base_is_rejected():
+    """A currency whose base is the agnostic `CURRENCY` token is refused: it would
+    make every agnostic declaration name a concrete currency."""
+    with (
+        isolated_unit_vocabulary(),
+        pytest.raises(UnitDefinitionError, match="agnostic currency base"),
+    ):
+        _fresh_system(
+            {
+                "CASTAR": Currency(statutory_from="0001-01-01"),
+                "SILVER_PENNY": Currency(value="CASTAR / 4"),
+                "currency": Currency(value="CASTAR / 8"),
+            }
+        )
+
+
+def test_agnostic_token_pins_down_no_concrete_currency():
+    """`TTSIMUnit.CURRENCY` never resolves to one of the system's currencies."""
+    _fresh_system()
+    assert ttsim_unit_currency(TTSIMUnit.CURRENCY) is None
+
+
+def test_registered_currency_token_round_trips_through_the_parser():
+    """Every registered currency's builder token parses back to the same unit."""
+    system = _fresh_system()
+    for name in sorted(system.currencies):
+        token = getattr(TTSIMUnit, name.upper())
+        assert ttsim_unit_from_string(str(token)) == token
+
+
+def test_annotated_results_label_a_declarationless_dimensionless_target_as_such():
+    """A framework month target is labelled as a calendar ordinal (GEP 10)."""
+    system = _fresh_system()
+    annotated = tree_with_unit_annotations(
+        tree={"policy_month": np.array([6, 7])},
+        raw_results__params={},
+        unit_checks__resolved_pint_units={
+            "policy_month": system.registry.parse_units("calendar_month")
+        },
+        data_currency="CASTAR",
+        computation_currency="SILVER_PENNY",
+        unit_system=system,
+    )
+    assert annotated["policy_month"].unit == TTSIMUnit.CALENDAR_MONTH
+
+
+def test_definition_referencing_no_system_currency_is_rejected():
+    # A currency must be defined relative to one the system already defines; a
+    # definition against the abstract CURRENCY reference alone would start a
+    # second, unconnected base.
+    with pytest.raises(UnitDefinitionError, match="no currency of this policy system"):
+        _fresh_system(
+            {
+                "CASTAR": Currency(statutory_from="0001-01-01"),
+                "FLOATING": Currency(value="CURRENCY / 2"),
+            }
+        )
+
+
+def test_statutory_currency_follows_the_dated_mapping():
+    system = TEST_UNIT_SYSTEM
+    assert (
+        system.statutory_currency_for_date(datetime.date(2019, 12, 31))
+        == "SILVER_PENNY"
+    )
+    assert system.statutory_currency_for_date(datetime.date(2020, 1, 1)) == "CASTAR"
+    assert system.statutory_currency_for_date(datetime.date(2025, 6, 1)) == "CASTAR"
+
+
+def test_statutory_currency_is_undefined_before_the_first_entry():
+    system = _fresh_system(
+        {
+            "CASTAR": Currency(),
+            "SILVER_PENNY": Currency(value="CASTAR / 4", statutory_from="1900-01-01"),
+        }
+    )
+    with pytest.raises(UnitDefinitionError, match="Extend the mapping"):
+        system.statutory_currency_for_date(datetime.date(1899, 12, 31))
+
+
+def test_system_without_any_statutory_currency_is_rejected():
+    """Some currency must be statutory — otherwise no policy date has one."""
+    with pytest.raises(UnitDefinitionError, match="must declare a `statutory_from`"):
+        _fresh_system(
+            {
+                "CASTAR": Currency(),
+                "SILVER_PENNY": Currency(value="CASTAR / 4"),
+            }
+        )
+
+
+def test_warns_when_statutory_currency_differs_from_default_data_currency():
+    """A run whose statutory currency is not the base while the data currency
+    sits at its default (the base) may hold data denominated in the wrong
+    currency — the user gets a nudge."""
+    with pytest.warns(PotentialCurrencyMismatchWarning, match="denominated"):
+        statutory_currency_and_default_data_currency_differ(
+            computation_currency="SILVER_PENNY",
+            data_currency="CASTAR",
+            policy_date=datetime.date(2019, 1, 1),
+            unit_system=TEST_UNIT_SYSTEM,
+        )
+
+
+def test_no_warning_when_statutory_currency_is_the_base():
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        statutory_currency_and_default_data_currency_differ(
+            computation_currency="CASTAR",
+            data_currency="CASTAR",
+            policy_date=datetime.date(2025, 1, 1),
+            unit_system=TEST_UNIT_SYSTEM,
+        )
+
+
+def test_no_warning_when_the_data_currency_is_set_off_the_base():
+    # The user chose a data currency explicitly; nothing to nudge about.
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        statutory_currency_and_default_data_currency_differ(
+            computation_currency="SILVER_PENNY",
+            data_currency="SILVER_PENNY",
+            policy_date=datetime.date(2019, 1, 1),
+            unit_system=TEST_UNIT_SYSTEM,
+        )

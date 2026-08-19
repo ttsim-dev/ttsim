@@ -24,7 +24,10 @@ from ttsim.interface_dag_elements.interface_node_objects import (
     interface_function,
     interface_input,
 )
-from ttsim.interface_dag_elements.shared import merge_trees
+from ttsim.interface_dag_elements.shared import (
+    framework_partial_arguments,
+    merge_trees,
+)
 from ttsim.tt.column_objects_param_function import (
     AggByGroupFunction,
     AggByPIDFunction,
@@ -35,7 +38,10 @@ from ttsim.tt.column_objects_param_function import (
     PolicyFunction,
     PolicyInput,
 )
-from ttsim.tt.param_objects import ParamObject, RawParam
+from ttsim.tt.param_objects import (
+    ParamObject,
+    RawParam,
+)
 from ttsim.tt.type_resolution import is_column_annotation
 from ttsim.typing import (
     OrderedQNames,
@@ -59,7 +65,7 @@ def rounding() -> bool:
 def without_tree_logic_and_with_derived_functions(
     policy_environment: PolicyEnvironment,
     tt_targets__qname: QNameTTTargets,
-    labels__input_columns: UnorderedQNames,
+    labels__data_qnames: UnorderedQNames,
     labels__top_level_namespace: UnorderedQNames,
     labels__grouping_levels: OrderedQNames,
 ) -> SpecEnvWithoutTreeLogicAndWithDerivedFunctions:
@@ -77,7 +83,7 @@ def without_tree_logic_and_with_derived_functions(
     return _add_derived_functions(
         qname_env_without_tree_logic=qname_env_without_tree_logic,
         tt_targets=tt_targets__qname,
-        input_columns=labels__input_columns,
+        data_qnames=labels__data_qnames,
         grouping_levels=labels__grouping_levels,
     )
 
@@ -102,13 +108,10 @@ def _remove_tree_logic_from_policy_environment(
 def _add_derived_functions(
     qname_env_without_tree_logic: dict[str, ColumnObject | ParamFunction | ParamObject],
     tt_targets: QNameStrings,
-    input_columns: UnorderedQNames,
+    data_qnames: UnorderedQNames,
     grouping_levels: OrderedQNames,
 ) -> SpecEnvWithoutTreeLogicAndWithDerivedFunctions:
-    """Return a mapping of qualified names to functions operating on columns.
-
-    Anything that is not a ColumnFunction is filtered out (e.g., ParamFunctions,
-    PolicyInputs).
+    """Return the environment extended by derived functions and input stubs.
 
     Derived functions are time converted functions and aggregation functions (aggregate
     by p_id or by group).
@@ -127,35 +130,35 @@ def _add_derived_functions(
         The specialized environment with derived functions (aggregations and time
             conversions), and without tree logic, i.e. absolute qualified names in
             all keys and function arguments.
-
     """
     # Create functions for different time units
-    time_conversion_functions = create_time_conversion_functions(
+    time_conversions = create_time_conversion_functions(
         qname_policy_environment=qname_env_without_tree_logic,
-        input_columns=input_columns,
+        data_qnames=data_qnames,
         grouping_levels=grouping_levels,
     )
     column_functions = {
         k: v
         for k, v in {
             **qname_env_without_tree_logic,
-            **time_conversion_functions,
+            **time_conversions.functions,
         }.items()
         if isinstance(v, ColumnFunction)
     }
 
     # Create aggregation functions by group.
-    aggregate_by_group_functions = create_agg_by_group_functions(
+    aggregations_by_group = create_agg_by_group_functions(
         column_functions=column_functions,
         qname_policy_environment=qname_env_without_tree_logic,
-        input_columns=input_columns,
+        time_converted_input_stubs=time_conversions.input_stubs,
+        data_qnames=data_qnames,
         tt_targets=tt_targets,
         grouping_levels=grouping_levels,
     )
     return {
         **qname_env_without_tree_logic,
-        **time_conversion_functions,
-        **aggregate_by_group_functions,
+        **time_conversions.all_objects,
+        **aggregations_by_group.all_objects,
     }
 
 
@@ -270,19 +273,16 @@ def with_partialled_params_and_scalars(
         for k, v in with_processed_params_and_scalars.items()
         if isinstance(v, ColumnFunction)
     }
+    framework_argument_values = framework_partial_arguments(
+        len_p_id=len_p_id, backend=backend, xnp=xnp, dnp=dnp
+    )
     all_partial_params = {
         **{
             k: v
             for k, v in with_processed_params_and_scalars.items()
             if not isinstance(v, ColumnObject)
         },
-        "len_p_id": len_p_id,
-        # Aggregation functions take a jax `num_segments` argument; the number of
-        # distinct groups is at most `len_p_id`, so feed it that safe upper bound.
-        "num_segments": len_p_id,
-        "backend": backend,
-        "xnp": xnp,
-        "dnp": dnp,
+        **framework_argument_values,
     }
 
     processed_functions = {}
@@ -375,9 +375,7 @@ def _broadcast_scalar_columns_at_call_time(
     The wrapper carries the same signature and annotations as `func` (so dependency
     resolution and the DAG annotation-consistency check see no change) plus `len_p_id`
     when `func` does not already require it. `len_p_id` is the population length
-    ``n_obs`` (see `len_p_id.len_p_id`) and is partialled in as a scalar, so the wrapper
-    introduces no DAG dependency. This is a lazy partial: the scalar value is fixed at
-    build time (partialled in), but its shape is resolved at call time.
+    ``n_obs``, partialled in as a scalar so the wrapper introduces no DAG dependency.
 
     At call time, every argument bound to a `Column`-typed parameter that arrives as a
     scalar is broadcast to ``(n_obs,)`` before `func` runs. The extra `len_p_id` value

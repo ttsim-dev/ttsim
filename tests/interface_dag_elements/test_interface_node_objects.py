@@ -300,23 +300,23 @@ def test_include_condition_satisfied_no_input_present_false():
     assert my_func.include_condition_satisfied(["input_a", "other"]) is False
 
 
-def test_include_condition_satisfied_combined_conditions_or_logic():
-    """Test that conditions are combined with OR logic."""
+def test_include_condition_satisfied_combined_conditions_and_logic():
+    """Specified conditions combine with AND; an unspecified one is satisfied."""
 
     @input_dependent_interface_function(
-        include_if_all_inputs_present=["all_a", "all_b"],
         include_if_any_input_present=["any_a", "any_b"],
+        include_if_no_input_present=["absent_a"],
     )
     def my_func(x: int) -> int:
         return x
 
-    # Only any_a present - any condition satisfied
+    # Both conditions satisfied.
     assert my_func.include_condition_satisfied(["any_a"]) is True
 
-    # all_a and all_b present - all condition satisfied
-    assert my_func.include_condition_satisfied(["all_a", "all_b"]) is True
+    # The presence condition is satisfied, but the absence condition is not.
+    assert my_func.include_condition_satisfied(["any_a", "absent_a"]) is False
 
-    # Neither condition satisfied
+    # The absence condition is satisfied, but the presence condition is not.
     assert my_func.include_condition_satisfied(["other"]) is False
 
 

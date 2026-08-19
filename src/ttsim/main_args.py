@@ -26,6 +26,7 @@ from ttsim.typing import (
     UnorderedQNames,
     UserFlatData,
     UserNestedData,
+    UserNestedUnitAnnotatedData,
     UserQNameData,
 )
 
@@ -77,7 +78,7 @@ def _set_single_field(cls: type[T], field_name: str, field_value: Any) -> T:  # 
 @dataclass(frozen=True)
 class MainArg:
     def to_dict(self) -> dict[str, Any]:
-        return self.__dict__
+        return dict(self.__dict__)
 
 
 @dataclass(frozen=True)
@@ -88,7 +89,7 @@ class DfAndMapper:
     """A nested dictionary mapping expected inputs to column names in df."""
 
     def to_dict(self) -> dict[str, Any]:
-        return self.__dict__
+        return dict(self.__dict__)
 
 
 @dataclass(frozen=True)
@@ -101,6 +102,7 @@ class InputData(MainArg):
     # and plain sequences alongside backend arrays. Canonicalization to the
     # narrow `NestedData` / `FlatData` / `QNameData` forms happens downstream.
     tree: UserNestedData | None
+    tree_with_unit_annotations: UserNestedUnitAnnotatedData | None
     flat: UserFlatData | None
     qname: UserQNameData | None
 
@@ -145,6 +147,25 @@ class InputData(MainArg):
     def tree(cls, tree: UserNestedData) -> InputData:
         """A nested dictionary mapping expected input names to vectors of data."""
         return _set_single_field(cls=cls, field_name="tree", field_value=tree)
+
+    @classmethod
+    @beartype(conf=INPUT_DATA_CONF)
+    def tree_with_unit_annotations(
+        cls, tree_with_unit_annotations: UserNestedUnitAnnotatedData
+    ) -> InputData:
+        """A nested dict whose every leaf is a ``UnitAnnotatedColumn`` carrying
+        the column's unit (GEP 10).
+
+        Opts into full-coverage boundary unit validation: each tag's currency is
+        converted to the data currency, its period is checked against the column's time
+        suffix, and its dimension and grouping level are checked against the column's
+        declared unit. Use :meth:`tree` for untagged data.
+        """
+        return _set_single_field(
+            cls=cls,
+            field_name="tree_with_unit_annotations",
+            field_value=tree_with_unit_annotations,
+        )
 
     @classmethod
     @beartype(conf=INPUT_DATA_CONF)
@@ -199,7 +220,7 @@ class OrigPolicyObjects(MainArg):
 
 @dataclass(frozen=True)
 class Labels(MainArg):
-    input_columns: UnorderedQNames | None = None
+    data_qnames: UnorderedQNames | None = None
     column_targets: OrderedQNames | None = None
     input_data_targets: OrderedQNames | None = None
     param_targets: OrderedQNames | None = None
@@ -241,10 +262,10 @@ class Labels(MainArg):
         )
 
     @classmethod
-    def input_columns(cls, input_columns: UnorderedQNames) -> Labels:
+    def data_qnames(cls, data_qnames: UnorderedQNames) -> Labels:
         """Input columns for labeling."""
         return _set_single_field(
-            cls=cls, field_name="input_columns", field_value=input_columns
+            cls=cls, field_name="data_qnames", field_value=data_qnames
         )
 
     @classmethod

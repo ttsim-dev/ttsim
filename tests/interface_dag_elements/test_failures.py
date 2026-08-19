@@ -11,6 +11,7 @@ import pandas as pd
 import pytest
 from mettsim import middle_earth
 
+from tests.test_unit_system import TEST_UNIT_SYSTEM
 from ttsim import InputData, MainTarget, OrigPolicyObjects, TTTargets, main
 from ttsim.exceptions import InputDataError, TTTargetsError
 from ttsim.interface_dag_elements.backend import jax
@@ -23,6 +24,7 @@ from ttsim.interface_dag_elements.fail_if import (
     foreign_keys_are_invalid_in_data,
     group_ids_are_outside_top_level_namespace,
     group_variables_are_not_constant_within_groups,
+    input_data_has_object_dtype_columns,
     input_data_is_invalid,
     input_data_uint64_values_overflow_int64,
     input_df_has_bool_or_numeric_column_names,
@@ -41,6 +43,7 @@ from ttsim.tt import (
     DictParam,
     PiecewisePolynomialParam,
     PiecewisePolynomialParamValue,
+    TTSIMUnit,
     group_creation_function,
     param_function,
     policy_function,
@@ -61,12 +64,10 @@ if TYPE_CHECKING:
         PolicyEnvironment,
     )
 
-
 _GENERIC_PARAM_HEADER = {
     "name": {"de": "foo", "en": "foo"},
     "description": {"de": "foo", "en": "foo"},
-    "unit": None,
-    "reference_period": None,
+    "unit": "DIMENSIONLESS",
 }
 _GENERIC_PARAM_SPEC = {
     "start_date": datetime.date(2024, 1, 1),
@@ -79,6 +80,11 @@ some_dict_param = DictParam(
     **_GENERIC_PARAM_SPEC,  # ty: ignore[invalid-argument-type]
 )
 
+# Mapping parameters declare per-axis tokens instead of `unit:` (GEP 10).
+_GENERIC_PARAM_MAPPING_OBJECT_SPEC = {
+    key: value for key, value in _GENERIC_PARAM_SPEC.items() if key != "unit"
+} | {"input_unit": "DIMENSIONLESS", "output_unit": "DIMENSIONLESS"}
+
 
 def _make_consecutive_int_lookup_table_param(
     xnp: ModuleType,
@@ -89,7 +95,7 @@ def _make_consecutive_int_lookup_table_param(
             xnp=xnp,
             values_to_look_up=xnp.array([1, 2, 3]),
         ),
-        **_GENERIC_PARAM_SPEC,  # ty: ignore[invalid-argument-type]
+        **_GENERIC_PARAM_MAPPING_OBJECT_SPEC,  # ty: ignore[invalid-argument-type]
     )
 
 
@@ -100,7 +106,7 @@ def _make_piecewise_polynomial_param(xnp: ModuleType) -> PiecewisePolynomialPara
             intercepts=xnp.array([1, 2, 3]),
             coefficients=xnp.array([[1], [2], [3]]),
         ),
-        **_GENERIC_PARAM_SPEC,  # ty: ignore[invalid-argument-type]
+        **_GENERIC_PARAM_MAPPING_OBJECT_SPEC,  # ty: ignore[invalid-argument-type]
     )
 
 
@@ -154,13 +160,16 @@ def mettsim_environment(backend) -> PolicyEnvironment:
     return main(
         main_target="policy_environment",
         orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+        unit_system=TEST_UNIT_SYSTEM,
         policy_date=datetime.date(2025, 1, 1),
         backend=backend,
     )
 
 
 @group_creation_function(
-    leaf_name="sp_id", fail_msg_if_included="""This should fail."""
+    leaf_name="sp_id",
+    fail_msg_if_included="""This should fail.""",
+    unit=TTSIMUnit.DIMENSIONLESS,
 )
 def should_fail_sp_id(
     p_id: IntColumn, p_id_spouse: IntColumn, xnp: ModuleType
@@ -173,12 +182,14 @@ def should_fail_sp_id(
     return xnp.maximum(p_id, p_id_spouse) + xnp.minimum(p_id, p_id_spouse) * n
 
 
-@policy_input(fail_msg_if_included="""This should fail.""")
+@policy_input(
+    fail_msg_if_included="""This should fail.""", unit=TTSIMUnit.DIMENSIONLESS
+)
 def p_id_spouse() -> IntColumn:
     """Just to test that we can pass a policy input with `fail_msg_if_included` set."""
 
 
-@group_creation_function(leaf_name="fam_id")
+@group_creation_function(leaf_name="fam_id", unit=TTSIMUnit.DIMENSIONLESS)
 def dummy_fam_id(sp_id: IntColumn, xnp: ModuleType) -> IntColumn:  # noqa: ARG001
     """
     Just want to use this as a drop-in replacement for `fam_id` from METTSIM with
@@ -191,12 +202,12 @@ def some_x(x):
     return x
 
 
-@param_function()
+@param_function(unit=TTSIMUnit.DIMENSIONLESS, verify_units=False)
 def some_param_func_returning_array_of_length_2(xnp: ModuleType) -> Float[Array, 2]:
     return xnp.array([1, 2])
 
 
-@param_function()
+@param_function(unit=TTSIMUnit.DIMENSIONLESS, verify_units=False)
 def some_param_func_returning_list_of_length_2() -> list[int]:
     return [1, 2]
 
@@ -245,11 +256,13 @@ def test_assert_valid_ttsim_pytree(tree, leaf_checker, err_substr):
                     start_date="2023-01-01",
                     end_date="2023-01-31",
                     leaf_name="f",
+                    unit=TTSIMUnit.DIMENSIONLESS,
                 )(identity),
                 ("c", "b"): policy_function(
                     start_date="2023-02-01",
                     end_date="2023-02-28",
                     leaf_name="f",
+                    unit=TTSIMUnit.DIMENSIONLESS,
                 )(identity),
             },
             {
@@ -266,11 +279,13 @@ def test_assert_valid_ttsim_pytree(tree, leaf_checker, err_substr):
                     start_date="2023-01-01",
                     end_date="2023-01-31",
                     leaf_name="f",
+                    unit=TTSIMUnit.DIMENSIONLESS,
                 )(identity),
                 ("x", "c", "b"): policy_function(
                     start_date="2023-01-01",
                     end_date="2023-02-28",
                     leaf_name="g",
+                    unit=TTSIMUnit.DIMENSIONLESS,
                 )(identity),
             },
             {
@@ -286,10 +301,12 @@ def test_assert_valid_ttsim_pytree(tree, leaf_checker, err_substr):
                 ("x", "c", "f"): policy_function(
                     start_date="2023-01-01",
                     end_date="2023-01-31",
+                    unit=TTSIMUnit.DIMENSIONLESS,
                 )(identity),
                 ("x", "d", "f"): policy_function(
                     start_date="2023-02-01",
                     end_date="2023-02-28",
+                    unit=TTSIMUnit.DIMENSIONLESS,
                 )(identity),
             },
             {
@@ -306,11 +323,13 @@ def test_assert_valid_ttsim_pytree(tree, leaf_checker, err_substr):
                     start_date="2023-01-01",
                     end_date="2023-01-31",
                     leaf_name="f",
+                    unit=TTSIMUnit.DIMENSIONLESS,
                 )(identity),
                 ("y", "a", "b"): policy_function(
                     start_date="2023-01-01",
                     end_date="2023-02-28",
                     leaf_name="f",
+                    unit=TTSIMUnit.DIMENSIONLESS,
                 )(identity),
             },
             {
@@ -341,19 +360,20 @@ def test_assert_valid_ttsim_pytree(tree, leaf_checker, err_substr):
                     start_date="2012-01-01",
                     end_date="2015-12-31",
                     leaf_name="f",
+                    unit=TTSIMUnit.DIMENSIONLESS,
                 )(identity),
                 ("c", "b"): policy_function(
                     start_date="2023-02-01",
                     end_date="2023-02-28",
                     leaf_name="f",
+                    unit=TTSIMUnit.DIMENSIONLESS,
                 )(identity),
             },
             {
                 ("c", "f"): {
                     "name": {"de": "foo", "en": "foo"},
                     "description": {"de": "foo", "en": "foo"},
-                    "unit": None,
-                    "reference_period": None,
+                    "unit": "DIMENSIONLESS",
                     "type": "scalar",
                     datetime.date(1984, 1, 1): {"value": 1},
                     datetime.date(1985, 1, 1): {"value": 3},
@@ -378,8 +398,7 @@ def test_assert_valid_ttsim_pytree(tree, leaf_checker, err_substr):
                 ("c", "f"): {
                     "name": {"de": "foo", "en": "foo"},
                     "description": {"de": "foo", "en": "foo"},
-                    "unit": None,
-                    "reference_period": None,
+                    "unit": "DIMENSIONLESS",
                     "type": "scalar",
                     datetime.date(1984, 1, 1): {"value": 1},
                     datetime.date(1985, 1, 1): {"value": 3},
@@ -389,8 +408,7 @@ def test_assert_valid_ttsim_pytree(tree, leaf_checker, err_substr):
                 ("d", "f"): {
                     "name": {"de": "foo", "en": "foo"},
                     "description": {"de": "foo", "en": "foo"},
-                    "unit": None,
-                    "reference_period": None,
+                    "unit": "DIMENSIONLESS",
                     "type": "scalar",
                     datetime.date(2016, 1, 1): {"value": 10},
                     datetime.date(2023, 2, 1): {
@@ -426,11 +444,13 @@ def test_fail_if_active_periods_overlap_passes(
                     start_date="2023-01-01",
                     end_date="2023-01-31",
                     leaf_name="f",
+                    unit=TTSIMUnit.DIMENSIONLESS,
                 )(identity),
                 ("b",): policy_function(
                     start_date="2023-01-01",
                     end_date="2023-01-31",
                     leaf_name="f",
+                    unit=TTSIMUnit.DIMENSIONLESS,
                 )(identity),
             },
             {},
@@ -442,11 +462,13 @@ def test_fail_if_active_periods_overlap_passes(
                     start_date="2023-01-01",
                     end_date="2023-01-31",
                     leaf_name="f",
+                    unit=TTSIMUnit.DIMENSIONLESS,
                 )(identity),
                 ("b"): policy_function(
                     start_date="2021-01-02",
                     end_date="2023-02-01",
                     leaf_name="f",
+                    unit=TTSIMUnit.DIMENSIONLESS,
                 )(identity),
             },
             {},
@@ -458,11 +480,13 @@ def test_fail_if_active_periods_overlap_passes(
                     start_date="2023-01-02",
                     end_date="2023-02-01",
                     leaf_name="f",
+                    unit=TTSIMUnit.DIMENSIONLESS,
                 )(identity),
                 ("b",): policy_function(
                     start_date="2022-01-01",
                     end_date="2023-01-31",
                     leaf_name="f",
+                    unit=TTSIMUnit.DIMENSIONLESS,
                 )(identity),
             },
             {},
@@ -474,11 +498,13 @@ def test_fail_if_active_periods_overlap_passes(
                     start_date="2023-01-02",
                     end_date="2023-02-01",
                     leaf_name="f",
+                    unit=TTSIMUnit.DIMENSIONLESS,
                 )(identity),
                 ("d", "b"): policy_function(
                     start_date="2022-01-01",
                     end_date="2023-01-31",
                     leaf_name="f",
+                    unit=TTSIMUnit.DIMENSIONLESS,
                 )(identity),
             },
             {},
@@ -489,10 +515,12 @@ def test_fail_if_active_periods_overlap_passes(
                 ("c", "f"): policy_function(
                     start_date="2023-01-02",
                     end_date="2023-02-01",
+                    unit=TTSIMUnit.DIMENSIONLESS,
                 )(identity),
                 ("d", "f"): policy_function(
                     start_date="2022-01-01",
                     end_date="2023-01-31",
+                    unit=TTSIMUnit.DIMENSIONLESS,
                 )(identity),
             },
             {},
@@ -504,11 +532,13 @@ def test_fail_if_active_periods_overlap_passes(
                     start_date="2023-01-01",
                     end_date="2023-01-31",
                     leaf_name="f",
+                    unit=TTSIMUnit.DIMENSIONLESS,
                 )(identity),
                 ("c", "b"): policy_function(
                     start_date="2023-02-01",
                     end_date="2023-02-28",
                     leaf_name="f",
+                    unit=TTSIMUnit.DIMENSIONLESS,
                 )(identity),
             },
             {
@@ -525,11 +555,13 @@ def test_fail_if_active_periods_overlap_passes(
                     start_date="2023-01-01",
                     end_date="2023-01-31",
                     leaf_name="f",
+                    unit=TTSIMUnit.DIMENSIONLESS,
                 )(identity),
                 ("x", "a", "c"): policy_function(
                     start_date="2023-02-01",
                     end_date="2023-02-28",
                     leaf_name="f",
+                    unit=TTSIMUnit.DIMENSIONLESS,
                 )(identity),
             },
             {
@@ -590,10 +622,12 @@ def test_fail_if_data_paths_are_missing_in_paths_to_mapped_column_names(
         main_target="results__tree",
         input_data=InputData.tree(tree=minimal_data_tree),
         policy_environment=environment,
+        policy_date=datetime.date(2024, 1, 1),
         evaluation_date=datetime.date(2024, 1, 1),
         tt_targets=TTTargets.tree(tt_targets__tree),
         rounding=False,
         backend=backend,
+        unit_system=TEST_UNIT_SYSTEM,
     )
     with pytest.raises(
         ValueError,
@@ -824,10 +858,12 @@ def test_fail_if_non_convertible_objects_in_results_tree_because_of_object_type(
             main_target=MainTarget.results.df_with_nested_columns,
             input_data=InputData.tree(tree=minimal_data_tree),
             policy_environment=env_factory(xnp),
+            policy_date=datetime.date(2024, 1, 1),
             evaluation_date=datetime.date(2024, 1, 1),
             tt_targets=TTTargets.tree(tt_targets__tree),
             rounding=False,
             backend=backend,
+            unit_system=TEST_UNIT_SYSTEM,
         )
 
 
@@ -859,10 +895,12 @@ def test_fail_if_non_convertible_objects_in_results_tree_because_of_object_lengt
             main_target=MainTarget.results.df_with_nested_columns,
             input_data=InputData.tree(tree=minimal_data_tree),
             policy_environment=environment,
+            policy_date=datetime.date(2024, 1, 1),
             evaluation_date=datetime.date(2024, 1, 1),
             tt_targets=TTTargets.tree(tt_targets__tree),
             rounding=False,
             backend=backend,
+            unit_system=TEST_UNIT_SYSTEM,
         )
 
 
@@ -888,8 +926,11 @@ def test_fail_if_non_convertible_objects_in_results_tree_passes_with_correct_len
     processed_data = main(
         main_target=MainTarget.processed_data,
         input_data=InputData.tree(tree=minimal_data_tree),
+        policy_environment={},
+        policy_date=datetime.date(2024, 1, 1),
         tt_targets=TTTargets.tree({}),
         backend=backend,
+        unit_system=TEST_UNIT_SYSTEM,
     )
     non_convertible_objects_in_results_tree(
         processed_data=processed_data,
@@ -910,8 +951,11 @@ def test_fail_if_non_convertible_objects_in_results_tree_passes_with_unsized_jax
     processed_data = main(
         main_target=MainTarget.processed_data,
         input_data=InputData.tree(tree=minimal_data_tree),
+        policy_environment={},
+        policy_date=datetime.date(2024, 1, 1),
         tt_targets=TTTargets.tree({}),
         backend=backend,
+        unit_system=TEST_UNIT_SYSTEM,
     )
     non_convertible_objects_in_results_tree(
         processed_data=processed_data,
@@ -959,6 +1003,15 @@ def test_fail_if_uint64_input_overflows_int64_ignores_non_uint64_columns():
     input_data_uint64_values_overflow_int64(data)
 
 
+def test_fail_if_input_data_has_object_dtype_columns_raises():
+    data = {
+        ("p_id",): numpy.array([1, 2], dtype=numpy.int64),
+        ("status",): numpy.array(["employed", "retired"], dtype=object),
+    }
+    with pytest.raises(ValueError, match=r"(?s)object dtype.*status"):
+        input_data_has_object_dtype_columns(data)
+
+
 def test_fail_if_p_id_is_missing_via_main(backend):
     data = {"fam_id": pd.Series([1, 2, 3], name="fam_id")}
     with pytest.raises(
@@ -973,6 +1026,7 @@ def test_fail_if_p_id_is_missing_via_main(backend):
             evaluation_date=datetime.date(2025, 1, 1),
             rounding=False,
             backend=backend,
+            unit_system=TEST_UNIT_SYSTEM,
         )
 
 
@@ -1002,6 +1056,7 @@ def test_fail_if_p_id_is_not_unique_via_main(minimal_input_data, backend):
             policy_date=datetime.date(2025, 1, 1),
             rounding=False,
             backend=backend,
+            unit_system=TEST_UNIT_SYSTEM,
         )
 
 
@@ -1064,6 +1119,7 @@ def test_fail_if_input_data_has_different_lengths(backend):
             evaluation_date=datetime.date(2025, 1, 1),
             rounding=False,
             backend=backend,
+            unit_system=TEST_UNIT_SYSTEM,
         )
 
 
@@ -1075,8 +1131,8 @@ def test_fail_if_tt_root_nodes_are_missing_via_main(minimal_input_data, backend)
         return b
 
     policy_environment = {
-        "b": policy_function(leaf_name="b")(b),
-        "c": policy_function(leaf_name="c")(c),
+        "b": policy_function(leaf_name="b", unit=TTSIMUnit.DIMENSIONLESS)(b),
+        "c": policy_function(leaf_name="c", unit=TTSIMUnit.DIMENSIONLESS)(c),
     }
 
     with pytest.raises(
@@ -1087,21 +1143,23 @@ def test_fail_if_tt_root_nodes_are_missing_via_main(minimal_input_data, backend)
             main_targets=["results__tree", "fail_if__tt_root_nodes_are_missing"],
             input_data=InputData.tree(tree=minimal_input_data),
             policy_environment=policy_environment,
+            policy_date=datetime.date(2024, 1, 1),
             evaluation_date=datetime.date(2024, 1, 1),
             tt_targets=TTTargets.tree({"c": None}),
             rounding=False,
             backend=backend,
+            unit_system=TEST_UNIT_SYSTEM,
         )
 
 
 def test_fail_if_tt_root_nodes_are_missing_asks_for_individual_level_columns(
     minimal_input_data, backend
 ):
-    @policy_function()
+    @policy_function(unit=TTSIMUnit.DIMENSIONLESS)
     def b(a_fam: int) -> int:
         return a_fam
 
-    @policy_input()
+    @policy_input(unit=TTSIMUnit.DIMENSIONLESS)
     def a() -> int:
         pass
 
@@ -1119,12 +1177,14 @@ def test_fail_if_tt_root_nodes_are_missing_asks_for_individual_level_columns(
             main_targets=["results__tree", "fail_if__tt_root_nodes_are_missing"],
             input_data=InputData.tree(tree=minimal_input_data),
             policy_environment=policy_environment,
+            policy_date=datetime.date(2024, 1, 1),
             evaluation_date=datetime.date(2024, 1, 1),
             tt_targets=TTTargets.tree({"b": None}),
             include_warn_nodes=False,
             include_fail_nodes=False,
             rounding=False,
             backend=backend,
+            unit_system=TEST_UNIT_SYSTEM,
         )
 
 
@@ -1132,7 +1192,7 @@ def test_fail_if_tt_root_nodes_are_missing_asks_for_individual_level_columns(
     (
         "policy_environment",
         "tt_targets",
-        "labels__input_columns",
+        "labels__data_qnames",
         "expected_error_match",
     ),
     [
@@ -1145,7 +1205,7 @@ def test_fail_if_tt_root_nodes_are_missing_asks_for_individual_level_columns(
 def test_fail_if_targets_are_not_in_specialized_environment_or_data(
     policy_environment,
     tt_targets,
-    labels__input_columns,
+    labels__data_qnames,
     expected_error_match,
 ):
     with pytest.raises(
@@ -1157,7 +1217,7 @@ def test_fail_if_targets_are_not_in_specialized_environment_or_data(
                 policy_environment
             ),
             tt_targets__qname=tt_targets,
-            labels__input_columns=labels__input_columns,
+            labels__data_qnames=labels__data_qnames,
         )
     assert expected_error_match in str(e.value)
 
@@ -1174,10 +1234,12 @@ def test_fail_if_targets_are_not_in_specialized_environment_or_data_via_main(
             main_target="fail_if__targets_are_not_in_specialized_environment_or_data",
             input_data=InputData.tree(tree=minimal_input_data),
             policy_environment={},
+            policy_date=datetime.date(2025, 1, 1),
             tt_targets=TTTargets.tree({"unknown_target": None}),
             evaluation_date=datetime.date(2025, 1, 1),
             rounding=False,
             backend=backend,
+            unit_system=TEST_UNIT_SYSTEM,
         )
 
 
@@ -1188,8 +1250,7 @@ def test_fail_if_targets_are_not_in_specialized_environment_or_data_via_main(
             {
                 "name": {"de": "spam", "en": "spam"},
                 "description": {"de": "spam", "en": "spam"},
-                "unit": None,
-                "reference_period": None,
+                "unit": "DIMENSIONLESS",
                 "type": "scalar",
                 datetime.date(1984, 1, 1): {"note": "completely empty"},
             },
@@ -1200,8 +1261,7 @@ def test_fail_if_targets_are_not_in_specialized_environment_or_data_via_main(
             {
                 "name": {"de": "foo", "en": "foo"},
                 "description": {"de": "foo", "en": "foo"},
-                "unit": None,
-                "reference_period": None,
+                "unit": "DIMENSIONLESS",
                 "type": "scalar",
                 datetime.date(1984, 1, 1): {"value": 1},
             },
@@ -1219,8 +1279,7 @@ def test_fail_if_targets_are_not_in_specialized_environment_or_data_via_main(
             {
                 "name": {"de": "foo", "en": "foo"},
                 "description": {"de": "foo", "en": "foo"},
-                "unit": None,
-                "reference_period": None,
+                "unit": "DIMENSIONLESS",
                 "type": "scalar",
                 datetime.date(1984, 1, 1): {"value": 1},
                 datetime.date(1985, 1, 1): {"note": "stop"},
@@ -1239,8 +1298,7 @@ def test_fail_if_targets_are_not_in_specialized_environment_or_data_via_main(
             {
                 "name": {"de": "bar", "en": "bar"},
                 "description": {"de": "bar", "en": "bar"},
-                "unit": None,
-                "reference_period": None,
+                "unit": "DIMENSIONLESS",
                 "type": "scalar",
                 datetime.date(1984, 1, 1): {"value": 1},
                 datetime.date(1985, 1, 1): {"value": 3},
@@ -1264,8 +1322,7 @@ def test_fail_if_targets_are_not_in_specialized_environment_or_data_via_main(
                     end_date=datetime.date(2099, 12, 31),
                     name={"de": "bar", "en": "bar"},
                     description={"de": "bar", "en": "bar"},
-                    unit=None,
-                    reference_period=None,
+                    unit="DIMENSIONLESS",
                 ),
                 _ParamWithActivePeriod(
                     original_function_name="bar",
@@ -1273,8 +1330,7 @@ def test_fail_if_targets_are_not_in_specialized_environment_or_data_via_main(
                     end_date=datetime.date(2023, 1, 31),
                     name={"de": "bar", "en": "bar"},
                     description={"de": "bar", "en": "bar"},
-                    unit=None,
-                    reference_period=None,
+                    unit="DIMENSIONLESS",
                 ),
                 _ParamWithActivePeriod(
                     original_function_name="bar",
@@ -1282,8 +1338,7 @@ def test_fail_if_targets_are_not_in_specialized_environment_or_data_via_main(
                     end_date=datetime.date(2011, 12, 31),
                     name={"de": "bar", "en": "bar"},
                     description={"de": "bar", "en": "bar"},
-                    unit=None,
-                    reference_period=None,
+                    unit="DIMENSIONLESS",
                 ),
             ],
         ),
@@ -1327,6 +1382,7 @@ def test_fail_if_input_df_mapper_columns_missing_in_df_via_main(
             input_data=InputData.df_and_mapper(df=df, mapper=mapper),
             main_target=MainTarget.results.df_with_mapper,
             orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+            unit_system=TEST_UNIT_SYSTEM,
             tt_targets=TTTargets.qname({"d": None}),
             policy_date_str="2025-01-01",
             backend=backend,
@@ -1391,6 +1447,7 @@ def test_fail_if_input_df_mapper_p_id_is_missing_via_main(
             evaluation_date=datetime.date(2025, 1, 1),
             rounding=False,
             backend=backend,
+            unit_system=TEST_UNIT_SYSTEM,
         )
 
 
@@ -1451,6 +1508,7 @@ def test_invalid_tt_targets_tree(
                 }
             ),
             orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+            unit_system=TEST_UNIT_SYSTEM,
             policy_date_str="2025-01-01",
             tt_targets=TTTargets.tree(tt_targets__tree),
         )
@@ -1486,6 +1544,7 @@ def test_invalid_input_data_tree_via_main(
             main_target=MainTarget.results.df_with_nested_columns,
             policy_date_str="2025-01-01",
             orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+            unit_system=TEST_UNIT_SYSTEM,
             input_data=InputData.tree(tree=input_data_tree_with_p_id),
             tt_targets=TTTargets.tree({"p_id": None}),
             backend=backend,
@@ -1550,8 +1609,12 @@ def test_fail_if_policy_environment_is_invalid(policy_environment, match):
     [
         # Valid environment with policy functions
         lambda _xnp: {
-            "valid_func": policy_function(leaf_name="valid_func")(identity),
-            "another_func": policy_function(leaf_name="another_func")(return_one),
+            "valid_func": policy_function(
+                leaf_name="valid_func", unit=TTSIMUnit.DIMENSIONLESS
+            )(identity),
+            "another_func": policy_function(
+                leaf_name="another_func", unit=TTSIMUnit.DIMENSIONLESS
+            )(return_one),
         },
         # Valid environment with param functions
         lambda _xnp: {
@@ -1569,14 +1632,18 @@ def test_fail_if_policy_environment_is_invalid(policy_environment, match):
         # Valid environment with nested structure
         lambda _xnp: {
             "nested": {
-                "nested_func": policy_function(leaf_name="nested_func")(identity),
+                "nested_func": policy_function(
+                    leaf_name="nested_func", unit=TTSIMUnit.DIMENSIONLESS
+                )(identity),
                 "some_param_func_returning_array_of_length_2": some_param_func_returning_array_of_length_2,
             },
             "some_dict_param": some_dict_param,
         },
         # Valid environment with mixed types
         lambda _xnp: {
-            "func": policy_function(leaf_name="func")(identity),
+            "func": policy_function(leaf_name="func", unit=TTSIMUnit.DIMENSIONLESS)(
+                identity
+            ),
             "some_param_func_returning_array_of_length_2": some_param_func_returning_array_of_length_2,
             "some_dict_param": some_dict_param,
             "module": numpy,
@@ -1597,6 +1664,7 @@ def test_raises_error_if_p_id_is_passed_as_scalar(backend: Literal["jax", "numpy
             main_target=MainTarget.results.df_with_nested_columns,
             policy_date_str="2025-01-01",
             orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+            unit_system=TEST_UNIT_SYSTEM,
             input_data=InputData.tree(tree={"p_id": 1}),
             tt_targets=TTTargets.tree({"p_id": None}),
             backend=backend,
@@ -1609,6 +1677,7 @@ def test_invalid_input_data_as_object_via_main(backend: Literal["jax", "numpy"])
             main_target=MainTarget.results.df_with_nested_columns,
             policy_date_str="2025-01-01",
             orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+            unit_system=TEST_UNIT_SYSTEM,
             input_data=InputData.tree(object()),  # ty: ignore [invalid-argument-type]
             tt_targets=TTTargets.tree({"p_id": None}),
             backend=backend,
@@ -1618,7 +1687,11 @@ def test_invalid_input_data_as_object_via_main(backend: Literal["jax", "numpy"])
 @pytest.mark.parametrize(
     "policy_environment",
     [
-        {"foo": policy_function(leaf_name="bar")(return_one)},
+        {
+            "foo": policy_function(leaf_name="bar", unit=TTSIMUnit.DIMENSIONLESS)(
+                return_one
+            )
+        },
     ],
 )
 def test_fail_if_name_of_last_branch_element_is_not_the_functions_leaf_name(
@@ -1632,8 +1705,10 @@ def test_fail_if_name_of_last_branch_element_is_not_the_functions_leaf_name(
         main(
             main_target=MainTarget.results.df_with_nested_columns,
             policy_environment=policy_environment,
+            policy_date=datetime.date(2025, 1, 1),
             tt_targets=TTTargets.tree({"p_id": None}),
             input_data=InputData.tree(tree={"p_id": xnp.array([0, 1, 2])}),
+            unit_system=TEST_UNIT_SYSTEM,
         )
 
 
@@ -1657,6 +1732,7 @@ def test_raise_tt_root_nodes_are_missing_without_input_data(
             policy_date_str="2025-01-01",
             backend=backend,
             orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+            unit_system=TEST_UNIT_SYSTEM,
         )
 
 
@@ -1672,6 +1748,7 @@ def test_raise_some_error_without_input_data(
             main_target=MainTarget.results.df_with_mapper,
             backend=backend,
             orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+            unit_system=TEST_UNIT_SYSTEM,
         )
 
 
@@ -1690,10 +1767,12 @@ def test_fail_if_tt_dag_includes_function_with_fail_msg_if_included_set(
         main(
             main_target=MainTarget.results.df_with_mapper,
             policy_environment=env,
+            policy_date=datetime.date(2025, 1, 1),
             tt_targets=TTTargets.tree({"fam_id": None}),
             input_data=InputData.tree(tree=minimal_data_tree),
             include_warn_nodes=False,
             backend=backend,
+            unit_system=TEST_UNIT_SYSTEM,
         )
 
 
@@ -1712,10 +1791,12 @@ def test_fail_if_tt_dag_includes_policy_input_with_fail_msg_if_included_set(
         main(
             main_target=MainTarget.results.df_with_mapper,
             policy_environment=env,
+            policy_date=datetime.date(2025, 1, 1),
             tt_targets=TTTargets.tree({"fam_id": None}),
             input_data=InputData.tree(tree=minimal_data_tree),
             include_warn_nodes=False,
             backend=backend,
+            unit_system=TEST_UNIT_SYSTEM,
         )
 
 
@@ -1733,10 +1814,12 @@ def test_fail_if_tt_dag_includes_policy_input_with_fail_msg_if_included_set_does
     main(
         main_target=MainTarget.results.df_with_mapper,
         policy_environment=env,
+        policy_date=datetime.date(2025, 1, 1),
         tt_targets=TTTargets.tree({"fam_id": None}),
         input_data=InputData.tree(tree=minimal_data_tree),
         include_warn_nodes=False,
         backend=backend,
+        unit_system=TEST_UNIT_SYSTEM,
     )
 
 
@@ -1747,13 +1830,14 @@ def test_backend_has_changed_from_jax_to_numpy_passes():
         main_target=MainTarget.policy_environment,
         policy_date_str="2000-01-01",
         orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+        unit_system=TEST_UNIT_SYSTEM,
         backend="jax",
     )
     input_data = InputData.tree(
         tree={
             "p_id": jax.numpy.array([0, 1, 2]),
             "property_tax": {
-                "acre_size_in_hectares": jax.numpy.array([5, 20, 200]),
+                "acre_size": jax.numpy.array([5, 20, 200]),
             },
         }
     )
@@ -1761,8 +1845,10 @@ def test_backend_has_changed_from_jax_to_numpy_passes():
         main_target=MainTarget.results.df_with_nested_columns,
         input_data=input_data,
         policy_environment=policy_environment,
+        policy_date_str="2000-01-01",
         tt_targets=TTTargets.tree({"property_tax": {"amount_y": None}}),
         backend="numpy",
+        unit_system=TEST_UNIT_SYSTEM,
     )
 
 
@@ -1772,13 +1858,16 @@ def test_backend_has_changed_from_numpy_for_processed_data_to_jax_passes():
         tree={
             "p_id": numpy.array([0, 1, 2]),
             "property_tax": {
-                "acre_size_in_hectares": numpy.array([5, 20, 200]),
+                "acre_size": numpy.array([5, 20, 200]),
             },
         }
     )
     processed_data = main(
         main_target=MainTarget.processed_data,
         backend="numpy",
+        policy_date_str="2000-01-01",
+        orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+        unit_system=TEST_UNIT_SYSTEM,
         input_data=input_data,
         tt_targets=TTTargets.tree({"property_tax": {"amount_y": None}}),
     )
@@ -1786,6 +1875,7 @@ def test_backend_has_changed_from_numpy_for_processed_data_to_jax_passes():
         main_target=MainTarget.results.df_with_nested_columns,
         policy_date_str="2000-01-01",
         orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+        unit_system=TEST_UNIT_SYSTEM,
         input_data=input_data,
         processed_data=processed_data,
         tt_targets=TTTargets.tree({"property_tax": {"amount_y": None}}),
@@ -1801,13 +1891,14 @@ def test_backend_has_changed_from_numpy_for_policy_environment_to_jax_raises(
         main_target=MainTarget.policy_environment,
         policy_date_str="2000-01-01",
         orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+        unit_system=TEST_UNIT_SYSTEM,
         backend="numpy",
     )
     input_data = InputData.tree(
         tree={
             "p_id": xnp.array([0, 1, 2]),
             "property_tax": {
-                "acre_size_in_hectares": xnp.array([5, 20, 200]),
+                "acre_size": xnp.array([5, 20, 200]),
             },
         }
     )
@@ -1816,30 +1907,32 @@ def test_backend_has_changed_from_numpy_for_policy_environment_to_jax_raises(
             main_target=MainTarget.results.df_with_nested_columns,
             input_data=input_data,
             policy_environment=policy_environment,
+            policy_date_str="2000-01-01",
             tt_targets=TTTargets.tree({"property_tax": {"amount_y": None}}),
             backend="jax",
+            unit_system=TEST_UNIT_SYSTEM,
         )
 
 
-@param_function()
+@param_function(unit=TTSIMUnit.DIMENSIONLESS)
 def valid_param_function(x: int) -> int:
     """A valid param function that only depends on parameters."""
     return x * 2
 
 
-@param_function()
+@param_function(unit=TTSIMUnit.DIMENSIONLESS)
 def invalid_param_function(some_policy_function: int) -> int:
     """An invalid param function that depends on a column object."""
     return some_policy_function * 2
 
 
-@policy_function()
+@policy_function(unit=TTSIMUnit.DIMENSIONLESS)
 def some_policy_function(x: int) -> int:
     """A policy function for testing."""
     return x + 1
 
 
-@policy_input()
+@policy_input(unit=TTSIMUnit.DIMENSIONLESS)
 def some_policy_input() -> int:
     """A policy input for testing."""
 
@@ -1935,4 +2028,5 @@ def test_param_function_depends_on_column_objects_via_main(
                 "invalid_param_function": invalid_param_function,
                 "some_policy_function": some_policy_function,
             },
+            unit_system=TEST_UNIT_SYSTEM,
         )

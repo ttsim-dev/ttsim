@@ -5,7 +5,7 @@ from pathlib import Path
 import ttsim.interface_dag_elements
 from ttsim.interface_dag_elements.interface_node_objects import InterfaceFunction
 from ttsim.interface_dag_elements.orig_policy_objects import load_module
-from ttsim.tt import param_function, policy_function, policy_input
+from ttsim.tt import TTSIMUnit, param_function, policy_function, policy_input
 
 # The package claw rewrites normally-imported `interface_dag_elements` modules,
 # binding each callable `InterfaceFunction` instance into a bound method. Re-load
@@ -31,7 +31,7 @@ def test_tree_is_interface_function():
 def test_tree_extracts_policy_functions_from_environment():
     """tree() extracts ColumnFunction instances (e.g., PolicyFunction)."""
 
-    @policy_function()
+    @policy_function(unit=TTSIMUnit.DIMENSIONLESS)
     def my_col(x: int) -> int:
         return x
 
@@ -47,11 +47,11 @@ def test_tree_extracts_policy_functions_from_environment():
 def test_tree_excludes_policy_inputs():
     """tree() only includes ColumnFunction instances, not PolicyInput."""
 
-    @policy_function()
+    @policy_function(unit=TTSIMUnit.DIMENSIONLESS)
     def my_col(x: int) -> int:
         return x
 
-    @policy_input()
+    @policy_input(unit=TTSIMUnit.DIMENSIONLESS)
     def my_input() -> int:
         pass
 
@@ -69,11 +69,11 @@ def test_tree_excludes_policy_inputs():
 
 
 def test_tree_excludes_param_functions():
-    @policy_function()
+    @policy_function(unit=TTSIMUnit.DIMENSIONLESS)
     def my_col(x: int) -> int:
         return x
 
-    @param_function()
+    @param_function(unit=TTSIMUnit.DIMENSIONLESS)
     def my_param() -> int:
         return 42
 
@@ -89,7 +89,7 @@ def test_tree_excludes_param_functions():
 
 
 def test_tree_handles_nested_policy_environment():
-    @policy_function()
+    @policy_function(unit=TTSIMUnit.DIMENSIONLESS)
     def nested_col(x: int) -> int:
         return x
 
@@ -106,7 +106,7 @@ def test_tree_handles_nested_policy_environment():
 
 
 def test_tree_returns_none_as_leaf_values():
-    @policy_function()
+    @policy_function(unit=TTSIMUnit.DIMENSIONLESS)
     def my_col(x: int) -> int:
         return x
 
@@ -122,7 +122,7 @@ def test_tree_empty_environment():
 
 
 def test_tree_environment_with_only_param_functions():
-    @param_function()
+    @param_function(unit=TTSIMUnit.DIMENSIONLESS)
     def my_param() -> int:
         return 42
 
@@ -133,7 +133,7 @@ def test_tree_environment_with_only_param_functions():
 
 
 def test_tree_environment_with_only_policy_inputs():
-    @policy_input()
+    @policy_input(unit=TTSIMUnit.DIMENSIONLESS)
     def my_input() -> int:
         pass
 
@@ -234,19 +234,19 @@ def test_qname_handles_mixed_flat_and_nested():
 # tree + qname
 # =============================================================================
 def test_tree_then_qname_extracts_column_function_qnames():
-    @policy_function()
+    @policy_function(unit=TTSIMUnit.DIMENSIONLESS)
     def col_a(x: int) -> int:
         return x
 
-    @policy_function()
+    @policy_function(unit=TTSIMUnit.DIMENSIONLESS)
     def col_b(x: int) -> int:
         return x
 
-    @policy_input()
+    @policy_input(unit=TTSIMUnit.DIMENSIONLESS)
     def input_col() -> int:
         pass
 
-    @param_function()
+    @param_function(unit=TTSIMUnit.DIMENSIONLESS)
     def param_func() -> int:
         return 42
 
@@ -272,7 +272,7 @@ def test_tree_then_qname_extracts_column_function_qnames():
 
 
 def test_tree_then_qname_with_nested_policy_environment():
-    @policy_function()
+    @policy_function(unit=TTSIMUnit.DIMENSIONLESS)
     def nested_col(x: int) -> int:
         return x
 

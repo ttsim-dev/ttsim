@@ -18,7 +18,7 @@ from ttsim.exceptions import TTSIMError
 from ttsim.interface_dag_elements.automatically_added_functions import (
     create_agg_by_group_functions,
 )
-from ttsim.tt import ColumnFunction, policy_function
+from ttsim.tt import ColumnFunction, TTSIMUnit, policy_function
 from ttsim.tt.aggregation import (
     AggType,
     grouped_all,
@@ -180,6 +180,14 @@ def test_resolve_kind_of_annotation_unknown_is_other() -> None:
     )
 
 
+def test_resolve_kind_of_annotation_passes_through_resolved_kind() -> None:
+    """An already-resolved `ResolvedKind` is returned unchanged."""
+    assert (
+        resolve_kind_of_annotation(ResolvedKind.BOOL_COLUMN, node_name="x")
+        == ResolvedKind.BOOL_COLUMN
+    )
+
+
 def test_resolve_kind_of_annotation_missing_raises() -> None:
     """A node with no return annotation cannot be resolved and raises."""
     with pytest.raises(TypeResolutionError, match="no return annotation"):
@@ -227,7 +235,7 @@ def test_type_resolution_error_is_ttsim_error() -> None:
 def _auto_agg_wrapper_from_int_source() -> typing.Callable[..., object]:
     """Build the synthesized `x_hh` aggregation wrapper for an int source `x`."""
 
-    @policy_function()
+    @policy_function(unit=TTSIMUnit.DIMENSIONLESS)
     def x(p_id: int) -> int:
         return p_id
 
@@ -240,11 +248,12 @@ def _auto_agg_wrapper_from_int_source() -> typing.Callable[..., object]:
     derived = create_agg_by_group_functions(
         column_functions=column_functions,
         qname_policy_environment={},
-        input_columns=set(),
+        time_converted_input_stubs={},
+        data_qnames=set(),
         tt_targets=("x_hh",),
         grouping_levels=("hh",),
     )
-    wrapper = derived["x_hh"]
+    wrapper = derived.functions["x_hh"]
     assert isinstance(wrapper, ColumnFunction)
     return wrapper.function
 

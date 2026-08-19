@@ -9,6 +9,7 @@ from beartype import beartype
 
 from ttsim._beartype_conf import ROUNDING_SPEC_CONF
 from ttsim.tt.type_resolution import build_beartype_checkable_wrapper
+from ttsim.tt.units import CompositeUnit
 from ttsim.typing import FloatColumn
 
 ROUNDING_DIRECTION = Literal["up", "down", "nearest"]
@@ -34,6 +35,7 @@ class RoundingSpec:
     direction: ROUNDING_DIRECTION
     to_add_after_rounding: int | float = 0
     reference: str | None = None
+    unit: CompositeUnit | None = None
 
     def __post_init__(self) -> None:
         """Validate the types of base and to_add_after_rounding."""

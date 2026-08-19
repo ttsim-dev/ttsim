@@ -18,6 +18,10 @@ sites rather than this module, to avoid an import cycle:
 
 Both are caught by `except TTSIMError`; import them from their defining
 modules.
+
+`ttsim._unit_inference._UnitCheckError` and its subclasses also subclass
+`TTSIMError` at their own site, but are internal control-flow signals thrown and
+caught within the unit check rather than part of this user-facing vocabulary.
 """
 
 
@@ -69,6 +73,22 @@ class RoundingSpecError(TTSIMError):
     """Raised when a `RoundingSpec` is constructed with invalid arguments."""
 
 
+class UnitDefinitionError(TTSIMError):
+    """Raised when a `unit=` declaration or a `UnitSystem` definition is invalid.
+
+    Covers an unparseable unit string, a unit involving a dimension outside the
+    closed GEP-10 vocabulary, and inconsistent currency registration.
+    """
+
+
+class UnitConsistencyError(TTSIMError):
+    """Raised when a declared unit disagrees with the inferred or producer unit.
+
+    Covers the per-function body check (inferred output unit vs. declared unit)
+    and the DAG edge-consistency check (producer unit vs. consumer expectation).
+    """
+
+
 # `ConflictingActivePeriodsError` and `TranslateToVectorizableError` subclass
 # `TTSIMError` from their definition sites (`ttsim.interface_dag_elements.fail_if`
 # and `ttsim.tt.vectorization`) — re-importing them here would create an
@@ -86,4 +106,6 @@ __all__ = [
     "RoundingSpecError",
     "TTSIMError",
     "TTTargetsError",
+    "UnitConsistencyError",
+    "UnitDefinitionError",
 ]

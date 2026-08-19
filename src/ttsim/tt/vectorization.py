@@ -2,18 +2,22 @@ from __future__ import annotations
 
 import ast
 import functools
-import inspect
-import textwrap
-import types
 from collections.abc import Callable
 from importlib import import_module
 from types import ModuleType
 from typing import TYPE_CHECKING, Any, Literal, cast
 
 import numpy
-from dags.signature import rename_arguments
 
 from ttsim.exceptions import TTSIMError
+from ttsim.tt._function_rewriting import (
+    WRAPPER_ASSIGNMENTS_NO_ANNOTATIONS,
+    boolop_to_call,
+    func_to_ast,
+    is_lambda_function,
+    not_to_call,
+    recompile_from_ast,
+)
 from ttsim.tt.type_resolution import (
     build_beartype_checkable_wrapper,
     create_vectorized_annotations,
@@ -24,21 +28,6 @@ if TYPE_CHECKING:
 
 
 BACKEND_TO_MODULE = {"jax": "jax.numpy", "numpy": "numpy"}
-
-
-# `functools.WRAPPER_ASSIGNMENTS` minus the annotation attributes. Used at
-# every `functools.wraps` site that wraps a user policy function: if we let
-# the user's scalar annotations leak onto the column-typed wrapper,
-# beartype rejects the wrapper's column-typed arguments against the
-# wrapper's inherited scalar signature.
-#
-# `__annotate__` is the PEP 649 (Python 3.14+) deferred-evaluation pair to
-# `__annotations__` and needs the same treatment.
-_WRAPPER_ASSIGNMENTS_NO_ANNOTATIONS: tuple[str, ...] = tuple(
-    a
-    for a in functools.WRAPPER_ASSIGNMENTS
-    if a not in ("__annotations__", "__annotate__")
-)
 
 
 def vectorize_function(
@@ -70,7 +59,7 @@ def vectorize_function(
             "__signature__",
             "__globals__",
             "__closure__",
-            *_WRAPPER_ASSIGNMENTS_NO_ANNOTATIONS,
+            *WRAPPER_ASSIGNMENTS_NO_ANNOTATIONS,
         )
         vectorized = functools.wraps(func, assigned=assigned)(numpy.vectorize(func))
     elif vectorization_strategy == "vectorize":
@@ -109,7 +98,7 @@ def _make_vectorizable(
     Returns:
         New function with altered ast.
     """
-    if _is_lambda_function(func):
+    if is_lambda_function(func):
         raise TranslateToVectorizableError(
             "Lambda functions are not supported for vectorization. Please define a "
             "named function and use that.",
@@ -117,39 +106,12 @@ def _make_vectorizable(
 
     module = _module_from_backend(backend)
     tree = _make_vectorizable_ast(func, module=module, xnp=xnp)
-
-    # recreate scope of function, add array library
-    scope = dict(func.__globals__)  # ty: ignore[unresolved-attribute]
-    if func.__closure__:  # ty: ignore[unresolved-attribute]
-        closure_vars = func.__code__.co_freevars  # ty: ignore[unresolved-attribute]
-        closure_cells = [c.cell_contents for c in func.__closure__]  # ty: ignore[unresolved-attribute]
-        scope.update(dict(zip(closure_vars, closure_cells, strict=False)))
-
-    scope[module] = import_module(module)
-
-    # execute new ast
-    compiled = compile(tree, "<ast>", "exec")
-    exec(compiled, scope)  # noqa: S102
-
-    # assign created function
-    new_func = scope[func.__name__]  # ty: ignore[unresolved-attribute]
-    _vectorized = functools.wraps(func, assigned=_WRAPPER_ASSIGNMENTS_NO_ANNOTATIONS)(
-        new_func
+    return recompile_from_ast(
+        func=func,
+        tree=tree,
+        scope_bindings={module: import_module(module)},
+        filename="<ast>",
     )
-
-    # For functions whose argument names are renamed dynamically, we need to match the
-    # argument names, since the vectorization works on the AST level, which is not
-    # affected by the original renaming. This assumes that the argument ordering is
-    # the same in the function and its AST.
-    _original_args = _args_from_func_ast(_func_to_ast(func))
-    _args_name_mapper = dict(
-        zip(
-            _original_args,
-            list(inspect.signature(func).parameters),
-            strict=False,
-        )
-    )
-    return rename_arguments(_vectorized, mapper=_args_name_mapper)
 
 
 def make_vectorizable_source(
@@ -168,7 +130,7 @@ def make_vectorizable_source(
     Returns:
         Source code of new function with altered ast.
     """
-    if _is_lambda_function(func):
+    if is_lambda_function(func):
         raise TranslateToVectorizableError(
             "Lambda functions are not supported for vectorization. Please define a "
             "named function and use that.",
@@ -193,7 +155,7 @@ def _make_vectorizable_ast(
     Returns:
         AST of new function with altered ast.
     """
-    tree = _func_to_ast(func)
+    tree = func_to_ast(func)
 
     # get function location for error messages
     func_loc = f"{func.__module__}/{func.__name__}"  # ty: ignore[unresolved-attribute]
@@ -201,25 +163,6 @@ def _make_vectorizable_ast(
     # transform tree nodes
     new_tree = Transformer(module=module, func_loc=func_loc, xnp=xnp).visit(tree)
     return ast.fix_missing_locations(new_tree)
-
-
-def _func_to_ast(func: Callable[..., Any]) -> ast.Module:
-    source = inspect.getsource(func)
-    source_dedented = textwrap.dedent(source)
-    source_without_decorators = _remove_decorator_lines(source_dedented)
-    return ast.parse(source_without_decorators)
-
-
-def _args_from_func_ast(func_ast: ast.Module) -> list[str]:
-    """Get function arguments from function ast."""
-    return [arg.arg for arg in func_ast.body[0].args.args]  # ty: ignore[unresolved-attribute]
-
-
-def _remove_decorator_lines(source: str) -> str:
-    """Removes leading decorator lines from function source code."""
-    if source.startswith("def "):
-        return source
-    return "def " + source.split("\ndef ")[1]
 
 
 # ======================================================================================
@@ -264,12 +207,12 @@ class Transformer(ast.NodeTransformer):
 
     def visit_UnaryOp(self, node: ast.UnaryOp) -> ast.UnaryOp | ast.Call:
         if isinstance(node.op, ast.Not):
-            return _not_to_call(node, module=self.module)
+            return not_to_call(node=node, module=self.module)
         return node
 
     def visit_BoolOp(self, node: ast.BoolOp) -> ast.Call:
         self.generic_visit(node)
-        return _boolop_to_call(node, module=self.module)
+        return boolop_to_call(node=node, module=self.module)
 
     def visit_If(
         self,
@@ -295,19 +238,6 @@ class Transformer(ast.NodeTransformer):
 # ======================================================================================
 # Transformation functions on node level
 # ======================================================================================
-
-
-def _not_to_call(node: ast.UnaryOp, module: str) -> ast.Call:
-    """Transform negation operation to Call."""
-    return ast.Call(
-        func=ast.Attribute(
-            value=ast.Name(id=module, ctx=ast.Load()),
-            attr="logical_not",
-            ctx=ast.Load(),
-        ),
-        args=[node.operand],
-        keywords=[],
-    )
 
 
 def _if_to_call(node: ast.If, module: str, func_loc: str) -> ast.Call:
@@ -373,34 +303,6 @@ def _ifexp_to_call(node: ast.IfExp, module: str) -> ast.Call:
     )
 
 
-def _boolop_to_call(node: ast.BoolOp, module: str) -> ast.Call:
-    """Transform BoolOp operation to Call."""
-    _boolop_registry: dict[type[ast.boolop], str] = {
-        ast.And: "logical_and",
-        ast.Or: "logical_or",
-    }
-    operation = _boolop_registry[type(node.op)]
-
-    def _constructor(left: ast.Call | ast.expr, right: ast.Call | ast.expr) -> ast.Call:
-        """Construct calls of the form `module.logical_(and|or)(left, right)`."""
-        return ast.Call(
-            func=ast.Attribute(
-                value=ast.Name(id=module, ctx=ast.Load()),
-                attr=operation,
-                ctx=ast.Load(),
-            ),
-            args=[left, right],
-            keywords=[],
-        )
-
-    values: list[ast.Call | ast.expr] = [
-        _boolop_to_call(v, module=module) if isinstance(v, ast.BoolOp) else v
-        for v in node.values
-    ]
-
-    return cast("ast.Call", functools.reduce(_constructor, values))
-
-
 def _call_to_call_from_module(
     node: ast.Call,
     module: str,
@@ -447,10 +349,6 @@ def _call_to_call_from_module(
 # ======================================================================================
 # Transformation errors and checks
 # ======================================================================================
-
-
-def _is_lambda_function(obj: object) -> bool:
-    return isinstance(obj, types.FunctionType) and obj.__name__ == "<lambda>"
 
 
 class TranslateToVectorizableError(TTSIMError, ValueError):

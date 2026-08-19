@@ -217,16 +217,18 @@ class InputDependentInterfaceFunction(InterfaceFunction[FunArgTypes, ReturnType]
             )
 
     def include_condition_satisfied(self, input_names: Iterable[str]) -> bool:
-        """Check if the input names match the include condition."""
-        # all(()) evaluates to True, so include first bit
-        all_cond = self.include_if_all_inputs_present and all(
-            i in input_names for i in self.include_if_all_inputs_present
+        """Whether every specified include condition holds.
+
+        Conditions combine with *and*; an unspecified condition is satisfied.
+        This lets a variant require one input's presence and another's absence.
+        """
+        names = set(input_names)
+        all_cond = all(i in names for i in self.include_if_all_inputs_present)
+        any_cond = not self.include_if_any_input_present or any(
+            i in names for i in self.include_if_any_input_present
         )
-        any_cond = any(i in input_names for i in self.include_if_any_input_present)
-        no_cond = bool(self.include_if_no_input_present) and not any(
-            i in input_names for i in self.include_if_no_input_present
-        )
-        return all_cond or any_cond or no_cond
+        no_cond = not any(i in names for i in self.include_if_no_input_present)
+        return all_cond and any_cond and no_cond
 
     def remove_tree_logic(
         self,

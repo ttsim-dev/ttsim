@@ -29,7 +29,7 @@ def test_processed_data(input_data__flat, xnp):
     pd.testing.assert_frame_equal(
         pd.DataFrame(
             processed_data(
-                input_data__flat=input_data__flat,
+                input_data_in_computation_currency=input_data__flat,
                 input_data__sort_indices=sort_indices(
                     input_data__flat=input_data__flat, xnp=xnp
                 ),
@@ -58,7 +58,7 @@ def test_processed_data_foreign_key_out_of_bounds(xnp):
     pd.testing.assert_frame_equal(
         pd.DataFrame(
             processed_data(
-                input_data__flat=input_data__flat,
+                input_data_in_computation_currency=input_data__flat,
                 input_data__sort_indices=input_data__sort_indices,
                 xnp=xnp,
             )
@@ -85,7 +85,7 @@ def test_processed_data_foreign_key_inside_bounds(xnp):
     pd.testing.assert_frame_equal(
         pd.DataFrame(
             processed_data(
-                input_data__flat=input_data__flat,
+                input_data_in_computation_currency=input_data__flat,
                 input_data__sort_indices=input_data__sort_indices,
                 xnp=xnp,
             )
@@ -108,7 +108,7 @@ def test_processed_data_single_column(xnp):
     pd.testing.assert_frame_equal(
         pd.DataFrame(
             processed_data(
-                input_data__flat=input_data__flat,
+                input_data_in_computation_currency=input_data__flat,
                 input_data__sort_indices=input_data__sort_indices,
                 xnp=xnp,
             )
@@ -170,7 +170,7 @@ def test_processed_data_coerces_uint_columns_to_signed(xnp):
         ("wage",): numpy.array([0, 100], dtype=numpy.uint32),
     }
     result = processed_data(
-        input_data__flat=input_data__flat,
+        input_data_in_computation_currency=input_data__flat,
         input_data__sort_indices=sort_indices(
             input_data__flat=input_data__flat, xnp=xnp
         ),
@@ -199,7 +199,7 @@ def test_processed_data_single_row(xnp):
     pd.testing.assert_frame_equal(
         pd.DataFrame(
             processed_data(
-                input_data__flat=input_data__flat,
+                input_data_in_computation_currency=input_data__flat,
                 input_data__sort_indices=input_data__sort_indices,
                 xnp=xnp,
             )

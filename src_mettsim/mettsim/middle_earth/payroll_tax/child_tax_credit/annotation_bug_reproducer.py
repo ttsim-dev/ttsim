@@ -12,10 +12,10 @@ BoolColumn.
 
 from __future__ import annotations
 
-from ttsim.tt import RoundingSpec, policy_function
+from ttsim.tt import RoundingSpec, TTSIMUnit, policy_function
 
 
-@policy_function()
+@policy_function(unit=TTSIMUnit.DIMENSIONLESS)
 def child_in_household_for_bug_reproducer(p_id: int) -> bool:
     """A function that returns a boolean column (for Python 3.14 bug reproducer).
 
@@ -25,12 +25,41 @@ def child_in_household_for_bug_reproducer(p_id: int) -> bool:
 
 
 @policy_function(
-    leaf_name="net_income_parents_m",
+    leaf_name="net_wealth_parents",
+    end_date="2019-12-31",
     rounding_spec=RoundingSpec(
-        base=1, direction="down", reference="Python 3.14 bug reproducer"
+        base=1,
+        direction="down",
+        reference="Python 3.14 bug reproducer",
+        unit=TTSIMUnit.SILVER_PENNY,
     ),
+    unit=TTSIMUnit.CURRENCY,
 )
-def net_income_parents_m(
+def net_wealth_parents_before_currency_reform(
+    wealth: float,  # Use an existing input
+    # This annotation extraction fails in Python 3.14
+    payroll_tax__child_tax_credit__child_in_household_for_bug_reproducer: bool,
+) -> float:
+    """A function that takes a bool parameter and has rounding."""
+    if payroll_tax__child_tax_credit__child_in_household_for_bug_reproducer:
+        out = wealth * 0.8
+    else:
+        out = wealth
+    return out
+
+
+@policy_function(
+    leaf_name="net_wealth_parents",
+    start_date="2020-01-01",
+    rounding_spec=RoundingSpec(
+        base=0.25,
+        direction="down",
+        reference="Python 3.14 bug reproducer",
+        unit=TTSIMUnit.CASTAR,
+    ),
+    unit=TTSIMUnit.CURRENCY,
+)
+def net_wealth_parents_after_currency_reform(
     wealth: float,  # Use an existing input
     # This annotation extraction fails in Python 3.14
     payroll_tax__child_tax_credit__child_in_household_for_bug_reproducer: bool,

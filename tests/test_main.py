@@ -12,6 +12,7 @@ import pytest
 from beartype.roar import BeartypeCallHintParamViolation
 from mettsim import middle_earth
 
+from tests.test_unit_system import TEST_UNIT_SYSTEM
 from ttsim import (
     InputData,
     Labels,
@@ -44,6 +45,7 @@ from ttsim.interface_dag_elements.specialized_environment_for_plotting_and_templ
     dummy_callable,
 )
 from ttsim.main_target import MainTarget
+from ttsim.tt import TTSIMUnit
 from ttsim.tt.column_objects_param_function import policy_function
 
 if TYPE_CHECKING:
@@ -107,7 +109,7 @@ def a() -> int:
     return 1
 
 
-@policy_function()
+@policy_function(unit=TTSIMUnit.DIMENSIONLESS)
 def e(c: int, d: float) -> float:
     return c + d
 
@@ -268,8 +270,8 @@ def test_input_data_classmethods(instance_factory, expected_field_name, xnp):
         ),
         # Labels
         (
-            lambda _xnp: Labels.input_columns({"test_column"}),
-            lambda _xnp: Labels(input_columns={"test_column"}),  # ty: ignore[unknown-argument]
+            lambda _xnp: Labels.data_qnames({"test_column"}),
+            lambda _xnp: Labels(data_qnames={"test_column"}),  # ty: ignore[unknown-argument]
         ),
         (
             lambda _xnp: Labels.column_targets(["target1", "target2"]),
@@ -566,7 +568,10 @@ def test_harmonize_main_target(main_target, expected):
     ],
 )
 def test_fail_if_input_structure_is_invalid(dict_inputs):
-    with pytest.raises(ValueError, match=r"Invalid inputs for main()"):
+    with pytest.raises(
+        ValueError,
+        match=r"Invalid inputs for main",
+    ):
         _fail_if_input_structure_is_invalid(
             user_treedef=optree.tree_flatten(dict_inputs)[1],
             expected_treedef=optree.tree_flatten(MainTarget.to_dict())[1],  # ty: ignore[invalid-argument-type]
@@ -631,6 +636,7 @@ def test_fail_if_data_is_provided_but_no_tt_targets(backend, xnp):
                 }
             ),
             orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+            unit_system=TEST_UNIT_SYSTEM,
             backend=backend,
         )
 

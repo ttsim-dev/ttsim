@@ -17,10 +17,11 @@ import networkx as nx
 import numpy
 import optree
 import pandas as pd
+import pint
 from dags import get_free_arguments
 from dags.tree.validation import fail_if_paths_are_invalid
 
-from ttsim.exceptions import TTSIMError
+from ttsim.exceptions import TTSIMError, UnitConsistencyError
 from ttsim.interface_dag_elements.backend import jax
 from ttsim.interface_dag_elements.interface_node_objects import fail_function
 from ttsim.interface_dag_elements.shared import (
@@ -40,6 +41,13 @@ from ttsim.tt.param_objects import (
     PLACEHOLDER_VALUE,
     ParamObject,
 )
+from ttsim.tt.units import (
+    UNSET_UNIT,
+    CompositeUnit,
+    UnitDeclaration,
+    UnitSystem,
+    ttsim_unit_has_agnostic_currency,
+)
 from ttsim.typing import (
     FlatColumnObjectsParamFunctions,
     FlatData,
@@ -57,6 +65,13 @@ from ttsim.typing import (
     SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
     SpecEnvWithPartialledParamsAndScalars,
     UnorderedQNames,
+    UserNestedUnitAnnotatedData,
+)
+from ttsim.unit_validation import (
+    fail_if_environment_units_are_inconsistent,
+    fail_if_environment_units_are_missing,
+    fail_if_input_units_are_inconsistent,
+    flatten_unit_annotated_input_tree,
 )
 
 
@@ -365,6 +380,27 @@ def input_data_has_int_or_bool_missing_values(input_data__flat: FlatData) -> Non
 
 
 @fail_function(include_if_any_element_present=["input_data__flat"])
+def input_data_has_object_dtype_columns(input_data__flat: FlatData) -> None:
+    """Fail when an input column has object dtype.
+
+    The taxes-and-transfers DAG operates on numeric and boolean arrays. Object arrays
+    cannot safely participate in arithmetic and must not reach input processing or
+    currency conversion.
+    """
+    offending = [
+        dt.qname_from_tree_path(path)
+        for path, data in input_data__flat.items()
+        if getattr(data, "dtype", None) == numpy.dtype(object)
+    ]
+    if offending:
+        msg = format_errors_and_warnings(
+            "The following input columns have object dtype, which is not supported:\n"
+            f"{format_list_linewise(offending)}"
+        )
+        raise ValueError(msg)
+
+
+@fail_function(include_if_any_element_present=["input_data__flat"])
 def input_data_uint64_values_overflow_int64(input_data__flat: FlatData) -> None:
     """Fail when a uint64 input column has any value outside the int64 range.
 
@@ -514,7 +550,7 @@ def group_variables_are_not_constant_within_groups(
             target_name=name,
             grouping_levels=labels__grouping_levels,
         )
-        if group_by_id in processed_data:
+        if group_by_id is not None and group_by_id in processed_data:
             group_by_id_series = pd.Series(processed_data[group_by_id])
             leaf_series = pd.Series(processed_data[name])
             unique_counts = leaf_series.groupby(group_by_id_series).nunique(
@@ -749,9 +785,7 @@ def backend_has_changed(
                 # attributes (GETTSIM tests fail otherwise).
                 if jax is not None and isinstance(arg, jax.Array):
                     continue
-                if isinstance(arg, numpy.ndarray) or any(
-                    isinstance(getattr(arg, attr), numpy.ndarray) for attr in dir(arg)
-                ):
+                if isinstance(arg, numpy.ndarray) or _has_numpy_array_attribute(arg):
                     issues += f"    {dt.tree_path_from_qname(argname)}\n"
     if issues:
         raise ValueError(
@@ -760,11 +794,29 @@ def backend_has_changed(
         )
 
 
+def _has_numpy_array_attribute(obj: Any) -> bool:  # noqa: ANN401
+    """Inspect direct attributes without assuming every name in ``dir`` is readable.
+
+    NumPy 2 scalar types retain removed methods such as ``itemset`` in ``dir(obj)``
+    but raise :class:`AttributeError` when the attribute is accessed. Those tombstone
+    names are irrelevant here; readable array-valued attributes still identify a
+    policy environment built for the NumPy backend.
+    """
+    for name in dir(obj):
+        try:
+            value = getattr(obj, name)
+        except AttributeError:
+            continue
+        if isinstance(value, numpy.ndarray):
+            return True
+    return False
+
+
 @fail_function()
 def tt_dag_includes_function_with_fail_msg_if_included_set(
     specialized_environment__without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
     specialized_environment__tt_dag: nx.DiGraph,
-    labels__input_columns: UnorderedQNames,
+    labels__data_qnames: UnorderedQNames,
 ) -> None:
     """Fail if the TT DAG includes functions that are marked as invalid."""
 
@@ -776,7 +828,7 @@ def tt_dag_includes_function_with_fail_msg_if_included_set(
             node not in env
             or
             # ColumnObjects overridden by data are fine
-            (not isinstance(env[node], PolicyInput) and node in labels__input_columns)
+            (not isinstance(env[node], PolicyInput) and node in labels__data_qnames)
         ):
             continue
         # Check for attribute existence because ParamObjects can be overridden by
@@ -799,7 +851,6 @@ def tt_root_nodes_are_missing(
     labels__grouping_levels: OrderedQNames,
 ) -> None:
     """Fail if root nodes are missing."""
-
     # Obtain root nodes
     root_nodes = nx.subgraph_view(
         specialized_environment__tt_dag,
@@ -837,7 +888,7 @@ def tt_root_nodes_are_missing(
 @fail_function()
 def targets_are_not_in_specialized_environment_or_data(
     specialized_environment__without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
-    labels__input_columns: UnorderedQNames,
+    labels__data_qnames: UnorderedQNames,
     tt_targets__qname: QNameTTTargets,
 ) -> None:
     """Fail if some target is not among functions."""
@@ -846,7 +897,7 @@ def targets_are_not_in_specialized_environment_or_data(
         for n in tt_targets__qname
         if n
         not in specialized_environment__without_tree_logic_and_with_derived_functions
-        and n not in labels__input_columns
+        and n not in labels__data_qnames
     ]
     if missing_targets:
         formatted = format_list_linewise(missing_targets)
@@ -923,12 +974,8 @@ def _param_with_active_periods(
         param_spec.get("description", None),
     )
     p_s_unit = cast(
-        "Literal['Euros', 'DM', 'Share', 'Percent', 'Years', 'Months', 'Hours', 'Square Meters', 'Euros / Square Meter'] | None",
-        param_spec.get("unit", None),
-    )
-    p_s_reference_period = cast(
-        "Literal['Year', 'Quarter', 'Month', 'Week', 'Day'] | None",
-        param_spec.get("reference_period", None),
+        "str | dict[str | int, Any] | UnitDeclaration",
+        param_spec.get("unit", UNSET_UNIT),
     )
 
     out = []
@@ -947,7 +994,6 @@ def _param_with_active_periods(
                         name=p_s_name,
                         description=p_s_description,
                         unit=p_s_unit,
-                        reference_period=p_s_reference_period,
                     ),
                 )
             start_date = None
@@ -961,11 +1007,108 @@ def _param_with_active_periods(
                 name=p_s_name,
                 description=p_s_description,
                 unit=p_s_unit,
-                reference_period=p_s_reference_period,
             ),
         )
 
     return out
+
+
+@fail_function()
+def tt_units_are_missing(
+    specialized_environment__without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
+) -> None:
+    """Fail if any active node lacks a mandatory unit declaration.
+
+    Raises:
+        UnitDefinitionError: If any node (or dict-parameter leaf) lacks a
+            unit declaration.
+    """
+    fail_if_environment_units_are_missing(
+        specialized_environment__without_tree_logic_and_with_derived_functions
+    )
+
+
+@fail_function(
+    include_if_all_elements_present=[
+        "specialized_environment__without_tree_logic_and_with_derived_functions",
+        "labels__grouping_levels",
+    ],
+)
+def tt_units_are_inconsistent(
+    specialized_environment__without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
+    labels__grouping_levels: OrderedQNames,
+    unit_checks__resolved_pint_units: dict[str, pint.Unit | dict[str | int, Any]],
+    unit_system: UnitSystem,
+) -> None:
+    """Fail if a function body infers a unit that contradicts its declaration.
+
+    Each body is unit-checked on representative values built from its producers'
+    resolved units, across every reachable branch path, without any user data.
+
+    Raises:
+        UnitConsistencyError: If any body infers a concrete unit that
+            disagrees with its declaration, or cannot be evaluated and has not
+            opted out via `verify_units=False`.
+    """
+    fail_if_environment_units_are_inconsistent(
+        env=specialized_environment__without_tree_logic_and_with_derived_functions,
+        grouping_levels=labels__grouping_levels,
+        unit_system=unit_system,
+        resolved_pint_units=unit_checks__resolved_pint_units,
+    )
+
+
+@fail_function(
+    include_if_any_element_present=["input_data__tree_with_unit_annotations"]
+)
+def input_currency_is_not_concrete(
+    input_data__tree_with_unit_annotations: UserNestedUnitAnnotatedData,
+) -> None:
+    """Fail if a currency-bearing input column names the agnostic ``CURRENCY``.
+
+    Input data, like a parameter, is written in a concrete currency: a currency column
+    must name one, never the agnostic ``TTSIMUnit.CURRENCY`` — which would leave the run
+    unable to tell what the numbers are denominated in.
+
+    Raises:
+        UnitConsistencyError: If any input column's tag is an agnostic currency.
+    """
+    agnostic = sorted(
+        dt.qname_from_tree_path(path)
+        for path, col in flatten_unit_annotated_input_tree(
+            tree=input_data__tree_with_unit_annotations
+        ).items()
+        if ttsim_unit_has_agnostic_currency(col.unit)
+    )
+    if agnostic:
+        raise UnitConsistencyError(
+            "Input data is denominated in a concrete currency, so a currency "
+            "column must name one, not the agnostic TTSIMUnit.CURRENCY (GEP 10). These "
+            f"name the agnostic currency: {', '.join(agnostic)}."
+        )
+
+
+@fail_function(
+    include_if_any_element_present=["input_data__tree_with_unit_annotations"]
+)
+def input_units_are_inconsistent(
+    input_data__ttsim_units: dict[str, CompositeUnit],
+    unit_checks__resolved_pint_units: dict[str, pint.Unit | dict[str | int, Any]],
+    unit_checks__declared_ttsim_units: dict[str, CompositeUnit],
+    unit_system: UnitSystem,
+) -> None:
+    """Fail if a tagged input column's unit contradicts its declared unit in the DAG.
+
+    Raises:
+        UnitConsistencyError: If any tagged column disagrees with its declared
+            unit.
+    """
+    fail_if_input_units_are_inconsistent(
+        input_ttsim_units=input_data__ttsim_units,
+        resolved_pint_units=unit_checks__resolved_pint_units,
+        unit_system=unit_system,
+        declared_ttsim_units=unit_checks__declared_ttsim_units,
+    )
 
 
 @fail_function()

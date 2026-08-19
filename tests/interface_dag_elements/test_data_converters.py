@@ -7,6 +7,7 @@ import pandas as pd
 import pytest
 from numpy.testing import assert_array_equal
 
+from tests.test_unit_system import TEST_UNIT_SYSTEM
 from ttsim import (
     InputData,
     TTTargets,
@@ -20,6 +21,7 @@ from ttsim.interface_dag_elements.data_converters import (
 )
 from ttsim.tt import (
     ScalarParam,
+    TTSIMUnit,
     param_function,
     policy_function,
 )
@@ -27,8 +29,7 @@ from ttsim.tt import (
 _GENERIC_PARAM_SPEC = {
     "start_date": datetime.date(2024, 1, 1),
     "end_date": datetime.date(2024, 12, 31),
-    "unit": None,
-    "reference_period": None,
+    "unit": "DIMENSIONLESS",
     "name": {
         "de": "generic_param",
         "en": "generic_param",
@@ -40,17 +41,17 @@ _GENERIC_PARAM_SPEC = {
 }
 
 
-@policy_function()
+@policy_function(unit=TTSIMUnit.DIMENSIONLESS)
 def int_policy_function() -> int:
     return 1
 
 
-@policy_function()
+@policy_function(unit=TTSIMUnit.DIMENSIONLESS)
 def another_int_policy_function() -> int:
     return 1
 
 
-@param_function()
+@param_function(unit=TTSIMUnit.DIMENSIONLESS)
 def int_param_function() -> int:
     return 1
 
@@ -227,10 +228,12 @@ def test_nested_data_to_dataframe(
         main_target="results__tree",
         input_data=InputData.tree(tree=minimal_data_tree),
         policy_environment=environment,
+        policy_date=datetime.date(2025, 1, 1),
         evaluation_date=datetime.date(2024, 1, 1),
         tt_targets=TTTargets.tree(tt_targets__tree),
         rounding=False,
         backend=backend,
+        unit_system=TEST_UNIT_SYSTEM,
     )
     result_df = nested_data_to_df_with_mapped_columns(
         nested_data_to_convert=results__tree,

@@ -1,0 +1,32 @@
+---
+info:
+  note: >-
+    A MEAN is the person's, whatever the target (GEP 10): the average kinstead
+    wealth is a per-head amount.
+  precision_atol: 0.01
+  source: ''
+inputs:
+  assumed: {}
+  provided:
+    p_id:
+      - 0
+      - 1
+      - 2
+      - 3
+    kin_id:
+      - 0
+      - 0
+      - 0
+      - 0
+    wealth:
+      - 5000
+      - 5000
+      - 10000
+      - 20000
+outputs:
+  wealth_tax:
+    average_wealth_kin:
+      - 10000.0
+      - 10000.0
+      - 10000.0
+      - 10000.0

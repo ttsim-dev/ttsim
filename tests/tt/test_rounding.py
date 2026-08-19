@@ -10,22 +10,31 @@ import pytest
 from beartype.roar import BeartypeCallHintViolation
 from pandas._testing import assert_series_equal
 
+from tests.test_unit_system import TEST_UNIT_SYSTEM
 from ttsim import InputData, TTTargets, main
-from ttsim.exceptions import PolicyFunctionDefinitionError, RoundingSpecError
+from ttsim.exceptions import (
+    PolicyFunctionDefinitionError,
+    RoundingSpecError,
+    UnitDefinitionError,
+)
+from ttsim.interface_dag_elements.policy_environment import (
+    _active_column_objects_and_param_functions,
+)
 from ttsim.tt import (
     RoundingSpec,
+    TTSIMUnit,
     policy_function,
     policy_input,
 )
 from ttsim.typing import FloatColumn, IntColumn
 
 
-@policy_input()
+@policy_input(unit=TTSIMUnit.DIMENSIONLESS)
 def x() -> int:
     pass
 
 
-@policy_input()
+@policy_input(unit=TTSIMUnit.DIMENSIONLESS)
 def p_id() -> int:
     pass
 
@@ -82,7 +91,7 @@ rounding_specs_and_exp_results = [
 def test_decorator():
     rs = RoundingSpec(base=1, direction="up")
 
-    @policy_function(rounding_spec=rs)
+    @policy_function(rounding_spec=rs, unit=TTSIMUnit.DIMENSIONLESS)
     def test_func() -> int:
         return 0
 
@@ -92,7 +101,10 @@ def test_decorator():
 def test_malformed_rounding_specs():
     with pytest.raises(PolicyFunctionDefinitionError):
 
-        @policy_function(rounding_spec={"base": 1, "direction": "updsf"})  # ty: ignore[invalid-argument-type]
+        @policy_function(
+            rounding_spec=cast("RoundingSpec", {"base": 1, "direction": "updsf"}),
+            unit=TTSIMUnit.DIMENSIONLESS,
+        )
         def test_func() -> int:
             return 0
 
@@ -105,7 +117,7 @@ def test_rounding(rounding_spec, input_values, exp_output, backend):
     """Check if rounding is correct."""
 
     # Define function that should be rounded
-    @policy_function(rounding_spec=rounding_spec)
+    @policy_function(rounding_spec=rounding_spec, unit=TTSIMUnit.DIMENSIONLESS)
     def test_func(x: float) -> float:
         return x
 
@@ -119,12 +131,14 @@ def test_rounding(rounding_spec, input_values, exp_output, backend):
         main_target="results__tree",
         input_data=InputData.tree(input_data__tree),
         policy_environment=policy_environment,
+        policy_date=datetime.date(2024, 1, 1),
         evaluation_date=datetime.date(2024, 1, 1),
         tt_targets=TTTargets.tree({"namespace": {"test_func": None}}),
         rounding=True,
         include_fail_nodes=False,
         include_warn_nodes=False,
         backend=backend,
+        unit_system=TEST_UNIT_SYSTEM,
     )
     assert_series_equal(
         pd.Series(results__tree["namespace"]["test_func"]),
@@ -138,7 +152,10 @@ def test_rounding_with_time_conversion(backend, xnp):
     """Check if rounding is correct for time-converted functions."""
 
     # Define function that should be rounded
-    @policy_function(rounding_spec=RoundingSpec(base=1, direction="down"))
+    @policy_function(
+        rounding_spec=RoundingSpec(base=1, direction="down"),
+        unit=TTSIMUnit.DIMENSIONLESS,
+    )
     def test_func_m(x: float) -> float:
         return x
 
@@ -157,12 +174,14 @@ def test_rounding_with_time_conversion(backend, xnp):
         main_target="results__tree",
         input_data=InputData.tree(data),
         policy_environment=policy_environment,
+        policy_date=datetime.date(2024, 1, 1),
         evaluation_date=datetime.date(2024, 1, 1),
         tt_targets=TTTargets.tree({"test_func_y": None}),
         rounding=True,
         include_fail_nodes=False,
         include_warn_nodes=False,
         backend=backend,
+        unit_system=TEST_UNIT_SYSTEM,
     )
     assert_series_equal(
         pd.Series(results__tree["test_func_y"]),
@@ -183,7 +202,7 @@ def test_no_rounding(
     backend,
 ):
     # Define function that should be rounded
-    @policy_function(rounding_spec=rounding_spec)
+    @policy_function(rounding_spec=rounding_spec, unit=TTSIMUnit.DIMENSIONLESS)
     def test_func(x: float) -> float:
         return x
 
@@ -199,12 +218,14 @@ def test_no_rounding(
         main_target="results__tree",
         input_data=InputData.tree(data),
         policy_environment=policy_environment,
+        policy_date=datetime.date(2024, 1, 1),
         evaluation_date=datetime.date(2024, 1, 1),
         tt_targets=TTTargets.tree({"test_func": None}),
         include_fail_nodes=False,
         include_warn_nodes=False,
         rounding=False,
         backend=backend,
+        unit_system=TEST_UNIT_SYSTEM,
     )
     assert_series_equal(
         pd.Series(results__tree["test_func"]),
@@ -492,3 +513,43 @@ def test_beartype_catches_structural_misuse_at_rounded_boundary(xnp) -> None:
     bogus = cast("Any", "not a column")
     with pytest.raises(BeartypeCallHintViolation):
         rounded(bogus)
+
+
+def test_active_objects_reject_non_statutory_rounding_spec_currency():
+    @policy_function(
+        rounding_spec=RoundingSpec(
+            base=4, direction="down", unit=TTSIMUnit.SILVER_PENNY.PER_MONTH
+        ),
+        unit=TTSIMUnit.CURRENCY.PER_MONTH,
+    )
+    def amount_m(x: float) -> float:
+        return x
+
+    # mettsim's statutory currency at 2024 is the castar; a silver-penny spec
+    # must be restated by splitting the function at the changeover.
+    with pytest.raises(UnitDefinitionError, match="never converted"):
+        _active_column_objects_and_param_functions(
+            orig={("income.py", "amount_m"): amount_m},
+            policy_date=datetime.date(2024, 1, 1),
+            computation_currency="CASTAR",
+        )
+
+
+def test_active_objects_accept_statutory_rounding_spec_currency():
+    spec = RoundingSpec(base=4, direction="down", unit=TTSIMUnit.SILVER_PENNY.PER_MONTH)
+
+    @policy_function(
+        rounding_spec=spec,
+        unit=TTSIMUnit.CURRENCY.PER_MONTH,
+    )
+    def amount_m(x: float) -> float:
+        return x
+
+    active = _active_column_objects_and_param_functions(
+        orig={("income.py", "amount_m"): amount_m},
+        policy_date=datetime.date(1950, 1, 1),
+        computation_currency="SILVER_PENNY",
+    )
+    # The spec passes through untouched: rounding happens in the statutory
+    # currency natively.
+    assert active["amount_m"].rounding_spec is spec

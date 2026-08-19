@@ -6,12 +6,12 @@ info:
 inputs:
   assumed: {}
   provided:
-    age:
-      - 30
-      - 30
-      - 10
-      - 10
-      - 10
+    birth_year:
+      - 1995
+      - 1995
+      - 2015
+      - 2015
+      - 2015
     kin_id:
       - 0
       - 0
