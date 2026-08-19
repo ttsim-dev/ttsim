@@ -15,10 +15,6 @@ def amount_y(
 @agg_by_group_function(
     agg_type=AggType.MEAN,
     unit=TTSIMUnit.CURRENCY.PER_KIN,
-    # A MEAN derives as the person's, but the average kin wealth reads as a
-    # property of the kinstead; the declaration states that and skips the
-    # declared-vs-derived check (GEP 10).
-    verify_units=False,
 )
 def average_wealth_kin(kin_id: int, wealth: float) -> float:
     """The average wealth of the kinstead."""

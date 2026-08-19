@@ -3,7 +3,7 @@
 These exercise the core level mechanics directly on the unit primitives:
 levels as non-convertible base dimensions, the level-as-denominator
 resolution, the dimensionless head-count bridge, cross-level rejection, and the
-level-aware aggregation (SUM/MIN/MAX take the target level, MEAN goes bare,
+level-aware aggregation (SUM/MEAN/MIN/MAX take the target level,
 COUNT mints ``1/[target]``, ANY/ALL a boolean at the target).
 
 An individual quantity is bare, carrying no grouping level, and a head count is
@@ -445,10 +445,8 @@ def test_resolved_aggregation_any_all_are_boolean_at_target_level(agg_type):
     )
 
 
-def test_resolved_aggregation_mean_resolves_to_bare():
-    # A per-head average belongs to the individual, whatever the target (GEP 10):
-    # leveling it to the target would break ``mean · count = sum``. The source
-    # level is dropped, leaving a bare per-person amount.
+def test_resolved_aggregation_mean_resolves_to_target_level():
+    # A mean calculated by target group is a statistic of that target group.
     source = divide_by_grouping_level(
         unit=pint_unit_from_string(unit_str=CURRENCY_TOKEN, registry=REGISTRY),
         level="hh",
@@ -461,13 +459,15 @@ def test_resolved_aggregation_mean_resolves_to_bare():
         source_level="hh",
         registry=REGISTRY,
     )
-    expected = pint_unit_from_string(unit_str=CURRENCY_TOKEN, registry=REGISTRY)
+    expected = divide_by_grouping_level(
+        unit=pint_unit_from_string(unit_str=CURRENCY_TOKEN, registry=REGISTRY),
+        level="sn",
+        registry=REGISTRY,
+    )
     assert units_are_equivalent(left=result, right=expected, registry=REGISTRY)
 
 
-def test_resolved_aggregation_mean_over_bare_source_stays_bare():
-    # The individual reading of an intensive base is bare, so an age's mean stays
-    # comparable to bare thresholds.
+def test_resolved_aggregation_mean_over_bare_source_takes_target_level():
     source = pint_unit_from_string(unit_str="delta_calendar_month", registry=REGISTRY)
     result = resolved_unit_for_aggregation(
         source_unit=source,
@@ -476,12 +476,15 @@ def test_resolved_aggregation_mean_over_bare_source_stays_bare():
         source_level=None,
         registry=REGISTRY,
     )
-    assert units_are_equivalent(left=result, right=source, registry=REGISTRY)
+    assert units_are_equivalent(
+        left=result,
+        right=divide_by_grouping_level(unit=source, level="hh", registry=REGISTRY),
+        registry=REGISTRY,
+    )
 
 
-def test_resolved_aggregation_mean_over_boolean_source_is_a_bare_share():
-    # The mean of an indicator is a share: stripping the boolean's level leaves a
-    # bare dimensionless number.
+def test_resolved_aggregation_mean_over_boolean_source_is_at_target_level():
+    # A mean of an indicator is a group statistic, not a head count.
     source = divide_by_grouping_level(
         unit=REGISTRY.dimensionless, level="hh", registry=REGISTRY
     )
@@ -493,7 +496,11 @@ def test_resolved_aggregation_mean_over_boolean_source_is_a_bare_share():
         registry=REGISTRY,
     )
     assert units_are_equivalent(
-        left=result, right=REGISTRY.dimensionless, registry=REGISTRY
+        left=result,
+        right=divide_by_grouping_level(
+            unit=REGISTRY.dimensionless, level="hh", registry=REGISTRY
+        ),
+        registry=REGISTRY,
     )
 
 
@@ -603,26 +610,23 @@ def test_min_aggregation_token_over_a_bare_base_takes_the_target_level():
     )
 
 
-def test_mean_aggregation_token_drops_a_leveled_source_to_bare():
-    # A per-head average belongs to the individual: a leveled source drops its
-    # group level, leaving a bare per-person amount.
+def test_mean_aggregation_token_takes_the_target_level():
     assert (
         unit_for_aggregation(
             source_unit=TTSIMUnit.CURRENCY.PER_MONTH.PER_HH,
             agg_type=AggType.MEAN,
             target_level="hh",
         )
-        == TTSIMUnit.CURRENCY.PER_MONTH
+        == TTSIMUnit.CURRENCY.PER_MONTH.PER_HH
     )
 
 
-def test_mean_aggregation_token_of_a_boolean_is_bare():
-    # A share — the mean of a boolean — is bare.
+def test_mean_aggregation_token_of_a_boolean_takes_the_target_level():
     assert (
         unit_for_aggregation(
             source_unit=TTSIMUnit.DIMENSIONLESS.PER_HH,
             agg_type=AggType.MEAN,
             target_level="hh",
         )
-        == TTSIMUnit.DIMENSIONLESS
+        == TTSIMUnit.DIMENSIONLESS.PER_HH
     )

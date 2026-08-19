@@ -72,7 +72,7 @@ def amount_y(
 
 @param_function(
     unit=InputOutputUnits(
-        input_unit=TTSIMUnit.DIMENSIONLESS.PER_KIN,
+        input_unit=TTSIMUnit.COUNT.PER_KIN,
         output_unit=TTSIMUnit.CURRENCY.PER_YEAR.PER_KIN,
     ),
     # See `kings_levy_schedule` above.
