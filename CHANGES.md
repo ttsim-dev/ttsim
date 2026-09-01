@@ -6,7 +6,7 @@ releases are available on [Anaconda.org](https://anaconda.org/conda-forge/ttsim)
 
 ## Unreleased
 
-- {gh}`XXX` Make `BooleanLevel` a frozen dataclass so beartype's package claw can
+- {gh}`154` Make `BooleanLevel` a frozen dataclass so beartype's package claw can
   decorate it — a `NamedTuple`'s synthesized `__new__` carries stringified annotations
   the claw cannot resolve, so it skipped the class with a warning on every import. Turn
   `BeartypeClawDecorWarning` into a test-suite error so the next such hole fails loudly.
