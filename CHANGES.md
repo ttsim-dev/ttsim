@@ -11,6 +11,9 @@ releases are available on [Anaconda.org](https://anaconda.org/conda-forge/ttsim)
   the claw cannot resolve, so it skipped the class with a warning on every import. Turn
   `BeartypeClawDecorWarning` into a test-suite error so the next such hole fails loudly.
   ({ghuser}`MImmesberger`)
+
+## v1.3.0 — 2026-08-20
+
 - {gh}`138` Implement GEP 10: Mandatory unit annotations for functions and parameters.
   Automatic checks of unit arithmetic and DAG unit consistency. ({ghuser}`MImmesberger`,
   {ghuser}`hmgaudecker`)
