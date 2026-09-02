@@ -6,6 +6,12 @@ releases are available on [Anaconda.org](https://anaconda.org/conda-forge/ttsim)
 
 ## Unreleased
 
+- {gh}`154` Make `BooleanLevel` a frozen dataclass so beartype's package claw can
+  decorate it. Turn `BeartypeClawDecorWarning` into a test-suite error so the next such
+  hole fails loudly. ({ghuser}`MImmesberger`)
+
+## v1.3.0 — 2026-08-20
+
 - {gh}`138` Implement GEP 10: Mandatory unit annotations for functions and parameters.
   Automatic checks of unit arithmetic and DAG unit consistency. ({ghuser}`MImmesberger`,
   {ghuser}`hmgaudecker`)

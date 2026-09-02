@@ -9,9 +9,9 @@ import ast
 import functools
 import inspect
 from collections.abc import Callable, Mapping
+from dataclasses import dataclass
 from typing import (
     Any,
-    NamedTuple,
     NoReturn,
     cast,
 )
@@ -198,7 +198,8 @@ def _has_grouping_component(unit: pint.Unit) -> bool:
     return bool(_grouping_levels_with_exponent(unit))
 
 
-class BooleanLevel(NamedTuple):
+@dataclass(frozen=True)
+class BooleanLevel:
     """A unit's classification as a (possibly leveled) boolean."""
 
     is_boolean: bool
@@ -1044,19 +1045,19 @@ class _UnitCheckQuantity:
         mismatch downcasts to the bare individual level. A bare literal carries no
         unit and stays a lenient, bare boolean.
         """
-        self_is_boolean, self_level = _as_boolean_level(
+        self_boolean = _as_boolean_level(
             unit=cast("pint.Unit", self.q.units), registry=self._registry
         )
         other_q = _unwrap(other)
         if isinstance(other_q, _UnitCheckStructuredValue):
             other_q._raise_used_as_quantity(op)  # noqa: SLF001
         if isinstance(other_q, pint.Quantity):
-            other_is_boolean, other_level = _as_boolean_level(
+            other_boolean = _as_boolean_level(
                 unit=cast("pint.Unit", other_q.units), registry=self._registry
             )
         else:
-            other_is_boolean, other_level = True, None
-        if not self_is_boolean or not other_is_boolean:
+            other_boolean = BooleanLevel(is_boolean=True, level=None)
+        if not self_boolean.is_boolean or not other_boolean.is_boolean:
             right = (
                 cast("pint.Unit", other_q.units)
                 if isinstance(other_q, pint.Quantity)
@@ -1066,7 +1067,9 @@ class _UnitCheckQuantity:
                 op=op, left=cast("pint.Unit", self.q.units), right=right
             )
         return self._controlled_bool_at(
-            level=_combined_boolean_level(left=self_level, right=other_level),
+            level=_combined_boolean_level(
+                left=self_boolean.level, right=other_boolean.level
+            ),
             label=self._composed_label(other=other, op=op),
         )
 
@@ -1384,17 +1387,17 @@ class _UnitCheckQuantity:
         return self._logical_result(other=other, op="^")
 
     def __invert__(self) -> _UnitCheckQuantity:
-        is_boolean, level = _as_boolean_level(
+        boolean = _as_boolean_level(
             unit=cast("pint.Unit", self.q.units), registry=self._registry
         )
-        if not is_boolean:
+        if not boolean.is_boolean:
             raise _UnitMixError(
                 op="~",
                 left=cast("pint.Unit", self.q.units),
                 right=_dimensionless_unit(self._registry),
             )
         return self._controlled_bool_at(
-            level=level,
+            level=boolean.level,
             label=f"~{self._label}" if self._label is not None else None,
         )
 

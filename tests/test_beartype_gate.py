@@ -96,3 +96,35 @@ def test_runtime_checking_fully_off_when_opted_out() -> None:
         "perimeter": "O0",
         "forwarder_checks": "0",
     }
+
+
+# Imports ttsim under the inherited env and reports every claw decoration that
+# beartype had to skip. A skipped decoration is a silent hole in the runtime
+# checking the claw is supposed to install package-wide.
+_CLAW_WARNING_PROBE = textwrap.dedent(
+    """
+    import warnings
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        import ttsim
+
+    from beartype.roar import BeartypeClawDecorWarning
+
+    for warning in caught:
+        if issubclass(warning.category, BeartypeClawDecorWarning):
+            print(str(warning.message).splitlines()[0])
+    """
+)
+
+
+def test_import_leaves_no_claw_decoration_skipped() -> None:
+    """Importing ttsim decorates every object the claw touches, warning-free."""
+    proc = subprocess.run(  # noqa: S603
+        [sys.executable, "-c", _CLAW_WARNING_PROBE],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert proc.returncode == 0, proc.stderr
+    assert proc.stdout == ""
