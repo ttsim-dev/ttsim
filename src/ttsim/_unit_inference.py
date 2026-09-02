@@ -198,9 +198,6 @@ def _has_grouping_component(unit: pint.Unit) -> bool:
     return bool(_grouping_levels_with_exponent(unit))
 
 
-# A dataclass, not a `NamedTuple`: under `from __future__ import annotations` the
-# `__new__` a `NamedTuple` synthesizes carries stringified annotations that the
-# package claw cannot resolve, so beartype skips it with a warning.
 @dataclass(frozen=True)
 class BooleanLevel:
     """A unit's classification as a (possibly leveled) boolean."""
