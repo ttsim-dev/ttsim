@@ -6,6 +6,8 @@ releases are available on [Anaconda.org](https://anaconda.org/conda-forge/ttsim)
 
 ## Unreleased
 
+## v1.3.1 — 2026-09-02
+
 - {gh}`154` Make `BooleanLevel` a frozen dataclass so beartype's package claw can
   decorate it. Turn `BeartypeClawDecorWarning` into a test-suite error so the next such
   hole fails loudly. ({ghuser}`MImmesberger`)
