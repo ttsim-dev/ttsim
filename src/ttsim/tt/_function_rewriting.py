@@ -70,7 +70,7 @@ def recompile_with_logical_ops_as_calls(
         The recompiled function, or ``func`` itself when there is nothing to do: a
         lambda, a body with neither a boolean operator nor ``extra_globals``, or a
         function whose source is unavailable (a builtin, a C function, a REPL
-        definition) or unparseable.
+        definition) or unparsable.
     """
     if is_lambda_function(func):
         return func

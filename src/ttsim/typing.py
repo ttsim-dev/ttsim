@@ -204,7 +204,14 @@ UserColumn: TypeAlias = (
 # beartype message. beartype still enforces the `Mapping[str, ...]`
 # structure (string keys, dict shape).
 if TYPE_CHECKING:
-    UserNestedData: TypeAlias = Mapping[str, "UserColumn | UserNestedData"]
+    UserNestedData: TypeAlias = Mapping[
+        str,
+        UserColumn
+        | UserScalarFloat
+        | UserScalarInt
+        | UserScalarBool
+        | "UserNestedData",
+    ]
 else:
     UserNestedData = Mapping[str, object]
 # `UserNestedUnitAnnotatedData` is the same tree with `UnitAnnotatedColumn`
@@ -325,9 +332,7 @@ if TYPE_CHECKING:
         InterfaceInput,
     )
 
-    FlatInterfaceObjects = Mapping[
-        tuple[str, ...], InterfaceFunction | InterfaceInput | "FlatInterfaceObjects"
-    ]
+    FlatInterfaceObjects = Mapping[tuple[str, ...], InterfaceFunction | InterfaceInput]
     """Flattened tree of interface objects."""
 
     from ttsim.tt import (

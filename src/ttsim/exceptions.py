@@ -76,7 +76,7 @@ class RoundingSpecError(TTSIMError):
 class UnitDefinitionError(TTSIMError):
     """Raised when a `unit=` declaration or a `UnitSystem` definition is invalid.
 
-    Covers an unparseable unit string, a unit involving a dimension outside the
+    Covers an unparsable unit string, a unit involving a dimension outside the
     closed GEP-10 vocabulary, and inconsistent currency registration.
     """
 

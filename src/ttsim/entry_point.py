@@ -297,7 +297,7 @@ def _harmonize_main_target(
         "output multiple elements, use `main_targets` instead."
     )
     if isinstance(main_target, tuple):
-        return dt.qname_from_tree_path(main_target)  # ty: ignore [invalid-argument-type]
+        return dt.qname_from_tree_path(main_target)
     if isinstance(main_target, dict):
         if len(optree.tree_flatten(main_target, none_is_leaf=True)[0]) > 1:  # ty: ignore [invalid-argument-type]
             raise ValueError(msg)

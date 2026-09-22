@@ -27,9 +27,7 @@ from ttsim.tt.column_objects_param_function import (
 )
 from ttsim.typing import FloatColumn
 
-# ======================================================================================
 # PolicyFunction and policy_function
-# ======================================================================================
 
 
 @policy_function(unit=TTSIMUnit.DIMENSIONLESS)
@@ -76,9 +74,7 @@ def test_policy_function_with_dates():
     assert str(policy_function_with_dates.end_date) == "2011-12-31"
 
 
-# ======================================================================================
 # ParamFunction and param_function
-# ======================================================================================
 
 
 @param_function(unit=TTSIMUnit.DIMENSIONLESS)
@@ -125,9 +121,7 @@ def test_param_function_with_dates():
     assert str(param_function_with_dates.end_date) == "2011-12-31"
 
 
-# ======================================================================================
 # PolicyInput and policy_input
-# ======================================================================================
 
 
 @policy_input(unit=TTSIMUnit.DIMENSIONLESS)
@@ -158,9 +152,7 @@ def test_policy_input_with_dates():
     assert str(policy_input_with_dates.end_date) == "2011-12-31"
 
 
-# ======================================================================================
 # AggByGroupFunction and agg_by_group_function
-# ======================================================================================
 
 
 @agg_by_group_function(
@@ -259,9 +251,7 @@ def test_agg_by_p_id_function_requires_unit():
             pass
 
 
-# ======================================================================================
 # AggByPIDFunction and agg_by_p_id_function
-# ======================================================================================
 
 
 @agg_by_p_id_function(agg_type=AggType.COUNT, unit=TTSIMUnit.DIMENSIONLESS)

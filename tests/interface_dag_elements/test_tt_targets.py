@@ -21,9 +21,7 @@ def identity(x: int) -> int:
     return x
 
 
-# =============================================================================
 # tree() function tests
-# =============================================================================
 def test_tree_is_interface_function():
     assert isinstance(tree, InterfaceFunction)
 
@@ -144,9 +142,7 @@ def test_tree_environment_with_only_policy_inputs():
     assert result == {}
 
 
-# =============================================================================
 # qname() function tests
-# =============================================================================
 def test_qname_is_interface_function():
     assert isinstance(qname, InterfaceFunction)
 
@@ -230,9 +226,7 @@ def test_qname_handles_mixed_flat_and_nested():
     assert "namespace__nested_col" in result
 
 
-# =============================================================================
 # tree + qname
-# =============================================================================
 def test_tree_then_qname_extracts_column_function_qnames():
     @policy_function(unit=TTSIMUnit.DIMENSIONLESS)
     def col_a(x: int) -> int:

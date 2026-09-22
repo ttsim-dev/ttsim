@@ -45,9 +45,7 @@ if TYPE_CHECKING:
 
     from ttsim.typing import IntColumn
 
-# ======================================================================================
 # String comparison
-# ======================================================================================
 
 
 def string_equal(s1, s2):
@@ -61,9 +59,7 @@ def test_compare_str():
     assert not string_equal(s1="This is a test", s2="This is not a test")
 
 
-# ======================================================================================
 # Test functions (no error)
-# ======================================================================================
 
 
 def f0(x):
@@ -266,9 +262,7 @@ TEST_CASES = [
 ]
 
 
-# ======================================================================================
 # Tests (no error)
-# ======================================================================================
 
 
 @pytest.mark.parametrize(("func", "expected", "args"), TEST_CASES)
@@ -287,9 +281,7 @@ def test_change_if_to_where_wrapper(func, expected, args):
     assert_array_equal(got, exp)
 
 
-# ======================================================================================
 # Test correct error raising
-# ======================================================================================
 
 
 def g1(x):
@@ -339,9 +331,7 @@ def test_disallowed_operation_wrapper(func):
         _make_vectorizable(func, backend="numpy", xnp=numpy)
 
 
-# ======================================================================================
 # Test that functions defined in METTSIM can be made vectorizable
-# ======================================================================================
 
 
 for year in range(1990, 2023):
@@ -377,15 +367,12 @@ for year in range(1990, 2023):
         _make_vectorizable(func, backend=backend, xnp=xnp)
 
 
-# ======================================================================================
 # Test that vectorized functions defined in METTSIM can be called with array input
-# ======================================================================================
 
 
 def test_housing_benefits_amount_m_fam(backend, xnp):
     """Test housing benefits amount function with conditional logic."""
     # Test original function on scalar input
-    # ==============================================================================
     eligibility__requirement_fulfilled_fam = True
     income__amount_m_fam = 1000.0
     assistance_rate = 0.8
@@ -414,7 +401,6 @@ def test_housing_benefits_amount_m_fam(backend, xnp):
     assert exp_false == 0.0
 
     # Create array inputs and assert that original function raises error
-    # ==============================================================================
     shape = (10, 2)
     eligibility__requirement_fulfilled_fam = xnp.full(shape, True)  # noqa: FBT003
     income__amount_m_fam = xnp.full(shape, income__amount_m_fam)
@@ -430,7 +416,6 @@ def test_housing_benefits_amount_m_fam(backend, xnp):
         )
 
     # Call converted function on array input and test result
-    # ==============================================================================
     converted = _make_vectorizable(
         amount_m_fam.function,
         backend=backend,
@@ -464,7 +449,6 @@ def test_housing_benefits_amount_m_fam(backend, xnp):
 def test_payroll_tax_amount_y(backend, xnp):
     """Test payroll tax amount function with multiple conditional logic."""
     # Test original function on scalar input
-    # ==============================================================================
     amount_standard_y = 1000.0
     amount_reduced_y = 800.0
     parent_is_noble_fam = False
@@ -501,7 +485,6 @@ def test_payroll_tax_amount_y(backend, xnp):
     assert exp_noble == 0.0
 
     # Create array inputs and assert that original function raises error
-    # ==============================================================================
     shape = (10, 2)
     amount_standard_y = xnp.full(shape, amount_standard_y)
     amount_reduced_y = xnp.full(shape, amount_reduced_y)
@@ -521,7 +504,6 @@ def test_payroll_tax_amount_y(backend, xnp):
         )
 
     # Call converted function on array input and test result
-    # ==============================================================================
     converted = _make_vectorizable(
         amount_y.function,
         backend=backend,
@@ -560,7 +542,6 @@ def test_payroll_tax_amount_y(backend, xnp):
 def test_orc_hunting_bounty_amount(backend, xnp):
     """Test orc hunting bounty function with conditional logic."""
     # Test original function on scalar input
-    # ==============================================================================
     age = 30
     small_orcs_hunted = 5
     large_orcs_hunted = 2
@@ -600,7 +581,6 @@ def test_orc_hunting_bounty_amount(backend, xnp):
     assert exp_peasant == 110.0  # 5*10 + 2*30
 
     # Create array inputs and assert that original function raises error
-    # ==============================================================================
     shape = (10, 2)
     age = xnp.full(shape, age)
     small_orcs_hunted = xnp.full(shape, small_orcs_hunted)
@@ -617,7 +597,6 @@ def test_orc_hunting_bounty_amount(backend, xnp):
         )
 
     # Call converted function on array input and test result
-    # ==============================================================================
     converted = _make_vectorizable(
         amount_without_topup.function,
         backend=backend,
@@ -650,9 +629,7 @@ def test_orc_hunting_bounty_amount(backend, xnp):
     assert_array_equal(got_mixed, expected_mixed)
 
 
-# ======================================================================================
 # Lambda functions
-# ======================================================================================
 
 
 def test_is_lambda_function_true():
@@ -695,9 +672,7 @@ def test_lambda_functions_disallowed_make_vectorizable_source(xnp):
         make_vectorizable_source(lambda x: x, backend="numpy", xnp=xnp)
 
 
-# ======================================================================================
 # Policy functions
-# ======================================================================================
 
 
 def test_make_vectorizable_policy_func(backend, xnp):
@@ -712,9 +687,7 @@ def test_make_vectorizable_policy_func(backend, xnp):
     assert_array_equal(got, exp)
 
 
-# ======================================================================================
 # Dags functions
-# ======================================================================================
 
 
 def test_make_vectorizable_nested_func():
@@ -850,9 +823,7 @@ def test_vectorized_function_accepts_scalar_and_off_dtype_column(backend, xnp) -
     )
 
 
-# ======================================================================================
 # Test forbidden type conversions and augmented assignments
-# ======================================================================================
 
 
 def forbidden_type_conversion_float(x):
@@ -938,9 +909,7 @@ def test_forbidden_augassign_raise(func, xnp):
         make_vectorizable_source(func, backend="numpy", xnp=xnp)
 
 
-# ======================================================================================
 # scalar_type_to_array_type
-# ======================================================================================
 
 
 @pytest.mark.parametrize(

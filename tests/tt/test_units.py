@@ -1,4 +1,4 @@
-"""Tests for the pint-based unit framework (GEP 10, issue #117)."""
+"""Tests for the pint-based unit framework (GEP 10)."""
 
 from __future__ import annotations
 

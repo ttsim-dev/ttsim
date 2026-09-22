@@ -18681,7 +18681,7 @@ packages:
   - beartype>=0.18
   - dags>=0.6
   - ipywidgets
-  - jaxtyping>=0.3.10
+  - jaxtyping>=0.3.11
   - kaleido>=1.1
   - networkx>=3.5
   - numpy

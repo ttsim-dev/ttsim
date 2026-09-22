@@ -999,7 +999,7 @@ def test_boolean_body_with_logical_ops_passes():
 
     @policy_function(unit=TTSIMUnit.DIMENSIONLESS)
     def eligible(income_m: float, other_income_m: float, is_exempt: bool) -> bool:
-        return ((income_m >= other_income_m) | is_exempt) & (~is_exempt)
+        return ((income_m >= other_income_m) | is_exempt) & (~is_exempt)  # ty: ignore[deprecated]
 
     fail_if_environment_units_are_inconsistent(
         env={

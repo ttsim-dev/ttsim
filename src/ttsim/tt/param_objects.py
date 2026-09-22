@@ -393,7 +393,12 @@ def get_consecutive_int_lookup_table_param_value(
         if isinstance(level_i_dict[sorted_keys[0]], dict):
             return xnp.concatenate(
                 [
-                    xnp.expand_dims(process_level(i + 1, level_i_dict[key]), axis=0)
+                    xnp.expand_dims(
+                        process_level(
+                            i + 1, cast("NestedLookupDict", level_i_dict[key])
+                        ),
+                        axis=0,
+                    )
                     for key in level_i_dict
                 ]
             )

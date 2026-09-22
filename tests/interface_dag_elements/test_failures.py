@@ -1098,8 +1098,7 @@ def test_p_id_can_be_specified_as_jax_array(xnp):
 def test_input_data_single_person_with_any_p_id_works_correctly(xnp, p_id_value):
     """Test that single-row data works for any p_id value.
 
-    The p_id=0 case is particularly important because this test would fail under the
-    implementation of duplicate detection in place at the time of creation (PR #34).
+    The p_id=0 case is particularly important for duplicate detection.
     """
     data = {("p_id",): xnp.array([p_id_value])}
     input_data_is_invalid(input_data__flat=data, xnp=xnp)
@@ -1379,7 +1378,7 @@ def test_fail_if_input_df_mapper_columns_missing_in_df_via_main(
         match=r"The following columns are missing: \['d', 'i'\]",
     ):
         main(
-            input_data=InputData.df_and_mapper(df=df, mapper=mapper),
+            input_data=InputData.df_and_mapper(df=df, mapper=mapper),  # ty: ignore[invalid-argument-type]
             main_target=MainTarget.results.df_with_mapper,
             orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
             unit_system=TEST_UNIT_SYSTEM,

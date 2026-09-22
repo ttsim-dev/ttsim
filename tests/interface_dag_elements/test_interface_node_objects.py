@@ -18,9 +18,7 @@ from ttsim.interface_dag_elements.interface_node_objects import (
 )
 
 
-# =============================================================================
 # InterfaceInput tests
-# =============================================================================
 def test_interface_input_decorator_creates_interface_input():
     @interface_input()
     def my_input() -> int:
@@ -90,9 +88,7 @@ def test_interface_input_remove_tree_logic_returns_self():
     assert result is my_input
 
 
-# =============================================================================
 # InterfaceFunction tests
-# =============================================================================
 def test_interface_function_decorator_creates_interface_function():
     @interface_function()
     def my_func(x: int) -> int:
@@ -192,9 +188,7 @@ def test_interface_function_remove_tree_logic_returns_new_interface_function():
     assert result.leaf_name == my_func.leaf_name
 
 
-# =============================================================================
 # InputDependentInterfaceFunction tests
-# =============================================================================
 def test_input_dependent_requires_at_least_one_condition():
     with pytest.raises(ValueError, match="At least one of"):
 
@@ -342,9 +336,7 @@ def test_input_dependent_remove_tree_logic_returns_input_dependent():
     assert result.include_if_any_input_present == my_func.include_if_any_input_present
 
 
-# =============================================================================
 # FailFunction tests
-# =============================================================================
 def test_fail_function_decorator_creates_fail_function():
     @fail_function()
     def my_fail_func(x: int) -> int:
@@ -406,9 +398,7 @@ def test_fail_function_remove_tree_logic_returns_fail_function():
     )
 
 
-# =============================================================================
 # WarnFunction tests
-# =============================================================================
 def test_warn_function_decorator_creates_warn_function():
     @warn_function()
     def my_warn_func(x: int) -> int:
