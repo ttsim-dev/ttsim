@@ -384,7 +384,7 @@ if TYPE_CHECKING:
     """Map qualified names to column functions that depend on columns only."""
 
 if TYPE_CHECKING:
-    NestedLookupDict: TypeAlias = dict[int, float | int | bool | "NestedLookupDict"]
+    NestedLookupDict: TypeAlias = Mapping[int, float | int | bool | "NestedLookupDict"]
 else:
     # Recursive aliases stringified as inner attribute names are unresolvable
     # by beartype; widen the runtime form to `dict[int, object]`.
