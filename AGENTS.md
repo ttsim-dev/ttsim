@@ -123,7 +123,7 @@ The `backend` parameter (`"numpy"` or `"jax"`) controls computation:
 - `src_mettsim/tests_middle_earth/`: Tests for the example "Middle Earth" policy
   implementation
 - Use pixi environment `py314` (numpy, current Python), `py311` (numpy, oldest supported
-  Python), `py-314-jax` (Jax, CPU) or `py314-cuda` (Jax, CUDA) to select Python version
+  Python), `py314-jax` (Jax, CPU) or `py314-cuda` (Jax, CUDA) to select Python version
   and backend
 - Markers: `@pytest.mark.skipif_jax`, `@pytest.mark.skipif_numpy`
 
