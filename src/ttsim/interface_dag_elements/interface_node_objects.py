@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import inspect
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Collection, Iterable
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Generic, ParamSpec, TypeVar, no_type_check
 
@@ -199,9 +199,9 @@ class InputDependentInterfaceFunction(InterfaceFunction[FunArgTypes, ReturnType]
     """A function that dynamically changes its behavior based on which InterfaceInput
     nodes are given by the user."""
 
-    include_if_any_input_present: Iterable[str]
-    include_if_all_inputs_present: Iterable[str]
-    include_if_no_input_present: Iterable[str]
+    include_if_any_input_present: Collection[str]
+    include_if_all_inputs_present: Collection[str]
+    include_if_no_input_present: Collection[str]
 
     def __post_init__(self) -> None:
         super().__post_init__()
@@ -252,9 +252,9 @@ class InputDependentInterfaceFunction(InterfaceFunction[FunArgTypes, ReturnType]
 
 def input_dependent_interface_function(
     *,
-    include_if_any_input_present: Iterable[str] = (),
-    include_if_all_inputs_present: Iterable[str] = (),
-    include_if_no_input_present: Iterable[str] = (),
+    include_if_any_input_present: Collection[str] = (),
+    include_if_all_inputs_present: Collection[str] = (),
+    include_if_no_input_present: Collection[str] = (),
     leaf_name: str | None = None,
     in_top_level_namespace: bool = False,
 ) -> Callable[
@@ -298,8 +298,8 @@ def input_dependent_interface_function(
 class FailFunction(InterfaceFunction):
     """An interface function that fails under certain conditions."""
 
-    include_if_any_element_present: Iterable[str]
-    include_if_all_elements_present: Iterable[str]
+    include_if_any_element_present: Collection[str]
+    include_if_all_elements_present: Collection[str]
 
     def remove_tree_logic(
         self,
@@ -322,8 +322,8 @@ class FailFunction(InterfaceFunction):
 
 def fail_function(
     *,
-    include_if_any_element_present: Iterable[str] = (),
-    include_if_all_elements_present: Iterable[str] = (),
+    include_if_any_element_present: Collection[str] = (),
+    include_if_all_elements_present: Collection[str] = (),
     leaf_name: str | None = None,
     in_top_level_namespace: bool = False,
 ) -> Callable[[Callable[..., Any]], FailFunction]:
@@ -347,8 +347,8 @@ def fail_function(
 class WarnFunction(InterfaceFunction):
     """An interface function that warns under certain conditions."""
 
-    include_if_any_element_present: Iterable[str]
-    include_if_all_elements_present: Iterable[str]
+    include_if_any_element_present: Collection[str]
+    include_if_all_elements_present: Collection[str]
 
     def remove_tree_logic(
         self,
@@ -371,8 +371,8 @@ class WarnFunction(InterfaceFunction):
 
 def warn_function(
     *,
-    include_if_any_element_present: Iterable[str] = (),
-    include_if_all_elements_present: Iterable[str] = (),
+    include_if_any_element_present: Collection[str] = (),
+    include_if_all_elements_present: Collection[str] = (),
     leaf_name: str | None = None,
     in_top_level_namespace: bool = False,
 ) -> Callable[[Callable[..., Any]], WarnFunction]:

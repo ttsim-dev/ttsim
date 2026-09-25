@@ -10,7 +10,7 @@ from collections.abc import (
 )
 from dataclasses import dataclass
 from types import ModuleType
-from typing import Any, Literal, cast
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 import dags.tree as dt
 import networkx as nx
@@ -73,6 +73,9 @@ from ttsim.unit_validation import (
     fail_if_input_units_are_inconsistent,
     flatten_unit_annotated_input_tree,
 )
+
+if TYPE_CHECKING:
+    from dags.tree.typing import NestedFunctionDict
 
 
 class KeyErrorMessage(str):
@@ -245,7 +248,7 @@ def any_paths_are_invalid(
 ) -> None:
     """Fail if any paths are invalid in the policy environment."""
     return fail_if_paths_are_invalid(
-        functions=policy_environment,
+        functions=cast("NestedFunctionDict", policy_environment),
         data_tree=input_data__tree,
         targets=tt_targets__tree,
         top_level_namespace=labels__top_level_namespace,

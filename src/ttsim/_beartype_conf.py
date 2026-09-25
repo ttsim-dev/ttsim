@@ -16,8 +16,11 @@ the package claw and take precedence at the call sites they cover.
 """
 
 import os
+from typing import Annotated
 
-from beartype import BeartypeConf, BeartypeStrategy
+import pint
+from beartype import BeartypeConf, BeartypeStrategy, FrozenDict
+from beartype.vale import IsInstance
 
 from ttsim.exceptions import (
     AggregationDefinitionError,
@@ -45,6 +48,13 @@ _STRATEGY = (
     BeartypeStrategy.On if RUNTIME_TYPE_CHECKING_ENABLED else BeartypeStrategy.O0
 )
 
+# pint >= 0.26 bounds `UnitRegistry`'s type parameters by names imported only under
+# `TYPE_CHECKING`. Before Python 3.14, beartype evaluates those bounds eagerly and
+# fails with a `NameError`, so reduce the hint to a plain `isinstance` check.
+_HINT_OVERRIDES = FrozenDict(
+    {pint.UnitRegistry: Annotated[object, IsInstance[pint.UnitRegistry]]}
+)
+
 
 def project_conf(error_class: type[TTSIMError]) -> BeartypeConf:
     """Build a `BeartypeConf` that re-raises violations as `error_class`.
@@ -70,6 +80,7 @@ def project_conf(error_class: type[TTSIMError]) -> BeartypeConf:
         is_color=False,
         is_pep484_tower=True,
         strategy=_STRATEGY,
+        hint_overrides=_HINT_OVERRIDES,
         violation_door_type=error_class,
         violation_param_type=error_class,
         violation_return_type=error_class,
@@ -87,6 +98,7 @@ INTERNAL_CONF = BeartypeConf(
     is_color=False,
     is_pep484_tower=True,
     strategy=_STRATEGY,
+    hint_overrides=_HINT_OVERRIDES,
 )
 
 ENTRY_POINT_CONF = project_conf(EntryPointError)

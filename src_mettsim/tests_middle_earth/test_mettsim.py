@@ -161,7 +161,7 @@ def test_mettsim_policy_environment_is_complete(orig_mettsim_objects, date):
     ids=lambda x: x.isoformat(),
 )
 def test_mettsim_units_are_complete_and_consistent(orig_mettsim_objects, date):
-    """GEP 10 Layer-1 check over all policy dates (ttsim #121).
+    """GEP 10 Layer-1 check over all policy dates.
 
     Every active node must declare (or auto-receive) a unit, and every
     function body the check can evaluate must infer a unit consistent with

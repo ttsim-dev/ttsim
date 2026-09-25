@@ -21,6 +21,7 @@ from ttsim.interface_dag_elements.policy_environment import (
     _active_column_objects_and_param_functions,
 )
 from ttsim.tt import (
+    PolicyFunction,
     RoundingSpec,
     TTSIMUnit,
     policy_function,
@@ -552,4 +553,4 @@ def test_active_objects_accept_statutory_rounding_spec_currency():
     )
     # The spec passes through untouched: rounding happens in the statutory
     # currency natively.
-    assert active["amount_m"].rounding_spec is spec
+    assert cast("PolicyFunction", active["amount_m"]).rounding_spec is spec

@@ -64,9 +64,7 @@ def test_get_top_level_namespace(policy_environment, expected):
     assert all(name in result for name in expected)
 
 
-# =============================================================================
 # grouping_levels tests
-# =============================================================================
 def test_grouping_levels_extracts_id_columns():
     @policy_input(unit=TTSIMUnit.DIMENSIONLESS)
     def p_id() -> int:
@@ -112,9 +110,7 @@ def test_grouping_levels_empty_environment():
     assert result == ()
 
 
-# =============================================================================
 # data_qnames_from_input_data / data_qnames_from_processed_data tests
-# =============================================================================
 def test_data_qnames_from_input_data_returns_qnames():
     input_data__flat = {
         ("p_id",): [0, 1, 2],
@@ -157,17 +153,13 @@ def test_data_qnames_from_processed_data_is_selected_via_main():
     assert result == {"p_id", "income"}
 
 
-# =============================================================================
 # data_qnames_is_empty_set tests
-# =============================================================================
 def test_data_qnames_is_empty_set_returns_empty():
     result = data_qnames_is_empty_set(xnp=np)
     assert result == set()
 
 
-# =============================================================================
 # all_qnames_in_policy_environment tests
-# =============================================================================
 def test_all_qnames_in_policy_environment_flat():
     @policy_function(unit=TTSIMUnit.DIMENSIONLESS)
     def col_a(x: int) -> int:
@@ -195,9 +187,7 @@ def test_all_qnames_in_policy_environment_nested():
     assert "namespace__nested_col" in result
 
 
-# =============================================================================
 # policy_inputs tests
-# =============================================================================
 def test_policy_inputs_returns_only_policy_input_qnames():
     @policy_function(unit=TTSIMUnit.DIMENSIONLESS)
     def col_func(x: int) -> int:
@@ -235,9 +225,7 @@ def test_policy_inputs_handles_nested():
     assert "namespace__nested_input" in result
 
 
-# =============================================================================
 # root_nodes tests
-# =============================================================================
 def test_root_nodes_filters_to_dag_roots():
     # Create a simple DAG where only "input_a" has no incoming edges
     dag = nx.DiGraph()
@@ -299,9 +287,7 @@ def test_root_nodes_multiple_roots():
     assert result == {"root_a", "root_b"}
 
 
-# =============================================================================
 # input_data_targets tests
-# =============================================================================
 def test_input_data_targets_filters_to_data_qnames():
     tt_targets = ["col_a", "col_b", "col_c"]
     data_qnames = {"col_a", "col_c"}
@@ -340,9 +326,7 @@ def test_input_data_targets_empty_intersection():
     assert result == []
 
 
-# =============================================================================
 # column_targets tests
-# =============================================================================
 def test_column_targets_excludes_input_data_targets():
     specialized_env = {
         "col_a": identity,
@@ -395,9 +379,7 @@ def test_column_targets_preserves_order():
     assert result == ["z", "a", "m"]
 
 
-# =============================================================================
 # param_targets tests
-# =============================================================================
 def test_param_targets_excludes_column_and_input_targets():
     specialized_env = {
         "param_a": 100,

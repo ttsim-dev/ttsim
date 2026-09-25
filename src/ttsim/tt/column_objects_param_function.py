@@ -1248,7 +1248,7 @@ def param_function(
     """Decorate a function to make it a `ParamFunction`.
 
     ParamFunctions convert complex parameters (i.e., anything that is not a scalar, a
-    flat homogenous dictionary, or a set of parameters of a piecewise polynomial
+    flat homogeneous dictionary, or a set of parameters of a piecewise polynomial
     function) to custom representations. They must not use any data columns (i.e.,
     arrays of the same length as `p_id`). Use `policy_function` / `PolicyFunction` for
     functions that operate on data columns.

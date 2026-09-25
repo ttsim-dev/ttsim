@@ -12,6 +12,8 @@ a dimensionless ``1/[group]`` (GEP 10).
 
 from __future__ import annotations
 
+from typing import cast
+
 import pint
 import pytest
 
@@ -170,7 +172,9 @@ def test_count_bridges_hh_to_bare_via_division():
         REGISTRY.Quantity(1.0, rent_at_hh) / REGISTRY.Quantity(1.0, count_to_hh)
     ).units
     expected = pint_unit_from_string(unit_str="CURRENCY / month", registry=REGISTRY)
-    assert units_are_equivalent(left=bridged, right=expected, registry=REGISTRY)
+    assert units_are_equivalent(
+        left=cast("pint.Unit", bridged), right=expected, registry=REGISTRY
+    )
 
 
 def test_count_bridges_bare_to_sn_via_multiplication():
@@ -188,7 +192,9 @@ def test_count_bridges_bare_to_sn_via_multiplication():
         level="sn",
         registry=REGISTRY,
     )
-    assert units_are_equivalent(left=product, right=expected, registry=REGISTRY)
+    assert units_are_equivalent(
+        left=cast("pint.Unit", product), right=expected, registry=REGISTRY
+    )
 
 
 def test_absent_level_is_bare():

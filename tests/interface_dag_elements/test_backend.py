@@ -7,9 +7,7 @@ import pytest
 
 from ttsim.interface_dag_elements.backend import dnp, xnp
 
-# =============================================================================
 # xnp() tests
-# =============================================================================
 
 
 def test_xnp_returns_numpy_for_numpy_backend():
@@ -45,9 +43,7 @@ def test_xnp_empty_string_raises():
         xnp("")
 
 
-# =============================================================================
 # dnp() tests
-# =============================================================================
 
 
 def test_dnp_returns_numpy_for_numpy_backend():

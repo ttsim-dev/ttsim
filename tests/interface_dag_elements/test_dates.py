@@ -28,9 +28,7 @@ policy_date = _dates.policy_date
 policy_date_str = _dates.policy_date_str
 
 
-# =============================================================================
 # policy_date tests
-# =============================================================================
 def test_policy_date_is_interface_function():
     assert isinstance(policy_date, InterfaceFunction)
 
@@ -68,9 +66,7 @@ def test_policy_date_invalid_date_raises():
         policy_date("2024-02-30")  # Invalid date
 
 
-# =============================================================================
 # evaluation_date_use_other_info tests
-# =============================================================================
 def test_evaluation_date_use_other_info_is_input_dependent():
     assert isinstance(evaluation_date_use_other_info, InputDependentInterfaceFunction)
 
@@ -118,9 +114,7 @@ def test_evaluation_date_use_other_info_condition_not_satisfied_when_eval_date_s
     assert result is False
 
 
-# =============================================================================
 # evaluation_date_from_evaluation_date_str tests
-# =============================================================================
 def test_evaluation_date_from_str_is_input_dependent():
     assert isinstance(
         evaluation_date_from_evaluation_date_str, InputDependentInterfaceFunction
@@ -165,9 +159,7 @@ def test_evaluation_date_from_str_condition_not_satisfied_when_no_eval_date_str(
     assert result is False
 
 
-# =============================================================================
 # Input definitions tests
-# =============================================================================
 def test_policy_date_str_is_interface_input():
     assert isinstance(policy_date_str, InterfaceInput)
     assert policy_date_str.in_top_level_namespace is True
@@ -178,9 +170,7 @@ def test_evaluation_date_str_is_interface_input():
     assert evaluation_date_str.in_top_level_namespace is True
 
 
-# =============================================================================
 # Mutual exclusivity tests
-# =============================================================================
 def test_evaluation_date_functions_are_mutually_exclusive():
     """Only one evaluation_date function can be included at a time."""
     # When evaluation_date_str is present

@@ -204,7 +204,14 @@ UserColumn: TypeAlias = (
 # beartype message. beartype still enforces the `Mapping[str, ...]`
 # structure (string keys, dict shape).
 if TYPE_CHECKING:
-    UserNestedData: TypeAlias = Mapping[str, "UserColumn | UserNestedData"]
+    UserNestedData: TypeAlias = Mapping[
+        str,
+        UserColumn
+        | UserScalarFloat
+        | UserScalarInt
+        | UserScalarBool
+        | "UserNestedData",
+    ]
 else:
     UserNestedData = Mapping[str, object]
 # `UserNestedUnitAnnotatedData` is the same tree with `UnitAnnotatedColumn`
@@ -325,9 +332,7 @@ if TYPE_CHECKING:
         InterfaceInput,
     )
 
-    FlatInterfaceObjects = Mapping[
-        tuple[str, ...], InterfaceFunction | InterfaceInput | "FlatInterfaceObjects"
-    ]
+    FlatInterfaceObjects = Mapping[tuple[str, ...], InterfaceFunction | InterfaceInput]
     """Flattened tree of interface objects."""
 
     from ttsim.tt import (
@@ -379,7 +384,7 @@ if TYPE_CHECKING:
     """Map qualified names to column functions that depend on columns only."""
 
 if TYPE_CHECKING:
-    NestedLookupDict: TypeAlias = dict[int, float | int | bool | "NestedLookupDict"]
+    NestedLookupDict: TypeAlias = Mapping[int, float | int | bool | "NestedLookupDict"]
 else:
     # Recursive aliases stringified as inner attribute names are unresolvable
     # by beartype; widen the runtime form to `dict[int, object]`.

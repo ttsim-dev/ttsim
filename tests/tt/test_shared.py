@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 import numpy
 import optree
@@ -219,7 +219,7 @@ def test_join_large_primary_key_values(xnp: ModuleType):
 def test_copy_single_scalar_param():
     """Copy a ScalarParam and verify content equality but object independence."""
     original = {"param": ScalarParam(value=0.186)}
-    copied = copy_environment(original)
+    copied = cast("dict[str, Any]", copy_environment(original))
 
     # Content should be identical
     assert copied["param"].value == original["param"].value
@@ -239,7 +239,7 @@ def test_copy_nested_dict_with_params():
         }
     }
 
-    copied = copy_environment(original)
+    copied = cast("dict[str, Any]", copy_environment(original))
 
     # Structure should be preserved
     assert "level1" in copied

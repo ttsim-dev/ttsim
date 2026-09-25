@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import inspect
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 import dags
 import dags.tree as dt
@@ -49,7 +49,7 @@ from ttsim.tt import TTSIMUnit
 from ttsim.tt.column_objects_param_function import policy_function
 
 if TYPE_CHECKING:
-    from ttsim.typing import FlatInterfaceObjects, UnorderedQNames
+    from ttsim.typing import FlatInterfaceObjects, NestedData, UnorderedQNames
 
 
 @interface_function(leaf_name="interface_function_a")
@@ -311,7 +311,9 @@ def test_input_data_classmethods(instance_factory, expected_field_name, xnp):
             ),
         ),
         (
-            lambda _xnp: Results.tree({"result_tree": {"data": [1, 2, 3]}}),
+            lambda _xnp: Results.tree(
+                cast("NestedData", {"result_tree": {"data": [1, 2, 3]}})
+            ),
             lambda _xnp: Results(tree={"result_tree": {"data": [1, 2, 3]}}),  # ty: ignore[unknown-argument]
         ),
         (

@@ -1,5 +1,5 @@
 import dataclasses
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy
 import pytest
@@ -18,9 +18,10 @@ from ttsim.tt.param_objects import (
     get_year_based_phase_inout_of_age_thresholds_param_value,
 )
 
-# =============================================================================
+if TYPE_CHECKING:
+    from ttsim.typing import NestedLookupDict
+
 # convert_sparse_to_consecutive_int_lookup_table tests
-# =============================================================================
 
 
 @pytest.mark.parametrize(
@@ -100,9 +101,7 @@ def test_convert_sparse_max_smaller_than_largest_key_raises(xnp):
         )
 
 
-# =============================================================================
 # ConsecutiveIntLookupTableParamValue tests
-# =============================================================================
 
 
 def test_lookup_table_init_basic(xnp):
@@ -194,14 +193,12 @@ def test_lookup_table_look_up_with_nonzero_base(xnp):
     numpy.testing.assert_almost_equal(lut.look_up(7), 30.0)
 
 
-# =============================================================================
 # get_consecutive_int_lookup_table_param_value tests
-# =============================================================================
 
 
 def test_get_consecutive_int_lookup_table_1d(xnp):
     """Test 1D lookup table creation."""
-    raw = {0: 10.0, 1: 20.0, 2: 30.0}
+    raw: NestedLookupDict = {0: 10.0, 1: 20.0, 2: 30.0}
     result = get_consecutive_int_lookup_table_param_value(raw=raw, xnp=xnp)
 
     assert result.look_up(0) == 10.0
@@ -211,7 +208,7 @@ def test_get_consecutive_int_lookup_table_1d(xnp):
 
 def test_get_consecutive_int_lookup_table_with_nonzero_min(xnp):
     """Test lookup table with non-zero minimum key."""
-    raw = {5: 100.0, 6: 200.0, 7: 300.0}
+    raw: NestedLookupDict = {5: 100.0, 6: 200.0, 7: 300.0}
     result = get_consecutive_int_lookup_table_param_value(raw=raw, xnp=xnp)
 
     assert result.look_up(5) == 100.0
@@ -219,9 +216,7 @@ def test_get_consecutive_int_lookup_table_with_nonzero_min(xnp):
     assert result.look_up(7) == 300.0
 
 
-# =============================================================================
 # get_month_based_phase_inout_of_age_thresholds_param_value tests
-# =============================================================================
 
 
 def test_month_based_phase_inout_basic(xnp):
@@ -317,9 +312,7 @@ def test_month_based_phase_inout_non_int_keys_error(xnp):
         )
 
 
-# =============================================================================
 # get_year_based_phase_inout_of_age_thresholds_param_value tests
-# =============================================================================
 
 
 def test_year_based_phase_inout_basic(xnp):
@@ -405,9 +398,7 @@ def test_year_based_phase_inout_fills_before_and_after(xnp):
     numpy.testing.assert_almost_equal(result.look_up(2025), 66.0)
 
 
-# =============================================================================
 # ScalarParam tests
-# =============================================================================
 
 
 def test_scalar_param_with_bool_value():
@@ -449,9 +440,7 @@ def test_scalar_param_is_frozen():
         param.value = 20  # ty: ignore[invalid-assignment]
 
 
-# =============================================================================
 # DictParam tests
-# =============================================================================
 
 
 def test_dict_param_with_str_int_values():
@@ -472,9 +461,7 @@ def test_dict_param_rejects_reference_key():
         DictParam(value={"reference": "some_ref", "other": 2})
 
 
-# =============================================================================
 # RawParam tests
-# =============================================================================
 
 
 def test_raw_param_with_nested_dict():
@@ -497,9 +484,7 @@ def test_raw_param_rejects_reference_key():
         RawParam(value={"reference": "forbidden", "other": 1})
 
 
-# =============================================================================
 # _year_fraction tests
-# =============================================================================
 
 
 def test_year_fraction_years_only():

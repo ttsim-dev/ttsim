@@ -18,9 +18,7 @@ from_input_data = _raw_results.from_input_data
 params = _raw_results.params
 
 
-# =============================================================================
 # columns_with_internal_p_ids() function tests
-# =============================================================================
 def test_columns_with_internal_p_ids_is_interface_function():
     assert isinstance(columns_with_internal_p_ids, InterfaceFunction)
 
@@ -108,16 +106,12 @@ def test_columns_with_empty_root_nodes(xnp):
     assert result == {}
 
 
-# =============================================================================
 # columns_with_original_p_ids() function tests
-# =============================================================================
 def test_columns_with_original_p_ids_is_interface_function():
     assert isinstance(columns_with_original_p_ids, InterfaceFunction)
 
 
-# =============================================================================
 # from_input_data() function tests
-# =============================================================================
 def test_from_input_data_is_interface_function():
     assert isinstance(from_input_data, InterfaceFunction)
 
@@ -203,9 +197,7 @@ def test_from_input_data_returns_arrays_unsorted(xnp):
     assert list(result["values"]) == [5, 3, 1, 4, 2]
 
 
-# =============================================================================
 # params() function tests
-# =============================================================================
 def test_params_is_interface_function():
     assert isinstance(params, InterfaceFunction)
 
@@ -290,9 +282,7 @@ def test_params_returns_various_value_types():
     assert result["list_param"] == [1, 2, 3]
 
 
-# =============================================================================
 # Dependencies property tests
-# =============================================================================
 def test_columns_with_internal_p_ids_dependencies():
     assert columns_with_internal_p_ids.dependencies == {
         "labels__root_nodes",

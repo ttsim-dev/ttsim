@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 import optree
 import pandas as pd
@@ -23,6 +23,7 @@ from ttsim.tt import ScalarParam, TTSIMUnit, policy_function
 if TYPE_CHECKING:
     from types import ModuleType
 
+    from ttsim.tt import DictParam, PiecewisePolynomialParam
     from ttsim.typing import (
         NestedColumnObjectsParamFunctions,
     )
@@ -74,8 +75,11 @@ def test_add_jahresanfang(xnp: ModuleType):
         xnp=xnp,
         computation_currency="CASTAR",
     )
-    assert _active_ttsim_tree_with_params["foo"].value == 2
-    assert _active_ttsim_tree_with_params["foo_jahresanfang"].value == 1
+    assert cast("ScalarParam", _active_ttsim_tree_with_params["foo"]).value == 2
+    assert (
+        cast("ScalarParam", _active_ttsim_tree_with_params["foo_jahresanfang"]).value
+        == 1
+    )
 
 
 def test_input_is_recognized_as_potential_group_id(backend):
@@ -259,7 +263,7 @@ def test_piecewise_updates_previous(piecewise_spec_base, xnp: ModuleType):
         xnp=xnp,
         computation_currency="CASTAR",
     )
-    params = result["foo"].value
+    params = cast("PiecewisePolynomialParam", result["foo"]).value
     # The first interval's slope should be updated to 0.9
     assert params.coefficients[0][0] == pytest.approx(0.9)
     # The second interval should remain from base
@@ -275,7 +279,7 @@ def test_piecewise_no_updates_previous(piecewise_spec_base, xnp: ModuleType):
         xnp=xnp,
         computation_currency="CASTAR",
     )
-    params = result["foo"].value
+    params = cast("PiecewisePolynomialParam", result["foo"]).value
     assert params.coefficients[0][0] == pytest.approx(0.5)
     assert params.coefficients[1][0] == pytest.approx(0.4)
 
@@ -301,7 +305,7 @@ def test_dict_updates_previous(xnp: ModuleType):
         xnp=xnp,
         computation_currency="CASTAR",
     )
-    assert result["foo"].value == {"a": 10, "b": 2}
+    assert cast("DictParam", result["foo"]).value == {"a": 10, "b": 2}
 
 
 def test_dict_updates_previous_adds_new_key(xnp: ModuleType):
@@ -324,7 +328,7 @@ def test_dict_updates_previous_adds_new_key(xnp: ModuleType):
         xnp=xnp,
         computation_currency="CASTAR",
     )
-    assert result["foo"].value == {"a": 1, "b": 2}
+    assert cast("DictParam", result["foo"]).value == {"a": 1, "b": 2}
 
 
 def test_dict_updates_previous_chained(xnp: ModuleType):
@@ -353,7 +357,7 @@ def test_dict_updates_previous_chained(xnp: ModuleType):
         xnp=xnp,
         computation_currency="CASTAR",
     )
-    assert result["foo"].value == {"a": 10, "b": 20, "c": 3}
+    assert cast("DictParam", result["foo"]).value == {"a": 10, "b": 20, "c": 3}
 
 
 def test_dict_updates_previous_nested(xnp: ModuleType):
@@ -376,7 +380,7 @@ def test_dict_updates_previous_nested(xnp: ModuleType):
         xnp=xnp,
         computation_currency="CASTAR",
     )
-    assert result["foo"].value == {"outer": {"x": 10, "y": 2}}
+    assert cast("DictParam", result["foo"]).value == {"outer": {"x": 10, "y": 2}}
 
 
 def test_dict_updates_previous_queries_base_date(xnp: ModuleType):
@@ -400,7 +404,7 @@ def test_dict_updates_previous_queries_base_date(xnp: ModuleType):
         xnp=xnp,
         computation_currency="CASTAR",
     )
-    assert result["foo"].value == {"a": 1, "b": 2}
+    assert cast("DictParam", result["foo"]).value == {"a": 1, "b": 2}
 
 
 def test_dict_no_updates_previous(xnp: ModuleType):
@@ -423,7 +427,7 @@ def test_dict_no_updates_previous(xnp: ModuleType):
         xnp=xnp,
         computation_currency="CASTAR",
     )
-    assert result["foo"].value == {"c": 3}
+    assert cast("DictParam", result["foo"]).value == {"c": 3}
 
 
 def test_piecewise_updates_previous_chained(piecewise_spec_base, xnp: ModuleType):
@@ -447,7 +451,7 @@ def test_piecewise_updates_previous_chained(piecewise_spec_base, xnp: ModuleType
         xnp=xnp,
         computation_currency="CASTAR",
     )
-    params = result["foo"].value
+    params = cast("PiecewisePolynomialParam", result["foo"]).value
     # First interval updated in 2021
     assert params.coefficients[0][0] == pytest.approx(0.9)
     # Second interval updated in 2022

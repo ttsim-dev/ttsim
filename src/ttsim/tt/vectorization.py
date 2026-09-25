@@ -165,9 +165,7 @@ def _make_vectorizable_ast(
     return ast.fix_missing_locations(new_tree)
 
 
-# ======================================================================================
 # Transformation class
-# ======================================================================================
 
 
 class Transformer(ast.NodeTransformer):
@@ -235,9 +233,7 @@ class Transformer(ast.NodeTransformer):
         return _ifexp_to_call(node, module=self.module)
 
 
-# ======================================================================================
 # Transformation functions on node level
-# ======================================================================================
 
 
 def _if_to_call(node: ast.If, module: str, func_loc: str) -> ast.Call:
@@ -346,9 +342,7 @@ def _call_to_call_from_module(
     return call
 
 
-# ======================================================================================
 # Transformation errors and checks
-# ======================================================================================
 
 
 class TranslateToVectorizableError(TTSIMError, ValueError):

@@ -59,3 +59,6 @@ build.targets.sdist.exclude = [ "tests_middle_earth" ]
 build.targets.sdist.only-packages = true
 build.targets.wheel.only-include = [ "." ]
 build.targets.wheel.sources = [ "." ]
+
+[tool.pyproject-fmt]
+max_supported_python = "3.14"
