@@ -41,6 +41,23 @@ def p_id() -> int:
 
 
 rounding_specs_and_exp_results = [
+    # Products whose exact decimal value is a whole number land one ulp below or above
+    # it in binary floating point; directed rounding must not drop or add a whole base.
+    (
+        RoundingSpec(base=1, direction="down"),
+        numpy.array([1e-6 * 65600 * 40000, 2623.5]),
+        numpy.array([2624.0, 2623.0]),
+    ),
+    (
+        RoundingSpec(base=1, direction="up"),
+        numpy.array([0.07 * 100, 7.5]),
+        numpy.array([7.0, 8.0]),
+    ),
+    (
+        RoundingSpec(base=1e-6, direction="up"),
+        numpy.array([0.0656, 0.0731351]),
+        numpy.array([0.0656, 0.073136]),
+    ),
     (
         RoundingSpec(base=1, direction="up"),
         numpy.array([100.24, 100.78]),

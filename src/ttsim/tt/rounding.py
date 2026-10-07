@@ -72,14 +72,18 @@ class RoundingSpec:
 
         @functools.wraps(func, assigned=_WRAPPER_ASSIGNMENTS_NO_ANNOTATIONS)
         def wrapper(*args: P.args, **kwargs: P.kwargs) -> FloatColumn:
-            out = func(*args, **kwargs)
+            # A quotient within 1e-9 of a whole number is treated as that whole
+            # number, so directed rounding does not react to the representation
+            # error of a decimal operand (0.0656 * 40000 is 2623.9999999999995 in
+            # binary floating point, and must round down to 2624, not 2623).
+            scaled = xnp.round(xnp.asarray(func(*args, **kwargs)) / self.base, 9)
 
             if self.direction == "up":
-                rounded_out = self.base * xnp.ceil(out / self.base)
+                rounded_out = self.base * xnp.ceil(scaled)
             elif self.direction == "down":
-                rounded_out = self.base * xnp.floor(out / self.base)
+                rounded_out = self.base * xnp.floor(scaled)
             else:  # self.direction == "nearest"
-                rounded_out = self.base * (xnp.asarray(out) / self.base).round()
+                rounded_out = self.base * xnp.round(scaled)
 
             return rounded_out + self.to_add_after_rounding
 
