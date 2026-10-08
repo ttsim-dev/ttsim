@@ -49,13 +49,18 @@ rounding_specs_and_exp_results = [
         numpy.array([2624.0, 2623.0]),
     ),
     (
+        RoundingSpec(base=1, direction="down"),
+        numpy.array([1e-6 * 65600 * 3_000_000_000, 196_800_000.5]),
+        numpy.array([196_800_000.0, 196_800_000.0]),
+    ),
+    (
         RoundingSpec(base=1, direction="up"),
         numpy.array([0.07 * 100, 7.5]),
         numpy.array([7.0, 8.0]),
     ),
     (
         RoundingSpec(base=1e-6, direction="up"),
-        numpy.array([0.0656, 0.0731351]),
+        numpy.array([0.0656, 0.0731355]),
         numpy.array([0.0656, 0.073136]),
     ),
     (

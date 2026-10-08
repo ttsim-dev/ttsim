@@ -28,6 +28,11 @@ _WRAPPER_ASSIGNMENTS_NO_ANNOTATIONS: tuple[str, ...] = tuple(
 )
 
 
+#: Distance to the nearest whole base, in units of the dtype's machine epsilon times
+#: the magnitude, below which a quotient counts as that whole base.
+_SNAP_TOLERANCE_IN_ULPS = 16
+
+
 @beartype(conf=ROUNDING_SPEC_CONF)
 @dataclass(frozen=True)
 class RoundingSpec:
@@ -72,11 +77,20 @@ class RoundingSpec:
 
         @functools.wraps(func, assigned=_WRAPPER_ASSIGNMENTS_NO_ANNOTATIONS)
         def wrapper(*args: P.args, **kwargs: P.kwargs) -> FloatColumn:
-            # A quotient within 1e-9 of a whole number is treated as that whole
-            # number, so directed rounding does not react to the representation
+            # A quotient within a few dozen ulps of a whole number is treated as that
+            # whole number, so directed rounding does not react to the representation
             # error of a decimal operand (0.0656 * 40000 is 2623.9999999999995 in
-            # binary floating point, and must round down to 2624, not 2623).
-            scaled = xnp.round(xnp.asarray(func(*args, **kwargs)) / self.base, 9)
+            # binary floating point, and must round down to 2624, not 2623). The
+            # tolerance scales with the magnitude and the dtype's precision, so it
+            # stays above the error for large amounts and in float32 alike.
+            scaled = xnp.asarray(func(*args, **kwargs)) / self.base
+            nearest = xnp.round(scaled)
+            tolerance = (
+                _SNAP_TOLERANCE_IN_ULPS
+                * xnp.finfo(scaled.dtype).eps
+                * xnp.maximum(xnp.abs(scaled), 1.0)
+            )
+            scaled = xnp.where(xnp.abs(scaled - nearest) <= tolerance, nearest, scaled)
 
             if self.direction == "up":
                 rounded_out = self.base * xnp.ceil(scaled)
