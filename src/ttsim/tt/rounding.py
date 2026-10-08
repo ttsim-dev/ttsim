@@ -29,8 +29,16 @@ _WRAPPER_ASSIGNMENTS_NO_ANNOTATIONS: tuple[str, ...] = tuple(
 
 
 #: Distance to the nearest whole base, in units of the dtype's machine epsilon times
-#: the magnitude, below which a quotient counts as that whole base.
-_SNAP_TOLERANCE_IN_ULPS = 16
+#: the magnitude, below which a quotient counts as that whole base. A product or
+#: quotient of two decimal operands lands within about one ulp of its exact value;
+#: anything much looser swallows genuine fractions in float32 (16 ulps of 12 290 are
+#: 0.023, and 0.204833 * 60000 = 12289.98 would round up to 12290).
+_SNAP_TOLERANCE_IN_ULPS = 4
+
+#: Upper bound on that distance in base units. In float32 a few ulps of a large
+#: quotient are a sizeable part of a base unit (16 ulps of 181 417 are 0.35), so
+#: without the bound a quotient a third below a whole base would be snapped up to it.
+_SNAP_TOLERANCE_MAX_IN_BASE_UNITS = 0.1
 
 
 @beartype(conf=ROUNDING_SPEC_CONF)
@@ -82,7 +90,10 @@ class RoundingSpec:
             scaled = xnp.asarray(func(*args, **kwargs)) / self.base
             nearest = xnp.round(scaled)
             tolerance = _SNAP_TOLERANCE_IN_ULPS * xnp.finfo(scaled.dtype).eps
-            tolerance = tolerance * xnp.maximum(xnp.abs(scaled), 1.0)
+            tolerance = xnp.minimum(
+                tolerance * xnp.maximum(xnp.abs(scaled), 1.0),
+                _SNAP_TOLERANCE_MAX_IN_BASE_UNITS,
+            )
             scaled = xnp.where(xnp.abs(scaled - nearest) <= tolerance, nearest, scaled)
             round_func = {"up": xnp.ceil, "down": xnp.floor, "nearest": xnp.round}
             rounded_out = self.base * round_func[self.direction](scaled)

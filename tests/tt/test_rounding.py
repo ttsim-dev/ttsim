@@ -63,6 +63,18 @@ rounding_specs_and_exp_results = [
         numpy.array([0.0656, 0.0731355]),
         numpy.array([0.0656, 0.073136]),
     ),
+    # In float32, 13062 / 72000 / 1e-6 is 181416.66 and 0.204833 * 60000 is 12289.98;
+    # a few ulps there are a visible part of a base, so neither may be carried up.
+    (
+        RoundingSpec(base=1e-6, direction="down"),
+        numpy.array([13062 / 72000, 0.0656]),
+        numpy.array([0.181416, 0.0656]),
+    ),
+    (
+        RoundingSpec(base=1, direction="down"),
+        numpy.array([0.204833 * 60000, 2624.0]),
+        numpy.array([12289.0, 2624.0]),
+    ),
     (
         RoundingSpec(base=1, direction="up"),
         numpy.array([100.24, 100.78]),
@@ -163,11 +175,15 @@ def test_rounding(rounding_spec, input_values, exp_output, backend):
         backend=backend,
         unit_system=TEST_UNIT_SYSTEM,
     )
+    # A snap that lands on the wrong base is one base unit off, which the default
+    # relative tolerance would hide for large quotients.
     assert_series_equal(
         pd.Series(results__tree["namespace"]["test_func"]),
         pd.Series(exp_output),
         check_names=False,
         check_dtype=False,
+        rtol=1e-7,
+        atol=0,
     )
 
 
