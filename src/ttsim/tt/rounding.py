@@ -77,28 +77,15 @@ class RoundingSpec:
 
         @functools.wraps(func, assigned=_WRAPPER_ASSIGNMENTS_NO_ANNOTATIONS)
         def wrapper(*args: P.args, **kwargs: P.kwargs) -> FloatColumn:
-            # A quotient within 16 ulps of a whole number is treated as that
-            # whole number, so directed rounding does not react to the representation
-            # error of a decimal operand (0.0656 * 40000 is 2623.9999999999995 in
-            # binary floating point, and must round down to 2624, not 2623). The
-            # tolerance scales with the magnitude and the dtype's precision, so it
-            # stays above the error for large amounts and in float32 alike.
+            # Snap near-whole quotients so representation error cannot flip a
+            # directed rounding (0.0656 * 40000 is 2623.9999999999995 in binary).
             scaled = xnp.asarray(func(*args, **kwargs)) / self.base
             nearest = xnp.round(scaled)
-            tolerance = (
-                _SNAP_TOLERANCE_IN_ULPS
-                * xnp.finfo(scaled.dtype).eps
-                * xnp.maximum(xnp.abs(scaled), 1.0)
-            )
+            tolerance = _SNAP_TOLERANCE_IN_ULPS * xnp.finfo(scaled.dtype).eps
+            tolerance = tolerance * xnp.maximum(xnp.abs(scaled), 1.0)
             scaled = xnp.where(xnp.abs(scaled - nearest) <= tolerance, nearest, scaled)
-
-            if self.direction == "up":
-                rounded_out = self.base * xnp.ceil(scaled)
-            elif self.direction == "down":
-                rounded_out = self.base * xnp.floor(scaled)
-            else:  # self.direction == "nearest"
-                rounded_out = self.base * xnp.round(scaled)
-
+            round_func = {"up": xnp.ceil, "down": xnp.floor, "nearest": xnp.round}
+            rounded_out = self.base * round_func[self.direction](scaled)
             return rounded_out + self.to_add_after_rounding
 
         # Synthesise the typed outer forwarder. Inputs mirror the wrapped
