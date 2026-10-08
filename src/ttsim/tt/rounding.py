@@ -77,7 +77,7 @@ class RoundingSpec:
 
         @functools.wraps(func, assigned=_WRAPPER_ASSIGNMENTS_NO_ANNOTATIONS)
         def wrapper(*args: P.args, **kwargs: P.kwargs) -> FloatColumn:
-            # A quotient within a few dozen ulps of a whole number is treated as that
+            # A quotient within 16 ulps of a whole number is treated as that
             # whole number, so directed rounding does not react to the representation
             # error of a decimal operand (0.0656 * 40000 is 2623.9999999999995 in
             # binary floating point, and must round down to 2624, not 2623). The
