@@ -28,6 +28,19 @@ _WRAPPER_ASSIGNMENTS_NO_ANNOTATIONS: tuple[str, ...] = tuple(
 )
 
 
+#: Distance to the nearest whole base, in units of the dtype's machine epsilon times
+#: the magnitude, below which a quotient counts as that whole base. A product or
+#: quotient of two decimal operands lands within about one ulp of its exact value;
+#: anything much looser swallows genuine fractions in float32 (16 ulps of 12 290 are
+#: 0.023, and 0.204833 * 60000 = 12289.98 would round up to 12290).
+_SNAP_TOLERANCE_IN_ULPS = 4
+
+#: Upper bound on that distance in base units. In float32 a few ulps of a large
+#: quotient are a sizeable part of a base unit (16 ulps of 181 417 are 0.35), so
+#: without the bound a quotient a third below a whole base would be snapped up to it.
+_SNAP_TOLERANCE_MAX_IN_BASE_UNITS = 0.1
+
+
 @beartype(conf=ROUNDING_SPEC_CONF)
 @dataclass(frozen=True)
 class RoundingSpec:
@@ -72,16 +85,22 @@ class RoundingSpec:
 
         @functools.wraps(func, assigned=_WRAPPER_ASSIGNMENTS_NO_ANNOTATIONS)
         def wrapper(*args: P.args, **kwargs: P.kwargs) -> FloatColumn:
-            out = func(*args, **kwargs)
-
-            if self.direction == "up":
-                rounded_out = self.base * xnp.ceil(out / self.base)
-            elif self.direction == "down":
-                rounded_out = self.base * xnp.floor(out / self.base)
-            else:  # self.direction == "nearest"
-                rounded_out = self.base * (xnp.asarray(out) / self.base).round()
-
-            return rounded_out + self.to_add_after_rounding
+            # Snap near-whole quotients so representation error cannot flip a
+            # directed rounding (0.0656 * 40000 is 2623.9999999999995 in float64).
+            scaled = xnp.asarray(func(*args, **kwargs)) / self.base
+            nearest = xnp.round(scaled)
+            tolerance = xnp.minimum(
+                _SNAP_TOLERANCE_IN_ULPS
+                * xnp.finfo(scaled.dtype).eps
+                * xnp.maximum(xnp.abs(scaled), 1.0),
+                _SNAP_TOLERANCE_MAX_IN_BASE_UNITS,
+            )
+            scaled = xnp.where(xnp.abs(scaled - nearest) <= tolerance, nearest, scaled)
+            round_func = {"up": xnp.ceil, "down": xnp.floor, "nearest": xnp.round}
+            return (
+                self.base * round_func[self.direction](scaled)
+                + self.to_add_after_rounding
+            )
 
         # Synthesise the typed outer forwarder. Inputs mirror the wrapped
         # function's signature; the return is always `FloatColumn` because
