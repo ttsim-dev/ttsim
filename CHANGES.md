@@ -9,7 +9,7 @@ releases are available on [Anaconda.org](https://anaconda.org/conda-forge/ttsim)
 - {gh}`159` Make `RoundingSpec` robust to floating-point representation error: a
   quotient `out / base` within 4 ulps of a whole number, and at most a tenth of a base
   unit away from it, counts as that whole number before `ceil`, `floor` or `round`, so
-  `0.0656 * 40000` (2623.9999999999995 in binary) rounds down to 2624, not 2623.
+  `0.0656 * 40000` (2623.9999999999995 in float64) rounds down to 2624, not 2623.
   ({ghuser}`MImmesberger`)
 
 ## v1.3.1 — 2026-09-02

@@ -86,18 +86,21 @@ class RoundingSpec:
         @functools.wraps(func, assigned=_WRAPPER_ASSIGNMENTS_NO_ANNOTATIONS)
         def wrapper(*args: P.args, **kwargs: P.kwargs) -> FloatColumn:
             # Snap near-whole quotients so representation error cannot flip a
-            # directed rounding (0.0656 * 40000 is 2623.9999999999995 in binary).
+            # directed rounding (0.0656 * 40000 is 2623.9999999999995 in float64).
             scaled = xnp.asarray(func(*args, **kwargs)) / self.base
             nearest = xnp.round(scaled)
-            tolerance = _SNAP_TOLERANCE_IN_ULPS * xnp.finfo(scaled.dtype).eps
             tolerance = xnp.minimum(
-                tolerance * xnp.maximum(xnp.abs(scaled), 1.0),
+                _SNAP_TOLERANCE_IN_ULPS
+                * xnp.finfo(scaled.dtype).eps
+                * xnp.maximum(xnp.abs(scaled), 1.0),
                 _SNAP_TOLERANCE_MAX_IN_BASE_UNITS,
             )
             scaled = xnp.where(xnp.abs(scaled - nearest) <= tolerance, nearest, scaled)
             round_func = {"up": xnp.ceil, "down": xnp.floor, "nearest": xnp.round}
-            rounded_out = self.base * round_func[self.direction](scaled)
-            return rounded_out + self.to_add_after_rounding
+            return (
+                self.base * round_func[self.direction](scaled)
+                + self.to_add_after_rounding
+            )
 
         # Synthesise the typed outer forwarder. Inputs mirror the wrapped
         # function's signature; the return is always `FloatColumn` because
