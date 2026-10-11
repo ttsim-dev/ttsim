@@ -19,8 +19,11 @@ from ttsim.tt._function_rewriting import (
     recompile_from_ast,
 )
 from ttsim.tt.type_resolution import (
+    ResolvedKind,
+    TypeResolutionError,
     build_beartype_checkable_wrapper,
     create_vectorized_annotations,
+    resolve_kind_of_column_function,
 )
 
 if TYPE_CHECKING:
@@ -28,6 +31,12 @@ if TYPE_CHECKING:
 
 
 BACKEND_TO_MODULE = {"jax": "jax.numpy", "numpy": "numpy"}
+
+_SCALAR_KIND_TO_OTYPE = {
+    ResolvedKind.FLOAT_SCALAR: float,
+    ResolvedKind.INT_SCALAR: int,
+    ResolvedKind.BOOL_SCALAR: bool,
+}
 
 
 def vectorize_function(
@@ -61,7 +70,18 @@ def vectorize_function(
             "__closure__",
             *WRAPPER_ASSIGNMENTS_NO_ANNOTATIONS,
         )
-        vectorized = functools.wraps(func, assigned=assigned)(numpy.vectorize(func))
+        # Without `otypes`, `numpy.vectorize` takes the output dtype from the
+        # first row's return value: an `int` there truncates later floats.
+        try:
+            return_kind = resolve_kind_of_column_function(
+                func, node_name=getattr(func, "__name__", "<vectorized node>")
+            )
+        except TypeResolutionError:
+            return_kind = ResolvedKind.OTHER
+        otype = _SCALAR_KIND_TO_OTYPE.get(return_kind)
+        vectorized = functools.wraps(func, assigned=assigned)(
+            numpy.vectorize(func, otypes=None if otype is None else [otype])
+        )
     elif vectorization_strategy == "vectorize":
         vectorized = _make_vectorizable(func, backend=backend, xnp=xnp)
     else:
