@@ -927,3 +927,20 @@ def test_forbidden_augassign_raise(func, xnp):
 )
 def test_scalar_type_to_array_type(input_type, expected):
     assert scalar_type_to_array_type(input_type) == expected
+
+
+def capped_share(x: float) -> float:
+    return min(0.4 * x, 1908)
+
+
+def test_loop_vectorize_returns_annotated_float_when_first_row_returns_int():
+    """A `-> float` function yields a float column even if row 0 returns an int."""
+    fun = vectorize_function(
+        capped_share,
+        vectorization_strategy="loop",
+        backend="numpy",
+        xnp=numpy,
+    )
+    numpy.testing.assert_allclose(
+        fun(numpy.array([5000.0, 4767.0])), [1908.0, 1906.8], rtol=0, atol=1e-9
+    )
