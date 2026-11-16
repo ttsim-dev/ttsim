@@ -263,6 +263,7 @@ def dummy_callable(
             start_date=obj.start_date,
             end_date=obj.end_date,
             foreign_key_type=obj.foreign_key_type,
+            vectorization_strategy="not_required",
             unit=unit,
         )(dummy)
     if isinstance(obj, ParamObject):

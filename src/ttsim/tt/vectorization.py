@@ -8,6 +8,7 @@ from types import ModuleType
 from typing import TYPE_CHECKING, Any, Literal, cast
 
 import numpy
+from dags import get_annotations
 
 from ttsim.exceptions import TTSIMError
 from ttsim.tt._function_rewriting import (
@@ -61,7 +62,9 @@ def vectorize_function(
             "__closure__",
             *WRAPPER_ASSIGNMENTS_NO_ANNOTATIONS,
         )
-        vectorized = functools.wraps(func, assigned=assigned)(numpy.vectorize(func))
+        vectorized = functools.wraps(func, assigned=assigned)(
+            numpy.vectorize(func, otypes=[get_annotations(func)["return"]])
+        )
     elif vectorization_strategy == "vectorize":
         vectorized = _make_vectorizable(func, backend=backend, xnp=xnp)
     else:

@@ -555,6 +555,14 @@ def _fail_if_annotations_mismatch_vectorization_strategy(
     else:
         for name, annot in annotations.items():
             if name == "return":
+                if annot not in _SCALAR_TYPES_FOR_POLICY_FUNCTION_CONTRACT:
+                    msg = (
+                        f"@policy_function with "
+                        f"vectorization_strategy={vectorization_strategy!r} "
+                        f"requires a scalar return annotation (int / float / "
+                        f"bool). Function {func_qualname!r} has `-> {annot}`."
+                    )
+                    raise PolicyFunctionDefinitionError(msg)
                 continue
             if annot in column_types:
                 annot_name = getattr(annot, "__name__", str(annot))
