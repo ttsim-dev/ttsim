@@ -270,7 +270,7 @@ def test_copy_full_policy_environment():
     copied_env = copy_environment(policy_env)
 
     # Verify skeletons (tree structure) are identical
-    assert set(optree.tree_paths(policy_env)) == set(optree.tree_paths(copied_env))
+    assert set(optree.tree_paths(policy_env)) == set(optree.tree_paths(copied_env))  # ty: ignore[invalid-argument-type]
 
     # Get reference to nested parameter in both versions
     original_param = policy_env["orc_hunting_bounty"]["raw_bounties_per_orc"]
@@ -329,7 +329,7 @@ def test_copy_environment_works_where_deepcopy_fails():
 
     # But copy_environment should work
     copied_env = copy_environment(policy_env)
-    assert set(optree.tree_paths(policy_env)) == set(optree.tree_paths(copied_env))
+    assert set(optree.tree_paths(policy_env)) == set(optree.tree_paths(copied_env))  # ty: ignore[invalid-argument-type]
     assert isinstance(copied_env, dict)
     assert len(copied_env) > 0
 

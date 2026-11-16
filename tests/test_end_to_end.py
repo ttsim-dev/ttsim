@@ -11,7 +11,7 @@ from mettsim import middle_earth
 
 from tests.test_unit_system import TEST_UNIT_SYSTEM
 from ttsim import InputData, MainTarget, OrigPolicyObjects, TTTargets, main
-from ttsim.tt import AggType, TTSIMUnit, agg_by_group_function
+from ttsim.tt import TTSIMUnit
 from ttsim.tt.column_objects_param_function import policy_function, policy_input
 from ttsim.tt.units import UnitAnnotatedColumn
 from ttsim.typing import FloatColumn
@@ -704,11 +704,6 @@ def cumulative_broadcast_x(broadcast_x: FloatColumn, xnp: ModuleType) -> FloatCo
     array and cannot run on a bare scalar.
     """
     return xnp.cumsum(broadcast_x)
-
-
-@agg_by_group_function(agg_type=AggType.SUM, unit=TTSIMUnit.DIMENSIONLESS)
-def broadcast_x_fam(broadcast_x: float, fam_id: int) -> float:
-    pass
 
 
 @policy_input(unit=TTSIMUnit.DIMENSIONLESS)

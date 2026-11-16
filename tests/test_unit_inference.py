@@ -2100,7 +2100,7 @@ def test_unevaluable_body_without_opt_out_is_rejected():
     # the author must opt out explicitly with verify_units=False.
     @policy_function(unit=TTSIMUnit.CURRENCY)
     def not_evaluable(wealth: float) -> float:
-        return wealth.this_attribute_does_not_exist()  # ty: ignore[unresolved-attribute]
+        return wealth.this_attribute_does_not_exist()  # ty: ignore[missing-attribute]
 
     with pytest.raises(UnitConsistencyError, match="verify_units=False"):
         fail_if_environment_units_are_inconsistent(
@@ -2114,7 +2114,7 @@ def test_unevaluable_body_with_opt_out_passes():
     # The same body, explicitly opted out, is accepted: its declared unit stands.
     @policy_function(unit=TTSIMUnit.CURRENCY, verify_units=False)
     def not_evaluable(wealth: float) -> float:
-        return wealth.this_attribute_does_not_exist()  # ty: ignore[unresolved-attribute]
+        return wealth.this_attribute_does_not_exist()  # ty: ignore[missing-attribute]
 
     fail_if_environment_units_are_inconsistent(
         env={"wealth": wealth, "not_evaluable": not_evaluable},
@@ -4024,7 +4024,7 @@ def test_verify_units_false_still_checks_consumers_against_declared_unit():
     # contract, so a consumer that misuses the producer is still caught.
     @policy_function(unit=TTSIMUnit.CURRENCY.PER_YEAR, verify_units=False)
     def producer_y(wealth: float) -> float:
-        return wealth.this_does_not_exist()  # ty: ignore[unresolved-attribute]
+        return wealth.this_does_not_exist()  # ty: ignore[missing-attribute]
 
     @policy_function(unit=TTSIMUnit.YEARS)
     def consumer(producer_y: float) -> float:

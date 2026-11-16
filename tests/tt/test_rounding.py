@@ -498,7 +498,7 @@ def test_rounding_preserves_function_name(xnp):
 
     rounded_func = rs.apply_rounding(my_custom_function, xnp=xnp)
 
-    assert rounded_func.__name__ == "my_custom_function"  # ty: ignore[unresolved-attribute]
+    assert rounded_func.__name__ == "my_custom_function"  # ty: ignore[missing-attribute]
 
 
 def test_rounded_wrapper_signature_preserves_param_annotations(xnp) -> None:

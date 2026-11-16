@@ -50,9 +50,9 @@ jobs:
             environment: py313
     steps:
       - uses: actions/checkout@v7.0.1
-      - uses: prefix-dev/setup-pixi@v0.10.2
+      - uses: prefix-dev/setup-pixi@v0.11.3
         with:
-          pixi-version: v0.81.0
+          pixi-version: v0.84.2
           cache: true
           cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
           frozen: true
@@ -86,9 +86,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7.0.1
-      - uses: prefix-dev/setup-pixi@v0.10.2
         with:
-          pixi-version: v0.81.0
+          # `.ai-instructions` carries the dead-code script.
+          submodules: true
+      - uses: prefix-dev/setup-pixi@v0.11.3
+        with:
+          pixi-version: v0.84.2
           cache: true
           cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
           frozen: true
@@ -98,4 +101,7 @@ jobs:
         shell: bash -el {0}
       - name: Run ty (jax backend)
         run: pixi run --locked -e py314 prek run ty-jax --all-files
+        shell: bash -el {0}
+      - name: Refuse dead internal and test code
+        run: pixi run --locked -e py314 prek run dead-code --all-files
         shell: bash -el {0}

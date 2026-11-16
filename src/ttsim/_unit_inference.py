@@ -1356,13 +1356,13 @@ class _UnitCheckQuantity:
 
     # ``==``/``!=`` are deliberately *not* unit-screened: they are routinely used
     # polymorphically (sentinels, ``x == 0``) and are not magnitude comparisons.
-    def __eq__(self, other: object) -> _UnitCheckQuantity:  # ty: ignore[invalid-method-override]
+    def __eq__(self, other: object) -> _UnitCheckQuantity:  # ty: ignore[incompatible-method-override]
         return self._controlled_bool_at(
             level=self._comparison_level(other),
             label=self._composed_label(other=other, op="=="),
         )
 
-    def __ne__(self, other: object) -> _UnitCheckQuantity:  # ty: ignore[invalid-method-override]
+    def __ne__(self, other: object) -> _UnitCheckQuantity:  # ty: ignore[incompatible-method-override]
         return self._controlled_bool_at(
             level=self._comparison_level(other),
             label=self._composed_label(other=other, op="!="),
