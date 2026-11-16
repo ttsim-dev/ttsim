@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import inspect
+from typing import Literal
 
 import pytest
 
@@ -399,6 +400,20 @@ def test_policy_function_dual_mode_check_resolves_stringified_annotations() -> N
         )
         def column_arg_on_vectorized(x: FloatColumn) -> FloatColumn:
             return x
+
+
+@pytest.mark.parametrize("vectorization_strategy", ["loop", "vectorize"])
+def test_policy_function_rejects_non_scalar_return_on_vectorized(
+    vectorization_strategy: Literal["loop", "vectorize"],
+) -> None:
+    with pytest.raises(PolicyFunctionDefinitionError, match="return annotation"):
+
+        @policy_function(
+            vectorization_strategy=vectorization_strategy,
+            unit=TTSIMUnit.DIMENSIONLESS,
+        )
+        def non_scalar_return(x: float) -> tuple[float, float]:
+            return (x, x)
 
 
 def test_policy_function_dual_mode_check_resolves_strings_not_required() -> None:

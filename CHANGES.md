@@ -8,7 +8,9 @@ releases are available on [Anaconda.org](https://anaconda.org/conda-forge/ttsim)
 
 - {gh}`160` Pass the return annotation as `otypes` to `numpy.vectorize` under the
   `"loop"` vectorization strategy, so a `-> float` function whose first row returns an
-  `int` no longer truncates later rows to integers. ({ghuser}`MImmesberger`)
+  `int` no longer truncates later rows to integers. `@policy_function` with
+  `vectorization_strategy` `"loop"` or `"vectorize"` now requires an `int`, `float` or
+  `bool` return annotation. ({ghuser}`MImmesberger`)
 - {gh}`159` Make `RoundingSpec` robust to floating-point representation error: a
   quotient `out / base` within 4 ulps of a whole number, and at most a tenth of a base
   unit away from it, counts as that whole number before `ceil`, `floor` or `round`, so

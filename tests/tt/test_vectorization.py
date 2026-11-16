@@ -930,7 +930,16 @@ def test_scalar_type_to_array_type(input_type, expected):
 
 
 def capped_share(x: float) -> float:
+    """Return an `int` for capped rows, so row 0 alone would yield an int column."""
     return min(0.4 * x, 1908)
+
+
+def positive_flag_as_int(x: float) -> bool:
+    return int(x > 0)
+
+
+def positive_flag_as_bool(x: float) -> int:
+    return x > 0
 
 
 def test_loop_vectorize_returns_annotated_float_when_first_row_returns_int():
@@ -944,3 +953,18 @@ def test_loop_vectorize_returns_annotated_float_when_first_row_returns_int():
     numpy.testing.assert_allclose(
         fun(numpy.array([5000.0, 4767.0])), [1908.0, 1906.8], rtol=0, atol=1e-9
     )
+
+
+@pytest.mark.parametrize(
+    ("func", "expected_dtype"),
+    [
+        (capped_share, numpy.float64),
+        (positive_flag_as_int, numpy.bool_),
+        (positive_flag_as_bool, numpy.int64),
+    ],
+)
+def test_loop_vectorize_returns_dtype_of_return_annotation(func, expected_dtype):
+    fun = vectorize_function(
+        func, vectorization_strategy="loop", backend="numpy", xnp=numpy
+    )
+    assert fun(numpy.array([5000.0, -1.0])).dtype == expected_dtype
