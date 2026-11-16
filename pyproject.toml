@@ -119,9 +119,6 @@ jax.pypi-dependencies.jax = ">=0.8"
 jax.target.linux-64.tasks.tests-jax = "pytest --backend=jax"
 jax.target.osx-arm64.tasks.tests-jax = "dot -c && pytest --backend=jax"
 jax.target.win-64.tasks.tests-jax = "pytest --backend=jax"
-metal.platforms = [ "osx-arm64" ]
-metal.target.osx-arm64.pypi-dependencies.jax = ">=0.8"
-metal.target.osx-arm64.pypi-dependencies.jax-metal = ">=0.1.1"
 py311.dependencies.python = "~=3.11.0"
 py312.dependencies.python = "~=3.12.0"
 py313.dependencies.python = "~=3.13.0"
@@ -154,7 +151,6 @@ py313 = [ "py313", "tests" ]
 py314 = [ "py314", "tests" ]
 py314-cuda = [ "py314", "tests", "cuda" ]
 py314-jax = [ "py314", "tests", "jax" ]
-py314-metal = [ "py314", "tests", "metal" ]
 
 [tool.ruff]
 fix = true
@@ -261,8 +257,6 @@ expand_tables = [
   "tool.pixi.feature.jax",
   "tool.pixi.feature.jax.pypi-dependencies",
   "tool.pixi.feature.jax.target",
-  "tool.pixi.feature.metal",
-  "tool.pixi.feature.metal.target",
   "tool.pixi.feature.py311",
   "tool.pixi.feature.py311.dependencies",
   "tool.pixi.feature.py312",
