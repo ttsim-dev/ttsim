@@ -3,7 +3,7 @@ import inspect
 from collections.abc import Callable
 from dataclasses import dataclass
 from types import ModuleType
-from typing import Literal, ParamSpec, get_args
+from typing import Literal, get_args
 
 from beartype import beartype
 
@@ -13,8 +13,6 @@ from ttsim.tt.units import CompositeUnit
 from ttsim.typing import FloatColumn
 
 ROUNDING_DIRECTION = Literal["up", "down", "nearest"]
-
-P = ParamSpec("P")
 
 
 # Drop annotations from the inner `*args, **kwargs` rounding wrapper. The
@@ -68,7 +66,7 @@ class RoundingSpec:
             msg = f"Additive part must be a number, got {self.to_add_after_rounding!r}"
             raise TypeError(msg)
 
-    def apply_rounding(
+    def apply_rounding[**P](
         self,
         func: Callable[P, FloatColumn],
         xnp: ModuleType,

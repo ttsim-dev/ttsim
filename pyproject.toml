@@ -14,7 +14,7 @@ keywords = [
   "Transfers",
 ]
 license = { file = "LICENSE" }
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 classifiers = [
   "Intended Audience :: Science/Research",
   "License :: OSI Approved :: GNU Affero General Public License v3",
@@ -24,7 +24,6 @@ classifiers = [
   "Operating System :: POSIX",
   "Operating System :: Unix",
   "Programming Language :: Python :: 3 :: Only",
-  "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
   "Programming Language :: Python :: 3.14",
@@ -121,7 +120,6 @@ jax.pypi-dependencies.jax = ">=0.8"
 jax.target.linux-64.tasks.tests-jax = "pytest --backend=jax"
 jax.target.osx-arm64.tasks.tests-jax = "dot -c && pytest --backend=jax"
 jax.target.win-64.tasks.tests-jax = "pytest --backend=jax"
-py311.dependencies.python = "~=3.11.0"
 py312.dependencies.python = "~=3.12.0"
 py313.dependencies.python = "~=3.13.0"
 py314.dependencies.python = "~=3.14.0"
@@ -147,7 +145,6 @@ tests.target.win-64.tasks.tests = "pytest"
 tests.target.win-64.tasks.tests-with-cov = "pytest --cov-report=xml --cov=./"
 [tool.pixi.environments]
 default = [ "py314" ]
-py311 = [ "py311", "tests" ]
 py312 = [ "py312", "tests" ]
 py313 = [ "py313", "tests" ]
 py314 = [ "py314", "tests" ]
@@ -183,8 +180,8 @@ extend-ignore = [
   "TC003",   # Move standard library import into a type-checking block
   "TRY003",  # Long messages outside exception class
   "UP040",   # Non-PEP 695 type alias (can't use inside TYPE_CHECKING)
-  "UP046",   # Non-PEP 695 generic class (needs careful migration)
-  "UP047",   # Non-PEP 695 generic function (needs careful migration)
+  "UP046",   # Non-PEP 695 generic class (beartype cannot resolve class type parameters in stringified annotations)
+  "UP047",   # Non-PEP 695 generic function (a forward-referenced bound fails under beartype before 3.14)
 ]
 per-file-ignores."conftest.py" = [
   "ANN", # Missing type annotations
@@ -259,8 +256,6 @@ expand_tables = [
   "tool.pixi.feature.jax",
   "tool.pixi.feature.jax.pypi-dependencies",
   "tool.pixi.feature.jax.target",
-  "tool.pixi.feature.py311",
-  "tool.pixi.feature.py311.dependencies",
   "tool.pixi.feature.py312",
   "tool.pixi.feature.py312.dependencies",
   "tool.pixi.feature.py313",

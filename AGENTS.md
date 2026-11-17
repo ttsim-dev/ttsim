@@ -31,7 +31,7 @@ pixi run -e py314 pytest tests/test_main.py::test_function_name -v
 prek run ty --all-files
 prek run ty-jax --all-files
 
-# Available environments: py311, py312, py313, py314, py314-jax, py314-cuda
+# Available environments: py312, py313, py314, py314-jax, py314-cuda
 ```
 
 Before finishing any task that modifies code, always run these two verification steps in
@@ -122,7 +122,7 @@ The `backend` parameter (`"numpy"` or `"jax"`) controls computation:
 - `tests/`: Main test suite for ttsim-backend
 - `src_mettsim/tests_middle_earth/`: Tests for the example "Middle Earth" policy
   implementation
-- Use pixi environment `py314` (numpy, current Python), `py311` (numpy, oldest supported
+- Use pixi environment `py314` (numpy, current Python), `py312` (numpy, oldest supported
   Python), `py314-jax` (Jax, CPU) or `py314-cuda` (Jax, CUDA) to select Python version
   and backend
 - Markers: `@pytest.mark.skipif_jax`, `@pytest.mark.skipif_numpy`

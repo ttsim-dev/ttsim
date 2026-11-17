@@ -34,7 +34,7 @@ from collections.abc import Iterable, Iterator, Mapping
 from dataclasses import dataclass, replace
 from enum import Enum, auto
 from types import MappingProxyType
-from typing import TYPE_CHECKING, Any, TypeAlias, TypeVar
+from typing import TYPE_CHECKING, Any, TypeAlias
 
 import pint
 from pint.util import to_units_container
@@ -156,8 +156,6 @@ _unit_builder_levels: set[str] = set()
 
 #: Tolerance for the magnitude part of a unit-equivalence comparison.
 _REL_TOL = 1e-9
-
-_CastValueT = TypeVar("_CastValueT")
 
 
 class QuantityKind(Enum):
@@ -446,10 +444,10 @@ class InputOutputUnits:
     """The unit the schedule produces at every call site."""
 
 
-def cast_ttsim_unit(
-    value: _CastValueT,
+def cast_ttsim_unit[CastValueT](
+    value: CastValueT,
     unit: str | CompositeUnit,  # noqa: ARG001
-) -> _CastValueT:
+) -> CastValueT:
     """Re-tag ``value`` with ``unit`` for the build-time unit check.
 
     The expression-level escape hatch of the unit check. Like ``typing.cast``, it
