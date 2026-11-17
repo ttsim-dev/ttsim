@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import datetime
 import inspect
-from collections.abc import Iterator
+from collections.abc import Generator
 from contextlib import contextmanager
 from functools import lru_cache
 from pathlib import Path
@@ -53,7 +53,7 @@ pd.set_option("display.width", None)
 
 
 @contextmanager
-def isolated_unit_vocabulary() -> Iterator[None]:
+def isolated_unit_vocabulary() -> Generator[None, None, None]:
     """Restore unit registrations performed inside the context on exit."""
     saved_currencies = set(_registered_currencies)
     saved_tokens = set(_ALLOWED_UNIT_TOKENS)
@@ -113,13 +113,13 @@ def get_policy_date_partition(
     """
     column_objects = orig_policy_objects["column_objects_and_param_functions"]
     start_dates = {
-        obj.start_date  # ty: ignore[unresolved-attribute]
+        obj.start_date  # ty: ignore[missing-union-attribute]
         for obj in column_objects.values()
     }
     if not start_dates:
         return []
     end_dates = {
-        obj.end_date + datetime.timedelta(days=1)  # ty: ignore[unresolved-attribute]
+        obj.end_date + datetime.timedelta(days=1)  # ty: ignore[missing-union-attribute]
         for obj in column_objects.values()
     }
     param_dates = {

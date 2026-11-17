@@ -645,7 +645,7 @@ def test_time_conversion_variants_rebased_period():
         grouping_levels=("sn", "kin"),
     )
     # Generated betrag_y re-bases the flow's period to its own _y suffix.
-    betrag_y_unit = variants.functions["betrag_y"].unit  # ty: ignore[unresolved-attribute]
+    betrag_y_unit = variants.functions["betrag_y"].unit  # ty: ignore[missing-attribute]
     assert betrag_y_unit == TTSIMUnit.CURRENCY.PER_YEAR
     assert units_are_equivalent(
         left=pint_unit_from_ttsim_unit(unit=betrag_y_unit, registry=REGISTRY),
@@ -670,7 +670,7 @@ def test_auto_aggregation_carries_the_target_level():
         grouping_levels=("kin",),
     )
     assert (
-        aggs.functions["betrag_m_kin"].unit  # ty: ignore[unresolved-attribute]
+        aggs.functions["betrag_m_kin"].unit  # ty: ignore[missing-attribute]
         == TTSIMUnit.CURRENCY.PER_MONTH.PER_KIN
     )
 
@@ -693,7 +693,7 @@ def test_auto_aggregation_over_a_boolean_source_mints_a_head_count():
         grouping_levels=("fam",),
     )
     assert (
-        aggs.functions["is_adult_fam"].unit  # ty: ignore[unresolved-attribute]
+        aggs.functions["is_adult_fam"].unit  # ty: ignore[missing-attribute]
         == TTSIMUnit.DIMENSIONLESS.PER_FAM
     )
 

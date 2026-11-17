@@ -31,7 +31,7 @@ pixi run -e py314 pytest tests/test_main.py::test_function_name -v
 prek run ty --all-files
 prek run ty-jax --all-files
 
-# Available environments: py311, py312, py313, py314, py314-jax, py314-cuda, py314-metal
+# Available environments: py311, py312, py313, py314, py314-jax, py314-cuda
 ```
 
 Before finishing any task that modifies code, always run these two verification steps in

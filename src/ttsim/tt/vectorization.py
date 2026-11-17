@@ -161,7 +161,7 @@ def _make_vectorizable_ast(
     tree = func_to_ast(func)
 
     # get function location for error messages
-    func_loc = f"{func.__module__}/{func.__name__}"  # ty: ignore[unresolved-attribute]
+    func_loc = f"{func.__module__}/{func.__name__}"  # ty: ignore[missing-attribute]
 
     # transform tree nodes
     new_tree = Transformer(module=module, func_loc=func_loc, xnp=xnp).visit(tree)
@@ -241,7 +241,7 @@ class Transformer(ast.NodeTransformer):
 
 def _if_to_call(node: ast.If, module: str, func_loc: str) -> ast.Call:
     """Transform If statement to Call."""
-    args: list[ast.expr] = [node.test, node.body[0].value]  # ty: ignore[unresolved-attribute]
+    args: list[ast.expr] = [node.test, node.body[0].value]  # ty: ignore[missing-attribute]
 
     if len(node.orelse) > 1 or len(node.body) > 1:
         msg = _too_many_operations_error_message(node, func_loc=func_loc)
@@ -253,7 +253,7 @@ def _if_to_call(node: ast.If, module: str, func_loc: str) -> ast.Call:
         if hasattr(node.body[0], "targets"):
             name = ast.Name(id=node.body[0].targets[0].id, ctx=ast.Load())  # ty: ignore[not-subscriptable]
         else:
-            name = ast.Name(id=node.body[0].target.id, ctx=ast.Load())  # ty: ignore[unresolved-attribute]
+            name = ast.Name(id=node.body[0].target.id, ctx=ast.Load())  # ty: ignore[missing-attribute]
         args.append(name)
     elif isinstance(node.orelse[0], ast.Return):
         args.append(cast("ast.expr", node.orelse[0].value))
@@ -354,7 +354,7 @@ class TranslateToVectorizableError(TTSIMError, ValueError):
 
 def _too_many_arguments_call_error_message(node: ast.Call, func_loc: str) -> str:
     source = _node_to_formatted_source(node)
-    _func_name = node.func.id  # ty: ignore[unresolved-attribute]
+    _func_name = node.func.id  # ty: ignore[missing-attribute]
     return (
         "\n\n"
         f"The function {_func_name} is called with too many arguments. Please only use "

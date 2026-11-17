@@ -96,7 +96,7 @@ def _remove_tree_logic_from_policy_environment(
     out = {}
     for name, obj in qname_env.items():
         if hasattr(obj, "remove_tree_logic"):
-            out[name] = obj.remove_tree_logic(  # ty: ignore[call-non-callable]
+            out[name] = obj.remove_tree_logic(  # ty: ignore[not-callable]
                 tree_path=dt.tree_path_from_qname(name),
                 top_level_namespace=labels__top_level_namespace,
             )
@@ -288,7 +288,7 @@ def with_partialled_params_and_scalars(
     processed_functions = {}
     for name, col_func in column_functions.items():
         vect_col_func = (
-            col_func.vectorize(backend=backend, xnp=xnp)  # ty: ignore[call-non-callable]
+            col_func.vectorize(backend=backend, xnp=xnp)  # ty: ignore[not-callable]
             if hasattr(col_func, "vectorize")
             else col_func
         )
@@ -340,7 +340,7 @@ def _apply_rounding(
     `ColumnFunction` and the rounded plain callable.
     """
     return (
-        element.rounding_spec.apply_rounding(element, xnp=xnp)  # ty: ignore[unresolved-attribute]
+        element.rounding_spec.apply_rounding(element, xnp=xnp)  # ty: ignore[missing-union-attribute]
         if getattr(element, "rounding_spec", False)
         else element
     )

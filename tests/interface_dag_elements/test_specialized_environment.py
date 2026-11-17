@@ -210,11 +210,6 @@ def minimal_input_data_shared_fam():
     }
 
 
-@agg_by_group_function(agg_type=AggType.SUM, unit=TTSIMUnit.DIMENSIONLESS)
-def foo_fam(foo: int, fam_id: int) -> int:
-    pass
-
-
 # Create a function which is used by some tests below
 @policy_function(vectorization_strategy="vectorize", unit=TTSIMUnit.DIMENSIONLESS)
 def func_before_partial(arg_1: int, some_param: int) -> int:
@@ -231,16 +226,6 @@ def function_with_bool_return(x: bool) -> bool:
 
 @policy_input(unit=TTSIMUnit.DIMENSIONLESS)
 def x() -> int:
-    pass
-
-
-@policy_input(unit=TTSIMUnit.DIMENSIONLESS)
-def x_f() -> float:
-    pass
-
-
-@policy_input(unit=TTSIMUnit.DIMENSIONLESS)
-def x_b() -> bool:
     pass
 
 

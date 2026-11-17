@@ -97,7 +97,9 @@ openpyxl = "*"
 pandas = ">=3"
 pint = ">=0.25,<0.27"
 portion = "*"
-prek = "*"
+# `pixi lock` keeps a locked version while it satisfies the spec, so `"*"` never
+# upgrades. prek below 0.5.9 installs a uv that cannot build ty-pre-commit.
+prek = ">=0.5.9"
 pygments = "*"
 pygraphviz = "*"
 pyyaml = "*"
@@ -119,9 +121,6 @@ jax.pypi-dependencies.jax = ">=0.8"
 jax.target.linux-64.tasks.tests-jax = "pytest --backend=jax"
 jax.target.osx-arm64.tasks.tests-jax = "dot -c && pytest --backend=jax"
 jax.target.win-64.tasks.tests-jax = "pytest --backend=jax"
-metal.platforms = [ "osx-arm64" ]
-metal.target.osx-arm64.pypi-dependencies.jax = ">=0.8"
-metal.target.osx-arm64.pypi-dependencies.jax-metal = ">=0.1.1"
 py311.dependencies.python = "~=3.11.0"
 py312.dependencies.python = "~=3.12.0"
 py313.dependencies.python = "~=3.13.0"
@@ -154,7 +153,6 @@ py313 = [ "py313", "tests" ]
 py314 = [ "py314", "tests" ]
 py314-cuda = [ "py314", "tests", "cuda" ]
 py314-jax = [ "py314", "tests", "jax" ]
-py314-metal = [ "py314", "tests", "metal" ]
 
 [tool.ruff]
 fix = true
@@ -261,8 +259,6 @@ expand_tables = [
   "tool.pixi.feature.jax",
   "tool.pixi.feature.jax.pypi-dependencies",
   "tool.pixi.feature.jax.target",
-  "tool.pixi.feature.metal",
-  "tool.pixi.feature.metal.target",
   "tool.pixi.feature.py311",
   "tool.pixi.feature.py311.dependencies",
   "tool.pixi.feature.py312",
@@ -282,6 +278,9 @@ expand_tables = [
 collapse_tables = [ "tool.hatch", "tool.pytask", "tool.pytest", "tool.ty" ]
 
 [tool.ty]
+# The `.ai-instructions` hook scripts import tools that exist only in their
+# pre-commit environments (vulture), so ty cannot resolve them.
+src.exclude = [ ".ai-instructions" ]
 # ty resolves third-party imports from this pixi env. The pre-commit hook runs
 # ty directly; pixi owns the project environment. Run `pixi install` once. The
 # `ty-jax` hook overrides this path on the command line to check the jax env.
@@ -289,13 +288,13 @@ environment.python = ".pixi/envs/py314"
 rules.ambiguous-protocol-member = "error"
 rules.deprecated = "error"
 rules.division-by-zero = "error"
-rules.empty-body = "ignore"
 rules.ignore-comment-unknown-rule = "error"
 rules.ineffective-final = "error"
 rules.invalid-enum-member-annotation = "error"
+rules.invalid-explicit-return = "ignore"
 rules.invalid-ignore-comment = "error"
+rules.invalid-implicit-return-in-function-with-stub-body = "ignore"
 rules.invalid-legacy-positional-parameter = "error"
-rules.invalid-return-type = "ignore"
 rules.invalid-type-form = "ignore"
 rules.possibly-missing-submodule = "error"
 rules.redundant-cast = "error"
@@ -344,3 +343,7 @@ ini_options.filterwarnings = [
 line_length = 88
 none_representation = "null"
 sequence_style = "block_style"
+
+[tool.dead-code]
+consumers = [ "src", "docs" ]
+public = [ "src/ttsim/" ]

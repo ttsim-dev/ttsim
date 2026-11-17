@@ -837,7 +837,7 @@ def tt_dag_includes_function_with_fail_msg_if_included_set(
         # Check for attribute existence because ParamObjects can be overridden by
         # ColumnObjects down the road.
         if hasattr(env[node], "fail_msg_if_included"):  # noqa: SIM102
-            if msg := env[node].fail_msg_if_included:  # ty: ignore[unresolved-attribute]
+            if msg := env[node].fail_msg_if_included:  # ty: ignore[missing-union-attribute]
                 issues += f"{node}:\n\n{msg}\n\n\n"
     if issues:
         raise ValueError(

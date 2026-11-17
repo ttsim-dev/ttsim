@@ -124,15 +124,15 @@ def recompile_from_ast(
     rewrites never touch the argument list, so any names renamed dynamically after
     definition are matched positionally against ``func``'s live signature.
     """
-    scope = dict(func.__globals__)  # ty: ignore[unresolved-attribute]
-    if func.__closure__:  # ty: ignore[unresolved-attribute]
-        closure_vars = func.__code__.co_freevars  # ty: ignore[unresolved-attribute]
-        closure_cells = [c.cell_contents for c in func.__closure__]  # ty: ignore[unresolved-attribute]
+    scope = dict(func.__globals__)  # ty: ignore[missing-attribute]
+    if func.__closure__:  # ty: ignore[missing-attribute]
+        closure_vars = func.__code__.co_freevars  # ty: ignore[missing-attribute]
+        closure_cells = [c.cell_contents for c in func.__closure__]  # ty: ignore[missing-attribute]
         scope.update(dict(zip(closure_vars, closure_cells, strict=False)))
     scope.update(scope_bindings)
     exec(compile(tree, filename, "exec"), scope)  # noqa: S102
     recompiled = functools.wraps(func, assigned=WRAPPER_ASSIGNMENTS_NO_ANNOTATIONS)(
-        scope[func.__name__]  # ty: ignore[unresolved-attribute]
+        scope[func.__name__]  # ty: ignore[missing-attribute]
     )
     args_name_mapper = dict(
         zip(
@@ -200,7 +200,7 @@ def is_lambda_function(obj: object) -> bool:
 
 def _args_from_func_ast(func_ast: ast.Module) -> list[str]:
     """Get function arguments from function ast."""
-    return [arg.arg for arg in func_ast.body[0].args.args]  # ty: ignore[unresolved-attribute]
+    return [arg.arg for arg in func_ast.body[0].args.args]  # ty: ignore[missing-attribute]
 
 
 def _remove_decorator_lines(source: str) -> str:

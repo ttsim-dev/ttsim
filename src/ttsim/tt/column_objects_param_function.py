@@ -204,7 +204,7 @@ def policy_input(
 
     def inner(func: Callable[..., Any]) -> PolicyInput:
         return PolicyInput(
-            leaf_name=func.__name__,  # ty: ignore[unresolved-attribute]
+            leaf_name=func.__name__,  # ty: ignore[missing-attribute]
             data_type=func.__annotations__["return"],
             start_date=start_date,
             end_date=end_date,
@@ -292,7 +292,7 @@ class ColumnFunction(ColumnObject, Generic[FunArgTypes, ReturnType]):
     @property
     def original_function_name(self) -> str:
         """The name of the wrapped function."""
-        return self.function.__name__  # ty: ignore[unresolved-attribute]
+        return self.function.__name__  # ty: ignore[missing-attribute]
 
     def is_active(self, policy_date: datetime.date) -> bool:
         """Check if the function is active at a given date."""
@@ -346,7 +346,7 @@ class PolicyFunction(ColumnFunction):
         # the same as for the initially defined function, since otherwise global
         # variables or imported functions cannot be found after vectorization.
         # This is not done by dt.get_one_function_without_tree_logic, so we do it here.
-        function_without_tree_logic.__globals__.update(self.function.__globals__)  # ty: ignore[unresolved-attribute]
+        function_without_tree_logic.__globals__.update(self.function.__globals__)  # ty: ignore[missing-attribute]
 
         return PolicyFunction(
             leaf_name=self.leaf_name,
@@ -448,7 +448,7 @@ def policy_function(
             func=func, vectorization_strategy=vectorization_strategy
         )
         return PolicyFunction(
-            leaf_name=leaf_name or func.__name__,  # ty: ignore[unresolved-attribute]
+            leaf_name=leaf_name or func.__name__,  # ty: ignore[missing-attribute]
             function=func,
             start_date=start_date,
             end_date=end_date,
@@ -668,7 +668,7 @@ def group_creation_function(
             exception_class=GroupCreationDefinitionError,
             decorator_name="@group_creation_function",
         )
-        _leaf_name = func.__name__ if leaf_name is None else leaf_name  # ty: ignore[unresolved-attribute]
+        _leaf_name = func.__name__ if leaf_name is None else leaf_name  # ty: ignore[missing-attribute]
         func_with_reorder = lambda **kwargs: reorder_ids(  # noqa: E731
             ids=func(**kwargs),
             xnp=kwargs["xnp"],
@@ -771,7 +771,7 @@ def agg_by_group_function(
             exception_class=AggregationDefinitionError,
             decorator_name="@agg_by_group_function",
         )
-        orig_location = f"{func.__module__}.{func.__name__}"  # ty: ignore[unresolved-attribute]
+        orig_location = f"{func.__module__}.{func.__name__}"  # ty: ignore[missing-attribute]
         args = set(inspect.signature(func).parameters)
         group_ids = {p for p in args if p.endswith("_id")}
         _fail_if_group_id_is_invalid(group_ids=group_ids, orig_location=orig_location)
@@ -804,13 +804,13 @@ def agg_by_group_function(
             node_name=orig_location,
         )
         return AggByGroupFunction(
-            leaf_name=leaf_name or func.__name__,  # ty: ignore[unresolved-attribute]
+            leaf_name=leaf_name or func.__name__,  # ty: ignore[missing-attribute]
             function=agg_func,
             start_date=start_date,
             end_date=end_date,
             description=str(inspect.getdoc(func)),
             foreign_key_type=FKType.IRRELEVANT,
-            orig_location=f"{func.__module__}.{func.__name__}",  # ty: ignore[unresolved-attribute]
+            orig_location=f"{func.__module__}.{func.__name__}",  # ty: ignore[missing-attribute]
             warn_msg_if_included=warn_msg_if_included,
             fail_msg_if_included=fail_msg_if_included,
             unit=unit,
@@ -1016,7 +1016,7 @@ def agg_by_p_id_function(
             exception_class=AggregationDefinitionError,
             decorator_name="@agg_by_p_id_function",
         )
-        orig_location = f"{func.__module__}.{func.__name__}"  # ty: ignore[unresolved-attribute]
+        orig_location = f"{func.__module__}.{func.__name__}"  # ty: ignore[missing-attribute]
         args = set(inspect.signature(func).parameters)
         other_p_ids = {p for p in args if qname_is_person_pointer(p)}
         other_args = args - {*other_p_ids, "p_id", "num_segments", "backend"}
@@ -1062,13 +1062,13 @@ def agg_by_p_id_function(
             node_name=orig_location,
         )
         return AggByPIDFunction(
-            leaf_name=leaf_name or func.__name__,  # ty: ignore[unresolved-attribute]
+            leaf_name=leaf_name or func.__name__,  # ty: ignore[missing-attribute]
             function=agg_func,
             start_date=start_date,
             end_date=end_date,
             description=str(inspect.getdoc(func)),
             foreign_key_type=FKType.IRRELEVANT,
-            orig_location=f"{func.__module__}.{func.__name__}",  # ty: ignore[unresolved-attribute]
+            orig_location=f"{func.__module__}.{func.__name__}",  # ty: ignore[missing-attribute]
             warn_msg_if_included=warn_msg_if_included,
             fail_msg_if_included=fail_msg_if_included,
             unit=unit,
@@ -1213,7 +1213,7 @@ class ParamFunction(Generic[FunArgTypes, ReturnType]):
     @property
     def original_function_name(self) -> str:
         """The name of the wrapped function."""
-        return self.function.__name__  # ty: ignore[unresolved-attribute]
+        return self.function.__name__  # ty: ignore[missing-attribute]
 
     def is_active(self, policy_date: datetime.date) -> bool:
         """Check if the function is active at a given date."""
@@ -1288,7 +1288,7 @@ def param_function(
             decorator_name="@param_function",
         )
         return ParamFunction(
-            leaf_name=leaf_name or func.__name__,  # ty: ignore[unresolved-attribute]
+            leaf_name=leaf_name or func.__name__,  # ty: ignore[missing-attribute]
             function=func,
             start_date=start_date,
             end_date=end_date,

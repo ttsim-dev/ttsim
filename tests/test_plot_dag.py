@@ -155,7 +155,7 @@ def test_input_dependent_interface_functions_with_same_path_have_same_docstring(
             raise ValueError(
                 "Input dependent interface functions with the same path must have the "
                 f"same docstring.\n\nOffending path: {path}\n\n"
-                f"Variants:\n\n" + "\n".join(idif.__name__ for idif in idifs)  # ty: ignore[unresolved-attribute]
+                f"Variants:\n\n" + "\n".join(idif.__name__ for idif in idifs)  # ty: ignore[missing-attribute]
             )
 
 

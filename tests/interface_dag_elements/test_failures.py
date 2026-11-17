@@ -139,14 +139,6 @@ def return_one() -> int:
     return 1
 
 
-def return_two() -> int:
-    return 2
-
-
-def return_three() -> int:
-    return 3
-
-
 @pytest.fixture(scope="module")
 def minimal_input_data():
     n_individuals = 5

@@ -79,7 +79,7 @@ def interface_input(
 
     def inner(func: Callable[..., Any]) -> InterfaceInput:
         return InterfaceInput(
-            leaf_name=leaf_name or func.__name__,  # ty: ignore[unresolved-attribute]
+            leaf_name=leaf_name or func.__name__,  # ty: ignore[missing-attribute]
             in_top_level_namespace=in_top_level_namespace,
             return_type=func.__annotations__["return"],
             docstring=inspect.getdoc(func),
@@ -147,7 +147,7 @@ class InterfaceFunction(InterfaceNodeObject, Generic[FunArgTypes, ReturnType]):
     @property
     def original_function_name(self) -> str:
         """The name of the wrapped function."""
-        return self.function.__name__  # ty: ignore[unresolved-attribute]
+        return self.function.__name__  # ty: ignore[missing-attribute]
 
     def remove_tree_logic(
         self,
@@ -186,7 +186,7 @@ def interface_function(
 
     def inner(func: Callable[..., Any]) -> InterfaceFunction:
         return InterfaceFunction(
-            leaf_name=leaf_name or func.__name__,  # ty: ignore[unresolved-attribute]
+            leaf_name=leaf_name or func.__name__,  # ty: ignore[missing-attribute]
             function=func,
             in_top_level_namespace=in_top_level_namespace,
         )
@@ -283,7 +283,7 @@ def input_dependent_interface_function(
         func: Callable[..., Any],
     ) -> InputDependentInterfaceFunction[FunArgTypes, ReturnType]:
         return InputDependentInterfaceFunction(
-            leaf_name=leaf_name or func.__name__,  # ty: ignore[unresolved-attribute]
+            leaf_name=leaf_name or func.__name__,  # ty: ignore[missing-attribute]
             function=func,
             in_top_level_namespace=in_top_level_namespace,
             include_if_any_input_present=include_if_any_input_present,
@@ -335,7 +335,7 @@ def fail_function(
         return FailFunction(
             include_if_any_element_present=include_if_any_element_present,
             include_if_all_elements_present=include_if_all_elements_present,
-            leaf_name=leaf_name or func.__name__,  # ty: ignore[unresolved-attribute]
+            leaf_name=leaf_name or func.__name__,  # ty: ignore[missing-attribute]
             function=func,
             in_top_level_namespace=in_top_level_namespace,
         )
@@ -384,7 +384,7 @@ def warn_function(
         return WarnFunction(
             include_if_any_element_present=include_if_any_element_present,
             include_if_all_elements_present=include_if_all_elements_present,
-            leaf_name=leaf_name or func.__name__,  # ty: ignore[unresolved-attribute]
+            leaf_name=leaf_name or func.__name__,  # ty: ignore[missing-attribute]
             function=func,
             in_top_level_namespace=in_top_level_namespace,
         )

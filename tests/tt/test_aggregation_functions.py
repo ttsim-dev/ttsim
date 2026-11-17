@@ -7,7 +7,7 @@ import pytest
 from beartype.roar import BeartypeCallHintViolation
 
 try:
-    import jax_datetime  # ty: ignore[unresolved-import]
+    import jax_datetime  # ty: ignore[import-not-found]
 
     my_datetime = jax_datetime.to_datetime
 except ImportError:
