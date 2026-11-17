@@ -1972,8 +1972,12 @@ def test_opaque_return_demands_opt_out():
     """A body returning an opaque value (a tuple, a dataclass) is neither a
     checkable quantity nor a plain scalar, so it must opt out (GEP 10)."""
 
-    @policy_function(unit=TTSIMUnit.CURRENCY.PER_YEAR)
-    def packaged_y(wealth: float, tax_rate_y: float) -> tuple[float, float]:
+    @policy_function(
+        vectorization_strategy="not_required", unit=TTSIMUnit.CURRENCY.PER_YEAR
+    )
+    def packaged_y(
+        wealth: FloatColumn, tax_rate_y: FloatColumn
+    ) -> tuple[FloatColumn, FloatColumn]:
         return (wealth * tax_rate_y, wealth)  # opaque: a tuple, not a scalar
 
     with pytest.raises(UnitConsistencyError, match="packaged_y"):
