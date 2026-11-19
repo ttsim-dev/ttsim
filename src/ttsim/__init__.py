@@ -1,10 +1,5 @@
 from __future__ import annotations
 
-# Make jaxtyping accept bare `Ellipsis` axis specs (produced by
-# `from __future__ import annotations` evaluation) before any
-# jaxtyping-subscripted type is created. See the module docstring.
-from ttsim import _jaxtyping_patch  # noqa: F401
-
 # Register beartype's package claw before any ttsim submodule imports so
 # every ttsim.* module loads with runtime type checks installed via
 # INTERNAL_CONF. User-facing constructors stack an explicit

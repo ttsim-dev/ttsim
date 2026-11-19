@@ -19,7 +19,7 @@ from ttsim.tt.units import (
 from ttsim.typing import DictParamValue, NestedLookupDict
 
 # Backend-agnostic array type: union the (optional) JAX `Array` with
-# `np.ndarray` so `Float[Array, ...]`/`Int[Array, ...]` annotations accept
+# `np.ndarray` so `Float[Array, " ..."]`/`Int[Array, " ..."]` annotations accept
 # NumPy arrays under the JAX env. Bare `jax.Array` would make the package
 # claw reject every NumPy-backed value (see `ttsim.typing` column aliases).
 try:
@@ -216,19 +216,19 @@ class ConsecutiveIntLookupTableParamValue:
     bases_to_subtract: Int[Array, "n_rows n_cols"]
     lookup_multipliers: Int[Array, "n_rows n_cols"]
     values_to_look_up: (
-        Float[Array | np.ndarray, ...]
-        | Int[Array | np.ndarray, ...]
-        | Bool[Array | np.ndarray, ...]
+        Float[Array | np.ndarray, " ..."]
+        | Int[Array | np.ndarray, " ..."]
+        | Bool[Array | np.ndarray, " ..."]
     )
     xnp: ModuleType
 
     def __init__(
         self,
         xnp: ModuleType,
-        values_to_look_up: Float[Array | np.ndarray, ...]
-        | Int[Array | np.ndarray, ...]
-        | Bool[Array | np.ndarray, ...],
-        bases_to_subtract: Int[Array | np.ndarray, ...],
+        values_to_look_up: Float[Array | np.ndarray, " ..."]
+        | Int[Array | np.ndarray, " ..."]
+        | Bool[Array | np.ndarray, " ..."],
+        bases_to_subtract: Int[Array | np.ndarray, " ..."],
     ) -> None:
         self.xnp = xnp
         self.values_to_look_up = values_to_look_up.flatten()
@@ -242,7 +242,7 @@ class ConsecutiveIntLookupTableParamValue:
 
     def look_up(
         self: ConsecutiveIntLookupTableParamValue,
-        *args: int | np.integer | Int[Array | np.ndarray, ...],
+        *args: int | np.integer | Int[Array | np.ndarray, " ..."],
     ) -> (
         float
         | int
@@ -250,9 +250,9 @@ class ConsecutiveIntLookupTableParamValue:
         | np.floating
         | np.integer
         | np.bool_
-        | Float[Array | np.ndarray, ...]
-        | Int[Array | np.ndarray, ...]
-        | Bool[Array | np.ndarray, ...]
+        | Float[Array | np.ndarray, " ..."]
+        | Int[Array | np.ndarray, " ..."]
+        | Bool[Array | np.ndarray, " ..."]
     ):
         """Look up value(s) for the given index argument(s).
 
@@ -384,9 +384,9 @@ def get_consecutive_int_lookup_table_param_value(
     def process_level(
         i: int, level_i_dict: NestedLookupDict
     ) -> (
-        Float[Array | np.ndarray, ...]
-        | Int[Array | np.ndarray, ...]
-        | Bool[Array | np.ndarray, ...]
+        Float[Array | np.ndarray, " ..."]
+        | Int[Array | np.ndarray, " ..."]
+        | Bool[Array | np.ndarray, " ..."]
     ):
         sorted_keys = sorted(level_i_dict.keys())
         bases_to_substract[i] = min(xnp.asarray(sorted_keys))

@@ -295,19 +295,20 @@ rules.possibly-missing-submodule = "error"
 rules.redundant-cast = "error"
 rules.unused-awaitable = "error"
 rules.unused-ignore-comment = "error"
+overrides = [
+  # The monkey-patch assignment in `conftest.py` needs
+  # `ty: ignore[invalid-assignment]` under the jax backend, where the patched
+  # attribute resolves to a typed signature; the numpy backend then reports the
+  # same suppression as unused. Scope the unused-suppression rule off for that
+  # file only.
+  { include = [ "conftest.py" ], rules.unused-ignore-comment = "ignore" }
+]
 analysis.allowed-unresolved-imports = [
   "ttsim._version",
   "jax",
   "jax.numpy",
   "jax.ops",
 ]
-# The two monkey-patch assignments below need `ty: ignore[invalid-assignment]`
-# under the jax backend, where the patched attribute resolves to a typed
-# signature; the numpy backend then reports the same suppression as unused.
-# Scope the unused-suppression rule off for those two files only.
-[[tool.ty.overrides]]
-include = [ "conftest.py", "src/ttsim/_jaxtyping_patch.py" ]
-rules.unused-ignore-comment = "ignore"
 
 [tool.pytest]
 ini_options.testpaths = [ "src_mettsim/tests_middle_earth", "tests" ]
