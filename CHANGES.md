@@ -4,7 +4,7 @@ This is a record of all past `ttsim` releases and what went into them in reverse
 chronological order. We follow [semantic versioning](https://semver.org/) and all
 releases are available on [Anaconda.org](https://anaconda.org/conda-forge/ttsim).
 
-## Unreleased
+## v1.4.0 — 2026-11-26
 
 - {gh}`165` Require dags >=0.7. ({ghuser}`hmgaudecker`)
 
@@ -21,6 +21,11 @@ releases are available on [Anaconda.org](https://anaconda.org/conda-forge/ttsim)
   quotient `out / base` within 4 ulps of a whole number, and at most a tenth of a base
   unit away from it, counts as that whole number before `ceil`, `floor` or `round`, so
   `0.0656 * 40000` (2623.9999999999995 in float64) rounds down to 2624, not 2623.
+  ({ghuser}`MImmesberger`)
+
+## v1.3.2 — 2026-09-25
+
+- {gh}`156` Support pint 0.26, update boilerplate, and migrate the cuda platform.
   ({ghuser}`MImmesberger`)
 
 ## v1.3.1 — 2026-09-02
