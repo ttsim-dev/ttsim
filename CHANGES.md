@@ -6,6 +6,8 @@ releases are available on [Anaconda.org](https://anaconda.org/conda-forge/ttsim)
 
 ## Unreleased
 
+- {gh}`165` Require dags >=0.7. ({ghuser}`hmgaudecker`)
+
 - {gh}`163` Drop Python 3.11 support, following numpy, which requires Python >=3.12 from
   2.5 on. ({ghuser}`hmgaudecker`)
 
