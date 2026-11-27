@@ -73,6 +73,7 @@ def test_policy_function_has_legal_references():
         return x
 
     assert f.legal_references == ("§ 1 XG idF A",)
+    assert f.rounding_spec is not None
     assert f.rounding_spec.legal_references == ("§ 3 XG idF C",)
 
 
