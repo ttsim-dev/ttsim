@@ -8,6 +8,7 @@ from typing import Literal, get_args
 from beartype import beartype
 
 from ttsim._beartype_conf import ROUNDING_SPEC_CONF
+from ttsim.tt.legal_references import LegalReferences, legal_references_from_spec
 from ttsim.tt.type_resolution import build_beartype_checkable_wrapper
 from ttsim.tt.units import CompositeUnit
 from ttsim.typing import FloatColumn
@@ -45,7 +46,7 @@ class RoundingSpec:
     base: int | float
     direction: ROUNDING_DIRECTION
     to_add_after_rounding: int | float = 0
-    reference: str | None = None
+    reference: str | tuple[str, ...] | None = None
     unit: CompositeUnit | None = None
 
     def __post_init__(self) -> None:
@@ -65,6 +66,11 @@ class RoundingSpec:
         if not isinstance(self.to_add_after_rounding, (int, float)):
             msg = f"Additive part must be a number, got {self.to_add_after_rounding!r}"
             raise TypeError(msg)
+
+    @property
+    def legal_references(self) -> LegalReferences | None:
+        """The references to the law of the rounding rule."""
+        return legal_references_from_spec(self.reference)
 
     def apply_rounding[**P](
         self,

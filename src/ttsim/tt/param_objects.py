@@ -8,6 +8,7 @@ import numpy as np
 from jaxtyping import Bool, Float, Int
 
 from ttsim.exceptions import UnitDefinitionError
+from ttsim.tt.legal_references import LegalReferences, legal_references_from_spec
 from ttsim.tt.units import (
     UNSET_UNIT,
     CompositeUnit,
@@ -49,6 +50,11 @@ class ParamObject:
     unit: UnitDeclaration | str | dict[str | int, Any] = UNSET_UNIT
     name: dict[Literal["de", "en"], str] | None = None
     description: dict[Literal["de", "en"], str] | None = None
+
+    @property
+    def legal_references(self) -> LegalReferences | None:
+        """The references to the law of the date entry in force."""
+        return legal_references_from_spec(getattr(self, "reference", None))
 
     def __post_init__(self) -> None:
         if getattr(self, "value", PLACEHOLDER_VALUE) is PLACEHOLDER_VALUE:
@@ -102,7 +108,7 @@ class ScalarParam(ParamObject):
 
     value: bool | int | float = PLACEHOLDER_FIELD
     note: str | None = None
-    reference: str | None = None
+    reference: str | list[str] | None = None
 
     def __post_init__(self) -> None:
         super().__post_init__()
@@ -122,7 +128,7 @@ class DictParam(ParamObject):
 
     value: DictParamValue = PLACEHOLDER_FIELD
     note: str | None = None
-    reference: str | None = None
+    reference: str | list[str] | None = None
 
     def __post_init__(self) -> None:
         super().__post_init__()
@@ -175,7 +181,7 @@ class PiecewisePolynomialParam(ParamMappingObject):
 
     value: PiecewisePolynomialParamValue = PLACEHOLDER_FIELD
     note: str | None = None
-    reference: str | None = None
+    reference: str | list[str] | None = None
 
 
 @dataclass(frozen=True)
@@ -188,7 +194,7 @@ class ConsecutiveIntLookupTableParam(ParamMappingObject):
 
     value: ConsecutiveIntLookupTableParamValue = PLACEHOLDER_FIELD
     note: str | None = None
-    reference: str | None = None
+    reference: str | list[str] | None = None
 
     def __post_init__(self) -> None:
         super().__post_init__()
@@ -282,7 +288,7 @@ class RawParam(ParamObject):
 
     value: dict[str | int, Any] = PLACEHOLDER_FIELD
     note: str | None = None
-    reference: str | None = None
+    reference: str | list[str] | None = None
     input_unit: UnitDeclaration | str = UNSET_UNIT
     output_unit: UnitDeclaration | str = UNSET_UNIT
 

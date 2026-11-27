@@ -53,6 +53,10 @@ from ttsim.tt.aggregation import (
     min_by_p_id,
     sum_by_p_id,
 )
+from ttsim.tt.legal_references import (
+    LegalReferences,
+    legal_references_from_docstring,
+)
 from ttsim.tt.rounding import RoundingSpec
 from ttsim.tt.type_resolution import (
     TypeResolutionError,
@@ -288,6 +292,11 @@ class ColumnFunction(ColumnObject, Generic[FunArgTypes, ReturnType]):
     def dependencies(self) -> UnorderedQNames:
         """The names of input variables that the function depends on."""
         return set(inspect.signature(self).parameters)
+
+    @property
+    def legal_references(self) -> LegalReferences | None:
+        """The references to the law in the `Reference:` section of the docstring."""
+        return legal_references_from_docstring(self.description)
 
     @property
     def original_function_name(self) -> str:
@@ -1209,6 +1218,11 @@ class ParamFunction(Generic[FunArgTypes, ReturnType]):
     def dependencies(self) -> UnorderedQNames:
         """The names of input variables that the function depends on."""
         return set(inspect.signature(self).parameters)
+
+    @property
+    def legal_references(self) -> LegalReferences | None:
+        """The references to the law in the `Reference:` section of the docstring."""
+        return legal_references_from_docstring(self.description)
 
     @property
     def original_function_name(self) -> str:

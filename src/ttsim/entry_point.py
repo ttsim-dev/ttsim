@@ -38,6 +38,7 @@ from ttsim.main_args import (
     TTTargets,
 )
 from ttsim.main_target import MainTarget, MainTargetABC
+from ttsim.tt.legal_references import LegalReferenceParser
 from ttsim.tt.units import UnitSystem
 from ttsim.typing import (
     DashedISOString,
@@ -80,6 +81,8 @@ def main(
     rounding: bool = True,
     backend: Literal["numpy", "jax"] = "numpy",
     unit_system: UnitSystem | None = None,
+    legal_references_parser: LegalReferenceParser | None = None,
+    legal_references_query: str | tuple[str, ...] | None = None,
     data_currency: str | None = None,
     evaluation_date_str: DashedISOString | None = None,
     include_fail_nodes: bool = True,
