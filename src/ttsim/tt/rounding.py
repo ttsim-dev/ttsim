@@ -46,7 +46,7 @@ class RoundingSpec:
     base: int | float
     direction: ROUNDING_DIRECTION
     to_add_after_rounding: int | float = 0
-    reference: str | None = None
+    reference: str | tuple[str, ...] | None = None
     unit: CompositeUnit | None = None
 
     def __post_init__(self) -> None:

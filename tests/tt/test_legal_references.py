@@ -80,3 +80,10 @@ def test_policy_function_has_legal_references():
 def test_param_object_has_legal_references():
     p = ScalarParam(value=1, reference=["§ 1 XG idF A", "§ 2 XG idF B"])
     assert p.legal_references == ("§ 1 XG idF A", "§ 2 XG idF B")
+
+
+def test_rounding_spec_accepts_several_references():
+    spec = RoundingSpec(
+        base=1, direction="up", reference=("§ 1 XG idF A", "§ 2 XG idF B")
+    )
+    assert spec.legal_references == ("§ 1 XG idF A", "§ 2 XG idF B")
