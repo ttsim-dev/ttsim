@@ -11,7 +11,11 @@ from ttsim.interface_dag_elements.interface_node_objects import (
     interface_input,
 )
 from ttsim.tt.column_objects_param_function import ParamFunction, PolicyFunction
-from ttsim.tt.legal_references import LegalReferenceParser, NoLegalReference
+from ttsim.tt.legal_references import (
+    LegalReferenceParser,
+    LegalReferences,
+    NoLegalReference,
+)
 from ttsim.tt.param_objects import ParamObject
 from ttsim.typing import PolicyEnvironment
 
@@ -47,6 +51,23 @@ def _parse(
         ) from e
 
 
+def _unparsed_references(
+    qname: str,
+    obj: PolicyFunction | ParamFunction | ParamObject,
+) -> tuple[LegalReferences | None, LegalReferences | None]:
+    """The references of a policy object and of its rounding rule."""
+    try:
+        refs = obj.legal_references
+        rounding_refs = (
+            obj.rounding_spec.legal_references
+            if isinstance(obj, PolicyFunction) and obj.rounding_spec is not None
+            else None
+        )
+    except ValueError as e:
+        raise ValueError(f"The references of {qname!r} are malformed:\n\n{e}") from e
+    return refs, rounding_refs
+
+
 @interface_function()
 def by_path(
     policy_environment: PolicyEnvironment,
@@ -61,12 +82,7 @@ def by_path(
     for qname, obj in dt.flatten_to_qnames(policy_environment).items():
         if not isinstance(obj, PolicyFunction | ParamFunction | ParamObject):
             continue
-        refs = obj.legal_references
-        rounding_refs = (
-            obj.rounding_spec.legal_references
-            if isinstance(obj, PolicyFunction) and obj.rounding_spec is not None
-            else None
-        )
+        refs, rounding_refs = _unparsed_references(qname=qname, obj=obj)
         if isinstance(refs, NoLegalReference) and not isinstance(rounding_refs, tuple):
             out[qname] = refs
             continue

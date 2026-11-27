@@ -92,6 +92,24 @@ def test_by_path_fails_for_malformed_reference():
         )
 
 
+@policy_function(unit=TTSIMUnit.DIMENSIONLESS)
+def malformed(x: float) -> float:
+    """Malformed.
+
+    Reference:
+    § 1 XG idF A
+    """
+    return x
+
+
+def test_by_path_fails_for_malformed_reference_section():
+    with pytest.raises(ValueError, match="'n__malformed'"):
+        by_path(
+            policy_environment={"x": x, "n": {"malformed": malformed}},
+            legal_references_parser=ToyParser(),
+        )
+
+
 @pytest.mark.parametrize(
     ("query", "expected"),
     [
