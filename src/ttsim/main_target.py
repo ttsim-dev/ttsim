@@ -205,6 +205,12 @@ class UnitChecks(MainTargetABC):
 
 
 @dataclass(frozen=True)
+class LegalReferences(MainTargetABC):
+    by_path: str = "legal_references__by_path"
+    by_query: str = "legal_references__by_query"
+
+
+@dataclass(frozen=True)
 class MainTarget(MainTargetABC):
     results: type[Results] = field(default=Results)
     templates: type[Templates] = field(default=Templates)
@@ -223,6 +229,9 @@ class MainTarget(MainTargetABC):
     raw_results: type[RawResults] = field(default=RawResults)
     labels: type[Labels] = field(default=Labels)
     unit_checks: type[UnitChecks] = field(default=UnitChecks)
+    legal_references: type[LegalReferences] = field(default=LegalReferences)
+    legal_references_query: str = "legal_references_query"
+    legal_references_parser: str = "legal_references_parser"
     input_data: type[InputData] = field(default=InputData)
     tt_targets: type[Targets] = field(default=Targets)
     len_p_id: str = "len_p_id"
