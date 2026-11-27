@@ -4,6 +4,13 @@ This is a record of all past `ttsim` releases and what went into them in reverse
 chronological order. We follow [semantic versioning](https://semver.org/) and all
 releases are available on [Anaconda.org](https://anaconda.org/conda-forge/ttsim).
 
+## Unreleased
+
+- {gh}`167` Add references to the law of policy objects (GEP 11): extract them from
+  docstrings, parameters and `RoundingSpec`s, accept a `legal_references_parser` from
+  the country package, and add the main targets `legal_references.by_path` and
+  `legal_references.by_query`. ({ghuser}`MImmesberger`)
+
 ## v1.4.0 — 2026-11-26
 
 - {gh}`165` Require dags >=0.7. ({ghuser}`hmgaudecker`)
